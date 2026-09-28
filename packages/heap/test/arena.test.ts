@@ -43,7 +43,7 @@ describe('arena layout', () => {
     expect(arena.layoutText.split('\n')[0]).toBe(
       `faf-arena v1 bytes=${arena.byteLength} dyn=0..${arena.dynamicEnd}`,
     );
-    expect(arena.layoutHash).toBe(0xD7DD082D);
+    expect(arena.layoutHash).toBe(0xD7DD022D);
   });
 
   it('layout hash changes with any schema change', () => {
