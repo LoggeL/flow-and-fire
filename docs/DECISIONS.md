@@ -14,5 +14,5 @@ Weitere pragmatische Anpassungen:
 - **CI:** zunächst lokales Skript `pnpm ci:local` statt Hosted-CI (kein Remote-Repo).
 - **Bun (JSC):** Cross-Engine-Determinismus über Node (V8) + Playwright WebKit (JSC) + Firefox (SpiderMonkey).
 - **Spikes SPK1–SPK6:** als Benchmarks/Prototypen innerhalb von MS1 statt 7-Wochen-Block.
-- **Name:** Projekt-Codename `ironflow`, eigene Fraktion, keine FA-Namen/Assets.
+- **Name:** **Flow & Fire (FAF)** — Initialen als Anlehnung an Forged Alliance Forever. Ordner `flow-and-fire`, Paket-Scope `@faf/*`. (Anfangs-Codename `ironflow`, Umbenennung nach MS1.) Eigene Fraktion, keine FA-Namen/Assets.
 - **Speicher:** Mac ohne Swap → max. 2 schwere Build-/Test-Agenten parallel.

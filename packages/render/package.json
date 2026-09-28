@@ -1,0 +1,19 @@
+{
+  "name": "@faf/render",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "gl-matrix": "^3.4.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "tsx": "^4.23.15",
+    "vite": "^8.3.1"
+  }
+}

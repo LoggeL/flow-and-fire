@@ -1,0 +1,16 @@
+{
+  "name": "@faf/fixed",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "gen:luts": "tsx scripts/gen-luts.ts",
+    "bench": "tsx bench/fixed.bench.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

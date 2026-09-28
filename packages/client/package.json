@@ -1,0 +1,19 @@
+{
+  "name": "@faf/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@faf/blueprints": "workspace:*",
+    "@faf/fixed": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "@faf/render": "workspace:*",
+    "@faf/rules": "workspace:*",
+    "@preact/signals": "^2.11.2",
+    "gl-matrix": "^3.4.4",
+    "preact": "^10.29.8"
+  }
+}

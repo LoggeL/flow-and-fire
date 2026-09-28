@@ -1,0 +1,18 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/fixed" },
+    { "path": "packages/heap" },
+    { "path": "packages/protocol" },
+    { "path": "packages/rules" },
+    { "path": "packages/blueprints" },
+    { "path": "packages/sim" },
+    { "path": "packages/sim-host" },
+    { "path": "packages/render" },
+    { "path": "packages/client" },
+    { "path": "apps/game" },
+    { "path": "tools/headless" },
+    { "path": "tools/headless/tsconfig.harness.json" },
+    { "path": "tools/headless/tsconfig.harness-worker.json" }
+  ]
+}

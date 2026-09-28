@@ -1,0 +1,37 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist/tsc",
+    "tsBuildInfoFile": "dist/tsc/.tsbuildinfo",
+    "lib": [
+      "ES2022",
+      "WebWorker"
+    ],
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "references": [
+    {
+      "path": "../fixed"
+    },
+    {
+      "path": "../heap"
+    },
+    {
+      "path": "../protocol"
+    },
+    {
+      "path": "../rules"
+    },
+    {
+      "path": "../blueprints"
+    },
+    {
+      "path": "../sim"
+    }
+  ]
+}

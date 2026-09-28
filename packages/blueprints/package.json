@@ -1,0 +1,14 @@
+{
+  "name": "@faf/blueprints",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/rules": "workspace:*",
+    "@sinclair/typebox": "^0.34.52"
+  }
+}

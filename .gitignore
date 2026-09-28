@@ -1,8 +1,29 @@
+# dependencies / caches
 node_modules/
-dist/
 .turbo/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# build output
+dist/
+**/dist/**
+tools/headless/dist-harness/
+content/generated/
+
+# test / bench output
 coverage/
 test-results/
 playwright-report/
+blob-report/
+bench-results/
+**/results/*.tmp.json
+*.bench.tmp.*
+*.cpuprofile
+*.heapsnapshot
+
+# misc
 *.log
 .DS_Store
+.env
+.env.*
