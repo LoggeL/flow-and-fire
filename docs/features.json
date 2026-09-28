@@ -1,0 +1,1959 @@
+{
+ "categories": [
+  {
+   "name": "Kern-Simulation & Engine",
+   "prefix": "S",
+   "features": [
+    {
+     "id": "S1",
+     "name": "Fixed-Tick-Simulation mit Render-Interpolation",
+     "description": "Die Spiellogik läuft mit festen 10 Ticks/s wie FA, das Rendering interpoliert mit 60+ FPS dazwischen.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "S2",
+     "name": "Deterministische Mathematik (Fixed-Point + Seeded RNG)",
+     "description": "Die Sim rechnet mit Fixed-Point/Integer, eigenen Trig-/Sqrt-Tabellen und Seed-RNG, damit Replays und Lockstep bitgleich laufen.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "S3",
+     "name": "Command-basierte Eingabe-Architektur",
+     "description": "Jede Aktion von Spieler, KI oder Konsole geht als serialisierbarer Command mit Ziel-Tick an die Sim, die UI ändert den State nie direkt.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "S4",
+     "name": "Simulation im Web Worker",
+     "description": "Sim und Pathfinding laufen im Worker, der Main-Thread macht nur Rendering, Input und UI (State per SharedArrayBuffer oder Transferables).",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S3"
+     ]
+    },
+    {
+     "id": "S5",
+     "name": "SoA-Datenlayout & Spatial Hash",
+     "description": "Entities liegen als Typed Arrays vor, ein Uniform Grid bedient Kollision, Zielsuche, Sicht und Reclaim-Suche ohne GC-Spitzen.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "S6",
+     "name": "Datengetriebene Blueprints",
+     "description": "Alle Werte von Einheiten, Gebäuden, Waffen und Projektilen stehen als typisierte JSON/TS-Blueprints mit Vererbung, Schema-Check und Hot-Reload bereit.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "S7",
+     "name": "Headless-Sim & Determinismus-Testsuite",
+     "description": "Die Sim läuft ohne Renderer in Node/Bun und vergleicht State-Hashes über V8, JSC und SpiderMonkey hinweg.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S2",
+      "S3"
+     ]
+    },
+    {
+     "id": "S8",
+     "name": "Entwickler-Konsole & Debug-Overlays",
+     "description": "Cheats (Spawn, Map aufdecken, Ressourcen) und Overlays für Pathing, Threat-Map und Tick-Budget, alle über die Command-Pipeline.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S3"
+     ]
+    },
+    {
+     "id": "S9",
+     "name": "Hintergrund-Tab-Handling",
+     "description": "Im Singleplayer pausiert das Spiel bei verstecktem Tab automatisch, im Multiplayer tickt die Sim im Worker weiter und holt danach auf.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S1",
+      "S4"
+     ]
+    },
+    {
+     "id": "S10",
+     "name": "Save/Load",
+     "description": "Der komplette Sim-State wird serialisiert und in IndexedDB oder als Datei gespeichert.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "S4",
+      "S6"
+     ]
+    },
+    {
+     "id": "S11",
+     "name": "Mod-Support",
+     "description": "Zuerst Daten-Mods per Blueprint-Merge, später Script-Mods in einer Sandbox, jeweils mit Mod-Hash-Check in der Lobby.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "S6",
+      "N5"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ökonomie",
+   "prefix": "E",
+   "features": [
+    {
+     "id": "E1",
+     "name": "Mass & Energy als Raten",
+     "description": "Zwei Ressourcen mit Einkommen und Verbrauch pro Sekunde statt fester Kontostände.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "E2",
+     "name": "Flow-Ausgaben & Build Power",
+     "description": "Baustellen verbrauchen laufend Kosten/Bauzeit × Build Power, mehr Build Power heißt schneller bauen und mehr Verbrauch.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E1",
+      "S1"
+     ]
+    },
+    {
+     "id": "E3",
+     "name": "Stalling (anteilige Drosselung)",
+     "description": "Bei einem Engpass werden alle Verbraucher anteilig gedrosselt, ein Energy-Stall schaltet Schilde, Radar und Fabs ab.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2"
+     ]
+    },
+    {
+     "id": "E4",
+     "name": "Speicherlimit & Overflow",
+     "description": "Jede Ressource hat eine Speichergrenze, alles darüber verfällt.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E1"
+     ]
+    },
+    {
+     "id": "E5",
+     "name": "Mass-Extraktoren auf Mass-Spots",
+     "description": "Mex lassen sich nur auf festen Map-Spots bauen und sind damit der Kern der Map-Kontrolle.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M4",
+      "B1"
+     ]
+    },
+    {
+     "id": "E6",
+     "name": "Energie-Generatoren",
+     "description": "Frei platzierbare Pgens, T1 im MVP und T2/T3 über die Tech-Leiter.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "B1"
+     ]
+    },
+    {
+     "id": "E7",
+     "name": "Reclaim von Wracks",
+     "description": "Engineers und ACU gewinnen Mass aus Wracks zurück, das Tempo richtet sich nach der Build Power.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2",
+      "K5"
+     ]
+    },
+    {
+     "id": "E8",
+     "name": "Map-Props mit Reclaim (Bäume, Felsen)",
+     "description": "Tausende instanzierte Props liefern Energy (Bäume) und Mass (Felsen) als Early-Game-Eco.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "E7",
+      "M1",
+      "P2"
+     ]
+    },
+    {
+     "id": "E9",
+     "name": "Hydrocarbon-Kraftwerke",
+     "description": "Energiegebäude nur auf Hydro-Spots, mit hohem Output.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M4",
+      "B1"
+     ]
+    },
+    {
+     "id": "E10",
+     "name": "Storage-Gebäude",
+     "description": "Mass- und Energy-Speicher erhöhen die Kapazität, um Einkommen zu puffern.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "E4"
+     ]
+    },
+    {
+     "id": "E11",
+     "name": "Adjacency-Bonus",
+     "description": "Direkt angrenzende Gebäude beeinflussen sich, z.B. Storage um Mex oder Pgen neben Fabrik.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "B1",
+      "E10"
+     ]
+    },
+    {
+     "id": "E12",
+     "name": "Eigene Gebäude reclaimen",
+     "description": "Veraltete eigene Gebäude werden abgebaut und geben einen Teil der Mass zurück.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "E7"
+     ]
+    },
+    {
+     "id": "E13",
+     "name": "Pausieren & Eco-Priorität",
+     "description": "Baustellen und Energieverbraucher lassen sich pausieren oder abschalten, optional mit Priorität beim Stall.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "E3"
+     ]
+    },
+    {
+     "id": "E14",
+     "name": "Area-Reclaim & Reclaim-Overlay",
+     "description": "Ein Flächenbefehl sammelt alles im Bereich ein, ein Overlay zeigt die Mass-Werte auf der Karte (FAF-QoL).",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "E7",
+      "E8"
+     ]
+    },
+    {
+     "id": "E15",
+     "name": "Mass Fabricator",
+     "description": "Wandelt viel Energy in wenig Mass um und fällt beim Energy-Stall zuerst aus.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "E3",
+      "U5"
+     ]
+    },
+    {
+     "id": "E16",
+     "name": "Team-Ressourcenaustausch",
+     "description": "Overflow geht an Verbündete, zusätzlich lässt sich Mass/Energy manuell senden.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "E4",
+      "A17"
+     ]
+    },
+    {
+     "id": "E17",
+     "name": "Endgame-Eco (Paragon, T3 Fab, RAS)",
+     "description": "Späte Eco-Optionen für das T3/T4-Spiel.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "E15",
+      "U15",
+      "U21"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Basenbau & Produktion",
+   "prefix": "B",
+   "features": [
+    {
+     "id": "B1",
+     "name": "Gebäudeplatzierung mit Footprint-Grid & Ghost-Preview",
+     "description": "Gebäude rasten im Raster ein, die Vorschau prüft Neigung, Kollision und Spots, und Footprints blockieren das Pathing-Grid.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M1",
+      "M5"
+     ]
+    },
+    {
+     "id": "B2",
+     "name": "Engineer-Assist & Factory-Guard",
+     "description": "Helfer addieren ihre Build Power zu Baustellen, Upgrades und dauerhaft zu Fabriken.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2"
+     ]
+    },
+    {
+     "id": "B3",
+     "name": "Fabrikproduktion mit Queue, Repeat & Rally",
+     "description": "Die Queue wächst per Klick um 1 und per Shift-Klick um 5, mit Loop-Modus, Rally-Wegpunkten und Mehrfach-Fabrik-Auswahl.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2",
+      "C5"
+     ]
+    },
+    {
+     "id": "B4",
+     "name": "Mex-Upgrade in-place",
+     "description": "Ein Mex rüstet vor Ort von T1 über T2 auf T3 auf, produziert dabei weiter und lässt sich per Assist beschleunigen.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E5",
+      "B2",
+      "U5"
+     ]
+    },
+    {
+     "id": "B5",
+     "name": "Statische Verteidigung T1–T2 (PD, AA, Mauern)",
+     "description": "Abwehrtürme und Mauern gegen frühe Raids und für Firebases.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "B1",
+      "K3"
+     ]
+    },
+    {
+     "id": "B6",
+     "name": "Unfertige Baustellen fortsetzen",
+     "description": "Abgebrochene Baustellen bleiben mit ihrem Fortschritt stehen und können weitergebaut oder reclaimt werden.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "E2",
+      "E7"
+     ]
+    },
+    {
+     "id": "B7",
+     "name": "Drag-Build-Linien & Mex-Komfort",
+     "description": "Ein Drag setzt Reihen von Mauern oder Pgens, dazu gibt es Mex-Drag und Auto-Storage-Ring (FAF).",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "B1",
+      "E11"
+     ]
+    },
+    {
+     "id": "B8",
+     "name": "Generisches In-Place-Upgrade",
+     "description": "Die Upgrade-Logik gilt auch für Radar, Sonar und Schilde.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "B4"
+     ]
+    },
+    {
+     "id": "B9",
+     "name": "HQ-/Support-Factory-System",
+     "description": "Nach der FAF-Regel wird nur die HQ-Fabrik teuer upgegradet, weitere Fabriken entstehen als günstige Support-Factories.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U5"
+     ]
+    },
+    {
+     "id": "B10",
+     "name": "Engineer-Capture",
+     "description": "Engineers und ACU übernehmen feindliche Einheiten oder Gebäude gegen Energy und Zeit.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U2",
+      "C4"
+     ]
+    },
+    {
+     "id": "B11",
+     "name": "Build-Templates",
+     "description": "Gespeicherte Gebäude-Anordnungen lassen sich als Ganzes platzieren und queuen.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "B1",
+      "C5"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Einheiten & Tech",
+   "prefix": "U",
+   "features": [
+    {
+     "id": "U1",
+     "name": "ACU mit Death-Explosion",
+     "description": "Einzigartiger Commander, der baut, reclaimt und kämpft und beim Tod nuklear explodiert.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2",
+      "K4"
+     ]
+    },
+    {
+     "id": "U2",
+     "name": "Engineers T1–T3",
+     "description": "Mobile Baueinheiten mit steigender Build Power, die bauen, reparieren, reclaimen und assisten.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2",
+      "E7",
+      "B2"
+     ]
+    },
+    {
+     "id": "U3",
+     "name": "Eine spielbare Fraktion (eigenes Design)",
+     "description": "Eine vollständige Allrounder-Fraktion mit eigenen Namen und Assets, die vor jeder Asymmetrie sauber gebalanct wird.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S6",
+      "P4"
+     ]
+    },
+    {
+     "id": "U4",
+     "name": "T1-Landarmee",
+     "description": "Scout, Light Assault Bot, Tank, mobile Artillerie und mobile AA.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S6",
+      "K3",
+      "M6"
+     ]
+    },
+    {
+     "id": "U5",
+     "name": "Tech-Progression per Fabrik-Upgrade",
+     "description": "Fabriken rüsten in-place von T1 auf T2 und T3 auf und schalten damit neue Baulisten frei.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S6",
+      "B3"
+     ]
+    },
+    {
+     "id": "U6",
+     "name": "T2-Landarmee",
+     "description": "Heavy Tank, MML, mobile Flak, Schild-/Stealth-Support und T2-Engineer.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "U4",
+      "U5"
+     ]
+    },
+    {
+     "id": "U7",
+     "name": "Unit-Cap",
+     "description": "Einheitenlimit pro Spieler (Default etwa 500) als Balance- und Performance-Ventil, einstellbar in der Lobby.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "U8",
+     "name": "ACU-Overcharge",
+     "description": "Starker Schuss, dessen Kosten und Schaden vom gespeicherten Energy abhängen, die klassische Anti-Rush-Waffe.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "U1",
+      "E4"
+     ]
+    },
+    {
+     "id": "U9",
+     "name": "Veteranenstufen",
+     "description": "Einheiten steigen nach dem Mass-Wert ihrer Kills auf und erhalten mehr HP und Regeneration (FAF-Modell).",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K3"
+     ]
+    },
+    {
+     "id": "U10",
+     "name": "T3-Landarmee",
+     "description": "Assault-Bots, schwere mobile Artillerie, Sniper-Bots, T3-AA und T3-Engineers.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "U6"
+     ]
+    },
+    {
+     "id": "U11",
+     "name": "Luftwaffe T1–T2 mit Flugmodell",
+     "description": "Scout, Interceptor, Bomber, Gunships und Torpedobomber mit Wendekreis, Bomben-Anflügen und Hover.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K1",
+      "K2",
+      "K3"
+     ]
+    },
+    {
+     "id": "U12",
+     "name": "Luftwaffe T3",
+     "description": "ASF, strategischer Bomber, schwerer Gunship für den Kampf um die Luftüberlegenheit.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U11"
+     ]
+    },
+    {
+     "id": "U13",
+     "name": "Transporter & Ferry-Routen",
+     "description": "Lufttransport für Drops sowie automatische Pendelrouten, auf die Fabrik-Rallies zeigen können.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U11",
+      "C5"
+     ]
+    },
+    {
+     "id": "U14",
+     "name": "ACU-Enhancements",
+     "description": "Slot-basierte Upgrades wie Gun, T2/T3-Engineering, Schild, RAS, Regeneration und Teleport.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U1",
+      "K10"
+     ]
+    },
+    {
+     "id": "U15",
+     "name": "Support Commander (SACU)",
+     "description": "T3-Mini-ACU aus dem Quantum Gateway mit Presets, deren Tod keine Niederlage ist.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U14",
+      "U10"
+     ]
+    },
+    {
+     "id": "U16",
+     "name": "Erstes Land-Experimental",
+     "description": "Ein spielentscheidendes T4-Monster mit langer Bauzeit und großem Wrack.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U10",
+      "B2"
+     ]
+    },
+    {
+     "id": "U17",
+     "name": "Marine T1–T3",
+     "description": "Fregatte bis Schlachtschiff inklusive Naval Factory und Torpedo-Launcher.",
+     "complexity": "XL",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "M13",
+      "K3"
+     ]
+    },
+    {
+     "id": "U18",
+     "name": "U-Boote & Torpedos",
+     "description": "Einheiten im Unterwasser-Layer, die nur per Sonar sichtbar und nur mit Torpedos angreifbar sind, plus Torpedo-Abwehr.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U17",
+      "I4"
+     ]
+    },
+    {
+     "id": "U19",
+     "name": "Zweite asymmetrische Fraktion",
+     "description": "Cybran-artiges Gegenstück mit eigenen Mechaniken, damit es echte Fraktions-Matchups gibt.",
+     "complexity": "XL",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "U3"
+     ]
+    },
+    {
+     "id": "U20",
+     "name": "Treibstoff & Air Staging",
+     "description": "Flugzeuge verbrauchen Treibstoff und tanken sowie reparieren an Air Staging oder Carriern.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "U11"
+     ]
+    },
+    {
+     "id": "U21",
+     "name": "Volles Experimental-Roster & Game-Ender",
+     "description": "Luft- und See-Experimentals sowie Mavor-, Scathis- und Paragon-Äquivalente.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "U16",
+      "U12",
+      "U17",
+      "K17"
+     ]
+    },
+    {
+     "id": "U22",
+     "name": "Fraktionen 3 & 4",
+     "description": "Aeon- und Seraphim-artige Fraktionen für das volle Vier-Fraktionen-Spektrum.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "U19",
+      "K10"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kampf & Waffen",
+   "prefix": "K",
+   "features": [
+    {
+     "id": "K1",
+     "name": "Echte Projektil-Simulation",
+     "description": "Jeder Schuss fliegt als Objekt mit Streuung und Hitbox-Kollision, Treffer sind nicht garantiert und Dodging-Micro funktioniert.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S2",
+      "S5"
+     ]
+    },
+    {
+     "id": "K2",
+     "name": "Ballistik & Zielvorhalt",
+     "description": "Artillerie schießt in Parabeln, Waffen halten auf bewegte Ziele vor.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "K1"
+     ]
+    },
+    {
+     "id": "K3",
+     "name": "Zielerfassung, Ziel-Layer & Rollen",
+     "description": "Automatische Zielwahl nach Layer (Land, Luft, Wasser) und Prioritätslisten, woraus sich das Counter-Netz ergibt.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S5",
+      "S6",
+      "I1"
+     ]
+    },
+    {
+     "id": "K4",
+     "name": "Flächenschaden (Splash)",
+     "description": "Explosionen treffen im Radius und bestrafen damit geklumpte Einheiten.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "K1"
+     ]
+    },
+    {
+     "id": "K5",
+     "name": "Wracks nach Tod",
+     "description": "Tote Einheiten und Gebäude hinterlassen Wracks mit Mass-Wert und eigenen HP, gerendert mit einem Wreck-Shader statt eigener Modelle.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "K1",
+      "S6"
+     ]
+    },
+    {
+     "id": "K6",
+     "name": "Feuermodi & Bodenangriff",
+     "description": "Einstellbar sind Return Fire, Hold Fire, Hold Ground sowie Attack-Ground für Artillerie.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K3",
+      "C4"
+     ]
+    },
+    {
+     "id": "K7",
+     "name": "Terrain- & Wrack-Blocking von Schüssen",
+     "description": "Hügel, Wracks und dazwischenstehende Einheiten fangen Direktfeuer ab.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K1",
+      "K5",
+      "M1"
+     ]
+    },
+    {
+     "id": "K8",
+     "name": "Friendly Fire",
+     "description": "Splash von Artillerie, Bombern und Explosionen trifft auch eigene Einheiten.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K4"
+     ]
+    },
+    {
+     "id": "K9",
+     "name": "Turrets & Firing Arcs",
+     "description": "Türme drehen mit begrenzter Geschwindigkeit, und eingeschränkte Feuerwinkel zwingen die Einheit zum Drehen.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K3"
+     ]
+    },
+    {
+     "id": "K10",
+     "name": "Schilde (Bubble & Personal) inkl. Shader",
+     "description": "Kuppeln mit HP, Regeneration, Energy-Unterhalt und Kollaps, dargestellt mit Fresnel- und Ripple-Shader.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K1",
+      "E3"
+     ]
+    },
+    {
+     "id": "K11",
+     "name": "Lenkflugkörper",
+     "description": "Raketen mit Wenderate, denen man durch Manöver ausweichen kann.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K1"
+     ]
+    },
+    {
+     "id": "K12",
+     "name": "Anti-Air & Absturzschaden",
+     "description": "Flak mit Splash, SAM-Raketen und abstürzende Flugzeuge, die am Boden Schaden machen.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "U11",
+      "K11",
+      "K4"
+     ]
+    },
+    {
+     "id": "K13",
+     "name": "Stationäre Artillerie T2/T3",
+     "description": "Langreichweiten-Artillerie gegen Basen und festgefahrene Fronten.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K2",
+      "K4",
+      "B1"
+     ]
+    },
+    {
+     "id": "K14",
+     "name": "Death-Weapons von Gebäuden",
+     "description": "Pgens und Storages explodieren beim Tod und lösen Kettenreaktionen aus.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K4"
+     ]
+    },
+    {
+     "id": "K15",
+     "name": "Overkill-Vermeidung",
+     "description": "Waffen berücksichtigen bereits fliegenden Schaden und wechseln rechtzeitig das Ziel.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "K3"
+     ]
+    },
+    {
+     "id": "K16",
+     "name": "Taktische Raketen (TML) & TMD",
+     "description": "Langreichweiten-Marschflugkörper und Abwehr, die sie abschießt.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "K11"
+     ]
+    },
+    {
+     "id": "K17",
+     "name": "Nukes & SMD",
+     "description": "Teure strategische Raketen, die manuell gestartet werden, und Abwehr mit begrenzter Munition.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "K4",
+      "K8",
+      "K16"
+     ]
+    },
+    {
+     "id": "K18",
+     "name": "EMP/Stun-Effekte",
+     "description": "Ein Status-Effekt-System, das Einheiten zeitweise bewegungs- und feuerunfähig macht.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "S6"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Intel & Sicht",
+   "prefix": "I",
+   "features": [
+    {
+     "id": "I1",
+     "name": "Fog of War & Sichtradius",
+     "description": "Team-Vision-Grid mit den Zuständen nie gesehen, erkundet und sichtbar, im Terrain-Shader gerendert.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S5"
+     ]
+    },
+    {
+     "id": "I2",
+     "name": "Ghost-Buildings im Fog",
+     "description": "Gesichtete feindliche Gebäude bleiben als zuletzt bekannter Stand sichtbar, Einheiten dagegen nicht.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "I1"
+     ]
+    },
+    {
+     "id": "I3",
+     "name": "Radar & Radar-Blips",
+     "description": "Radargebäude zeigen unidentifizierte Blips außerhalb der Sicht, auf die man ungenau feuern kann.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "I1"
+     ]
+    },
+    {
+     "id": "I4",
+     "name": "Sonar & Omni",
+     "description": "Sonar für Marine und U-Boote, Omni deckt Stealth und Cloak auf.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "I3"
+     ]
+    },
+    {
+     "id": "I5",
+     "name": "Stealth, Cloak & Jamming",
+     "description": "Einheiten verstecken sich vor Radar oder Sicht, Jammer erzeugen Fake-Blips.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "I3",
+      "I4"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Steuerung & UI",
+   "prefix": "C",
+   "features": [
+    {
+     "id": "C1",
+     "name": "Kamera-Steuerung",
+     "description": "Edge-Pan, WASD, Mittelklick-Drag, Zoom zum Cursor und ein Hotkey, der zum ACU springt.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "C2",
+     "name": "Strategic Zoom mit Strategic Icons",
+     "description": "Stufenloser Zoom bis zur ganzen Karte, bei dem Modelle in Icons für Klasse, Tech-Stufe und Team überblenden.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C1",
+      "P2"
+     ]
+    },
+    {
+     "id": "C3",
+     "name": "Einheitenauswahl & Lebensbalken",
+     "description": "Box, Klick, Shift-Toggle, Doppelklick für den gleichen Typ, dazu Selection-Ringe und HP-Balken.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S5"
+     ]
+    },
+    {
+     "id": "C4",
+     "name": "Kontextsensitiver Rechtsklick",
+     "description": "Move, Attack, Reclaim, Repair, Assist oder Guard je nach Ziel, und der Cursor zeigt den Befehl an.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C3",
+      "E7",
+      "B2"
+     ]
+    },
+    {
+     "id": "C5",
+     "name": "Command Queue mit Shift & Bau-Ghosts",
+     "description": "Mit Shift werden alle Befehle verkettet, Wegpunkt-Linien und geplante Gebäude-Ghosts bleiben sichtbar und können von anderen Engineers übernommen werden.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C4",
+      "S3",
+      "B1"
+     ]
+    },
+    {
+     "id": "C6",
+     "name": "Attack-Move",
+     "description": "Einheiten laufen zum Ziel und bekämpfen unterwegs alles in Reichweite.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C5",
+      "K3"
+     ]
+    },
+    {
+     "id": "C7",
+     "name": "Control Groups",
+     "description": "Gruppen per Modifier+Zahl speichern und per Zahl abrufen, Doppeltap zentriert die Kamera, mit browser-sicherer Default-Belegung.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C3"
+     ]
+    },
+    {
+     "id": "C8",
+     "name": "Bau-Menü / Command Card mit Tech-Tabs",
+     "description": "DOM-Panel mit den Bauoptionen nach Tech-Stufe und den Befehlsknöpfen, bei Mehrfachauswahl die Schnittmenge.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S6"
+     ]
+    },
+    {
+     "id": "C9",
+     "name": "Unit-Info-Panel & Tooltips",
+     "description": "Tooltips zu Kosten, Bauzeit, DPS, HP und Reichweite, dazu ein Auswahlpanel mit Baufortschritt und Typ-Gruppierung.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "C8"
+     ]
+    },
+    {
+     "id": "C10",
+     "name": "Ressourcenleiste mit Stall-Warnung",
+     "description": "Speicher, Einkommen, Verbrauch und Netto pro Ressource, farbig markiert, wenn ein Stall droht.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E3"
+     ]
+    },
+    {
+     "id": "C11",
+     "name": "Basis-Hotkeys & Browser-Input",
+     "description": "Hotkeys über KeyboardEvent.code, Fullscreen, Pointer-Confinement für Edge-Pan und ein unterdrücktes Kontextmenü.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "C12",
+     "name": "Patrol mit Engineer-Automatik",
+     "description": "Einheiten pendeln zwischen Wegpunkten, Engineers auf Patrol reclaimen, reparieren und assisten automatisch.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "C5",
+      "E7",
+      "B2"
+     ]
+    },
+    {
+     "id": "C13",
+     "name": "Formationen & Formation-Drag",
+     "description": "Rechtsklick-Drag zieht eine ausgerichtete Linie, gemischte Gruppen gleichen ihr Tempo an.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M6",
+      "M7"
+     ]
+    },
+    {
+     "id": "C14",
+     "name": "Selection-Filter & Idle-Engineer-Button",
+     "description": "Hotkeys wählen untätige Engineers, alle Land- oder Luft-Einheiten oder Fabriken, oder filtern die aktuelle Auswahl.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "C3"
+     ]
+    },
+    {
+     "id": "C15",
+     "name": "Range-Ringe",
+     "description": "Terrain-Decals zeigen Waffen-, Radar-, Schild- und Baureichweiten bei Hover, Auswahl und Placement.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S6",
+      "B1"
+     ]
+    },
+    {
+     "id": "C16",
+     "name": "Minimap",
+     "description": "Übersichtskarte mit Fog, Kamera-Rahmen und Klick-Befehlen; der Strategic Zoom ersetzt sie in FA weitgehend.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "I1"
+     ]
+    },
+    {
+     "id": "C17",
+     "name": "Fähigkeits-Toggles",
+     "description": "Schild, Stealth, Produktion und Auto-Overcharge lassen sich über die Command Card an- und abschalten.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "C8"
+     ]
+    },
+    {
+     "id": "C18",
+     "name": "Self-Destruct",
+     "description": "Eigene Einheiten und Gebäude sprengen, um Wracks zu verweigern oder das Cap freizumachen, mit browser-sicherer Taste.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "K5"
+     ]
+    },
+    {
+     "id": "C19",
+     "name": "Waypoint-Editing",
+     "description": "Gequeuete Wegpunkte lassen sich per Drag verschieben oder einzeln löschen.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "C5"
+     ]
+    },
+    {
+     "id": "C20",
+     "name": "Hotbuild, Rebinding & Hotkey-Editor",
+     "description": "FAF-artiges Hotbuild-Layout, frei belegbare Tasten sowie Preset-Import und -Export.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "C11"
+     ]
+    },
+    {
+     "id": "C21",
+     "name": "Kamera-Bookmarks",
+     "description": "Kameraposition und Zoom per Hotkey speichern und wieder anspringen.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "C1",
+      "C11"
+     ]
+    },
+    {
+     "id": "C22",
+     "name": "Split-Screen",
+     "description": "Zwei unabhängige Kameras, typischerweise Nahansicht plus Strategic Zoom.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "C2"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Karten, Terrain & Bewegung",
+   "prefix": "M",
+   "features": [
+    {
+     "id": "M1",
+     "name": "Heightmap-Terrain",
+     "description": "16-Bit-Heightmap mit Auto-Texturierung nach Höhe und Neigung sowie Höhenabfrage auf der CPU für die Sim.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "M2",
+     "name": "Wasserebene (Flach/Tief)",
+     "description": "Globaler Wasserspiegel, bei dem Flachwasser passierbar ist und Tiefwasser blockiert, mit einfachem Tiefen-Shader.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M1"
+     ]
+    },
+    {
+     "id": "M3",
+     "name": "Eigenes Kartenformat",
+     "description": "Versionierte JSON-Metadaten plus binäre Heightmap mit Startpositionen, Spots und Props.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "M4",
+     "name": "Mass- & Hydro-Spots",
+     "description": "Feste Ressourcenpunkte auf der Karte als Wirtschafts-Geografie.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M3"
+     ]
+    },
+    {
+     "id": "M5",
+     "name": "Passierbarkeits-Grid pro Bewegungstyp",
+     "description": "Beim Laden aus Neigung, Wassertiefe und Hindernissen vorberechnet, woraus Klippen als Engstellen entstehen.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M1",
+      "M2"
+     ]
+    },
+    {
+     "id": "M6",
+     "name": "Pathfinding (A*, erweiterbar zu HPA*)",
+     "description": "Deterministische Pfadsuche im Worker mit Budget pro Tick, auf MVP-Kartengröße reicht Grid-A*.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M5",
+      "S4"
+     ]
+    },
+    {
+     "id": "M7",
+     "name": "Lokales Steering & Einheitenkollision",
+     "description": "Separation, Ausweichen und Stauauflösung, damit Pulks nicht ineinander stecken.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S5"
+     ]
+    },
+    {
+     "id": "M8",
+     "name": "Skirmish-Kartenset (1v1)",
+     "description": "2–3 handgebaute 1v1-Karten mit 5–10 km und sinnvoller Mass- und Engstellen-Verteilung.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M3",
+      "M4"
+     ]
+    },
+    {
+     "id": "M9",
+     "name": "Splatmap-Texturierung (Strata)",
+     "description": "Mehrere handgemalte Texturlayer über Texture-Arrays statt reiner Auto-Texturierung.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M1"
+     ]
+    },
+    {
+     "id": "M10",
+     "name": "Flow Fields für Massenbewegung",
+     "description": "Ein Vektorfeld pro Ziel statt hunderter einzelner A*-Suchen.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M6"
+     ]
+    },
+    {
+     "id": "M11",
+     "name": "Terrain-LOD & Chunking",
+     "description": "CDLOD bzw. Geomipmapping für flüssigen Zoom auf großen Karten.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M1"
+     ]
+    },
+    {
+     "id": "M12",
+     "name": "Marker-Editor",
+     "description": "Browser-Tool, das auf einer Heightmap Starts, Spots und Prop-Felder setzt und die Karte exportiert.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "M3"
+     ]
+    },
+    {
+     "id": "M13",
+     "name": "Wasser-Bewegungslayer",
+     "description": "Naval-, Unterwasser-, Hover- und Amphibien-Layer mit eigenem Pathing.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "M5",
+      "M6"
+     ]
+    },
+    {
+     "id": "M14",
+     "name": "Große Karten (20–81 km)",
+     "description": "Die FA-typischen großen Teamkarten, die Streaming, HPA* und kamerarelative Koordinaten brauchen.",
+     "complexity": "XL",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "M11",
+      "M6"
+     ]
+    },
+    {
+     "id": "M15",
+     "name": "Vollständiger Map-Editor",
+     "description": "Sculpting, Strata malen, Wasser setzen und Props platzieren im Browser.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "M12",
+      "M9"
+     ]
+    },
+    {
+     "id": "M16",
+     "name": "Prozeduraler Kartengenerator",
+     "description": "Symmetrische Seed-Karten nach dem Vorbild von Neroxis, generiert im Worker.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "M3",
+      "M5"
+     ]
+    },
+    {
+     "id": "M17",
+     "name": "Import von FA-.scmap-Karten",
+     "description": "Übernimmt Geometrie und Marker bekannter Community-Karten, ohne die geschützten Assets.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "M3"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "KI & Spielmodi",
+   "prefix": "A",
+   "features": [
+    {
+     "id": "A1",
+     "name": "Skirmish-KI: Build-Order, Expansion & T2-Aufstieg",
+     "description": "Feste Eröffnung, danach Expansion auf freie Mex-Spots und ein einfacher Tech-Aufstieg auf T2, mit 1–2 Hz Denktakt.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "E2",
+      "B1",
+      "M4",
+      "M6",
+      "U5"
+     ]
+    },
+    {
+     "id": "A2",
+     "name": "Skirmish-KI: Platoons & Angriffswellen",
+     "description": "Sammeln am Rally-Punkt, Angriff ab einer Stärke-Schwelle und Rückzug bei Unterlegenheit.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "A1",
+      "K3"
+     ]
+    },
+    {
+     "id": "A3",
+     "name": "Hauptmenü & Skirmish-Setup (lokal)",
+     "description": "Kartenwahl mit Vorschau, Slots für Spieler und KI, Farbe, Startposition und Grundoptionen wie das Unit-Cap.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "M3"
+     ]
+    },
+    {
+     "id": "A4",
+     "name": "Siegbedingung Assassination",
+     "description": "Wer seinen ACU verliert, verliert das Spiel.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "U1"
+     ]
+    },
+    {
+     "id": "A5",
+     "name": "Pause",
+     "description": "Die Sim hält an, Kamera und Befehlseingabe laufen weiter.",
+     "complexity": "S",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "A6",
+     "name": "Sim-Speed",
+     "description": "Einstellbare Spielgeschwindigkeit im Singleplayer von etwa 0,25x bis 3x.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "A7",
+     "name": "KI: Threat-Map & Scouting",
+     "description": "Influence-Grid der bekannten Gegnerkräfte, Scouts und die Wahl schwach verteidigter Ziele.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "I1",
+      "A2"
+     ]
+    },
+    {
+     "id": "A8",
+     "name": "KI: Basisverteidigung",
+     "description": "Die KI baut PD und AA an bedrohten Stellen und zieht bei Raids Truppen zurück.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "A7",
+      "B5"
+     ]
+    },
+    {
+     "id": "A9",
+     "name": "KI: Economy-Scaling",
+     "description": "Die KI plant Mex-Upgrade-Timing, Energie-Reserven und Adjacency und vermeidet Stalls.",
+     "complexity": "L",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "A1",
+      "B4"
+     ]
+    },
+    {
+     "id": "A10",
+     "name": "KI-Schwierigkeitsgrade",
+     "description": "Easy, Normal und Hard ohne Cheats, unterschieden über Reaktionszeit, Micro und Aggressivität.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "A2"
+     ]
+    },
+    {
+     "id": "A11",
+     "name": "Cheating-KI (AIx)",
+     "description": "Multiplikatoren auf Ressourcen und Build Power als billigster Weg zu einem stärkeren Gegner.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "A1",
+      "A3"
+     ]
+    },
+    {
+     "id": "A12",
+     "name": "Supremacy & Annihilation",
+     "description": "Alternative Siegbedingungen: keine Baueinheiten mehr bzw. alles zerstört.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "A3",
+      "A4"
+     ]
+    },
+    {
+     "id": "A13",
+     "name": "Score-Screen & Statistiken",
+     "description": "Graphen für Eco und Army-Value sowie Werte zu Kills, Verlusten und Reclaim nach Spielende.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S1"
+     ]
+    },
+    {
+     "id": "A14",
+     "name": "Sandbox-Modus",
+     "description": "Kein Sieg, unendlich Ressourcen und Spawnen für Tests und Balancing.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A3",
+      "S8"
+     ]
+    },
+    {
+     "id": "A15",
+     "name": "KI: Engineer-Management & Reclaim",
+     "description": "Die KI setzt Engineers gezielt für Reclaim, Assist, Reparatur und Capture ein.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A1",
+      "E7",
+      "B2"
+     ]
+    },
+    {
+     "id": "A16",
+     "name": "KI: T3, Experimentals & Assist",
+     "description": "Gestaffelter Aufstieg auf T3/T4 mit Engineer-Pulks auf Großprojekten.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A9",
+      "U16"
+     ]
+    },
+    {
+     "id": "A17",
+     "name": "Team-Spiele & Allianzen",
+     "description": "2v2 und mehr mit geteilter Sicht, Unit-Transfer und Share Conditions beim Spielertod.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A3",
+      "I1"
+     ]
+    },
+    {
+     "id": "A18",
+     "name": "Erweiterte Lobby-Optionen",
+     "description": "Unit-Restriktionen, No-Rush-Timer, Prebuilt Units und Zufallsspawns.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A3",
+      "S6"
+     ]
+    },
+    {
+     "id": "A19",
+     "name": "Live-Scoreboard",
+     "description": "Übersicht im Spiel mit Score, Einheitenzahl, Income und Spielzeit.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A13"
+     ]
+    },
+    {
+     "id": "A20",
+     "name": "Missions-Scripting & Tutorial",
+     "description": "Trigger-/Objective-System mit geführtem Tutorial zu Flow-Eco, Shift-Queue, Assist und Strategic Zoom.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "A3"
+     ]
+    },
+    {
+     "id": "A21",
+     "name": "KI: Luft, Marine & strategische Waffen",
+     "description": "KI-Module für Bomber-Snipes, Drops, Navy, Nukes und SMD-Antworten.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "A7",
+      "U11",
+      "U13",
+      "U17",
+      "K17"
+     ]
+    },
+    {
+     "id": "A22",
+     "name": "Kampagne",
+     "description": "Story-Missionen mit Skript-Triggern, Kartenerweiterung und Zwischensequenzen.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "A20"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Multiplayer, Replays & Online",
+   "prefix": "N",
+   "features": [
+    {
+     "id": "N1",
+     "name": "Replays",
+     "description": "Seed plus Command-Stream (wenige KB), abspielbar mit Speed-Regler, Spieler-Perspektiven und Datei-Export.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S2",
+      "S3"
+     ]
+    },
+    {
+     "id": "N2",
+     "name": "Observer-Modus",
+     "description": "Volle Kartensicht ohne Fog mit Perspektivwechsel und Eco-/Army-Overlay.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "N1",
+      "I1"
+     ]
+    },
+    {
+     "id": "N3",
+     "name": "Lockstep-Netcode & Desync-Erkennung",
+     "description": "Commands mit Input-Delay, jeder Client simuliert selbst, periodische State-Hashes erkennen Desyncs.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "S2",
+      "S3",
+      "S9"
+     ]
+    },
+    {
+     "id": "N4",
+     "name": "WebSocket-Relay-Server",
+     "description": "Schlanker Server, der Commands weiterleitet, die Tick-Reihenfolge festlegt und nebenbei Replays aufzeichnet.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "N3"
+     ]
+    },
+    {
+     "id": "N5",
+     "name": "Online-Lobby & Custom Games",
+     "description": "Host, Slots, Teams, Chat, Ready-Status und Versions-Hash-Check, beitreten per Invite-Link.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "N4",
+      "A3"
+     ]
+    },
+    {
+     "id": "N6",
+     "name": "Chat, Pings & Kartenmarker",
+     "description": "All-/Team-Chat und Pings als Sim-Commands, auch im Strategic Zoom sichtbar.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "N3"
+     ]
+    },
+    {
+     "id": "N7",
+     "name": "Reconnect/Rejoin",
+     "description": "Nach Abbruch oder F5 per Snapshot und Schnelldurchlauf wieder einsteigen.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "N3",
+      "S10",
+      "N1"
+     ]
+    },
+    {
+     "id": "N8",
+     "name": "WebRTC-P2P-Transport",
+     "description": "DataChannels mit STUN/TURN-Fallback für geringere Latenz und Serverkosten.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "N3",
+      "N4"
+     ]
+    },
+    {
+     "id": "N9",
+     "name": "Accounts, Rating, Matchmaking & Leaderboard",
+     "description": "Login per Passkey/OAuth, TrueSkill-artiges Rating, Ladder mit Map-Pool und Replay-Vault.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "N5",
+      "N1"
+     ]
+    },
+    {
+     "id": "N10",
+     "name": "Anti-Cheat & Replay-Validierung",
+     "description": "Serverseitige Prüfung von Ergebnissen und Replays, weil der Browser-Client manipulierbar ist.",
+     "complexity": "XL",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "N9"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Präsentation, Audio & Meta",
+   "prefix": "P",
+   "features": [
+    {
+     "id": "P1",
+     "name": "WebGL2-Renderer mit Backend-Abstraktion",
+     "description": "WebGL2 als Baseline hinter einer dünnen Schicht, damit sich später WebGPU andocken lässt.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "P2",
+     "name": "Instanced Rendering, Culling & Mesh-LOD",
+     "description": "Ein Draw-Call pro Blueprint und LOD, Teamfarbe und Zustand als Instanz-Attribute, Frustum-Culling.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "P1",
+      "P3"
+     ]
+    },
+    {
+     "id": "P3",
+     "name": "Asset-Pipeline & Ladebildschirm",
+     "description": "glTF mit meshopt und KTX2, versionierte Pakete mit Content-Hash, Cache-API-Caching und Fortschrittsanzeige.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": []
+    },
+    {
+     "id": "P4",
+     "name": "Artstyle & Teamfarben-Masken",
+     "description": "Gut lesbare Low-/Mid-Poly-Silhouetten mit Teamfarbe per Shader-Maske.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "P3"
+     ]
+    },
+    {
+     "id": "P5",
+     "name": "Waffen-VFX & GPU-Partikel",
+     "description": "Mündungsfeuer, Tracer, Raketen-Trails, Einschläge, Explosionen und Scorch-Decals mit harter Partikel-Obergrenze.",
+     "complexity": "L",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "P2",
+      "K1"
+     ]
+    },
+    {
+     "id": "P6",
+     "name": "Bau- & Reclaim-Effekte",
+     "description": "Nano-Beams, Assist-Beams und ein Dissolve-Shader, der Gebäude mit dem Baufortschritt wachsen lässt.",
+     "complexity": "M",
+     "tier": "MVP-Kern",
+     "depends_on": [
+      "P2",
+      "E2"
+     ]
+    },
+    {
+     "id": "P7",
+     "name": "Positions-Audio & SFX",
+     "description": "Web-Audio-Sounds nach Kameraposition und Zoom gemischt, mit Voice-Limiting pro Soundtyp.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": []
+    },
+    {
+     "id": "P8",
+     "name": "Warn-Ansagen & Alerts",
+     "description": "Meldungen wie „Commander unter Beschuss“ oder „Energie niedrig“, die per Klick zum Ereignisort springen.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "P7",
+      "E3",
+      "U1"
+     ]
+    },
+    {
+     "id": "P9",
+     "name": "Grafik-/Audio-Einstellungen mit GPU-Autodetect",
+     "description": "Qualitäts-Presets, Render-Scale und Audio-Mixer, vorgewählt anhand von GPU-Erkennung und Kurz-Benchmark.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "P1"
+     ]
+    },
+    {
+     "id": "P10",
+     "name": "WebGL-Context-Loss-Recovery",
+     "description": "Nach einem GPU-Reset werden alle Ressourcen neu aufgebaut, während die Sim im Worker weiterläuft.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "P1",
+      "S4"
+     ]
+    },
+    {
+     "id": "P11",
+     "name": "Beleuchtung, Schatten & Post-Processing",
+     "description": "Cascaded Shadow Maps, Bloom und Tonemapping in Qualitätsstufen.",
+     "complexity": "M",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "P1"
+     ]
+    },
+    {
+     "id": "P12",
+     "name": "Lokalisierung (DE/EN)",
+     "description": "Alle Texte und Unit-Namen kommen von Anfang an aus String-Tabellen.",
+     "complexity": "S",
+     "tier": "MVP-optional",
+     "depends_on": [
+      "S6"
+     ]
+    },
+    {
+     "id": "P13",
+     "name": "WebGPU-Backend",
+     "description": "Compute-Culling, GPU-Partikel und Indirect Draw für mehr Headroom bei hohen Einheitenzahlen.",
+     "complexity": "L",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "P1"
+     ]
+    },
+    {
+     "id": "P14",
+     "name": "Großereignis-Effekte",
+     "description": "Pilzwolke, Druckwelle und Kamera-Shake für Nukes, Experimental-Tode und ACU-Explosion, abschaltbar.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "P5"
+     ]
+    },
+    {
+     "id": "P15",
+     "name": "Dynamische Musik",
+     "description": "Menü-Theme und In-Game-Musik, die zwischen Ruhe- und Kampf-Layer überblendet.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "P7"
+     ]
+    },
+    {
+     "id": "P16",
+     "name": "Accessibility-Optionen",
+     "description": "Farbenblind-Paletten, UI-Skalierung, Kontrast-Icons und reduzierte Effekte.",
+     "complexity": "S",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "C2",
+      "P9"
+     ]
+    },
+    {
+     "id": "P17",
+     "name": "Unit-Encyclopedia",
+     "description": "Durchsuchbare Unit-DB mit Vergleichsfunktion, generiert direkt aus den Blueprints.",
+     "complexity": "M",
+     "tier": "Post-MVP",
+     "depends_on": [
+      "S6"
+     ]
+    },
+    {
+     "id": "P18",
+     "name": "Zerstörbare Props & Krater-Decals",
+     "description": "Bäume knicken um und brennen, Einschläge hinterlassen gepoolte Krater.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "E8",
+      "M1"
+     ]
+    },
+    {
+     "id": "P19",
+     "name": "ACU-Warp-in-Sequenz",
+     "description": "Der ACU materialisiert sich zum Spielstart mit Warp-Effekt.",
+     "complexity": "S",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "U1",
+      "P6"
+     ]
+    },
+    {
+     "id": "P20",
+     "name": "Achievements",
+     "description": "Freischaltbare Erfolge, zunächst nur lokal in IndexedDB.",
+     "complexity": "M",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "A13"
+     ]
+    },
+    {
+     "id": "P21",
+     "name": "Mobile/Touch-Support",
+     "description": "Touch-Bedienung und reduzierte Grafik; die Empfehlung lautet bewusst Desktop-only.",
+     "complexity": "L",
+     "tier": "Später/Nice-to-have",
+     "depends_on": [
+      "C11",
+      "C2"
+     ]
+    }
+   ]
+  }
+ ],
+ "mvp_proposal": "Der vorgeschlagene MVP ist ein lokales 1v1-Skirmish auf 2–3 Landkarten (5–10 km) mit einer eigenen Fraktion gegen eine einfache, nicht cheatende KI. Man spielt es von T1 bis T2 an Land mit ACU, Engineers, Mex/Pgen, Flow-Ökonomie mit Stalling, Assist, Shift-Queue, Wrack-Reclaim und Strategic Zoom, und wer seinen ACU verliert, verliert (alle MVP-Kern-IDs, etwa 60 Features, viele davon S). Bewusst draußen bleiben Luft, Marine, Schilde, Experimentals, Nukes und Multiplayer, weil jedes davon eigene Layer, Shader oder Netcode braucht und das Grundgefühl auch ohne sie steht. Den besten SupCom-Mehrwert pro Aufwand bringen diese optionalen Kandidaten: U8 Overcharge, E8 Baum-/Fels-Reclaim, E10/E11 Storage und Adjacency, I3 Radar, C12 Patrol, P7 Sound und N1 Replays (fast gratis, wenn S2/S3 stehen). Die Fundamente S1–S6 (fester Tick, Determinismus, Commands, Worker, SoA, Blueprints) gehören auch dann in den MVP, wenn Multiplayer erst viel später kommt, weil sie sich nicht nachrüsten lassen.",
+ "architecture_decisions": [
+  {
+   "decision": "Deterministische Simulation (Fixed-Point + Seeded RNG) ja oder nein",
+   "why_early": "Jede Zeile Sim-Code (Bewegung, Ballistik, Eco, Pathing) hängt davon ab. Nachträglich von Float auf Fixed-Point umzustellen heißt praktisch alles neu schreiben, und ohne Determinismus gibt es weder Replays noch Lockstep-Multiplayer.",
+   "recommendation": "Ja, ab dem ersten Tick: Int32-Fixed-Point, eigene Trig-/Sqrt-Tabellen, ein Seed-RNG, stabile Iterationsreihenfolge und kein Math.sin/Math.random in der Sim. Dazu früh eine Headless-Hash-Testsuite (S7) über V8, JSC und SpiderMonkey."
+  },
+  {
+   "decision": "Trennung von Sim und Client: Worker plus Command-Pipeline",
+   "why_early": "Wenn UI, KI oder Rendering direkt am Sim-State schreiben, ist die Grenze später kaum wieder herzustellen. Genau diese Grenze brauchen Replays, Netcode, KI und Debug-Konsole.",
+   "recommendation": "Die Sim läuft im Web Worker mit 10 Hz, ihr einziger Eingang sind serialisierte Commands mit Ziel-Tick, ihr Ausgang sind State-Snapshots für den Renderer (SharedArrayBuffer mit Transferables-Fallback). COOP/COEP-Header gleich beim Hosting einplanen."
+  },
+  {
+   "decision": "Datenlayout der Entities (SoA/ECS mit Typed Arrays vs. Objekt-pro-Einheit)",
+   "why_early": "Bei 1000+ Einheiten, tausenden Projektilen und Wracks bestimmt das Layout, ob GC-Pausen und Cache-Misses das Tick-Budget sprengen. Ein späterer Wechsel betrifft jedes System.",
+   "recommendation": "Structure-of-Arrays mit Entity-IDs und Generation-Counter, Object-Pools für Projektile und Uniform-Grid-Spatial-Hash. Blueprints bleiben reine Daten, die Sim-Arrays enthalten nur Laufzeitwerte."
+  },
+  {
+   "decision": "Koordinatensystem, Weltmaßstab und maximale Kartengröße",
+   "why_early": "Die Fixed-Point-Auflösung, die Grid-Zellgröße für Pathing, Fog und Footprints sowie die Float32-Präzision im Renderer hängen an der größten unterstützten Karte. 81-km-Karten später nachzuziehen bricht Formate und Grids.",
+   "recommendation": "Eine Welteinheit entspricht einer FA-Ogrid-Zelle, die Sim rechnet mit Fixed-Point-Nachkommastellen, Grids arbeiten in ganzen Zellen. Kartenformat und Wertebereiche auf mindestens 20 km (besser 81 km) auslegen, gerendert wird kamerarelativ. Der MVP nutzt trotzdem nur 5–10 km."
+  },
+  {
+   "decision": "Rendering-Stack: WebGL2 vs. WebGPU, Engine vs. eigene Pipeline",
+   "why_early": "Instancing-Strategie, Shader-Sprache (GLSL vs. WGSL), Strategic-Icon-Pipeline, Partikelsystem und Asset-Formate sind darauf zugeschnitten. Ein späterer Wechsel des Frameworks trifft den gesamten Präsentations-Code.",
+   "recommendation": "WebGL2 als Baseline hinter einer dünnen Backend-Abstraktion, dazu eine eigene schlanke Instanced-Pipeline (three.js höchstens für Tools und Prototyp). WebGPU kommt als zweites Backend nach dem MVP. Nur Desktop mit Maus und Tastatur."
+  },
+  {
+   "decision": "Content-/IP-Strategie und Blueprint-Schema",
+   "why_early": "FA-Namen, Modelle, Icons und Sounds sind geschützt. Wer mit Platzhaltern auf FA-Basis startet, muss später Assets, Namen und Balancing-Daten austauschen. Das Blueprint-Schema ist außerdem Teil der Sim-Version für Replays und Multiplayer.",
+   "recommendation": "Eine eigene Fraktion mit eigenen Namen und Assets; FA dient nur als mechanische Referenz. Versioniertes, schema-validiertes Blueprint-Format mit Vererbung, dessen Hash in Replays und Lobby-Check einfließt. So werden Daten-Mods später fast gratis."
+  }
+ ]
+}
