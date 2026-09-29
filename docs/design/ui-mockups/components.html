@@ -29,7 +29,7 @@
   .typo > div { display: grid; grid-template-columns: 9rem 1fr; align-items: baseline; gap: 1rem; padding: .375rem 0; border-bottom: 1px solid var(--line); }
   .typo code { color: var(--text-lo); font-family: var(--font-mono); font-size: var(--fs-micro); }
   .icongrid { display: grid; grid-template-columns: repeat(auto-fill, 5.5rem); gap: 2px; }
-  .icongrid > div { display: grid; justify-items: center; gap: .25rem; padding: .5rem .25rem; background: var(--surface-1); font-size: 0.5625rem; color: var(--text-lo); text-align: center; word-break: break-all; }
+  .icongrid > div { display: grid; justify-items: center; gap: .25rem; padding: .5rem .25rem; background: var(--surface-1); font-size: var(--fs-micro); color: var(--text-lo); text-align: center; word-break: break-all; }
   .icongrid .ff-si { width: 2.25rem; height: 2.5rem; }
   .icongrid .ff-gi { width: 1.5rem; height: 1.5rem; color: var(--text); margin: .5rem 0 .25rem; }
   .cur { width: 5.5rem; display: grid; justify-items: center; gap: .375rem; padding: .75rem .25rem; background: #3a342c; font-size: var(--fs-micro); color: var(--text); text-align: center; }
@@ -110,7 +110,7 @@
     ['Eisen', ['iron-1000', 'iron-950', 'iron-900', 'iron-850', 'iron-800', 'iron-750', 'iron-700', 'iron-600', 'iron-500', 'iron-400', 'iron-300', 'iron-200', 'ceramic-100', 'ceramic-50']],
     ['Glut · Kupfer', ['ember-900', 'ember-800', 'ember-700', 'ember-600', 'ember-500', 'ember-300', 'ember-100', 'whiteheat', 'copper-800', 'copper-700', 'copper-500', 'copper-300', 'verdigris-500', 'verdigris-300']],
     ['Ressourcen · Semantik', ['mass', 'mass-dim', 'energy', 'energy-dim', 'ok', 'warn', 'crit', 'info', 'neutral-blip', 'text-hi', 'text', 'text-mid', 'text-lo', 'text-off']],
-    ['Teams · Hausfarben / farbenblind-sicher', ['team-rot', 'team-blau', 'team-gruen', 'team-violett', 'team-cyan', 'team-orange', 'team-pink', 'team-oliv', 'cvd-blau', 'cvd-orange', 'cvd-himmel', 'cvd-blaugruen', 'cvd-rotviolett', 'cvd-rot', 'cvd-purpur', 'cvd-rosa']],
+    ['Teams · Hausfarben / farbenblind-sicher', ['team-rot', 'team-blau', 'team-gruen', 'team-violett', 'team-cyan', 'team-orange', 'team-pink', 'team-oliv', 'cvd-blau', 'cvd-rot', 'cvd-orange', 'cvd-himmel', 'cvd-blaugruen', 'cvd-rotviolett', 'cvd-purpur', 'cvd-rosa']],
   ];
   const cs = getComputedStyle(document.documentElement);
   $('colors').innerHTML = groups.map(([t, list]) => `<div><div style="font-size:var(--fs-micro);color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem">${t}</div><div class="row" style="gap:.375rem">${list.map((n) => `<div class="sw"><div style="background:var(--${n})"></div><span>--${n}<br><code>${cs.getPropertyValue('--' + n).trim()}</code></span></div>`).join('')}</div></div>`).join('');
@@ -133,7 +133,7 @@
   $('orders').innerHTML = [
     ['Standard', ob('', 'move', 'Q')], ['Hover', ob('is-hover', 'move', 'Q')], ['Scharf (wartet auf Ziel)', ob('is-armed', 'attackmove', 'A')], ['Toggle an', ob('is-on', 'shield', 'G')], ['Gemischt', ob('is-mixed', 'shield', 'G')],
     ['Zyklus (Feuermodus)', ob('', 'fire_return', 'F', '<span class="ff-order__dots"><i class="on"></i><i></i><i></i></span>')], ['Deaktiviert', ob('is-disabled', 'reclaim', 'R')], ['Fokus', ob('is-focus', 'stop', 'S')],
-    ['Gefahr', ob('ff-order--danger', 'selfdestruct', 'B')], ['Countdown 4 s', ob('is-countdown', 'selfdestruct', '4')],
+    ['Gefahr', ob('ff-order--danger', 'selfdestruct', '')], ['Countdown 4 s', ob('is-countdown', 'selfdestruct', '4')],
   ].map(([n, h]) => `<div class="demo"><small>${n}</small>${h}</div>`).join('');
   $('bars').innerHTML = [['HP 86 %', 'ff-bar--hp', 0.86], ['HP 42 % (Warnung)', 'ff-bar--hp is-warn', 0.42], ['HP 18 % (kritisch)', 'ff-bar--hp is-crit', 0.18], ['Schild', 'ff-bar--shield', 0.7], ['Bau', 'ff-bar--build', 0.64], ['Mass-Speicher', 'ff-bar--mass', 0.25], ['Energy-Speicher', 'ff-bar--energy', 0.58]]
     .map(([n, c, v]) => `<span>${n}</span><div class="ff-bar ${c}" style="height:.5rem"><i style="--v:${v}"></i></div>`).join('');
@@ -163,7 +163,7 @@
   $('cursors').innerHTML = CUR.map(([n, s]) => `<div class="cur"><svg viewBox="0 0 32 32">${s}</svg>${n}</div>`).join('');
   const ids = Object.keys(window.FF_ICONS).filter((k) => !k.includes('.'));
   $('icons').innerHTML = ids.map((id) => `<div>${si(id, id.startsWith('blip') ? '' : '')}${id}</div>`).join('') +
-    `<div>${si('land_direct_t1', 'ff-si--enemy')}Feind (Team 2)</div><div style="position:relative">${si('struct_energy_t1.ghost')}Ghost (I2)</div><div>${si('land_direct_t1', '', '--team:var(--cvd-blau)')}CVD-Blau</div><div>${si('land_direct_t1', '', '--team:var(--cvd-orange)')}CVD-Orange</div>`;
+    `<div>${si('land_direct_t1', 'ff-si--enemy')}Feind (Team 2)</div><div style="position:relative">${si('struct_energy_t1.ghost')}Ghost (I2)</div><div>${si('land_direct_t1', '', '--team:var(--cvd-blau)')}CVD-Blau</div><div>${si('land_direct_t1', '', '--team:var(--cvd-rot)')}CVD-Rot (Slot 2)</div>`;
   $('glyphs').innerHTML = FF.giNames.map((n) => `<div>${gi(n)}${n}</div>`).join('');
 </script>
 </body>

@@ -133,15 +133,19 @@ button { cursor: pointer; }
 }
 .ff-cell__key { position: absolute; left: 0.25rem; top: 0.1875rem; font: var(--fw-bold) var(--fs-micro)/1 var(--font-mono); color: var(--text-lo); }
 .ff-cell__icon { position: absolute; left: 50%; top: 0.375rem; width: 1.875rem; height: 2.125rem; transform: translateX(-50%); }
-.ff-cell__name { position: absolute; left: 0.125rem; right: 0.125rem; bottom: 0.1875rem; font-size: 0.625rem; line-height: 1; text-align: center; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ff-cell__badge { position: absolute; right: 0.1875rem; top: 0.1875rem; min-width: 1rem; height: 1rem; padding: 0 0.1875rem; border-radius: var(--radius-pill); background: var(--ember-500); color: var(--text-on-ember); font: var(--fw-bold) 0.625rem/1rem var(--font-mono); text-align: center; }
-.ff-cell__tiers { position: absolute; right: 0.25rem; top: 0.25rem; display: flex; gap: 2px; }
+.ff-cell__name { position: absolute; left: 0.125rem; right: 0.125rem; bottom: 0.1875rem; font-size: var(--fs-micro); line-height: 1; text-align: center; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ff-cell__badge { position: absolute; right: 0.1875rem; top: 0.1875rem; min-width: 1rem; height: 1rem; padding: 0 0.1875rem; border-radius: var(--radius-pill); background: var(--ember-500); color: var(--text-on-ember); font: var(--fw-bold) var(--fs-micro)/1rem var(--font-mono); text-align: center; z-index: 1; }
+.ff-cell__tiers { position: absolute; right: 0.1875rem; top: 1.375rem; display: flex; gap: 2px; } /* Review: unter der Icon-Kerbe, nicht darauf */
 .ff-cell__tiers i { width: 3px; height: 7px; background: var(--iron-500); border-radius: 1px; }
 .ff-cell__tiers i.on { background: var(--ceramic-100); }
+.ff-cell__tiers i.none { visibility: hidden; } /* Stufe existiert für diese Taste nicht (roster.json) */
+.ff-cell--danger { --fg: #ff9a8a; }
+.ff-cell--danger .ff-gi { color: #ff9a8a; }
 .ff-cell__prog { position: absolute; left: 1px; right: 1px; bottom: 1px; height: 3px; background: var(--iron-900); }
 .ff-cell__prog > i { display: block; height: 100%; background: var(--ember-500); transform-origin: left; transform: scaleX(var(--p, 0)); }
-.ff-cell__lock { position: absolute; left: 50%; top: 0.875rem; transform: translateX(-50%); color: var(--text-mid); }
-.ff-cell__lock .ff-gi { width: 1rem; height: 1rem; }
+/* Review: Schloss klein in der Ecke statt über Icon und Name; der Name bleibt lesbar (was wird freigeschaltet?) */
+.ff-cell__lock { position: absolute; left: 0.25rem; top: 1.125rem; z-index: 1; width: 0.8125rem; height: 0.8125rem; color: var(--text-mid); }
+.ff-cell__lock .ff-gi { width: 100%; height: 100%; }
 .ff-cell:hover, .ff-cell.is-hover { --b: var(--copper-500); --bg: var(--surface-hover); }
 .ff-cell:hover .ff-cell__name, .ff-cell.is-hover .ff-cell__name { color: var(--text-hi); }
 .ff-cell:hover .ff-cell__key, .ff-cell.is-hover .ff-cell__key { color: var(--copper-300); }
@@ -153,7 +157,8 @@ button { cursor: pointer; }
 .ff-cell.is-disabled, .ff-cell:disabled { --bg: var(--iron-900); --b: var(--iron-750); cursor: not-allowed; }
 .ff-cell.is-disabled .ff-cell__icon, .ff-cell:disabled .ff-cell__icon { opacity: 0.28; filter: grayscale(1); }
 .ff-cell.is-disabled .ff-cell__name { color: var(--text-off); }
-.ff-cell.is-locked .ff-cell__icon { opacity: 0.18; filter: grayscale(1); }
+.ff-cell.is-locked .ff-cell__icon { opacity: 0.35; filter: grayscale(1); }
+.ff-cell.is-locked .ff-cell__name { color: var(--text-lo); }
 .ff-cell.is-empty { --bg: transparent; --b: transparent; background: none; cursor: default; }
 .ff-cell.is-empty::before { background: none; border: 1px dashed var(--iron-700); clip-path: none; inset: 0; }
 .ff-cell.is-empty .ff-cell__key { color: var(--iron-600); }
@@ -169,7 +174,7 @@ button { cursor: pointer; }
 }
 .ff-order::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--bg);
   clip-path: polygon(calc(var(--c) - 0.4px) 0, 100% 0, 100% calc(100% - var(--c) + 0.4px), calc(100% - var(--c) + 0.4px) 100%, 0 100%, 0 calc(var(--c) - 0.4px)); }
-.ff-order__key { position: absolute; right: 0.1875rem; bottom: 0.125rem; font: var(--fw-bold) 0.5625rem/1 var(--font-mono); color: var(--text-lo); }
+.ff-order__key { position: absolute; right: 0.1875rem; bottom: 0.125rem; font: var(--fw-bold) var(--fs-micro)/1 var(--font-mono); color: var(--text-lo); }
 .ff-order__dots { position: absolute; left: 0; right: 0; top: 0.1875rem; display: flex; justify-content: center; gap: 2px; }
 .ff-order__dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--iron-500); }
 .ff-order__dots i.on { background: var(--ember-300); }
@@ -197,7 +202,7 @@ button { cursor: pointer; }
 .ff-tab.is-selected::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--ember-500); }
 .ff-tab.is-disabled { color: var(--text-off); background: var(--iron-900); cursor: not-allowed; }
 .ff-tab:focus-visible, .ff-tab.is-focus { outline: 2px solid var(--ceramic-50); outline-offset: -2px; }
-.ff-tab .ff-key { height: 0.9375rem; min-width: 0.9375rem; font-size: 0.5625rem; }
+.ff-tab .ff-key { height: 0.9375rem; min-width: 0.9375rem; font-size: var(--fs-micro); }
 
 /* ---------- Balken (immer transform: scaleX, nie width) ---------- */
 .ff-bar { position: relative; height: 0.375rem; background: var(--iron-900); overflow: hidden; contain: strict; }
@@ -242,7 +247,7 @@ button { cursor: pointer; }
 .ff-tip__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
 .ff-tip__grid > div { background: #171412; padding: var(--sp-1) var(--sp-3); }
 .ff-tip__grid b { display: block; font-size: var(--fs-data); color: var(--text-hi); font-weight: var(--fw-semi); }
-.ff-tip__grid small { color: var(--text-lo); font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ff-tip__grid small { color: var(--text-lo); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.06em; }
 .ff-tip__body { padding: var(--sp-2) var(--sp-3); color: var(--text-mid); }
 .ff-tip__adj { margin: 0 var(--sp-3) var(--sp-2); padding: var(--sp-1) var(--sp-2); border-left: 2px solid var(--verdigris-500); background: #122420; color: var(--verdigris-300); }
 .ff-tip__foot { display: flex; gap: var(--sp-3); flex-wrap: wrap; padding: var(--sp-1) var(--sp-3) var(--sp-2); color: var(--text-lo); font-size: 0.6875rem; border-top: 1px solid var(--line); }

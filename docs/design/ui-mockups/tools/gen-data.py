@@ -36,7 +36,8 @@ for u in roster['units']:
         'speed': (u.get('motion') or {}).get('speed'), 'vision': (u.get('intel') or {}).get('vision'),
         'radar': (u.get('intel') or {}).get('radar'),
         'hotbuild': u.get('hotbuild'), 'adjacency': sp.get('adjacency'), 'upgradesTo': sp.get('upgradesTo'),
-        'upgradeFrom': sp.get('upgradeFrom'), 'ms9': u.get('ms9Core'),
+        'upgradeFrom': sp.get('upgradeFrom'), 'ms9': u.get('ms9Core'), 'buildableBy': u.get('buildableBy'),
+        'msFirst': u.get('msFirst'),
     }
 dst2 = pathlib.Path(__file__).resolve().parents[1] / 'assets/roster-data.js'
 dst2.write_text('/* generiert von tools/gen-data.py aus docs/design/roster.json – nicht von Hand ändern */\n'

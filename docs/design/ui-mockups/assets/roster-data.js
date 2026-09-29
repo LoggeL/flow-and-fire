@@ -51,7 +51,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": null,
+"msFirst": "MS4"
 },
 "core:lnd_t1_engineer": {
 "name": {
@@ -87,7 +89,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS6"
 },
 "core:lnd_t2_engineer": {
 "name": {
@@ -123,7 +127,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:lnd_t3_engineer": {
 "name": {
@@ -159,7 +165,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & TECH3",
+"msFirst": "MS13"
 },
 "core:lnd_t1_scout": {
 "name": {
@@ -205,7 +213,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS7"
 },
 "core:lnd_t1_bot": {
 "name": {
@@ -251,7 +261,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS6"
 },
 "core:lnd_t1_tank": {
 "name": {
@@ -297,7 +309,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS5"
 },
 "core:lnd_t1_arty": {
 "name": {
@@ -343,7 +357,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS7"
 },
 "core:lnd_t1_aa": {
 "name": {
@@ -389,7 +405,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+"msFirst": "MS7"
 },
 "core:lnd_t2_tank": {
 "name": {
@@ -435,7 +453,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:lnd_t2_mml": {
 "name": {
@@ -481,7 +501,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:lnd_t2_aa": {
 "name": {
@@ -527,7 +549,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:lnd_t2_shield": {
 "name": {
@@ -563,7 +587,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS13"
 },
 "core:lnd_t2_bot": {
 "name": {
@@ -609,7 +635,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+"msFirst": "MS14"
 },
 "core:lnd_t3_bot": {
 "name": {
@@ -655,7 +683,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & TECH3",
+"msFirst": "MS13"
 },
 "core:lnd_t3_arty": {
 "name": {
@@ -701,7 +731,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & TECH3",
+"msFirst": "MS13"
 },
 "core:lnd_t3_sniper": {
 "name": {
@@ -747,7 +779,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & TECH3",
+"msFirst": "MS13"
 },
 "core:lnd_t3_aa": {
 "name": {
@@ -793,7 +827,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & LAND & TECH3",
+"msFirst": "MS13"
 },
 "core:air_t1_scout": {
 "name": {
@@ -829,7 +865,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+"msFirst": "MS12"
 },
 "core:air_t1_fighter": {
 "name": {
@@ -875,7 +913,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+"msFirst": "MS12"
 },
 "core:air_t1_bomber": {
 "name": {
@@ -921,7 +961,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+"msFirst": "MS12"
 },
 "core:air_t2_gunship": {
 "name": {
@@ -967,7 +1009,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & AIR & TECH2",
+"msFirst": "MS12"
 },
 "core:air_t2_fbomber": {
 "name": {
@@ -1022,7 +1066,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "FACTORY & AIR & TECH2",
+"msFirst": "MS12"
 },
 "core:str_t1_mex": {
 "name": {
@@ -1058,7 +1104,9 @@ window.FF_ROSTER = {
 "adjacency": "Gibt Fabriken −7,5 % Mass-Verbrauch (8×8); erhält +12,5 % je angrenzendem Erzspeicher.",
 "upgradesTo": "core:str_t2_mex",
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS4"
 },
 "core:str_t2_mex": {
 "name": {
@@ -1094,7 +1142,9 @@ window.FF_ROSTER = {
 "adjacency": "Fabriken −10 % Mass-Verbrauch; +12,5 % je Erzspeicher.",
 "upgradesTo": "core:str_t3_mex",
 "upgradeFrom": "core:str_t1_mex",
-"ms9": true
+"ms9": true,
+"buildableBy": "ENGINEER & (TECH2 | TECH3) | UPGRADE",
+"msFirst": "MS8"
 },
 "core:str_t3_mex": {
 "name": {
@@ -1130,7 +1180,9 @@ window.FF_ROSTER = {
 "adjacency": "Fabriken −12,5 % Mass-Verbrauch; +12,5 % je Erzspeicher.",
 "upgradesTo": null,
 "upgradeFrom": "core:str_t2_mex",
-"ms9": false
+"ms9": false,
+"buildableBy": "ENGINEER & TECH3 | UPGRADE",
+"msFirst": "MS13"
 },
 "core:str_t1_pgen": {
 "name": {
@@ -1166,7 +1218,9 @@ window.FF_ROSTER = {
 "adjacency": "Fabriken (8×8) −1,56 % Energy-Verbrauch, 2×2-Verbraucher −6,25 %; erhält +25 % Produktion je angrenzendem Glutspeicher (SIZE4).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS4"
 },
 "core:str_t2_pgen": {
 "name": {
@@ -1202,7 +1256,9 @@ window.FF_ROSTER = {
 "adjacency": "Fabriken −12,5 % Energy-Verbrauch; erhält +8,3 % Produktion je angrenzendem Glutspeicher (SIZE12).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "ENGINEER & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:str_t3_pgen": {
 "name": {
@@ -1238,7 +1294,9 @@ window.FF_ROSTER = {
 "adjacency": "Fabriken −15,6 % Energy-Verbrauch; erhält +6,25 % Produktion je angrenzendem Glutspeicher (SIZE16).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "ENGINEER & TECH3",
+"msFirst": "MS13"
 },
 "core:str_t1_hydro": {
 "name": {
@@ -1274,7 +1332,9 @@ window.FF_ROSTER = {
 "adjacency": "Wie Glutkessel II (Fabriken −12,5 % Energy); erhält +8,3 % je angrenzendem Glutspeicher (SIZE12).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS10"
 },
 "core:str_t1_mstore": {
 "name": {
@@ -1310,7 +1370,9 @@ window.FF_ROSTER = {
 "adjacency": "+12,5 % Produktion je angrenzender Zapfstelle (FA-Relation, max. 4 Seiten = +50 %).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS10"
 },
 "core:str_t1_estore": {
 "name": {
@@ -1346,7 +1408,9 @@ window.FF_ROSTER = {
 "adjacency": "Bufft alle angrenzenden Energieproduzenten (FA-Relation): Glutkessel I +25 % (SIZE4), Glutkessel II und Dampfquelle +8,3 % (SIZE12), Glutkessel III +6,25 % (SIZE16).",
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS6"
 },
 "core:str_t1_fac_land": {
 "name": {
@@ -1382,7 +1446,9 @@ window.FF_ROSTER = {
 "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
 "upgradesTo": "core:str_t2_fac_land",
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS6"
 },
 "core:str_t2_fac_land": {
 "name": {
@@ -1418,7 +1484,9 @@ window.FF_ROSTER = {
 "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
 "upgradesTo": "core:str_t3_fac_land",
 "upgradeFrom": "core:str_t1_fac_land",
-"ms9": true
+"ms9": true,
+"buildableBy": "UPGRADE",
+"msFirst": "MS8"
 },
 "core:str_t3_fac_land": {
 "name": {
@@ -1454,7 +1522,9 @@ window.FF_ROSTER = {
 "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
 "upgradesTo": null,
 "upgradeFrom": "core:str_t2_fac_land",
-"ms9": false
+"ms9": false,
+"buildableBy": "UPGRADE",
+"msFirst": "MS13"
 },
 "core:str_t1_fac_air": {
 "name": {
@@ -1490,7 +1560,9 @@ window.FF_ROSTER = {
 "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
 "upgradesTo": "core:str_t2_fac_air",
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS12"
 },
 "core:str_t2_fac_air": {
 "name": {
@@ -1526,7 +1598,9 @@ window.FF_ROSTER = {
 "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
 "upgradesTo": null,
 "upgradeFrom": "core:str_t1_fac_air",
-"ms9": false
+"ms9": false,
+"buildableBy": "UPGRADE",
+"msFirst": "MS12"
 },
 "core:str_t1_pd": {
 "name": {
@@ -1572,7 +1646,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS8"
 },
 "core:str_t2_pd": {
 "name": {
@@ -1618,7 +1694,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "ENGINEER & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:str_t1_aa": {
 "name": {
@@ -1664,7 +1742,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS8"
 },
 "core:str_t2_aa": {
 "name": {
@@ -1710,7 +1790,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "ENGINEER & (TECH2 | TECH3)",
+"msFirst": "MS8"
 },
 "core:str_t3_sam": {
 "name": {
@@ -1756,7 +1838,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "ENGINEER & TECH3",
+"msFirst": "MS8"
 },
 "core:str_t1_wall": {
 "name": {
@@ -1792,7 +1876,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": true
+"ms9": true,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS8"
 },
 "core:str_t1_radar": {
 "name": {
@@ -1828,7 +1914,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": "core:str_t2_radar",
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+"msFirst": "MS10"
 },
 "core:str_t2_radar": {
 "name": {
@@ -1864,7 +1952,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": "core:str_t3_radar",
 "upgradeFrom": "core:str_t1_radar",
-"ms9": false
+"ms9": false,
+"buildableBy": "UPGRADE",
+"msFirst": "MS10"
 },
 "core:str_t3_radar": {
 "name": {
@@ -1900,7 +1990,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": "core:str_t2_radar",
-"ms9": false
+"ms9": false,
+"buildableBy": "UPGRADE",
+"msFirst": "MS13"
 },
 "core:str_t2_shield": {
 "name": {
@@ -1936,7 +2028,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": "core:str_t3_shield",
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "ENGINEER & (TECH2 | TECH3)",
+"msFirst": "MS13"
 },
 "core:str_t3_shield": {
 "name": {
@@ -1972,7 +2066,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": "core:str_t2_shield",
-"ms9": false
+"ms9": false,
+"buildableBy": "UPGRADE",
+"msFirst": "MS13"
 },
 "core:str_t2_arty": {
 "name": {
@@ -2018,7 +2114,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "ENGINEER & (TECH2 | TECH3)",
+"msFirst": "MS13"
 },
 "core:str_t3_arty": {
 "name": {
@@ -2064,7 +2162,9 @@ window.FF_ROSTER = {
 "adjacency": null,
 "upgradesTo": null,
 "upgradeFrom": null,
-"ms9": false
+"ms9": false,
+"buildableBy": "ENGINEER & TECH3",
+"msFirst": "MS13"
 }
 },
 "hotbuildGrid": {

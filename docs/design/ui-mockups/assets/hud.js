@@ -269,7 +269,7 @@
       <div class="stat stat--timer" title="Spielzeit (Sim-Zeit)">${gi('timer')}<b class="num">11:42</b></div>
       <div class="stat stat--speed ${speedChanged ? 'is-changed' : ''}" title="Sim-Tempo (A6): − / +">${gi('speed')}<b class="num">×${n1(S.speed)}</b></div>
       <div class="stat stat--cap" title="Einheiten / Unit-Cap (U7)">${gi('cap')}<b class="num">${S.sel === 'army' ? '71' : '64'}</b><span class="ff-lo num">/ 500</span></div>
-      <div class="stat stat--score" title="Punkte (optional, A19 Post-MVP)">${gi('score')}<span class="score-chip" style="--team:var(--team-self)"><i></i><b class="num">8.412</b></span><span class="score-chip" style="--team:var(--team-enemy)"><i></i><b class="num">7.980</b></span></div>
+      ${qs.get('score') === '1' ? `<div class="stat stat--score" title="Punkte (A19 Post-MVP; im MVP nur im Replay)">${gi('score')}<span class="score-chip" style="--team:var(--team-self)"><i></i><b class="num">8.412</b></span><span class="score-chip" style="--team:var(--team-enemy)"><i></i><b class="num">7.980</b></span></div>` : ''}
       <button class="status__menu" title="Menü (Esc)" aria-label="Menü">${gi('menu')}</button>
     </div>`;
     const b = $('banner');
@@ -319,19 +319,22 @@
     const groups = [['1', 'land_direct_t1', 18], ['2', 'land_arty_t1', 3], ['3', 'struct_fac_land_t1', 1], ['4', 'eng_build_t1', 2], ['5'], ['6'], ['7'], ['8'], ['9'], ['0']];
     const active = S.sel === 'army' ? '1' : S.sel === 'factory' ? '3' : '';
     $('groups').innerHTML = groups.map(([k, ic, n]) => ic
-      ? `<button class="grp ${k === active ? 'is-active' : ''}" title="Gruppe ${k}: abrufen ${k} · doppelt = Kamera · Alt+${k} speichern">${`<span class="grp__k">${k}</span>`}${si(ic)}<span class="grp__n num">${n}</span></button>`
-      : `<button class="grp is-empty" title="Gruppe ${k} leer · Alt+${k} speichern"><span class="grp__k">${k}</span></button>`).join('');
+      ? `<button class="grp ${k === active ? 'is-active' : ''}" title="Gruppe ${k}: abrufen ${k} · doppelt = Kamera · Alt+${k} oder Rechtsklick = speichern · ⇧Rechtsklick = hinzufügen">${`<span class="grp__k">${k}</span>`}${si(ic)}<span class="grp__n num">${n}</span></button>`
+      : `<button class="grp is-empty" title="Gruppe ${k} leer · Alt+${k} oder Rechtsklick = Auswahl speichern"><span class="grp__k">${k}</span></button>`).join('');
     const hasBuild = S.sel === 'vogt' || S.sel === 'factory';
     const o = $('orders');
     if (!hasBuild) { o.innerHTML = ''; return; }
     const on = (k) => ORDERS_STATE[S.sel] && ORDERS_STATE[S.sel][k];
     o.innerHTML = `<span class="orders__hint">Befehle <span class="ff-key">Alt</span>+</span>` + ORDER_ROWS.map((row) => `<div class="orders__grp">${row.map((k) => orderBtn(k, on(k))).join('')}</div>`).join('');
   }
+  // [Icon, Name (Tooltip), ID, Kurzlabel für die 58-px-Zelle (≤ 10 Zeichen, i18n-Key ui.order.<id>.short)]
   const ORDER = {
-    Q: ['move', 'Bewegen', 'C4'], W: ['patrol', 'Patrouille', 'C12'], E: ['assist', 'Assist / Bewachen', 'B2'], R: ['reclaim', 'Reclaim', 'E7'], T: ['repair', 'Reparieren', 'G4'],
-    A: ['attackmove', 'Angriff / Angriffsbewegung', 'C6'], S: ['stop', 'Stop', 'S3'], D: ['pause', 'Pausieren', 'E13'], F: ['fire_return', 'Feuermodus', 'K6'], G: ['shield', 'Fähigkeit umschalten', 'C17'],
-    Z: ['attackground', 'Boden angreifen', 'K6'], X: ['tapshot', 'Abstich (manuell)', 'U8'], C: ['formation', 'Formation', 'C13'], V: null, B: ['selfdestruct', 'Selbstzerstörung (Strg+Entf)', 'C18'],
+    Q: ['move', 'Bewegen', 'C4', 'Bewegen'], W: ['patrol', 'Patrouille', 'C12', 'Patrouille'], E: ['assist', 'Assist / Bewachen', 'B2', 'Assist'], R: ['reclaim', 'Reclaim', 'E7', 'Reclaim'], T: ['repair', 'Reparieren', 'G4', 'Reparieren'],
+    A: ['attackmove', 'Angriff / Angriffsbewegung', 'C6', 'Angriff'], S: ['stop', 'Stop', 'S3', 'Stop'], D: ['pause', 'Pausieren', 'E13', 'Pause'], F: ['fire_return', 'Feuermodus', 'K6', 'Feuer'], G: ['shield', 'Fähigkeit umschalten', 'C17', 'Fähigkeit'],
+    Z: ['attackground', 'Boden angreifen', 'K6', 'Boden'], X: ['tapshot', 'Abstich (manuell)', 'U8', 'Abstich'], C: ['formation', 'Formation', 'C13', 'Formation'], V: null, B: ['selfdestruct', 'Selbstzerstörung – nur Klick oder Strg+Entf, keine Rastertaste', 'C18', 'Sprengen'],
   };
+  // Review: Selbstzerstörung liegt nie auf einer Rastertaste (B ist auf Gebäude-/Fabrikseiten „Upgrade“).
+  const KEYLBL = (k, bar) => (k === 'B' ? (bar ? '' : 'Entf') : LBL(k)); // Strg+Entf: Zelle zeigt „Entf“, die 40-px-Leiste nur den Tooltip
   const ORDER_ROWS = [['Q', 'W', 'E', 'R', 'T'], ['A', 'S', 'D', 'F', 'G'], ['Z', 'X', 'C', 'B']];
   const ORDERS_STATE = {
     vogt: { R: 'on', G: 'auto', X: 'ready', C: 'off', D: 'off' },
@@ -344,7 +347,7 @@
     const dis = st === 'off';
     const cls = ['ff-order', dis ? 'is-disabled' : '', st === 'auto' ? 'is-on' : '', k === 'B' ? 'ff-order--danger' : '', S.armed === k ? 'is-armed' : ''].join(' ');
     const dots = k === 'F' ? `<span class="ff-order__dots"><i class="on"></i><i></i><i></i></span>` : '';
-    return `<button class="${cls}" data-order="${k}" title="${d[1]} (${k === 'B' ? 'Strg+Entf' : 'Alt+' + LBL(k)}) · ${d[2]}${dis ? ' – für diese Auswahl nicht verfügbar' : ''}">${dots}${gi(d[0])}<span class="ff-order__key">${LBL(k)}</span></button>`;
+    return `<button class="${cls}" data-order="${k}" title="${d[1]} (${k === 'B' ? 'Strg+Entf' : 'Alt+' + LBL(k)}) · ${d[2]}${dis ? ' – für diese Auswahl nicht verfügbar' : ''}">${dots}${gi(d[0])}<span class="ff-order__key">${KEYLBL(k, true)}</span></button>`;
   }
 
   /* ================= Auswahl-Panel (C9) ================= */
@@ -432,18 +435,29 @@
   const LBL = (k) => (k === 'Z' ? 'Y' : k);
   const KEYS = ['Q', 'W', 'E', 'R', 'T', 'A', 'S', 'D', 'F', 'G', 'Z', 'X', 'C', 'V', 'B'];
   const QUEUED = { Q: 5, W: 2, E: 1, R: 1 };
+  // Tech-Striche aus roster.json: welche Stufen die Rolle auf dieser Taste direkt baubar hat (Upgrade-only zählt nicht)
+  function tiersFor(menu, k, shownTech) {
+    const have = [0, 0, 0];
+    Object.values(window.FF_ROSTER.units).forEach((u) => {
+      const hb = u.hotbuild; if (!hb || hb.menu !== menu || !(hb.slot === k || hb.slot.startsWith(k + ' '))) return;
+      if (menu === 'Bau' && !/ENGINEER|COMMAND/.test(u.buildableBy || '')) return;
+      if (u.tech >= 1 && u.tech <= 3) have[u.tech - 1] = 1;
+    });
+    if (have.reduce((a, b) => a + b, 0) < 2) return null; // nur eine Stufe → keine Striche
+    return have.map((h, i) => (h ? (i + 1 === shownTech ? 2 : 1) : 0));
+  }
   function cell(k, id, opts = {}) {
     const u = id && FF.unit('core:' + id);
     if (!u && !opts.order) return `<button class="ff-cell is-empty" tabindex="-1"><span class="ff-cell__key">${LBL(k)}</span></button>`;
     if (opts.order) {
       const d = ORDER[k]; if (!d) return `<button class="ff-cell is-empty" tabindex="-1"><span class="ff-cell__key">${LBL(k)}</span></button>`;
       const st = opts.st;
-      return `<button class="ff-cell ${st === 'off' ? 'is-disabled' : ''} ${S.armed === k ? 'is-active' : ''}" data-key="${k}" title="${d[1]}">${st === 'part' ? '<span class="ff-cell__badge">3</span>' : ''}<span class="ff-cell__key">${LBL(k)}</span>${gi(d[0])}<span class="ff-cell__name">${d[1].split(' ')[0]}</span></button>`;
+      return `<button class="ff-cell ${st === 'off' ? 'is-disabled' : ''} ${S.armed === k ? 'is-active' : ''} ${k === 'B' ? 'ff-cell--danger' : ''}" data-key="${k}" title="${d[1]}">${st === 'part' ? '<span class="ff-cell__badge">3</span>' : ''}<span class="ff-cell__key">${KEYLBL(k)}</span>${gi(d[0])}<span class="ff-cell__name">${d[3]}</span></button>`;
     }
     const locked = opts.maxTech && u.tech > opts.maxTech;
     const active = (S.place && k === 'W' && S.sel === 'vogt') || S.armed === k;
     const hov = S.tip === k && !S.place;
-    const tiers = opts.tiers ? `<span class="ff-cell__tiers">${opts.tiers.map((t) => `<i class="${t ? 'on' : ''}"></i>`).join('')}</span>` : '';
+    const tiers = opts.tiers ? `<span class="ff-cell__tiers" title="Stufen dieser Taste">${opts.tiers.map((t) => `<i class="${t === 2 ? 'on' : t ? '' : 'none'}"></i>`).join('')}</span>` : '';
     const badge = opts.badge ? `<span class="ff-cell__badge">${opts.badge}</span>` : '';
     const prog = opts.prog ? `<span class="ff-cell__prog"><i style="--p:${opts.prog}"></i></span>` : '';
     return `<button class="ff-cell ${locked ? 'is-locked is-disabled' : ''} ${active ? 'is-active' : ''} ${hov ? 'is-hover' : ''}" data-key="${k}" data-unit="${id}" aria-label="${u.name.de} (${LBL(k)})">
@@ -454,12 +468,12 @@
     let head = '', grid = '';
     if (S.sel === 'vogt') {
       head = `<div class="ff-ph">Bau · Vogt<div class="ff-tabs" data-tabs="tech" role="tablist"><button class="ff-tab is-selected" data-tab="T1">T1</button><button class="ff-tab is-disabled" title="Vogt baut nur T1 (U14 Post-MVP)">T2</button><button class="ff-tab is-disabled">T3</button></div></div>`;
-      grid = KEYS.map((k) => cell(k, BAU[k] ? BAU[k].replace('str_t2_shield', 'str_t2_shield') : null, { maxTech: 1, tiers: BAU[k] && ['Q', 'W', 'Z', 'X'].includes(k) ? [1, 0, 0] : null })).join('');
+      grid = KEYS.map((k) => cell(k, BAU[k] || null, { maxTech: 1, tiers: BAU[k] ? tiersFor('Bau', k, FF.unit('core:' + BAU[k]).tech) : null })).join('');
     } else if (S.sel === 'factory') {
       head = `<div class="ff-ph">Produktion · Landwerk I<div class="ff-tabs" data-tabs="tech"><button class="ff-tab is-selected" data-tab="T1">T1</button><button class="ff-tab is-disabled" title="Freisprechen nötig (Landwerk II)">T2 ${gi('lock')}</button><button class="ff-tab is-disabled">T3</button></div></div>`;
       grid = KEYS.map((k) => {
-        if (k === 'B') return `<button class="ff-cell" data-key="B" title="Freisprechen → Landwerk II (U5): 1.400 M · 11.000 E"><span class="ff-cell__key">B</span>${gi('upgrade')}<span class="ff-cell__name" style="color:var(--ember-300)">Freisprechen</span></button>`;
-        return cell(k, WERK[k] || null, { maxTech: 1, badge: QUEUED[k], prog: k === 'Q' ? 0.64 : 0 });
+        if (k === 'B') return `<button class="ff-cell" data-key="B" title="Upgrade: Freisprechen → Landwerk II (U5): 1.400 M · 11.000 E"><span class="ff-cell__key">B</span>${gi('upgrade')}<span class="ff-cell__name" style="color:var(--ember-300)">Upgrade</span></button>`;
+        return cell(k, WERK[k] || null, { maxTech: 1, badge: QUEUED[k], tiers: WERK[k] ? tiersFor('Landwerk', k, FF.unit('core:' + WERK[k]).tech) : null, prog: k === 'Q' ? 0.64 : 0 });
       }).join('');
     } else if (S.sel === 'army') {
       head = `<div class="ff-ph">Befehle · 19 Einheiten<span class="ff-ph__end">Feuermodus: <b style="color:var(--text)">Feuer frei</b></span></div>`;
@@ -569,6 +583,7 @@
     if (e.code === 'KeyH') { go({ sel: 'vogt' }); return; }
     if (k && KEYS.includes(k)) {
       e.preventDefault();
+      if ((e.altKey || S.sel === 'army') && k === 'B') return; // Selbstzerstörung nur über Strg+Entf / Klick
       if (e.altKey || S.sel === 'army') {
         const b = document.querySelector(`[data-order="${k}"]`) || document.querySelector(`.card__grid .ff-cell[data-key="${k}"]`);
         if (b && !b.classList.contains('is-disabled')) { S.armed = S.armed === k ? null : k; renderStrip(); renderCard(); }

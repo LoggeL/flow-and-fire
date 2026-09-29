@@ -45,8 +45,18 @@ def de(a,b):
     Rt=-math.sin(math.radians(2*dth))*Rc
     return math.sqrt((dLp/Sl)**2+(dCp/Sc)**2+(dHp/Sh)**2+Rt*(dCp/Sc)*(dHp/Sh))
 conds=['normal','deutan','protan','tritan']
-for name,final in [('std',{'Rot':'#C8372D','Blau':'#2F6FD0','Gruen':'#3E9A4A','Violett':'#7A4CC2','Cyan':'#27A6B5','Orange':'#E07A1F','Pink':'#D0569A','Oliv':'#8A8F2E'}),('cb',{'Blau':'#0072B2','Orange':'#E69F00','Himmel':'#56B4E9','Blaugruen':'#009E73','Rotviolett':'#CC79A7','Rot':'#D7263D','Purpur':'#AA3377','Rosa':'#EE6677'})]:
+# Reihenfolge = Slot-Reihenfolge (Slot 1 eigen, Slot 2 Gegner im 1v1). Review: CVD-Slot 2 = Rot statt Orange.
+PAL=[('std',{'Rot':'#C8372D','Blau':'#2F6FD0','Gruen':'#3E9A4A','Violett':'#7A4CC2','Cyan':'#27A6B5','Orange':'#E07A1F','Pink':'#D0569A','Oliv':'#8A8F2E'}),
+     ('cb',{'Blau':'#0072B2','Rot':'#D7263D','Orange':'#E69F00','Himmel':'#56B4E9','Blaugruen':'#009E73','Rotviolett':'#CC79A7','Purpur':'#AA3377','Rosa':'#EE6677'})]
+# HUD-Semantik, mit der eine Teamfarbe auf Minimap/Icons nicht verwechselt werden darf (Glut-Ping, Warnung)
+SEM={'Glut':'#FF8A2A','Warnung':'#FF9F43'}
+for name,final in PAL:
+  s12=[]
   for k in conds:
     ls={n:lab(sim(hx(c),k)) for n,c in final.items()}
     ps=sorted((de(ls[a],ls[b]),a,b) for a,b in itertools.combinations(final,2))
-    print(name,k, [(round(p[0],1),p[1],p[2]) for p in ps[:2]], 'Slot1-2:', round(de(ls[list(final)[0]],ls[list(final)[1]]),1))
+    n1,n2=list(final)[:2]
+    s12.append(round(de(ls[n1],ls[n2]),1))
+    sem=min((de(lab(sim(hx(final[n]),k)),lab(sim(hx(v),k))),n,t) for n in (n1,n2) for t,v in SEM.items())
+    print(name,k, [(round(p[0],1),p[1],p[2]) for p in ps[:2]], 'Slot1-2:', s12[-1], 'Slot1/2 vs Semantik:', (round(sem[0],1),sem[1],sem[2]))
+  print(name,'Slot 1-2 schlechteste Sicht:',min(s12))

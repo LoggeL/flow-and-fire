@@ -1,6 +1,6 @@
 # UI/HUD-Designsystem „Gießhalle"
 
-> **Status:** Designkonzept, Stand 2026-09-29. Gilt für HUD und Menüs bis zum Voll-MVP (MS14). Noch nichts davon ist in `packages/client` oder `apps/game` umgesetzt; diese Datei ist die Vorlage für C8/C9/C10/C14/C15/C16/C17 und die Menüs aus A3/A13/P9.
+> **Status:** Designkonzept, Stand 2026-09-29, **nach kritischem Review überarbeitet** (Entscheidungen in §14). Gilt für HUD und Menüs bis zum Voll-MVP (MS14). Noch nichts davon ist in `packages/client` oder `apps/game` umgesetzt; diese Datei ist die Vorlage für C8/C9/C10/C14/C15/C16/C17 und die Menüs aus A3/A13/P9.
 > **Mockups:** [`docs/design/ui-mockups/`](ui-mockups/index.html) – statisch, klickbar, reines HTML/CSS mit wenig Script. Einstieg `index.html`, HUD `hud.html` (Zustände per URL-Parameter, §12).
 > **Quellen:** PLAN §2 (Preact + Signals, Minimap Canvas2D), §3.7 (Rendering, Minimap 4 Hz, Alert-Queue), §3.10 (KI), §5 (Meilensteine); `features.json`; `faction.md` §3–§8 (Farben, Icons, Namen, Klang); `roster.json` (Hotbuild-Raster, Werte); `audio.md` + `content/audio/SOUNDLIST.md` (Alerts); `content/icons/` (Strategic Icons); `packages/client/src/{cursor-fsm,actions}.ts` (bestehende Cursor-FSM und Tastenbelegung).
 > **Abgrenzung:** keine FA-Grafiken, -Screenshots, -Layouts oder -Namen. FAF dient nur als Maßstab für Komfort (Hotbuild, Idle-Engineer, Queue-Klicks, Alert-Sprung). Formen, Farben, Icons und Texte sind eigene Gestaltung.
@@ -12,7 +12,7 @@
 - **Stil:** dunkles Gusseisen als Fläche, **Glut** (Orange) nur dort, wo Aufmerksamkeit hingehört (aktiv, ausgewählt, Fortschritt, Primäraktion), **Kupfer** für Struktur (Rahmen, Panel-Köpfe, Hover). Ecken sind 45° gefast statt gerundet („gegossen, nicht geschweißt", faction.md §3.1).
 - **Dichte wie FA, Lesbarkeit wie heute:** tabellarische Ziffern, feste Spaltenbreiten, kompakte 11–14-px-Schrift in Panels, großzügige 20-px-Zahlen nur für das, was man in 100 ms erfassen muss (Speicher, Netto, Timer).
 - **Layout:** Ressourcen oben links, Status und Alerts oben rechts, unten ein Dock aus Minimap | Auswahl | Command Card, darüber eine schmale Leiste mit Filtern, Control Groups und Befehlen. Die Welt bleibt zu ≈ 79 % frei (1080p).
-- **Tasten:** Ein 15-Tasten-Raster (QWERT/ASDFG/ZXCVB, physisch) trägt je nach Auswahl Hotbuild, Produktion oder Befehle. Kamera standardmäßig über Pfeile, Rand und Mittelklick; WASD als Schema wählbar (§7.2, Entscheidung UI-E1).
+- **Tasten:** Ein 15-Tasten-Raster (QWERT/ASDFG/ZXCVB, physisch) trägt je nach Auswahl Hotbuild, Produktion oder Befehle. Kamera standardmäßig über Pfeile, Rand und Mittelklick; WASD schwenkt im Standardschema **nie** (kein auswahlabhängiger Doppelsinn), sondern nur im wählbaren Schema „WASD“ (§7.2, UI-E1, R3).
 - **Farbe ist nie allein Träger:** Stall = Rahmen + Symbol + Text + Schraffur, Alerts haben je Stufe eine eigene Symbolform, Teams haben einen geprüften farbenblind-sicheren Modus (§8).
 - **Performance:** HUD bindet über Signals mit festen Raten (1–10 Hz), schreibt nur `textContent`, CSS-Variablen und Klassen, liest nie Layout im Update-Pfad, animiert nur `transform`/`opacity`. Budget: HUD ≤ 1 ms Main-JS pro Frame (MS4-Abnahme), Minimap ≤ 0,5 ms (MS11).
 
@@ -76,9 +76,9 @@ Alle Werte stehen in `ui-mockups/assets/tokens.css` als CSS-Variablen. Komponent
 
 **Semantik** (reserviert, nie für Serien oder Teams): `--ok #8fd18b`, `--warn #ff9f43`, `--crit #ff5a45`, `--info #8fb8e8`, `--neutral-blip #9a9a9a`. Jede Semantikfarbe hat eine eigene Form (§8.1).
 
-**Text:** `--text-hi #f1ebdf` (15,9 : 1 auf Panel), `--text #d9d1c3` (12,4 : 1), `--text-mid #a89e90` (7,1 : 1), `--text-lo #8a8074` (4,9 : 1), `--text-off #574f47` (nur deaktiviert, 2,3 : 1). Kontraste gemessen gegen `#131110` (Panel über dunkler Welt).
+**Text:** `--text-hi #f1ebdf` (15,9 : 1 auf Panel), `--text #d9d1c3` (12,4 : 1), `--text-mid #a89e90` (7,1 : 1), `--text-lo #968b7e` (5,6 : 1 auf Panel, **4,9 : 1 auf Zellen** `--surface-2`, 4,5 : 1 auf `--surface-3`), `--text-off #574f47` (nur deaktiviert, 2,3 : 1). Kontraste gemessen gegen `#131110` (Panel über dunkler Welt) und gegen die Zellflächen (Review R7: der alte Wert `#8a8074` lag auf Zellen bei 4,2 : 1).
 
-**Teams:** Hausfarben aus faction.md §4.3 (`--team-rot` … `--team-oliv`) und die farbenblind-sichere Palette `--cvd-*` (§8.2). Komponenten nutzen nur `--team-self` / `--team-enemy` bzw. `--team` pro Element; der Modus schaltet über `:root[data-teams]`.
+**Teams:** Hausfarben aus faction.md §4.3 (`--team-rot` … `--team-oliv`) und die farbenblind-sichere Palette `--cvd-*` (§8.2). Komponenten nutzen nur `--team-self` / `--team-enemy` bzw. `--team` pro Element; der Modus schaltet über `:root[data-teams]`. Im Farbenblind-Modus ist Slot 2 (Gegner im 1v1) **Rot** `--cvd-rot`, nicht Orange (R8).
 
 ### 3.2 Typografie
 
@@ -92,7 +92,7 @@ In den Mockups greift die Fallback-Kette (`Avenir Next Condensed`, `Roboto Conde
 
 | Token | Größe @1,0 | Verwendung |
 |---|---|---|
-| `--fs-micro` | 11 px | Tastenbeschriftung, Badges, Metazeilen |
+| `--fs-micro` | 11 px, Untergrenze 10 px (`max(0.6875rem, 10px)`) | Tastenbeschriftung, Badges, Metazeilen, Zellnamen; kleiner geht keine Schrift im HUD (R6) |
 | `--fs-cap` | 12 px | Panelwerte, Tooltips-Raster, Legenden |
 | `--fs-data` | 13 px | Zahlen in Tabellen, Status |
 | `--fs-body` | 14 px | Fließtext, Alert-Titel |
@@ -163,7 +163,7 @@ Flow-Einheiten gibt es auch im HUD: Fortschritt und laufender Bau sind immer Glu
 - **Auto (Standard):** `scale = round₀,₀₅((Fensterhöhe / 1080)^0,78)`, begrenzt auf 0,8–1,5. Ergibt **1,0 bei 1080p**, **1,25 bei 1440p**, 1,5 bei 2160p. Der Exponent < 1 lässt auf großen Schirmen mehr Welt frei, statt das HUD linear aufzublasen.
 - **Manuell:** 0,8 / 0,9 / 1,0 / 1,1 / 1,25 / 1,5 (Einstellungen → Barrierefreiheit). „Kompakt" = 1,0 auf 1440p.
 - Die Welt (WebGL) skaliert unabhängig über Render-Skalierung (P9).
-- Unter 1280 × 720 oder bei `scale · 1080 > Fensterhöhe` greift automatisch 0,8.
+- Unter 1280 × 720 oder bei `scale · 1080 > Fensterhöhe` greift automatisch 0,8. Dort hält `--fs-micro` seine Untergrenze von 10 px; `tools/shoot.mjs` prüft 1280 × 720 mit (`hud-720-*`).
 
 ### 4.2 1080p (Skalierung 1,0)
 
@@ -187,7 +187,8 @@ Flow-Einheiten gibt es auch im HUD: Fortschritt und laufender Bau sind immer Glu
 8           224 228                                                  1592 1596                  1912
 ```
 
-- Ressourcenleiste: 2 × 312 px, links oben. Status: rechts oben, 40 px hoch. Pause-/Tempo-Banner: oben Mitte, nur sichtbar, wenn Pause oder Tempo ≠ 1.
+- Ressourcenleiste: 2 × 312 px, links oben. Status: rechts oben, 40 px hoch (Timer · Tempo · Cap · Menü; Punkte nur im Replay, R2).
+- Control Groups stehen **fest linksbündig über dem Auswahl-Panel** (x = 232), unabhängig davon, ob die Befehlsleiste sichtbar ist (R1). Die Skizze oben zeigt sie noch mittig. Pause-/Tempo-Banner: oben Mitte, nur sichtbar, wenn Pause oder Tempo ≠ 1.
 - Dock: 220 px + 8 px Rand = 21 % der Höhe. Die Leiste darüber (40 px) ist bis auf ihre Knöpfe durchklickbar.
 - Alerts: rechts oben unter dem Status, höchstens 3 sichtbar + Zähler.
 - Tooltip: über der Command Card, rechtsbündig; bei Welt-Hover neben dem Cursor.
@@ -203,6 +204,8 @@ Flow-Einheiten gibt es auch im HUD: Fortschritt und laufender Bau sind immer Glu
 - Das HUD-Wurzelelement hat `pointer-events: none`, nur Panels `auto`. Klicks in freie Welt landen immer beim Picking (C3).
 - Kein Panel ändert seine Größe durch Inhalt. Wachsende Inhalte (Alerts, Queue, Einzeleinheiten) haben feste Slots und einen Zähler „+N".
 - Die Mittelspalte des Docks ist die einzige flexible Breite (`minmax(0, 1fr)`).
+- Nichts, was man per Muskelgedächtnis anklickt (Gruppen, Filter, Idle, Raster), verschiebt sich abhängig von der Auswahl (R1).
+- **Automatisch geprüft:** `tools/shoot.mjs` misst in jeder HUD-Ansicht die Panel-Rechtecke und meldet Überlappungen, Panels außerhalb des Viewports, abgeschnittene Zell-/Tastenbeschriftungen und Schrift unter 11 px × Skalierung (§12).
 
 ---
 
@@ -227,12 +230,12 @@ Namen = spätere Preact-Komponenten (in den Mockups als `data-component`). „Bi
 
 ### 5.2 Status (`MatchStatus`)
 
-Timer (Sim-Zeit, `mm:ss`, ab 60 min `h:mm:ss`) · Sim-Tempo `×1,0` (A6, Glut wenn ≠ 1, Tasten `−`/`+`) · Einheiten `64 / 500` (U7, gelb ab 90 %, rot bei Cap) · Punkte beider Häuser (optional, **A19 Post-MVP**, im MVP ausgeblendet oder nur im Replay) · Menüknopf (Esc).
+Timer (Sim-Zeit, `mm:ss`, ab 60 min `h:mm:ss`) · Sim-Tempo `×1,0` (A6, Glut wenn ≠ 1, Tasten `−`/`+`) · Einheiten `64 / 500` (U7, gelb ab 90 %, rot bei Cap) · Punkte beider Häuser (**A19 Post-MVP**: im MVP nur im Replay sichtbar; im Mockup per `score=1`) · Menüknopf (Esc).
 Binding: Timer 1 Hz, Cap bei Änderung, Punkte 1 Hz. IDs: A5 (MS1), U7 (MS8), A6 (MS11), A19 (Post-MVP).
 
 ### 5.3 Pause- und Tempo-Banner (`PauseBanner`)
 
-Oben Mitte, 272 px. **Pause:** `PAUSE`, darunter „Sim angehalten · Kamera und Befehle bleiben aktiv · P fortsetzen" (A5). **Hintergrund-Tab (S9):** „Pausiert – Tab war verborgen". **Tempo ≠ 1:** schmales Banner `SIM-TEMPO ×2,0`. **Sim-Lag** (Scheduler kommt nicht nach oder KI antwortet `pending`): kleines Banner „Sim hinkt nach · ×0,8 effektiv". Ereignisgetrieben. IDs: A5 (MS1), S9 (MS9), A6 (MS11).
+Oben Mitte, 272 px. **Pause:** `PAUSE`, darunter „Sim angehalten · Kamera und Befehle bleiben aktiv · P fortsetzen" (A5). **Hintergrund-Tab (S9):** „Pausiert – Tab war verborgen". **Tempo ≠ 1:** schmales Banner `SIM-TEMPO ×2,0`. **Sim-Lag** (Scheduler kommt nicht nach oder KI antwortet `pending`): kleines Banner „Sim hinkt nach · ×0,8 effektiv". **Context-Loss (P10):** „Grafik wird wiederhergestellt · Sim läuft weiter" bis `webglcontextrestored` (R12). Ereignisgetrieben. IDs: A5 (MS1), S9 (MS9), A6 (MS11), P10 (MS14).
 
 ### 5.4 Minimap (`Minimap`)
 
@@ -265,15 +268,30 @@ Binding: Struktur bei Auswahländerung (Ereignis); HP/Vet/Kette 4 Hz; Bau- und Q
 | Auswahl | Kopf | Inhalt | Tabs |
 |---|---|---|---|
 | Vogt / Engineers | „Bau · Vogt" | Bau-Menü nach `roster.json` → `hotbuildGrid.Bau`: Q Zapfstelle · W Glutkessel · E Dampfquelle · R Erzspeicher · T Glutspeicher · A Landwerk · S Luftwerk · D Horcher · F Schirm · Y Riegel · X Rost/Hochrost · C Mauer · V Tiegel/Hochofen | T1 · T2 · T3 (höchste baubare Stufe vorgewählt) |
-| Landwerk | „Produktion · Landwerk I" | Q Panzer · W Artillerie · E Engineer · R Flugabwehr · A Späher · S Bots · D Schürze · F Reißnadel · **B Freisprechen** (Upgrade, U5) | T1 · T2 · T3 |
-| Luftwerk | „Produktion · Luftwerk I" | Q Abfangjäger · W Bomber · E Gunship · R Jagdbomber · A Aufklärer · B Freisprechen | T1 · T2 |
+| Landwerk | „Produktion · Landwerk I" | Q Panzer · W Artillerie · E Engineer · R Flugabwehr · A Späher · S Bots · D Schürze · F Reißnadel · **B Upgrade** (Freisprechen, U5) | T1 · T2 · T3 |
+| Luftwerk | „Produktion · Luftwerk I" | Q Abfangjäger · W Bomber · E Gunship · R Jagdbomber · A Aufklärer · B Upgrade (Freisprechen) | T1 · T2 |
 | Mex, Radar, Schild (Upgrade-fähig) | „Gebäude · Zapfstelle I" | B Upgrade (B4/B8), G Fähigkeit (C17), D Pause (E13), Selbstzerstörung | – |
 | nur Kampfeinheiten | „Befehle · N Einheiten" | **Befehlsraster** (§5.8); die Befehlsleiste darüber entfällt | – |
-| gemischt mit Bauern | Bau-Seite der höchsten Bauklasse | Schnittmenge der Baulisten (C8), Befehle über Alt | T1–T3 |
+| gemischt mit Bauern | Bau-Seite des höchstrangigen Bauers | Bauliste des höchstrangigen Bauers (C8); wer den Auftrag nicht bauen kann, assistiert (B2). Befehle über Alt | T1–T3 |
 
-**Zelle:** Taste oben links · Strategic Icon · Kurzname unten (ohne römische Stufe) · rechts oben entweder Tech-Striche (welche Stufen die Rolle hat, aktuelle hell) oder Queue-Badge · unten Fortschrittsstrich (laufende Produktion). Zustände §3.7; gesperrte Zellen nennen im Tooltip die Voraussetzung („ab T2: Landwerk freisprechen"), deaktivierte den Grund („Unit-Cap erreicht").
+**Zelle:** Taste oben links · Strategic Icon · Kurzname unten (ohne römische Stufe, höchstens 10 Zeichen bei 11 px; eigener i18n-Key `….short`, der volle Name steht im Tooltip) · rechts neben dem Icon Tech-Striche (welche Stufen die Rolle auf dieser Taste **direkt** baubar hat, aktuelle hell, fehlende Stufen als Lücke) · rechts oben Queue-Badge (ersetzt dann die Striche) · links neben dem Icon das Schloss bei gesperrten Zellen · unten Fortschrittsstrich (laufende Produktion). Zustände §3.7; gesperrte Zellen nennen im Tooltip die Voraussetzung („ab T2: Landwerk freisprechen"), deaktivierte den Grund („Unit-Cap erreicht").
 
 **Hotbuild-Zyklus:** Gleiche Taste = gleiche Rolle; erneutes Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst), nie den Typ (`hotbuildGrid.rule`). Der Tech-Tab folgt mit.
+
+**Tab-Inhalt:** Ein Tab zeigt je Taste die höchste Stufe ≤ Tab, die der Bauer direkt bauen kann; Tasten ohne Variante in dieser Stufe zeigen die niedrigere Stufe statt einer Lücke. Das Raster ändert also nie Positionen, nur Stufen. Stufen, die nur per Upgrade entstehen, stehen nicht im Bau-Raster, sondern als **B Upgrade** auf der Gebäudeseite.
+
+**Tech-Stufen je Taste** (aus `roster.json`, `hotbuild` + `buildableBy`; die Striche im Mockup werden daraus berechnet, `hud.js → tiersFor`):
+
+| Bau | Q | W | E | R | T | A | S | D | F | Y (KeyZ) | X | C | V |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Rolle | Zapfstelle | Glutkessel | Dampfquelle | Erzspeicher | Glutspeicher | Landwerk | Luftwerk | Horcher | Schirm | Riegel | Rost/Hochrost | Mauer | Tiegel/Hochofen |
+| direkt baubar | I–III | I–III | I | I | I | I (II/III Upgrade) | I (II Upgrade) | I (II/III Upgrade) | II (III Upgrade) | I–II | I–III | I | II–III |
+
+| Landwerk | Q | W | E | R | A | S | D | F |
+|---|---|---|---|---|---|---|---|---|
+| Stufen | 1–2 | 1–3 | 1–3 | 1–3 | 1 | 1–3 | 2 | 3 |
+
+Luftwerk: Q, W, A nur T1; E, R nur T2. Der Vogt baut nur T1; F Schirm und V Tiegel sind bei ihm gesperrt („ab Geselle (T2-Engineer)“). Hinweis an `roster.json`: `str_t2_mex` trägt den Slot-Text „Q (Upgrade: Command Card)“, ist laut `buildableBy` aber auch direkt durch T2/T3-Engineers baubar; die UI folgt `buildableBy` (FA-Verhalten).
 
 **Im Flow-System gibt es kein „zu teuer":** Zellen werden bei knapper Eco nicht deaktiviert; der Tooltip zeigt stattdessen den Flow-Bedarf (Mass/s, Energy/s bei aktueller BP) und färbt ihn gelb, wenn er das Netto übersteigt.
 
@@ -299,7 +317,7 @@ Binding: Ereignis + Fortschritt 10 Hz. IDs: **B3 (MS6)**, B2 (MS6), E13 (MS10).
 | Q | Bewegen | Pfeil | scharf → Linksklick Ziel | C4 · MS6 |
 | W | Patrouille | Kreisel | Wegpunkte mit Shift; Engineers reclaimen/reparieren/assistieren automatisch | C12 · MS11 |
 | E | Assist / Bewachen | Doppel-Chevron | Ziel eigene Einheit/Baustelle/Fabrik | B2 · MS6 |
-| R | Reclaim | Trichter | Ziel Wrack/Prop/eigenes Gebäude | E7 · MS5, E12 · MS10 |
+| R | Reclaim | Trichter | Ziel Wrack/Prop/eigenes Gebäude; **scharf + Linksklick-Ziehen = Bereich** (Kreis, E14); solange Reclaim scharf ist oder der Zeiger Reclaim zeigt, blendet die Welt das Reclaim-Overlay ein (Mass-Wert je Wrack/Prop-Gruppe, §5.14) | E7 · MS5, E12 · MS10, E14 · MS8 |
 | T | Reparieren | Schlüssel | | G4 · MS6 |
 | A | Angriff / Angriffsbewegung | Fadenkreuz + Pfeil | auf Einheit = Angriff, auf Boden = Attack-Move | C6 · MS8 |
 | S | Stop | Achteck | leert die Befehlskette | S3 · MS1 |
@@ -309,9 +327,11 @@ Binding: Ereignis + Fortschritt 10 Hz. IDs: **B3 (MS6)**, B2 (MS6), E13 (MS10).
 | Y (KeyZ) | Boden angreifen | Fadenkreuz über Boden | nur Artillerie; Badge = Anzahl fähiger Einheiten | K6 · MS7 |
 | X | Abstich | Blitz | manuell, scharf → Ziel; grau unter 7.500 E | U8 · MS6 |
 | C | Formation | drei Punkte | Formation wählen; Rechtsklick-Ziehen zieht Linie | C13 · MS13 |
-| B | Selbstzerstörung | Stern, rot | **Strg+Entf**: 5-s-Countdown auf Knopf und Einheit, erneut = Abbruch | C18 · MS11 |
+| (B-Platz) | Selbstzerstörung | Stern, rot, Kurzlabel „Sprengen“ | **nur Klick oder Strg+Entf** (macOS zusätzlich Strg+⌫, weil MacBooks keine Entf-Taste haben): 5-s-Countdown auf Knopf und Einheit, erneut = Abbruch. **Keine Rastertaste**: B bzw. Alt+B lösen sie nie aus, weil B auf Gebäude- und Fabrikseiten „Upgrade“ ist (R4). Die Zelle zeigt „Entf“ statt „B“ | C18 · MS11 |
 
-Zustände: scharf (wartet auf Ziel, Cursor wechselt, Esc/Rechtsklick bricht ab), Toggle an/gemischt, Zyklus mit Punkten, deaktiviert mit Grund. Binding: Ereignis + Toggle-Zustände 4 Hz. IDs siehe Tabelle; Grundlage C4/C5/S3.
+Zustände: scharf (wartet auf Ziel, Cursor wechselt, Esc/Rechtsklick bricht ab), Toggle an/gemischt, Zyklus mit Punkten, deaktiviert mit Grund (Tooltip; z. B. Bewegen bei Fabrikauswahl). Die Knöpfe haben feste Plätze, auch wenn sie deaktiviert sind. Kurzlabels in der 58-px-Zelle: Bewegen · Patrouille · Assist · Reclaim · Reparieren · Angriff · Stop · Pause · Feuer · Fähigkeit · Boden · Abstich · Formation · Sprengen. Binding: Ereignis + Toggle-Zustände 4 Hz. IDs siehe Tabelle; Grundlage C4/C5/S3.
+
+**Fehlgriff „S = Stop“ bei Bauern (bewusst beibehalten, R5):** Wählt ein FA-Spieler Engineers und drückt S, erscheint der Luftwerk-Ghost statt Stop. Das ist harmlos (Platzieren gibt ohne Klick keinen Befehl, Esc/Rechtsklick bricht ab); Stop liegt für Bauern auf **Alt+S**, und die Befehlsleiste zeigt das sichtbar an. Das Raster aus `roster.json` bleibt unverändert.
 
 ### 5.9 Selection-Filter und Idle-Engineer (`SelectionFilter`, `IdleButton`)
 
@@ -323,7 +343,7 @@ Binding: Zähler 1 Hz. IDs: **C14 (MS6)**.
 
 ### 5.10 Control Groups (`ControlGroups`)
 
-Zehn Plätze (1–0), je 52 × 34 px: Taste, Icon des häufigsten Typs, Anzahl. Aktive Gruppe mit Glutrahmen. Abrufen = Zahl, zweimal schnell = Kamera zentrieren, **Speichern = Alt+Zahl**, Hinzufügen = Shift+Alt+Zahl, Auswahl ergänzen = Shift+Zahl. Strg+Zahl nur bei aktiver Tastatursperre im Vollbild (Browser reserviert Strg+1…9). Binding: Ereignis, Zahlen 1 Hz. ID: C7 (MS3).
+Zehn Plätze (1–0), je 52 × 34 px: Taste, Icon des häufigsten Typs, Anzahl. Aktive Gruppe mit Glutrahmen. Abrufen = Zahl, zweimal schnell = Kamera zentrieren, **Speichern = Alt+Zahl**, Hinzufügen = Shift+Alt+Zahl, Auswahl ergänzen = Shift+Zahl. **Maus-Weg (R9):** Rechtsklick auf ein Gruppenfeld = aktuelle Auswahl speichern, Shift+Rechtsklick = hinzufügen. Strg+Zahl (FA-Gewohnheit) nur bei aktiver Tastatursperre im Vollbild (`navigator.keyboard.lock`, nur Chromium), weil der Browser Strg+1…9 sonst selbst verbraucht. Unter Linux schalten Chrome und Firefox mit Alt+1…8 Tabs um; ob `preventDefault` das dort verhindert, prüft der E2E-Test `groups` je Browser/OS – schlägt er fehl, bleibt dort der Maus-Weg bzw. das Vollbild. Binding: Ereignis, Zahlen 1 Hz. ID: C7 (MS3).
 
 ### 5.11 Alerts (`AlertFeed` → `Alert`)
 
@@ -375,12 +395,14 @@ Auswahlringe, HP-/Baubalken über Einheiten, Wegpunktlinien der Befehlskette, Ba
 | Rally (B3) | Grün gestrichelt + Fahne |
 | Angriffsziel | Rot, Fadenkreuz |
 | Auswahlrahmen | Weiß 1 px, 6 % Füllung (DOM, z 10) |
+| Area-Reclaim (E14) | Kreis Mass-Grün `--mass` gestrichelt, Summe „≈ 340 M“ am Zeiger |
+| Reclaim-Overlay (E14) | Mass-Wert je Wrack bzw. je Prop-Cluster als kleine Zahl mit Raute, gerastert auf 16-WU-Zellen (höchstens ~200 Etiketten, IconPass-Text, kein DOM) |
 
 ### 5.15 Menüs
 
 **Hauptmenü (`MainMenu`, A3 · MS9):** Wortmarke „Flow & Fire", Tagline, vertikale Navigation (Gefecht · Replays [MS11] · Einstellungen · Einweisung [Post-MVP, gesperrt] · Mitwirkende), Emblem (Lot im Gussring), Karte „Letzte Partie" mit Replay/Revanche, Fuß mit Build, simId, Transport und Preset, Sprache DE/EN oben rechts. Tastatur: ↑/↓, Enter; Fokus startet auf „Gefecht".
 
-**Gefecht einrichten (`SkirmishSetup`, A3 · MS9):** drei Spalten – Kartenliste mit Mini-Vorschau (Setons, Hollow Ridge, drittes 1v1-Layout M8), Kartenbeschreibung und KI-Profil · große Kartenvorschau mit Ressourcenpunkten und nummerierten Startpositionen (Klick tauscht Start) · Häuser (Slot, Name, Fraktion Varkan, Farbe, Team; KI-Slot mit **Stufe Leicht/Normal/Schwer** (A10, MS14) und **AIx-Schalter + Regler ×1,0–×2,0** (A11, MS14)) und Regeln (Siegbedingung Assassination/Supremacy/Annihilation (A4, A12 MS14), Unit-Cap (U7), Anfangstempo (A6), Nebel, Teamfarben-Modus). Fuß: Prüfstatus (Karte/Blueprints, simId), Zurück, **Gefecht starten** (Glut, Enter). Weitere Slots erst mit A17.
+**Gefecht einrichten (`SkirmishSetup`, A3 · MS9):** drei Spalten – Kartenliste mit Mini-Vorschau (Setons, Hollow Ridge, drittes 1v1-Layout M8), Kartenbeschreibung und KI-Profil · große Kartenvorschau mit Ressourcenpunkten und nummerierten Startpositionen (Klick tauscht Start) · Häuser (Slot, Name, Fraktion Varkan, Farbe, Team; KI-Slot mit **Stufe Leicht/Normal/Schwer** (A10, MS14; Verhalten je Stufe: [`ai.md`](ai.md) §6) und **AIx-Schalter + Regler ×1,0–×2,0** (A11, MS14)) und Regeln (Siegbedingung Assassination/Supremacy/Annihilation (A4, A12 MS14), Unit-Cap (U7), Anfangstempo (A6), Nebel, Teamfarben-Modus). Fuß: Prüfstatus (Karte/Blueprints, simId), Zurück, **Gefecht starten** (Glut, Enter). Weitere Slots erst mit A17.
 
 **Einstellungen (`Settings`):** vertikale Tabs Grafik · Audio · Tasten · Barrierefreiheit · Spiel & Sprache; Zeilen mit Label + Erklärung links, Steuerelement rechts, geänderte Werte mit Glutpunkt; rechts eine Kontextkarte (Lastschätzung, Klangprobe, Rasterbelegung, Farbenblind-Vorschau). Grafik: Autodetect-Kasten (GPU + 3-s-Benchmark, P9), Preset Niedrig/Mittel/Hoch/Ultra, Render-Skalierung, Schatten-Kaskaden, Splat-Layer, Partikel-Cap, Bloom, Kantenglättung, Bildrate, Kamera-Wackeln. Audio: Busse Gesamt/Effekte/Ansagen/Oberfläche/Musik/Umgebung, Warn-Ansagen (Sprache/Nur Gong/Aus), hörbarer Stall, Ton im Hintergrund. Tasten: **Tastenschema Raster/WASD** (UI-E1), Tastatur-Ansicht mit Raster-, Kamera- und Systemtasten in DE-Beschriftung, Tabelle der Sonderkombinationen; Umbelegen folgt mit C20. Barrierefreiheit: §8. Spiel: Sprache, Randschwenk, Tooltips, Pause im Hintergrund (S9), Replays automatisch speichern (N1). IDs: P9 (MS14; Preset-Infrastruktur MS2), C11 (MS2), P12 (MS4), P16 (Post-MVP, Teile vorgezogen).
 
@@ -390,6 +412,10 @@ Auswahlringe, HP-/Baubalken über Einheiten, Wegpunktlinien der Befehlskette, Ba
 
 **Esc-Menü im Spiel (`GameMenu`, G12 · MS9, nicht gemockt):** Modal mittig: Fortsetzen · Einstellungen · Tastenübersicht · Aufgeben (Bestätigung) · Ins Hauptmenü. Im Einzelspieler pausiert es die Sim.
 
+### 5.16 Replay-Leiste (`ReplayBar`, N1 · MS11, nicht gemockt)
+
+Ersetzt im Replay die Command Card und die Befehlsleiste (Eingaben erzeugen keine Commands). Aufbau im 324-px-Platz der Command Card: Play/Pause (P/Leertaste), Tempo ×0,5 / ×1 / ×2 / ×4 / ×8 (`−`/`+`), Zeitleiste mit Ereignismarken (erste Fabrik, T2, Lotbruch) und Sprung per Klick zum nächsten Keyframe (PLAN §3.11), Perspektive: Haus 1 · Haus 2 · Alles sichtbar (Fog je Haus, 1/2/0). Die Status-Punkte (A19) sind im Replay sichtbar. Auswahl, Tooltips, Minimap und Kamera funktionieren normal. Binding: Zeit 4 Hz, sonst Ereignis.
+
 ---
 
 ## 6. Komponentenliste mit Zuständen
@@ -397,7 +423,7 @@ Auswahlringe, HP-/Baubalken über Einheiten, Wegpunktlinien der Befehlskette, Ba
 | Komponente | Zustände | Mockup |
 |---|---|---|
 | `Button` (primär, sekundär, ghost, gefahr; sm/md/lg/icon) | Standard, Hover, Gedrückt, Fokus, Deaktiviert | components |
-| `CardCell` | Standard, Hover, Gedrückt, Aktiv (Platzieren), Fokus, Queue-Badge, Fortschritt, Tech-Striche, Gesperrt, Deaktiviert, Leer | components, hud |
+| `CardCell` | Standard, Hover, Gedrückt, Aktiv (Platzieren), Fokus, Queue-Badge, Fortschritt, Tech-Striche (aus `roster.json`), Gesperrt (Name lesbar, Schloss links), Deaktiviert, Leer, Gefahr | components, hud |
 | `OrderButton` | Standard, Hover, Scharf, An, Gemischt, Zyklus, Deaktiviert, Fokus, Gefahr, Countdown | components, hud |
 | `Tab`, `Segmented`, `Switch`, `Check`, `Range`, `Select`, `Input` | Standard, Hover, Ausgewählt/An, Fokus, Deaktiviert | components, settings |
 | `Bar` (HP, Schild, Bau, Mass, Energy) | Wert, Warnung, Kritisch (schraffiert) | components |
@@ -405,7 +431,7 @@ Auswahlringe, HP-/Baubalken über Einheiten, Wegpunktlinien der Befehlskette, Ba
 | `ResourceMeter` | Normal, Überlauf, Stall droht, Stall | components, hud |
 | `FlowDetails` | geschlossen, offen, Zeile pausiert, Engpass | hud |
 | `MatchStatus` | normal, Tempo ≠ 1, Cap nah/erreicht | hud |
-| `PauseBanner` | Pause, Hintergrund-Pause, Tempo, Sim-Lag | hud |
+| `PauseBanner` | Pause, Hintergrund-Pause, Tempo, Sim-Lag, Context-Loss | hud (ohne Context-Loss) |
 | `Minimap` | Gelände/Taktisch, Ressourcen an/aus, Ping, Fog-Stufen | hud |
 | `SelectionPanel` | leer, einzeln, mehrfach (Kacheln + Einzeleinheiten), Fabrik, Kachel-Fokus | hud |
 | `OrderQueue` | laufend, gehängt, leer | hud |
@@ -413,7 +439,8 @@ Auswahlringe, HP-/Baubalken über Einheiten, Wegpunktlinien der Befehlskette, Ba
 | `FactoryQueue` | laufend, Wiederholen an, pausiert, leer, Mehrfach-Fabrik | hud |
 | `OrderBar` | sichtbar (Alt-Tasten), ausgeblendet (Befehle im Raster) | hud |
 | `SelectionFilter`, `IdleButton` | Standard, Hover, Idle-Zähler 0/N | hud |
-| `ControlGroups` | leer, belegt, aktiv | hud |
+| `ControlGroups` | leer, belegt, aktiv; Rechtsklick speichert | hud |
+| `ReplayBar` | spielt, pausiert, Tempo, Perspektive | – (§5.16) |
 | `Alert` | kritisch (neu blitzt), Warnung, Info, Erfolg, veraltet, zusammengefasst | components, hud |
 | `Tooltip` | Einheit/Gebäude, Befehl, Ressource; mit/ohne Nachbarschaft | components, hud |
 | `DevConsole`, `BudgetOverlay` | offen, Autovervollständigung, Fehlerzeile | hud |
@@ -448,6 +475,7 @@ Erweitert die bestehende `CursorFsm` (`packages/client/src/cursor-fsm.ts`: idle,
 - **Hover-Auflösung in `idle`:** Über HUD → Standardzeiger; über eigener Einheit → heller Glutkern-Zeiger; sonst zeigt der Zeiger den **Kontextbefehl**, den ein Rechtsklick auslösen würde (§7.4).
 - **Zeigerformen** (components.html): Standard, Über eigener Einheit, Bewegen, Angriff, Angriffsbewegung, Boden angreifen, Patrouille, Assist/Bewachen, Reclaim, Reparieren, Rally, Ungültig, Randschwenk (8 Richtungen), Greifen, Drehen, Platzieren, Warten (Sim-Lag). 32 px, Hotspot oben links (Pfeile) bzw. Mitte (Greifen/Drehen), als CSS-`cursor: url()` mit PNG@1×/2×; im Pointer-Lock zeichnet der Client den Zeiger selbst.
 - `cancel()` (Blur, Pointercancel, Textfokus) verlässt auch Befehlsmodi.
+- Zusätzlicher Zustand `areaDrag` (E14): aus `orderArmed` mit Reclaim per Linksklick-Ziehen, Loslassen → Befehl(e), wie `placementDrag`.
 
 ### 7.2 Tastatur-Schichten (Entscheidung UI-E1)
 
@@ -461,13 +489,15 @@ Tasten werden über `KeyboardEvent.code` gebunden (bestehender Vertrag in `actio
 4. **Alt + Rastertaste** → Befehlsraster (immer, unabhängig von der Auswahl).
 5. **Rastertaste** (15 Tasten) → Seite der Command Card (Bau / Produktion / Befehle). Leere Zellen fallen durch.
 6. Globale Tasten außerhalb des Rasters (Tabelle unten).
-7. Kamera: Pfeiltasten immer; WASD nur bei leerer Auswahl oder im Schema „WASD".
+7. Kamera: Pfeiltasten immer; WASD **nur** im Schema „WASD“ (im Standardschema nie – auch nicht bei leerer Auswahl, sonst würde eine gehaltene Taste nach einem Auswahlklick plötzlich bauen, R3).
 
 **Schemata** (Einstellungen → Tasten, kein freies Umbelegen vor C20):
 - **Raster (Standard, empfohlen):** wie oben. FAF-nah, Hotbuild und Befehle ohne Modifier.
-- **WASD:** WASD schwenkt immer (Schicht 7 vor 5), das Raster braucht dann Alt, Befehle Alt+Shift.
+- **WASD:** WASD schwenkt immer (Schicht 7 vor 5), die übrigen Rastertasten bleiben, W/A/S/D-Plätze und das ganze Raster sind zusätzlich über Alt erreichbar, Befehle bei Bau-Auswahl über Alt+Shift oder die Maus. Vorsicht: Alt+Shift ist unter Windows die Standard-Tastenkombination zum Umschalten der Eingabesprache; deshalb bleibt WASD ein Zweitschema.
 
 Das bestehende `S = Stop` bleibt im Raster-Schema erhalten (Befehlsraster S), bei Bau-Auswahl ist S dagegen Luftwerk bzw. Bots; Stop dann über Alt+S. `WASD mit anyModifiers` aus MS2 entfällt im Standardschema. → Umstellung von `DEFAULT_ACTION_MAP` in MS4 zusammen mit C8.
+
+**Alt im Browser:** Firefox unter Windows öffnet mit Alt+Buchstabe Menüs und zeigt nach einem einzelnen Alt-Loslassen die Menüleiste. Der Eingabe-Handler ruft deshalb `preventDefault` auf `keydown` jeder Alt+Rastertaste **und** auf dem `keyup` von Alt auf, solange das Spiel Fokus hat. Unter macOS erzeugt Option+Taste Sonderzeichen bzw. tote Tasten; weil nur `code` zählt, stört das außerhalb von Textfeldern nicht. Beides gehört in die E2E-Matrix von MS4.
 
 **Globale Tasten:**
 
@@ -484,7 +514,7 @@ Das bestehende `S = Stop` bleibt im Raster-Schema erhalten (Befehlsraster S), be
 | `.` / Shift+`.` / `,` | untätiger Engineer / alle / untätige Fabrik | C14 |
 | F2 / F3 / F4 / F6 (Shift = Auswahl filtern) | Land / Luft / Fabriken / Engineers | C14 |
 | Tab | Fokus-Typ in Mehrfachauswahl | C9 |
-| Strg+Entf | Selbstzerstörung (Countdown) | C18 |
+| Strg+Entf (macOS auch Strg+⌫) | Selbstzerstörung (Countdown) | C18 |
 | `^` / `` ` `` / F1 | Dev-Konsole | S8 |
 | N | Einzelschritt (nur Dev/pausiert) | S8 |
 | Alt+Enter | Vollbild | C11 |
@@ -538,6 +568,7 @@ Abnahme MS6: Kontext-Rechtsklick in der Testmatrix zu 100 % korrekt.
 - Am Ghost: Nachbarschaftsetikett (E11), Reichweitenring (C15), Flow-Bedarf im Tooltip.
 - **Ziehen (Drag-Build):** Linksklick halten und ziehen legt eine Reihe von Ghosts im Footprint-Abstand; ungültige Plätze sind rot und werden übersprungen. Im MVP für Mauern (PLAN §7 Entscheidung 3, MS8), für alle Gebäude mit B7 (Post-MVP). Zeiger-Etikett: „Glutkessel I ×4 · Ziehen = Linie · ⇧ weiterbauen · Rechtsklick Abbruch".
 - Shift beim Loslassen: Modus bleibt, Aufträge werden an die Befehlskette gehängt (C5).
+- **Area-Reclaim (E14, MS8, DECISIONS 4):** Reclaim scharf (R bzw. Alt+R) → Linksklick-Ziehen zieht einen Kreis; beim Loslassen bekommt jeder Engineer der Auswahl die Reclaim-Ziele im Kreis, nach Entfernung sortiert. Shift hängt an, Esc/Rechtsklick bricht ab. Ohne Ziehen = Einzelziel wie bisher.
 - Rechtsklick oder Esc bricht ab, ohne Befehl.
 
 ### 7.6 Befehlsausführung und Rückmeldung
@@ -570,23 +601,24 @@ Menüs: Pfeile bewegen, Enter bestätigt, Esc zurück, Tab springt zwischen Spal
 |---|---|---|
 | **Hausfarben** (Standard) | faction.md §4.3, frei wählbar | Identität der Häuser |
 | **Eigen/Feind** | eigen `#3d8bff`, verbündet `#27b5a0`, feindlich `#e8462f` | schnelle Freund/Feind-Lesung, unabhängig von der Lobbywahl |
-| **Farbenblind-sicher** | `#0072b2` Blau · `#e69f00` Orange · `#56b4e9` Himmel · `#009e73` Blaugrün · `#cc79a7` Rotviolett · `#d7263d` Rot · `#aa3377` Purpur · `#ee6677` Rosa | Deuteranopie, Protanopie, Tritanopie |
+| **Farbenblind-sicher** | Slot-Reihenfolge: `#0072b2` Blau · **`#d7263d` Rot** · `#e69f00` Orange · `#56b4e9` Himmel · `#009e73` Blaugrün · `#cc79a7` Rotviolett · `#aa3377` Purpur · `#ee6677` Rosa | Deuteranopie, Protanopie, Tritanopie |
 
 **Messung** (`tools/cvd-check.py`, Simulation nach Machado 2009 mit Schwere 1,0, Abstand CIEDE2000, jeweils kleinstes Paar):
 
-| Palette | normal | Deutan | Protan | Tritan | Slot 1 ↔ 2 (1v1, schlechteste Sicht) |
-|---|---|---|---|---|---|
-| Hausfarben | 17,0 (Grün–Oliv) | **2,6** (Blau–Violett) | **1,7** (Orange–Oliv) | 8,7 | 44,5 (Rot–Blau) |
-| Farbenblind-sicher | 14,7 | 11,1 | 10,0 | 10,1 | 51,4 (Blau–Orange) |
+| Palette | normal | Deutan | Protan | Tritan | Slot 1 ↔ 2 (1v1, schlechteste Sicht) | Slot 1/2 ↔ Glut/Warnung (schlechteste Sicht) |
+|---|---|---|---|---|---|---|
+| Hausfarben | 17,0 (Grün–Oliv) | **2,6** (Blau–Violett) | **1,7** (Orange–Oliv) | 8,7 | 44,5 (Rot–Blau) | 18,5 |
+| Farbenblind-sicher, alte Reihenfolge (Slot 2 Orange) | 14,7 | 11,1 | 10,0 | 10,1 | 51,4 (Blau–Orange) | **1,3** (Orange–Glut, Deutan) |
+| Farbenblind-sicher, **neue Reihenfolge (Slot 2 Rot)** | 14,7 | 11,1 | 10,0 | 10,1 | 37,6 (Blau–Rot, Protan) | 16,2 |
 
-Die Hausfarben sind für 1v1 (Slot 1/2 = Rot/Blau) ausreichend, im 8er-Feld aber für Farbenblinde nicht unterscheidbar. Die sichere Palette erreicht ≥ 10 unter allen Sichten; die Auswahl ist per Suche über Okabe-Ito-, Tol- und eigene Kandidaten entstanden, ohne die in faction.md verbotenen Töne (Blassgelb, Weiß, Grau, Schwarz). Orange und Rot liegen nahe am Glut-Farbton und schalten die Einheiten-Glut auf Weißglut (faction.md §4.3). Für die Score-Graphen besteht das 1v1-Paar Blau/Rot alle Prüfungen des Dataviz-Validators (Dunkelmodus); CVD-Orange liegt mit Helligkeit 0,75 über dem Band, bleibt aber wegen Direktbeschriftung und gestrichelter zweiter Serie zulässig.
+Die Hausfarben sind für 1v1 (Slot 1/2 = Rot/Blau) ausreichend, im 8er-Feld aber für Farbenblinde nicht unterscheidbar. Die sichere Palette erreicht ≥ 10 unter allen Sichten; die Auswahl ist per Suche über Okabe-Ito-, Tol- und eigene Kandidaten entstanden, ohne die in faction.md verbotenen Töne (Blassgelb, Weiß, Grau, Schwarz). Orange und Rot liegen nahe am Glut-Farbton und schalten die Einheiten-Glut auf Weißglut (faction.md §4.3). **Review R8:** CVD-Orange war als Gegnerfarbe im 1v1 unter Deuteranopie von Glut (Alert-Ping, aktive Zelle) mit ΔE 1,3 und von Warnung mit ΔE 3,9 nicht zu trennen. Deshalb ist Slot 2 jetzt Rot; Orange kommt erst ab Slot 3 (Teamspiele A17, Post-MVP) zum Einsatz. Das Paar Blau/Rot bleibt mit ≥ 37,6 in allen Sichten weit über jeder Schwelle. Für die Score-Graphen besteht das 1v1-Paar Blau/Rot alle Prüfungen des Dataviz-Validators (Dunkelmodus); CVD-Orange liegt mit Helligkeit 0,75 über dem Band, bleibt aber wegen Direktbeschriftung und gestrichelter zweiter Serie zulässig.
 
 **Empfehlung:** Die drei Modi schon mit A3 (MS9) liefern, obwohl P16 insgesamt Post-MVP ist: Aufwand ≈ 1 Tag (eine Palette mehr im Shader-UBO, eine Auswahl), großer Nutzen (Entscheidung UI-E5).
 
 ### 8.3 Kontrast und Größe
 
-- Text ≥ 4,5 : 1 für alles Lesbare (`--text-lo` wurde dafür auf `#8a8074` = 4,9 : 1 angehoben); `--text-off` nur für deaktivierte Elemente.
-- Kleinste Schrift 11 px @1,0 (Tasten, Badges); UI-Skalierung bis 1,5.
+- Text ≥ 4,5 : 1 für alles Lesbare, **auch auf Zellflächen**: `--text-lo` = `#968b7e` (5,6 : 1 Panel, 4,9 : 1 Zelle, 4,5 : 1 `--surface-3`). `--text-off` nur für deaktivierte Elemente; gesperrte Zellen zeigen ihren Namen in `--text-lo`, weil der Name sagt, was freigeschaltet wird.
+- Kleinste Schrift 11 px @1,0 (Tasten, Badges, Zellnamen, Gruppenzahlen; vor dem Review lagen Zellnamen, Gruppenzahlen und Tooltip-Labels bei 10 px und Befehlstasten bei 9 px), Untergrenze 10 px bei Skalierung 0,8; UI-Skalierung bis 1,5. `shoot.mjs` meldet jede Unterschreitung.
 - Klickziele ≥ 34 px (Filter) bzw. 40 px (Befehle), Zellen 58 px.
 - Option „Icon-Kontur verstärken" (3 px statt 2 px Graphit-Kontur).
 
@@ -633,12 +665,16 @@ Raten laufen im Sim-Takt, nicht im Bildtakt: Bei ×3 Tempo bleibt Eco bei 10 Hz 
 - **Animation** nur `opacity`/`transform`; kein `box-shadow`, `filter` oder `backdrop-filter` auf großen Flächen (Unschärfe über dem WebGL-Canvas erzwingt pro Frame einen Readback). Pulsieren über ein Pseudo-Element mit `opacity`.
 - **Schriften** vorgeladen, `font-display: block` → kein Umbruch nach dem Laden.
 - **DOM-Budget HUD ≤ 700 Knoten:** Einzeleinheiten ≤ 60, Typ-Kacheln ≤ 24 (+N), Queue ≤ 10 Blöcke, Alerts ≤ 3 + Zähler, Konsolen-Log virtualisiert (≤ 200 Zeilen im DOM). Strategic Icons als SVG-Sprite (`<use>`), nicht als Inline-Kopie pro Knoten.
+  - **Gemessen (Review R10, `shoot.mjs`, Icons als `<svg><use>` gezählt):** Vogt 444, Armee mit 19 Einheiten/5 Typen 430, Fabrik + Stall + Flow-Details 528–531 Knoten. In der Struktur der Mockups kostet eine Einzeleinheit 5 Knoten und eine Typ-Kachel ≈ 11; der Grenzfall (60 Einheiten, 24 Kacheln, Flow-Details offen) läge bei ≈ 950 und damit über dem Budget.
+  - **Deshalb schlanke Blätter:** Einzeleinheit = **ein** `<button>` (Icon als CSS-`mask-image` aus dem Sprite-Atlas, HP-Strich als `::after` mit `scaleX(var(--v))`, Warn-/Krit-Zustand als Klasse) → 60 Knoten. Typ-Kachel = `<button>` + `<svg><use>` + Zahl + Beschädigt-Zahl, HP-Balken und Vet-Rauten als Pseudo-Elemente/Hintergrund → 5 Knoten, 24 Kacheln = 120. Grenzfall damit ≈ 600 Knoten.
 - **Minimap:** Terrain einmal in eine Offscreen-Canvas, Fog/Einheiten auf eigene Ebenen, kein `getImageData`, keine Textdarstellung.
 - **Ereignisse:** ein delegierter Pointer-Listener pro Panel; Hover über der Welt geht an das Picking (CPU, PLAN §3.7), nicht an DOM-Elemente.
 
 ### 9.3 Prüfung
 
-- Playwright-Messung im Demo-Pfad (MS4): 400 Einheiten, 10 Hz Eco, geöffnete Flow-Details, Mehrfachauswahl mit 60 Einheiten → p95 HUD-Zeit aus `performance.measure` je Scheduler-Flush ≤ 1 ms; Layout-Shift- und Long-Task-Observer ohne Einträge durch das HUD.
+- Playwright-Messung im Demo-Pfad (MS4): 400 Einheiten, 10 Hz Eco, geöffnete Flow-Details, Mehrfachauswahl mit 60 Einheiten und 24 Typen → p95 HUD-Zeit aus `performance.measure` je Scheduler-Flush ≤ 1 ms; Layout-Shift- und Long-Task-Observer ohne Einträge durch das HUD.
+- **Auch Stil/Layout zählen (R10):** `performance.measure` sieht nur Script. Die Style-Neuberechnung und das Layout, die ein Flush auslöst, laufen danach im selben Frame. In Chromium misst der Test sie über die Long-Animation-Frames-API (`styleAndLayoutStart`) und über ein erzwungenes `getBoundingClientRect` am Ende eines Test-Flushs (nur im Test). Ziel: Script + Style/Layout des HUD ≤ 1,5 ms p95. Möglich wird das durch `contain` auf allen Panels und feste Geometrie.
+- Die Mehrfachauswahl-Ansicht wird bei Auswahländerung **ein** Mal neu aufgebaut (Ereignis); bei Box-Select über 400 Einheiten wird die Auswahl-Signal-Aktualisierung auf den nächsten rAF gebündelt, damit Ziehen keinen Neuaufbau pro `pointermove` auslöst.
 - Test-Hooks: jede Komponente trägt `data-testid`; Zustände als Klassen (`is-stall`, `is-armed`) sind in E2E abfragbar.
 - Context-Loss (P10): das HUD ist DOM und übersteht den Verlust ohne Neuaufbau; nur die Minimap-Terrain-Canvas wird neu gezeichnet, falls die Quelle aus WebGL stammt.
 
@@ -664,6 +700,7 @@ packages/client/src/ui/
   hud/OrderBar.tsx      OrderButton, Befehlstabelle §5.8
   hud/Strip.tsx         SelectionFilter, IdleButton, ControlGroups
   hud/Tooltip.tsx       TooltipLayer, UnitTooltip, OrderTooltip, ResourceTooltip
+  hud/ReplayBar.tsx     Replay-Leiste (§5.16)
   hud/Cursor.ts         Zeigerformen je FSM-Zustand
   input/keylayers.ts    Tastatur-Schichten §7.2, Layout-Beschriftung
 apps/game/src/ui/
@@ -693,7 +730,7 @@ apps/game/src/ui/
 | **Command Card mit Tech-Tabs + Hotbuild-Raster** | **C8**, B1 | **MS4** | Produktion MS6, T2/Upgrade U5/B4 MS8, T3 U10 MS13, Rebinding C20 Post-MVP |
 | Platzieren, Ghost-Verdikt | B1 | MS4 | Drag-Linie Mauern MS8, B7 Post-MVP |
 | i18n aller Texte | P12 | MS4 | |
-| Reclaim-Befehl, Sieg/Niederlage-Minimalbild | E7, A4 | MS5 | |
+| Reclaim-Befehl, Sieg/Niederlage-Minimalbild | E7, A4 | MS5 | Area-Reclaim + Reclaim-Overlay E14 MS8 |
 | Positions-Audio, UI-Klänge | P7 | MS5 | |
 | **Auswahl-Panel, Tooltips** | **C9** | **MS6** | Vet U9 MS11, Schild K10 MS13 |
 | **Fabrik-Queue** (+1, Shift +5, Repeat, Rally) | **B3**, B2 | **MS6** | Pause E13 MS10 |
@@ -709,7 +746,9 @@ apps/game/src/ui/
 | Radar-Blips in Welt/Minimap | I3 | MS10 | |
 | **Minimap** | **C16**, I1, I2 | **MS11** | |
 | Sim-Tempo-Anzeige | A6 | MS11 | |
-| Replays (Menü, Speichern im Score) | N1 | MS11 | Replay-Leiste im HUD (nicht Teil dieser Mockups) |
+| Replays (Menü, Speichern im Score, Replay-Leiste §5.16) | N1 | MS11 | Replay-Leiste nur als Text spezifiziert, nicht gemockt |
+| Context-Loss-Banner | P10 | MS14 | |
+| Area-Reclaim, Reclaim-Overlay | E14 (per DECISIONS 4 im MVP) | MS8 | |
 | **Einstellungen** Grafik/Audio mit Autodetect | **P9** | **MS14** | Preset-Infrastruktur seit MS2 |
 | **Score-Screen** | **A13** | **MS14** | |
 | KI-Stufen/AIx in der Lobby | A10, A11 | MS14 | KI-Manager A1/A2 MS9, A7/A8 MS11, A9 MS10 (nur Verhalten, keine eigene UI) |
@@ -724,10 +763,10 @@ apps/game/src/ui/
 | MS3 | Status (Timer), Pause-Banner, Auswahl-Zahl, Gruppen, Konsole |
 | MS4 | + Ressourcenleiste, Command Card (Bau-Seite, T1), Platzieren, Tooltips minimal |
 | MS6 | + Auswahl-Panel voll, Fabrik-Queue, Befehlsleiste (Q/E/T/S/X), Filter + Idle, Kontext-Cursor |
-| MS8 | + T2-Tabs/Upgrade, Angriff, Range-Ringe, Cap |
+| MS8 | + T2-Tabs/Upgrade, Angriff, Range-Ringe, Cap, Area-Reclaim + Reclaim-Overlay |
 | MS9 | + Alerts, Menüs, Lobby, Esc-Menü, Teamfarben-Modi, finale Icons |
 | MS10 | + Flow-Details interaktiv, Toggles, Nachbarschaft, Blips |
-| MS11 | + Minimap, Patrouille, Selbstzerstörung, Vet, Tempo, Replays |
+| MS11 | + Minimap, Patrouille, Selbstzerstörung, Vet, Tempo, Replays mit Replay-Leiste |
 | MS13 | + Formation, Schilde, T3 |
 | MS14 | + Einstellungen komplett, Score-Screen, KI-Stufen/AIx |
 
@@ -737,7 +776,7 @@ apps/game/src/ui/
 
 Öffnen: `docs/design/ui-mockups/index.html` direkt im Browser (klassische Scripts, funktioniert auch über `file://`).
 
-**HUD-Parameter** (`hud.html?…`): `sel=vogt|army|factory|none` · `stall=1` · `flow=1` · `paused=1` · `speed=2` · `console=1` · `place=1` · `tip=<Taste>` · `ring=1` · `teams=cvd|relation` · `scale=1.25` · `clean=1` (ohne Mockup-Leiste). Im HUD funktionieren: Rastertasten (Zelle wird aktiv bzw. Queue +1/+5 mit Shift), Alt+Taste (Befehl scharf), Esc, P, 1–4 (Gruppen), H, Leertaste (Alert-Ping), F1/`^` (Konsole), Hover über Zellen (Tooltip), Klick auf Gruppen.
+**HUD-Parameter** (`hud.html?…`): `sel=vogt|army|factory|none` · `stall=1` · `flow=1` · `paused=1` · `speed=2` · `console=1` · `place=1` · `tip=<Taste>` · `ring=1` · `teams=cvd|relation` · `scale=1.25` · `score=1` (Punkte wie im Replay) · `clean=1` (ohne Mockup-Leiste). Im HUD funktionieren: Rastertasten (Zelle wird aktiv bzw. Queue +1/+5 mit Shift), Alt+Taste (Befehl scharf), Esc, P, 1–4 (Gruppen), H, Leertaste (Alert-Ping), F1/`^` (Konsole), Hover über Zellen (Tooltip), Klick auf Gruppen.
 
 **Screenshots erzeugen:**
 
@@ -746,7 +785,7 @@ PLAYWRIGHT_FROM=<pfad>/node_modules/.pnpm/playwright@<v>/node_modules/playwright
   node docs/design/ui-mockups/tools/shoot.mjs /private/tmp/claude-501/faf-ui [filter]
 ```
 
-Das Skript startet einen eigenen statischen Server auf einem freien Port, fotografiert 20 Ansichten (1920 × 1080 und 2560 × 1440, Komponentenseite ganzseitig), meldet Script-Fehler pro Seite und beendet Browser und Server. Die Bilder werden nicht eingecheckt.
+Das Skript startet einen eigenen statischen Server auf einem freien Port, fotografiert 23 Ansichten (1920 × 1080, 2560 × 1440 und 1280 × 720, Komponentenseite ganzseitig), meldet Script-Fehler pro Seite und beendet Browser und Server. Für jede HUD-Ansicht meldet es zusätzlich die **Layout-Prüfung** (Überlappung der Panels, außerhalb des Viewports, abgeschnittene Zell-/Tastenbeschriftungen, Schrift unter 11 px × Skalierung) und die **HUD-Knotenzahl**. Stand nach dem Review: alle 12 HUD-Ansichten „Layout ok“. Die Bilder werden nicht eingecheckt.
 
 | Datei | Inhalt |
 |---|---|
@@ -757,6 +796,8 @@ Das Skript startet einen eigenen statischen Server auf einem freien Port, fotogr
 | `hud-1080-konsole.png` | Dev-Konsole mit Autovervollständigung und Tick-Budget |
 | `hud-1080-pause-cvd.png` | Pause, farbenblind-sichere Teamfarben, Range-Ring |
 | `hud-1440-vogt.png`, `hud-1440-fabrik.png`, `hud-1440-kompakt.png` | 1440p bei 1,25 und 1,0 (mit Tempo-Banner) |
+| `hud-1080-fabrik-alles.png` | Dichtester Fall 1080p: Pause + Stall + Flow-Details + Tooltip + 3 Alerts + Befehlsleiste |
+| `hud-720-fabrik.png`, `hud-720-armee.png` | 1280 × 720, automatische Skalierung 0,8 |
 | `menu-1080.png`, `skirmish-1080/1440.png`, `settings-1080-{grafik,tasten,zugang}.png`, `loading-1080.png`, `score-1080/1440.png` | Menüs |
 | `components.png`, `index.png` | Komponentenübersicht, Einstieg |
 
@@ -766,10 +807,55 @@ Das Skript startet einen eigenen statischen Server auf einem freien Port, fotogr
 
 | # | Entscheidung | Optionen | Empfehlung |
 |---|---|---|---|
-| UI-E1 | **Tastenschema** | (a) Raster-Standard: Buchstaben = Raster, Kamera über Pfeile/Rand/Mitte, WASD nur ohne Auswahl, WASD-Schema wählbar. (b) WASD-Standard, Raster mit Alt | **(a).** Hotbuild ist Kern von C8 und FA-Komfort; Kameraführung läuft im RTS ohnehin über Maus und Strategic Zoom. Ändert `DEFAULT_ACTION_MAP` (WASD, S) in MS4. |
+| UI-E1 | **Tastenschema** | (a) Raster-Standard: Buchstaben = Raster, Kamera über Pfeile/Rand/Mitte, WASD-Schema wählbar. (b) WASD-Standard, Raster mit Alt | **(a).** Hotbuild ist Kern von C8 und FA-Komfort; Kameraführung läuft im RTS ohnehin über Maus und Strategic Zoom. Nach dem Review ohne die Ausnahme „WASD bei leerer Auswahl“ (R3). Ändert `DEFAULT_ACTION_MAP` (WASD, S) in MS4. |
 | UI-E2 | Übersicht vor MS11 | (a) Dock-Platz der Minimap zeigt bis MS11 Kartenkennzahlen. (b) C16 auf MS9 vorziehen (≈ 1–1,5 PW) | **(a)**, Strategic Zoom reicht bis MS11; die Minimap bleibt bei MS11. |
 | UI-E3 | Punkte im Status | (a) im MVP ausblenden (A19 Post-MVP). (b) nur eigene Punkte | **(a)**; das Feld bleibt im Layout reserviert. |
 | UI-E4 | Schriften | (a) IBM Plex Sans Condensed + Mono selbst gehostet (OFL, ≈ 120 KB woff2 Subset). (b) Systemschriften | **(a)**, feste Metrik ist Voraussetzung für §9.2. |
 | UI-E5 | Farbenblind-Modus vorziehen | (a) drei Teamfarben-Modi in MS9. (b) mit P16 Post-MVP | **(a)**, ≈ 1 Tag. |
 | UI-E6 | Beschriftung nach Layout | (a) `getLayoutMap` + Sprachtabelle. (b) immer QWERTY-Buchstaben | **(a)**; DE-Spieler sehen „Y" auf der unteren Reihe. |
-| UI-E7 | Selbstzerstörung | (a) Strg+Entf mit 5-s-Countdown. (b) Entf halten 1 s | **(a)**, browser-sicher und nicht versehentlich auslösbar. |
+| UI-E7 | Selbstzerstörung | (a) Strg+Entf mit 5-s-Countdown. (b) Entf halten 1 s | **(a)**, browser-sicher und nicht versehentlich auslösbar; macOS zusätzlich Strg+⌫; nie auf einer Rastertaste (R4). |
+| UI-E8 | S bei Bau-Auswahl | (a) wie `roster.json`: S = Luftwerk/Bots, Stop über Alt+S. (b) Stop immer auf S, Luftwerk auf eine andere Taste (ändert `roster.json`) | **(a)** (R5): Der Fehlgriff kostet nur ein Esc, das Raster bleibt eine Quelle. Nach den ersten Spieltests in MS6 neu bewerten. |
+| UI-E9 | Gruppen speichern | (a) Alt+Zahl + Rechtsklick aufs Gruppenfeld, Strg+Zahl nur im Vollbild mit Tastatursperre. (b) nur Alt+Zahl | **(a)** (R9): Maus-Weg als Rückfall für Linux, wo Alt+Zahl Tabs umschalten kann. |
+
+---
+
+## 14. Review-Entscheidungen
+
+Kritisches Review vom 2026-09-29 gegen die Fragen: Findet sich ein FA/FAF-Spieler sofort zurecht? Stimmen Dichte und Lesbarkeit? Ist das Hotbuild-Raster konsistent mit `roster.json`? Sind alle MVP-UI-IDs abgedeckt? Überlappt bei 1080p nichts? Reichen Kontrast und Barrierefreiheit? Ist das mit Preact im Budget von ≤ 1 ms Main-JS umsetzbar? Grundlage waren die neu erzeugten Screenshots (23 Ansichten), Messungen mit `shoot.mjs` und `cvd-check.py` und ein Abgleich mit `roster.json`, `features.json`, PLAN, DECISIONS und `actions.ts`. Alle Punkte sind eingearbeitet (Dokument und Mockups).
+
+### 14.1 Ergebnis in Kürze
+
+- **FA/FAF-Spieler:** Orientierung stimmt (Ressourcen oben links, Auswahl/Command Card unten, Shift-Queue, Kontext-Rechtsklick, Idle-Engineer, Doppeltipp auf Gruppe). Die Abweichungen von der FA-Gewohnheit sind Strg+Zahl → Alt+Zahl (Browser) und S bei Bauern. Beide sind jetzt begründet und haben einen Ausweg (R5, R9).
+- **Dichte vs. Lesbarkeit:** Die Dichte passt. Die Lesbarkeit war an drei Stellen schlechter als im Dokument behauptet: Schrift unter 11 px, `--text-lo` auf Zellen unter 4,5 : 1 und gesperrte Namen verdeckt. Das ist behoben (R6, R7).
+- **Hotbuild ↔ roster.json:** Die Slots stimmen. Die Tech-Striche im Mockup waren von Hand gesetzt und teils falsch (Riegel mit 3 statt 2 Stufen; Tiegel, Schirm und alle Landwerk-Zellen ohne Striche). Jetzt werden sie aus `roster.json` berechnet (R11).
+- **MVP-Abdeckung:** Es fehlten E14 Area-Reclaim/Reclaim-Overlay (per DECISIONS 4 im MVP, MS8), die Replay-Bedienung (N1) und die Anzeige bei Context-Loss (P10). Alle drei sind ergänzt (R12).
+- **1080p:** Die Panels überlappen nicht, auch nicht im dichtesten Fall (neue Ansicht `hud-1080-fabrik-alles`). Die Control Groups sprangen aber je nach Auswahl um 336 px zur Seite (R1).
+- **Performance:** Die Regeln sind tragfähig. Das Knotenbudget wäre im Grenzfall mit der Mockup-Struktur überschritten worden, und die Messung erfasste Style/Layout nicht (R10).
+
+### 14.2 Entscheidungen
+
+| # | Befund | Entscheidung | Geändert |
+|---|---|---|---|
+| R1 | Control Groups waren mittig in der Leiste zentriert und sprangen, sobald die Befehlsleiste erschien oder verschwand (x = 465 ↔ 800 px). Das bricht das Muskelgedächtnis. | Feste Position linksbündig über dem Auswahl-Panel. Regel §4.4: Nichts Anklickbares verschiebt sich je nach Auswahl. | `hud.css`, §4.2, §4.4 |
+| R2 | Das Mockup zeigte Punkte im Status, obwohl A19 Post-MVP ist und UI-E3 „ausblenden“ empfiehlt. | Punkte nur im Replay (`score=1`). | `hud.js`, §5.2 |
+| R3 | „WASD schwenkt bei leerer Auswahl“ gibt gehaltenen Tasten einen Doppelsinn: Nach einem Auswahlklick baut W plötzlich, statt zu schwenken. | Im Standardschema schwenkt WASD nie. Das WASD-Schema bleibt wählbar (Hinweis auf Windows-Alt+Shift). | §0, §7.2, UI-E1 |
+| R4 | Die Selbstzerstörung lag im Befehlsraster auf B, und im Mockup löste Alt+B sie aus. Gleichzeitig ist B auf Gebäude- und Fabrikseiten „Upgrade“. Ein Fehlgriff konnte also eine Einheit sprengen. | Selbstzerstörung nur per Klick oder Strg+Entf (macOS Strg+⌫). Die Zelle zeigt „Entf“ und das Kurzlabel „Sprengen“. B heißt auf allen Bau-/Gebäudeseiten einheitlich „Upgrade“ (auch das Landwerk-„Freisprechen“, der Flavor-Name bleibt im Tooltip). | `hud.js`, `ff.css`, `components.html`, `settings.html`, §5.6, §5.8 |
+| R5 | S = Stop (FA, MS2) gegen S = Luftwerk/Bots (`roster.json`) bei Bauern. | Das Raster bleibt, wie `roster.json` es vorgibt. Der Fehlgriff ist harmlos (Ghost ohne Befehl), Stop liegt bei Bauern auf Alt+S. Nach Spieltests in MS6 neu bewerten (UI-E8). | §5.8, §13 |
+| R6 | Das Dokument versprach mindestens 11 px, das Mockup nutzte 10 px (Zellnamen, Gruppenzahlen, Tooltip-Labels, Badges, Tastaturansicht) und 9 px (Befehlstasten, Tab-Tasten). Befehlsnamen wurden abgeschnitten („Selbstzerstör…“). | Alles auf `--fs-micro`, Untergrenze 10 px bei Skalierung 0,8, Kurzlabels ≤ 10 Zeichen mit eigenem i18n-Key. `shoot.mjs` prüft Schriftgröße und Abschneiden. | `tokens.css`, `ff.css`, `hud.css`, `menus.css`, `hud.js`, §3.2, §8.3 |
+| R7 | `--text-lo` (Tastenbuchstaben in Zellen) erreichte auf `--surface-2` nur 4,2 : 1. Gesperrte Zellen verdeckten ihren Namen mit einem großen Schloss und zeigten ihn mit 2,0 : 1. | `--text-lo` = `#968b7e` (4,9 : 1 auf Zellen). Schloss klein links neben dem Icon, Name gesperrter Zellen in `--text-lo`. | `tokens.css`, `ff.css`, `hud.css`, §3.1, §8.3 |
+| R8 | Im Farbenblind-Modus war der Gegner im 1v1 CVD-Orange. Unter Deuteranopie liegt das bei ΔE 1,3 zur Glut (Alert-Ping, aktive Zelle, Fortschritt) und bei 3,9 zur Warnung. | Slot 2 = Rot (`#d7263d`), Orange erst ab Slot 3. `cvd-check.py` prüft jetzt auch Teamfarbe gegen HUD-Semantik. | `tokens.css`, `cvd-check.py`, `settings.html`, `components.html`, §8.2 |
+| R9 | Alt+Zahl (Gruppe speichern) kann unter Linux in Chrome/Firefox Tabs umschalten. Firefox unter Windows öffnet mit Alt+Buchstabe Menüs. | Gruppen zusätzlich per Rechtsklick speichern bzw. mit Shift+Rechtsklick hinzufügen. Strg+Zahl nur im Vollbild mit Tastatursperre. `preventDefault` auf Alt+Rastertaste und Alt-`keyup`. E2E-Fälle in MS4. | `hud.js`, `settings.html`, §5.10, §7.2, UI-E9 |
+| R10 | Das DOM-Budget von 700 wäre mit der Mockup-Struktur im Grenzfall (60 Einheiten, 24 Typen, Flow-Details offen) bei ≈ 950 Knoten gelandet. `performance.measure` erfasst nur Script, nicht die Style/Layout-Kosten der HUD-Schreibvorgänge. | Einzeleinheit = 1 Knoten, Typ-Kachel = 5 Knoten (Grenzfall ≈ 600). Messung von Style/Layout über LoAF, Ziel Script + Style/Layout ≤ 1,5 ms p95. `shoot.mjs` zählt die Knoten mit. | §9.2, §9.3, `shoot.mjs` |
+| R11 | Die Tech-Striche waren von Hand gesetzt und widersprachen `roster.json`. Die Regel „gemischte Bauer = Schnittmenge“ widersprach „höchste Bauklasse“. | Striche werden aus `hotbuild` + `buildableBy` berechnet (`gen-data.py` exportiert jetzt `buildableBy`/`msFirst`). Tabelle „Tech-Stufen je Taste“ und Tab-Regel in §5.6. Gemischte Auswahl: Liste des höchstrangigen Bauers, wer nicht bauen kann, assistiert. Striche sitzen unter der Tech-Kerbe des Icons statt darauf. | `hud.js`, `ff.css`, `gen-data.py`, `roster-data.js`, §5.6 |
+| R12 | Lücken in der MVP-Abdeckung: E14 (per DECISIONS 4 im MVP, MS8) fehlte ganz, für N1 gab es keine Replay-Bedienung, P10 hatte keine sichtbare Rückmeldung. | Area-Reclaim (Reclaim scharf + Ziehen, FSM-Zustand `areaDrag`) und Reclaim-Overlay (automatisch bei scharfem Reclaim). Replay-Leiste §5.16. Context-Loss-Banner. | §5.3, §5.8, §5.14, §5.16, §7.1, §7.5, §11 |
+| R13 | Settings-Tastatur: „Esc“ lag auf der Caps-Lock-Position, Tab hatte keine Beschriftung, F-Tasten (Filter) und Entf fehlten, B hieß noch „Selbstz.“. | F-Reihe mit Esc/F1–F6, ⇪ ohne Funktion, Tab = Typ wechseln, Entf = Strg: Sprengen, `,` = untätige Fabrik. | `settings.html` |
+| R14 | Keine automatische Prüfung „1080p ohne Überlappung“. | `shoot.mjs` prüft Layout und Knoten und fotografiert zusätzlich den dichtesten 1080p-Fall und 1280 × 720. Stand: alle HUD-Ansichten ok. | `shoot.mjs`, §4.4, §12 |
+
+### 14.3 Geprüft und bewusst so gelassen
+
+- **Raster mit 5 Spalten (T, G, B):** PLAN MS4 nennt „QWER/ASDF/ZXCV“. `roster.json` braucht die 5. Spalte, weil 13 Bau-Rollen nicht auf 12 Tasten passen. Die UI folgt `roster.json`; PLAN sollte bei Gelegenheit nachgezogen werden.
+- **Minimap erst MS11 (UI-E2):** Der Strategic Zoom trägt die Übersicht bis dahin; FA-Spieler vermissen die Minimap zwar, aber der Aufwand bleibt, wo er geplant ist.
+- **Informationsdichte:** Die Ressourcenleiste (Speicher, Netto, Einkommen/Verbrauch, Flow %) und die Tooltips (Kosten + Flow-Bedarf + Nachbarschaft) liegen auf FA-Niveau. Mehr gehört nicht ins HUD; Details stehen in Flow-Details und Tooltip.
+- **Tooltip bei 1440p:** Er wächst nicht mit der breiteren Mittelspalte mit; 320 px × 1,25 genügen.
+- **Fehlende Plex-Schriften:** Die Screenshots zeigen Avenir Next Condensed. Die Längenprüfung gilt deshalb nur näherungsweise; sie wird mit den echten Schriften in MS4 wiederholt (P12-Pseudo-Lokalisierung).
+

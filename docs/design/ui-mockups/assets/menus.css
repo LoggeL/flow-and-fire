@@ -118,7 +118,7 @@ body.menu-page { min-height: 100vh; overflow: hidden; background: var(--iron-100
 /* Tastatur-Ansicht */
 .kbd { display: grid; gap: 0.3rem; padding: var(--sp-3) 0; }
 .kbd__row { display: flex; gap: 0.3rem; }
-.kk { position: relative; width: 4.5rem; height: 4.25rem; border: 1px solid var(--line-strong); border-bottom-width: 3px; background: var(--iron-850); display: grid; grid-template-rows: auto 1fr; padding: 0.1875rem 0.3125rem; font-size: 0.625rem; color: var(--text-lo); line-height: 1.1; }
+.kk { position: relative; width: 4.5rem; height: 4.25rem; border: 1px solid var(--line-strong); border-bottom-width: 3px; background: var(--iron-850); display: grid; grid-template-rows: auto 1fr; padding: 0.1875rem 0.3125rem; font-size: var(--fs-micro); color: var(--text-lo); line-height: 1.1; }
 .kk b { font: var(--fw-bold) var(--fs-cap)/1 var(--font-mono); color: var(--text-mid); }
 .kk span { align-self: end; overflow: hidden; }
 .kk.is-grid { background: #231a12; border-color: var(--copper-700); }
@@ -139,7 +139,7 @@ body.menu-page { min-height: 100vh; overflow: hidden; background: var(--iron-100
 
 /* Teamfarben-Vorschau */
 .palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
-.palette > div { height: 2.25rem; display: grid; place-items: end start; padding: 0.1875rem 0.3125rem; font-size: 0.625rem; color: rgba(255,255,255,0.9); text-shadow: 0 1px 1px rgba(0,0,0,0.6); }
+.palette > div { height: 2.25rem; display: grid; place-items: end start; padding: 0.1875rem 0.3125rem; font-size: var(--fs-micro); color: rgba(255,255,255,0.9); text-shadow: 0 1px 1px rgba(0,0,0,0.6); }
 .simrow { display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--sp-2); align-items: center; font-size: var(--fs-micro); color: var(--text-lo); }
 .iconrow { display: flex; gap: var(--sp-2); align-items: center; }
 .iconrow .ff-si { width: 2rem; height: 2.25rem; }
