@@ -5,12 +5,19 @@
   "language": "de",
   "sourceOfTruth": "roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts; faction.md und roster.md verweisen darauf.",
   "counts": {
-    "total": 50,
+    "total": 56,
+    "mvp": 50,
     "mobile": 23,
     "structures": 27,
     "ms9Core": 26,
     "visuals": 28,
-    "iconGlyphs": 19
+    "iconGlyphs": 19,
+    "experimental": {
+      "total": 6,
+      "mobile": 3,
+      "structures": 3,
+      "visuals": 6
+    }
   },
   "conventions": {
     "units": "1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s",
@@ -29,7 +36,19 @@
     "scale": "Mobil uniform T1 1,0 / T2 1,3 / T3 1,7, bei 1×1-Footprint max. 1,4. Strukturen: xz = Footprint-Kante / Footprint-Kante der niedrigsten Stufe des Visuals (Sockel füllt 100 % des Footprints), y = xz × Höhenfaktor (T1 1,0 / T2 1,2 / T3 1,4) relativ zur Basis.",
     "techStripes": "Breite 0,10 WU × Maßstab, Abstand 0,10 WU, im hinteren Drittel des Decks; keramikweiß, bei Engineers graphit (#1E1C1B) auf Keramik; Vogt und Mauer ohne Streifen",
     "visual": "Ein Visual = ein Superset-Mesh pro Rolle (Vereinigung der Parts aller Tech-Stufen nach Part+Material). Jeder Vertex trägt eine Tech-Bitmaske; der Vertex-Shader kollabiert Parts, die für die Instanz-Tech nicht gelten (Skalierung 0). Ein Draw pro (Visual, LOD).",
-    "faSource": "FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js; Stichprobe gegen FAForever/fa develop"
+    "faSource": "FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js; Stichprobe gegen FAForever/fa develop",
+    "experimentals": "Tier T4 (tech 4, group exp, postMvp true, msFirst PM1–PM3), Details docs/design/experimentals.md. Zählen nicht zu counts.mvp/mobile/structures/visuals. Gleiche Gates wie MVP (±25 % hart, ±15 % Ziel inkl. Produkt/Pulk) gegen die FA-T4-Referenz; zusätzlich checks.experimentals: T3-Äquivalent (T4/T3-Verhältnis von DPS/Mass und HP/Mass gegen dasselbe FA-Verhältnis, ±25 %), Bauzeit mit N Meistern, Schild- und Todeswaffen-Tabellen. Modelle in Spielgröße (scale 1), Keramik-Klammer statt Tech-Streifen, Budget ≤ 1.600/800/320 Tris, Parts ≤ 16, animiert ≤ 8 (PartStream)."
+  },
+  "experimentalMechanics": {
+    "XM1": "Mobile Großbaustelle: Meister gießen mobile T4 als Baustelle mit Footprint (blockiert Pathing wie ein Gebäude, B1/B6), die bei 100 % zur Einheit wird und ausläuft (FA: NEEDMOBILEBUILD). Platzierung nur, wenn der Footprint in der Clearance-Komponente (Land, sizeClass) der Hauptfläche liegt (kein T4 im Basis-Kessel); Baustellen < 100 % haben keine Todeswaffe, ihr Wrack trägt 90 % der verbauten Mass",
+    "XM2": "Massiv/Crush: kleinere Einheiten blockieren nicht (Steering-Priorität nach sizeClass, M7), werden beiseitegeschoben; Mauern und Wracks unter dem Footprint werden überrollt; Fußtritt-Schaden je Schritt (FA: Footfall-Damage) im festen Sim-Takt (12 Ticks, Fuß abwechselnd), im Tick vor der Kollisionsauflösung",
+    "XM3": "Große Größenklassen: sizeClass 6–7 mit eigenen Clearance-Komponenten (M5/M6); Pfad-Klasse nach der Breite, die Länge 9 der Kokille löst das Steering (Wenden auf der Stelle, Stuck → Repath); Abnahme mit Basisgassen 7–9 WU",
+    "XM4": "Verzögerte Death-Weapon (Umkippen/Absturz, 1,5–3 s Fluchtfenster) mit Kamera-Shake und Großereignis-Effekt (P14); Selbstzerstörung nutzt dieselbe Verzögerung; Kettenreaktionen (K14) je Glied ≥ 3 Ticks versetzt",
+    "XM5": "Mobile Fabrik: Bauliste (B3) in einer mobilen Einheit, Ausgang Heckrampe, Rally relativ zum Träger; baut nur im Stand",
+    "XM6": "Strategische Reichweite: Feuern auf Radar-/Ghost-Ziele außerhalb der Sicht (baut auf I3/K6 auf), Streuung σ = max(8 WU, 1,2 % der Distanz), Einschlagwarnung für den Beschossenen ab dem Abschuss (Ring Splash + 2σ, Ansage P8)",
+    "XM7": "Bedarfsdeckende Produktion: Ertrag = Grundlast + clamp(Bedarf − Einkommen, 0, Deckel) je Eco-Tick, deterministisch nach der Stall-Auflösung (E3)",
+    "XM8": "T4-Icon: Klammer statt Tech-Kerben, Faktor 1,5 (content/icons/grammar.ts), Zeichenreihenfolge über T1–T3, Mesh bleibt länger vor dem Icon sichtbar (C2)",
+    "XM9": "Großguss-Meldung: sieht ein Haus eine fremde T4-Baustelle (Sicht, nicht Radar), meldet die Ansage „Großguss gesichtet“ (P8); ab 75 % Baufortschritt zusätzlich Minimap-Ping (C16). Konverter-Baustellen melden sich ab 50 % allen Gegnern auch ohne Sicht (Ping mit 40 WU Unschärfe, „Großguss-Signatur“)"
   },
   "hotbuildGrid": {
     "Landwerk": {
@@ -62,9 +81,18 @@
       "Z": "Riegel",
       "X": "Rost/Hochrost",
       "C": "Mauer",
-      "V": "Tiegel/Hochofen"
+      "V": "Tiegel/Hochofen",
+      "G": "Großguss (T4-Untermenü, Post-MVP)"
     },
-    "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen."
+    "Großguss": {
+      "Q": "Sturmläufer (Stampfe)",
+      "W": "Strategische Artillerie (Konverter)",
+      "E": "Mobile Gießhalle (Kokille)",
+      "A": "Tiefenzapfwerk (Tiefenstich)",
+      "S": "Luft-Experimental (Kolkrabe)",
+      "F": "Großschild (Mantel)"
+    },
+    "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen. Post-MVP: G im Bau-Menü öffnet das Untermenü Großguss (T4); dessen Tasten folgen den Rollen der übrigen Menüs (Q Direktfeuer, W Artillerie, E Bauen, S Luft, F Schild, A Wirtschaft)."
   },
   "silhouettePairs": {
     "ms9": [
@@ -133,6 +161,32 @@
       [
         "core:str_t3_mex",
         "core:str_t1_hydro"
+      ]
+    ],
+    "t4": [
+      [
+        "core:exp_lnd_walker",
+        "core:cmd_commander"
+      ],
+      [
+        "core:exp_air_gunship",
+        "core:air_t2_gunship"
+      ],
+      [
+        "core:exp_str_arty",
+        "core:str_t3_arty"
+      ],
+      [
+        "core:exp_str_shield",
+        "core:str_t3_shield"
+      ],
+      [
+        "core:exp_lnd_foundry",
+        "core:lnd_t2_shield"
+      ],
+      [
+        "core:exp_str_eco",
+        "core:str_t3_mex"
       ]
     ]
   },
@@ -541,6 +595,104 @@
         "ladle:team": 1,
         "barrel": 1
       }
+    },
+    "v_exp_walker": {
+      "members": [
+        "core:exp_lnd_walker"
+      ],
+      "supersetParts": 12,
+      "trisEstimate": 468,
+      "parts": {
+        "legs": 2,
+        "hull": 3,
+        "hull:team": 1,
+        "bell:team": 2,
+        "barrel": 2,
+        "boiler": 1,
+        "hull:ceramic": 1
+      }
+    },
+    "v_exp_foundry": {
+      "members": [
+        "core:exp_lnd_foundry"
+      ],
+      "supersetParts": 15,
+      "trisEstimate": 500,
+      "parts": {
+        "tracks": 2,
+        "hull": 2,
+        "hull:team": 1,
+        "stack:glow": 2,
+        "ladle:team": 2,
+        "bell:team": 2,
+        "grate:team": 1,
+        "mast": 1,
+        "ring:team": 1,
+        "hull:ceramic": 1
+      }
+    },
+    "v_exp_gunship": {
+      "members": [
+        "core:exp_air_gunship"
+      ],
+      "supersetParts": 12,
+      "trisEstimate": 512,
+      "parts": {
+        "hull:team": 1,
+        "ductfan:team": 4,
+        "bell:team": 2,
+        "barrel": 3,
+        "boiler": 1,
+        "hull:ceramic": 1
+      }
+    },
+    "v_exp_arty": {
+      "members": [
+        "core:exp_str_arty"
+      ],
+      "supersetParts": 10,
+      "trisEstimate": 284,
+      "parts": {
+        "hull": 3,
+        "hull:team": 1,
+        "boom": 3,
+        "ladle:team": 1,
+        "barrel": 1,
+        "hull:ceramic": 1
+      }
+    },
+    "v_exp_eco": {
+      "members": [
+        "core:exp_str_eco"
+      ],
+      "supersetParts": 12,
+      "trisEstimate": 396,
+      "parts": {
+        "hull": 1,
+        "hull:team": 1,
+        "ring:team": 1,
+        "ring": 2,
+        "mast": 1,
+        "boiler:glow": 1,
+        "stack:glow": 4,
+        "hull:ceramic": 1
+      }
+    },
+    "v_exp_shield": {
+      "members": [
+        "core:exp_str_shield"
+      ],
+      "supersetParts": 9,
+      "trisEstimate": 328,
+      "parts": {
+        "hull": 1,
+        "hull:team": 2,
+        "boiler": 1,
+        "mast": 1,
+        "ring:team": 1,
+        "ring": 2,
+        "hull:ceramic": 1
+      }
     }
   },
   "checks": {
@@ -943,7 +1095,414 @@
         "faTimeS": null,
         "note": "Einzelner Schütze; FA-Waffe gegen FA-Schild-HP mit gleicher Regeneration/Verzögerung"
       }
-    ]
+    ],
+    "experimentals": {
+      "t3Equivalent": [
+        {
+          "t4": "core:exp_lnd_walker",
+          "t3": "core:lnd_t3_bot",
+          "t3Count": 54.0,
+          "faT3Count": 57.3,
+          "t3PoolDps": 8100.0,
+          "t3PoolHp": 172800,
+          "dpsRatio": 0.309,
+          "faDpsRatio": 0.291,
+          "hpRatio": 0.556,
+          "faHpRatio": 0.563,
+          "devDpsRatioPct": 6.1,
+          "devHpRatioPct": -1.3
+        },
+        {
+          "t4": "core:exp_lnd_foundry",
+          "t3": "core:lnd_t3_bot",
+          "t3Count": 56.0,
+          "faT3Count": 58.3,
+          "t3PoolDps": 8400.0,
+          "t3PoolHp": 179200,
+          "dpsRatio": 0.156,
+          "faDpsRatio": 0.149,
+          "hpRatio": 0.184,
+          "faHpRatio": 0.18,
+          "devDpsRatioPct": 4.2,
+          "devHpRatioPct": 2.5
+        },
+        {
+          "t4": "core:exp_air_gunship",
+          "t3": "core:air_t2_gunship",
+          "t3Count": 145.0,
+          "faT3Count": 151.0,
+          "t3PoolDps": 7732.8,
+          "t3PoolHp": 110200,
+          "dpsRatio": 0.173,
+          "faDpsRatio": 0.166,
+          "hpRatio": 0.672,
+          "faHpRatio": 0.709,
+          "devDpsRatioPct": 4.2,
+          "devHpRatioPct": -5.3
+        },
+        {
+          "t4": "core:exp_str_arty",
+          "t3": "core:str_t3_arty",
+          "t3Count": 4.6,
+          "faT3Count": 3.1,
+          "t3PoolDps": 1680.6,
+          "t3PoolHp": 45833,
+          "dpsRatio": 1.19,
+          "faDpsRatio": 1.165,
+          "hpRatio": 0.175,
+          "faHpRatio": 0.171,
+          "devDpsRatioPct": 2.2,
+          "devHpRatioPct": 2.2
+        },
+        {
+          "t4": "core:exp_str_eco",
+          "t3": "core:str_t3_mex",
+          "t3Count": 54.4,
+          "faT3Count": 54.4,
+          "t3PoolDps": null,
+          "t3PoolHp": 381111,
+          "dpsRatio": null,
+          "faDpsRatio": null,
+          "hpRatio": 0.014,
+          "faHpRatio": 0.013,
+          "devDpsRatioPct": null,
+          "devHpRatioPct": 3.9,
+          "eco": {
+            "maxMassPerSec": 750,
+            "baseMassPerSec": 20,
+            "paybackAtMaxS": 327,
+            "t3MexForMax": 41.7,
+            "t3MexCostForMax": 226500,
+            "faPaybackAt750S": 334
+          }
+        },
+        {
+          "t4": "core:exp_str_shield",
+          "t3": "core:str_t3_shield",
+          "t3Count": 5.0,
+          "faT3Count": 1.0,
+          "t3PoolDps": null,
+          "t3PoolHp": 87600,
+          "dpsRatio": null,
+          "faDpsRatio": null,
+          "hpRatio": 0.942,
+          "faHpRatio": 1.0,
+          "devDpsRatioPct": null,
+          "devHpRatioPct": -5.8
+        }
+      ],
+      "buildTime": [
+        {
+          "unit": "core:exp_lnd_walker",
+          "buildTime": 51000,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 1594,
+              "massPerSec": 16.9,
+              "energyPerSec": 213,
+              "faSeconds": 1585
+            },
+            {
+              "engineers": 10,
+              "seconds": 159,
+              "massPerSec": 169.4,
+              "energyPerSec": 2133,
+              "faSeconds": 158
+            },
+            {
+              "engineers": 20,
+              "seconds": 80,
+              "massPerSec": 338.8,
+              "energyPerSec": 4267,
+              "faSeconds": 79
+            },
+            {
+              "engineers": 40,
+              "seconds": 40,
+              "massPerSec": 677.6,
+              "energyPerSec": 8533,
+              "faSeconds": 40
+            }
+          ]
+        },
+        {
+          "unit": "core:exp_lnd_foundry",
+          "buildTime": 47500,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 1484,
+              "massPerSec": 18.9,
+              "energyPerSec": 236,
+              "faSeconds": 1462
+            },
+            {
+              "engineers": 10,
+              "seconds": 148,
+              "massPerSec": 188.6,
+              "energyPerSec": 2358,
+              "faSeconds": 146
+            },
+            {
+              "engineers": 20,
+              "seconds": 74,
+              "massPerSec": 377.3,
+              "energyPerSec": 4716,
+              "faSeconds": 73
+            },
+            {
+              "engineers": 40,
+              "seconds": 37,
+              "massPerSec": 754.5,
+              "energyPerSec": 9432,
+              "faSeconds": 37
+            }
+          ]
+        },
+        {
+          "unit": "core:exp_air_gunship",
+          "buildTime": 48000,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 1500,
+              "massPerSec": 19.3,
+              "energyPerSec": 533,
+              "faSeconds": 1477
+            },
+            {
+              "engineers": 10,
+              "seconds": 150,
+              "massPerSec": 193.3,
+              "energyPerSec": 5333,
+              "faSeconds": 148
+            },
+            {
+              "engineers": 20,
+              "seconds": 75,
+              "massPerSec": 386.7,
+              "energyPerSec": 10667,
+              "faSeconds": 74
+            },
+            {
+              "engineers": 40,
+              "seconds": 38,
+              "massPerSec": 773.3,
+              "energyPerSec": 21333,
+              "faSeconds": 37
+            }
+          ]
+        },
+        {
+          "unit": "core:exp_str_arty",
+          "buildTime": 300000,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 9375,
+              "massPerSec": 23.5,
+              "energyPerSec": 629,
+              "faSeconds": 9231
+            },
+            {
+              "engineers": 10,
+              "seconds": 938,
+              "massPerSec": 234.7,
+              "energyPerSec": 6293,
+              "faSeconds": 923
+            },
+            {
+              "engineers": 20,
+              "seconds": 469,
+              "massPerSec": 469.3,
+              "energyPerSec": 12587,
+              "faSeconds": 462
+            },
+            {
+              "engineers": 40,
+              "seconds": 234,
+              "massPerSec": 938.7,
+              "energyPerSec": 25173,
+              "faSeconds": 231
+            }
+          ]
+        },
+        {
+          "unit": "core:exp_str_eco",
+          "buildTime": 325000,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 10156,
+              "massPerSec": 24.1,
+              "energyPerSec": 719,
+              "faSeconds": 10000
+            },
+            {
+              "engineers": 10,
+              "seconds": 1016,
+              "massPerSec": 241.2,
+              "energyPerSec": 7188,
+              "faSeconds": 1000
+            },
+            {
+              "engineers": 20,
+              "seconds": 508,
+              "massPerSec": 482.5,
+              "energyPerSec": 14375,
+              "faSeconds": 500
+            },
+            {
+              "engineers": 40,
+              "seconds": 254,
+              "massPerSec": 964.9,
+              "energyPerSec": 28751,
+              "faSeconds": 250
+            }
+          ]
+        },
+        {
+          "unit": "core:exp_str_shield",
+          "buildTime": 24000,
+          "builderBp": 32,
+          "faBuilderBp": 32.5,
+          "rows": [
+            {
+              "engineers": 1,
+              "seconds": 750,
+              "massPerSec": 21.3,
+              "energyPerSec": 347,
+              "faSeconds": null
+            },
+            {
+              "engineers": 10,
+              "seconds": 75,
+              "massPerSec": 213.3,
+              "energyPerSec": 3467,
+              "faSeconds": null
+            },
+            {
+              "engineers": 20,
+              "seconds": 38,
+              "massPerSec": 426.7,
+              "energyPerSec": 6933,
+              "faSeconds": null
+            },
+            {
+              "engineers": 40,
+              "seconds": 19,
+              "massPerSec": 853.3,
+              "energyPerSec": 13867,
+              "faSeconds": null
+            }
+          ]
+        }
+      ],
+      "shieldBreak": [
+        {
+          "attacker": "core:exp_str_arty",
+          "target": "core:str_t2_shield",
+          "shots": 1,
+          "timeS": 0.0,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:exp_str_arty",
+          "target": "core:str_t3_shield",
+          "shots": 2,
+          "timeS": 8.0,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:exp_str_arty",
+          "target": "core:exp_str_shield",
+          "shots": 6,
+          "timeS": 40.0,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:str_t3_arty",
+          "target": "core:exp_str_shield",
+          "shots": 39,
+          "timeS": 570.0,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:exp_lnd_walker",
+          "target": "core:exp_str_shield",
+          "shots": 80,
+          "timeS": 31.6,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:exp_air_gunship",
+          "target": "core:exp_str_shield",
+          "shots": 125,
+          "timeS": 86.8,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        },
+        {
+          "attacker": "core:exp_str_arty",
+          "target": "core:exp_lnd_foundry",
+          "shots": 2,
+          "timeS": 8.0,
+          "note": "ein Schütze, Hauptwaffe; Regeneration mit regenStartS"
+        }
+      ],
+      "deathWeapons": [
+        {
+          "unit": "core:exp_lnd_walker",
+          "damage": 8000,
+          "radius": 7,
+          "delayS": 2.0,
+          "faDamage": 8000,
+          "faRadius": 7,
+          "killsT3Bot": true,
+          "killsT3Pgen": false
+        },
+        {
+          "unit": "core:exp_lnd_foundry",
+          "damage": 4000,
+          "radius": 7,
+          "delayS": 1.5,
+          "faDamage": 4000,
+          "faRadius": 7,
+          "killsT3Bot": true,
+          "killsT3Pgen": false
+        },
+        {
+          "unit": "core:exp_air_gunship",
+          "damage": 5000,
+          "radius": 8,
+          "delayS": 3.0,
+          "faDamage": 5000,
+          "faRadius": 8,
+          "killsT3Bot": true,
+          "killsT3Pgen": false
+        },
+        {
+          "unit": "core:exp_str_eco",
+          "damage": 35000,
+          "radius": 25,
+          "delayS": 2.0,
+          "faDamage": 35000,
+          "faRadius": 25,
+          "killsT3Bot": true,
+          "killsT3Pgen": true
+        }
+      ]
+    }
   },
   "units": [
     {
@@ -7871,6 +8430,1503 @@
         },
         "withinBand25": true,
         "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:exp_lnd_walker",
+      "name": {
+        "de": "Stampfe",
+        "en": "Stamper"
+      },
+      "role": {
+        "de": "Experimenteller Sturmläufer",
+        "en": "Experimental Assault Walker"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_walker",
+      "ms9Core": false,
+      "msFirst": "PM1",
+      "msNote": "Post-MVP: U16 „Erstes Land-Experimental“",
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Assault Bot (Riesen-Laufroboter)",
+        "bp": "UAL0401",
+        "crossCheckBp": "XSL0401"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "BOT",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 27000,
+        "energy": 340000,
+        "buildTime": 51000
+      },
+      "health": {
+        "max": 96000,
+        "regenPerSec": 10
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_stamper_twin_bell",
+          "type": "Doppelglocke (zwei Schulterkanonen, abwechselnd)",
+          "damage": 500,
+          "salvo": 2,
+          "reloadS": 0.4,
+          "dps": 2500.0,
+          "rangeMin": 2,
+          "range": 40,
+          "projectile": "linear",
+          "muzzleVelocity": 45,
+          "splash": 1.0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_stamper_footfall",
+          "type": "Stampfen (Fußtritt beim Aufsetzen, Crush)",
+          "damage": 3000,
+          "salvo": 1,
+          "reloadS": 1.2,
+          "dps": 2500.0,
+          "range": 1.2,
+          "projectile": "fußtritt",
+          "splash": 1.2,
+          "layers": [
+            "land"
+          ],
+          "notes": "XM2; trifft nur Land-Einheiten unter dem Fuß (kein Friendly Fire, FA-Relation Footfall 3500 r1); nicht in DPS/Mass gewertet"
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.4,
+        "turnRateDeg": 40,
+        "accel": 1.2,
+        "sizeClass": 6,
+        "footprint": [
+          6,
+          6
+        ]
+      },
+      "intel": {
+        "vision": 50
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_stamper_break",
+          "damage": 8000,
+          "radius": 7,
+          "delayS": 2.0,
+          "note": "Gussbruch: kippt in Laufrichtung, Explosion nach 2,0 s (XM4), Friendly Fire (K8); FA-Relation 8000 r7"
+        },
+        "notes": "Reiner Nahkampf-Koloss ohne Flugabwehr: Konter sind Luft (Krähe, Elster, Kolkrabe), Hochofen-/Pfannen-Beschuss auf Abstand und Reißnadel-Pulks. Regeneration 10 HP/s. Nicht amphibisch (Layer Land; Amphibious erst mit U17), Wasser nur über Brücken. Wrack 90 % Mass (24.300) – „Schlacke ist auch Erz“."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "Q"
+      },
+      "icon": "land_bot_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs",
+            "anim": "legs",
+            "note": "bein_l"
+          },
+          {
+            "part": "legs",
+            "anim": "legs",
+            "note": "bein_r"
+          },
+          {
+            "part": "hull",
+            "note": "becken"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "torso"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "note": "schulter_l"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "note": "schulter_r"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch",
+            "note": "rohr_l"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch",
+            "note": "rohr_r"
+          },
+          {
+            "part": "boiler",
+            "note": "rueckenkessel"
+          },
+          {
+            "part": "hull",
+            "note": "stampffuss_l"
+          },
+          {
+            "part": "hull",
+            "note": "stampffuss_r"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 12,
+        "animatedParts": 5,
+        "trisEstimate": 468,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Zweibeiniger Stampfkoloss, Höhe ≈ 6,3 WU (2,6× Vogt): breite Torso-Wanne (team) auf zwei Säulenbeinen mit runden Stampffüßen (Ø 1,6 WU), zwei Schulterglocken mit waagerechten Rohren (Direktfeuer-Monopol), liegender Rückenkessel als Gegengewicht. Keramik-Klammer (zwei Winkelleisten an den Deckkanten) statt Tech-Streifen. Kein Schlot, kein Lot-Kopf (Vogt-Monopol).",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": 2500.0,
+        "dpsPerMass": 0.0926,
+        "hpPerMass": 3.5556,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UAL0401",
+          "mass": 27500,
+          "energy": 343750,
+          "buildTime": 51500,
+          "hp": 99999,
+          "shieldHp": null,
+          "dps": 2500.04,
+          "dpsPerMass": 0.0909,
+          "hpPerMass": 3.6363,
+          "speed": 2.4,
+          "range": 41
+        },
+        "devDpsPerMassPct": 1.9,
+        "devHpPerMassPct": -2.2,
+        "devProductPct": -0.4,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "land",
+        "milestone": "PM1",
+        "features": [
+          "U16",
+          "B2",
+          "B1",
+          "B6",
+          "M5",
+          "M6",
+          "M7",
+          "K4",
+          "K5",
+          "K8",
+          "P14",
+          "A16",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM1",
+          "XM2",
+          "XM3",
+          "XM4",
+          "XM8",
+          "XM9"
+        ],
+        "crush": {
+          "walls": true,
+          "wrecks": true,
+          "pushSizeClassMax": 3,
+          "footfallDamage": 3000,
+          "footfallRadius": 1.2,
+          "friendly": false
+        },
+        "counters": [
+          "Luft (Krähe, Elster, Kolkrabe) – keine Flugabwehr",
+          "Artillerie auf Abstand (Pfanne 85 WU, Hochofen 200 WU) gegen Tempo 2,4",
+          "Reißnadel-Pulks auf 58 WU (gleiches Tempo 2,4: Abstand halten braucht Mikro)",
+          "Baustelle früh angreifen (XM9)"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 24300
+        },
+        "faCompare": "FA-DPS = Strahl 2.500 + Greifer 0,04 (ohne Todeswaffe); Stampfen nicht gewertet (FA-Footfall ebenfalls nicht in spooky-DPS)",
+        "t3Equivalent": {
+          "unit": "core:lnd_t3_bot",
+          "faT4": "UAL0401",
+          "faT3": "UEL0303"
+        }
+      }
+    },
+    {
+      "id": "core:exp_lnd_foundry",
+      "name": {
+        "de": "Kokille",
+        "en": "Mould"
+      },
+      "role": {
+        "de": "Mobile Gießhalle",
+        "en": "Mobile Foundry"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_foundry",
+      "ms9Core": false,
+      "msFirst": "PM2",
+      "msNote": "Post-MVP: U21 (Teil Land) + mobile Fabrik",
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Mobile Factory (mobile Fabrik/Festung)",
+        "bp": "UEL0401",
+        "crossCheckBp": "XRL0403"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "FACTORY",
+        "DIRECTFIRE",
+        "INDIRECTFIRE",
+        "ANTIAIR",
+        "SHIELD",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 28000,
+        "energy": 350000,
+        "buildTime": 47500,
+        "buildPower": 135,
+        "upkeepEnergyPerSec": 600,
+        "storageMass": 200,
+        "storageEnergy": 1000
+      },
+      "health": {
+        "max": 13000,
+        "regenPerSec": 20
+      },
+      "shield": {
+        "hp": 20000,
+        "radius": 24,
+        "regenPerSec": 100,
+        "regenStartS": 1,
+        "rechargeS": 120,
+        "upkeepEnergyPerSec": 600
+      },
+      "weapons": [
+        {
+          "ref": "core:wpn_foundry_ladle",
+          "type": "Deckskellen (drei Schlackenwerfer, gemeinsame Salve)",
+          "damage": 250,
+          "salvo": 3,
+          "reloadS": 1.0,
+          "dps": 750.0,
+          "range": 100,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 25,
+          "splash": 1.5,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_foundry_bell",
+          "type": "Flankenglocken (Schnellfeuer, zwei Türme)",
+          "damage": 150,
+          "salvo": 2,
+          "reloadS": 0.6,
+          "dps": 500.0,
+          "range": 45,
+          "projectile": "linear",
+          "muzzleVelocity": 60,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_foundry_aa",
+          "type": "Rostkamm (Flak)",
+          "damage": 40,
+          "salvo": 1,
+          "reloadS": 0.7,
+          "dps": 57.14,
+          "range": 45,
+          "projectile": "linear",
+          "muzzleVelocity": 90,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 1.75,
+        "turnRateDeg": 30,
+        "accel": 1.0,
+        "sizeClass": 7,
+        "footprint": [
+          7,
+          9
+        ]
+      },
+      "intel": {
+        "vision": 32
+      },
+      "special": {
+        "toggles": [
+          "shield (C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_foundry_burst",
+          "damage": 4000,
+          "radius": 7,
+          "delayS": 1.5,
+          "note": "Kesselbruch (XM4), Friendly Fire (K8); FA-Relation 4000 r7"
+        },
+        "notes": "Mobile Fabrik mit der Bauliste von Landwerk III (Build Power 135 wie FA), Personal-Kuppel 20.000 HP (Radius 24, deckt Begleiter). Baut nur im Stand, Ausgang über die Heckrampe (XM5), kein Assist auf fremde Baustellen. Kein Torpedo (Marine Post-MVP): FA-Vergleich ohne Anti-Navy-Waffe."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "E"
+      },
+      "icon": "land_fac_land_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "tracks",
+            "note": "kette_l"
+          },
+          {
+            "part": "tracks",
+            "note": "kette_r"
+          },
+          {
+            "part": "hull",
+            "note": "wanne"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "deck"
+          },
+          {
+            "part": "hull",
+            "note": "portal"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_l"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_r"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "kelle_l"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "kelle_r"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "glocke_l"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "glocke_r"
+          },
+          {
+            "part": "grate",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "rostkamm"
+          },
+          {
+            "part": "mast",
+            "note": "schildmast"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "spin",
+            "note": "schildring"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 15,
+        "animatedParts": 6,
+        "trisEstimate": 500,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Rollende Gießhalle auf vier Kettenblöcken (7 × 9 WU): U-Portal (Fabrik-Monopol) mit glühendem Werkhallentor und Heckrampe, zwei Schlote (FACTORY = Flow-Einheit), vorn zwei Deckskellen (Artillerie), seitlich zwei Glocken (Direktfeuer), am Heck ein Rostkamm (Flak), mittig Schildmast mit waagerechtem Ring als höchstem Punkt. Keramik-Klammer an den Deckkanten.",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": 1307.14,
+        "dpsPerMass": 0.0467,
+        "hpPerMass": 1.1786,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEL0401",
+          "mass": 28000,
+          "energy": 350000,
+          "buildTime": 47500,
+          "hp": 12500,
+          "shieldHp": 20000,
+          "dps": 1307.14,
+          "dpsPerMass": 0.0467,
+          "hpPerMass": 1.1607,
+          "speed": 1.75,
+          "range": 100
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": 1.5,
+        "devProductPct": 1.5,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "land",
+        "milestone": "PM2",
+        "features": [
+          "U21",
+          "U5",
+          "B3",
+          "K10",
+          "K2",
+          "K4",
+          "K12",
+          "M5",
+          "M6",
+          "M7",
+          "C17",
+          "E3",
+          "P14",
+          "A16",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM1",
+          "XM2",
+          "XM3",
+          "XM4",
+          "XM5",
+          "XM8",
+          "XM9"
+        ],
+        "crush": {
+          "walls": true,
+          "wrecks": true,
+          "pushSizeClassMax": 3,
+          "footfallDamage": null,
+          "footfallRadius": null,
+          "friendly": false
+        },
+        "counters": [
+          "Energy-Stall (600 E/s Unterhalt, E3) schaltet die Kuppel ab",
+          "Konzentrierter Direktbeschuss (Stampfe, Fallhammer-Pulk) unter die Kuppel",
+          "Bomber nach Kuppel-Kollaps (Flak nur 57 DPS)",
+          "Baut nur im Stand – dann treffen Hochofen und Konverter sicher (2 Konverter-Treffer brechen die Kuppel, der dritte zerstört die Kokille)"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 25200
+        },
+        "faCompare": "FA-DPS = Artillerie 750 + Riot 500 + Flak 57,14 (ohne Torpedo 75, Marine Post-MVP)",
+        "t3Equivalent": {
+          "unit": "core:lnd_t3_bot",
+          "faT4": "UEL0401",
+          "faT3": "UEL0303"
+        }
+      }
+    },
+    {
+      "id": "core:exp_air_gunship",
+      "name": {
+        "de": "Kolkrabe",
+        "en": "Raven"
+      },
+      "role": {
+        "de": "Experimenteller Kampfschweber",
+        "en": "Experimental Gunship"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_gunship",
+      "ms9Core": false,
+      "msFirst": "PM2",
+      "msNote": "Post-MVP: U21 (Luft-Experimental); ohne T3-Luft (U12) baubar",
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Gunship (Luft-Experimental)",
+        "bp": "URA0401",
+        "crossCheckBp": "UAA0310"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "GUNSHIP",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 29000,
+        "energy": 800000,
+        "buildTime": 48000,
+        "upkeepEnergyPerSec": 600
+      },
+      "health": {
+        "max": 74000,
+        "regenPerSec": 70
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_raven_bells",
+          "type": "Hängeglocken (zwei schwere Schnellfeuer-Kanonen)",
+          "damage": 320,
+          "salvo": 2,
+          "reloadS": 0.7,
+          "dps": 914.29,
+          "range": 30,
+          "projectile": "linear",
+          "muzzleVelocity": 30,
+          "splash": 3,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_raven_rockets",
+          "type": "Rumpfraketen (Dreiersalve)",
+          "damage": 200,
+          "salvo": 3,
+          "reloadS": 2.0,
+          "dps": 300.0,
+          "range": 30,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_raven_aa",
+          "type": "Flakkamm (Luftabwehr-Raketen)",
+          "damage": 150,
+          "salvo": 2,
+          "reloadS": 2.5,
+          "dps": 120.0,
+          "range": 60,
+          "projectile": "lenkflugkörper",
+          "muzzleVelocity": 30,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 8,
+        "turnRateDeg": 20,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          7,
+          7
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 46
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_raven_crash",
+          "damage": 5000,
+          "radius": 8,
+          "delayS": 3.0,
+          "note": "Absturz (K12, XM4): trudelt 3 s, Aufschlag wie FA 5000 r8"
+        },
+        "notes": "Schwebt tief (Flughöhe ≈ 12 WU) und langsam (8 WU/s); nur Flugabwehr trifft (K3). Landet nicht, Footprint 7×7 nur für die Baustelle. Regeneration 70 HP/s. Unterhalt 600 E/s (FA-Relation), im Energy-Stall halbe Feuerrate. Konter: Hochrost, Trommelsieb, Turmfalken-Schwärme."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "S"
+      },
+      "icon": "air_direct_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "deckscheibe"
+          },
+          {
+            "part": "ductfan",
+            "mat": "team",
+            "anim": "spin",
+            "note": "duese_vl"
+          },
+          {
+            "part": "ductfan",
+            "mat": "team",
+            "anim": "spin",
+            "note": "duese_vr"
+          },
+          {
+            "part": "ductfan",
+            "mat": "team",
+            "anim": "spin",
+            "note": "duese_hl"
+          },
+          {
+            "part": "ductfan",
+            "mat": "team",
+            "anim": "spin",
+            "note": "duese_hr"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "glocke_l"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "glocke_r"
+          },
+          {
+            "part": "barrel",
+            "note": "rohr_l"
+          },
+          {
+            "part": "barrel",
+            "note": "rohr_r"
+          },
+          {
+            "part": "boiler",
+            "note": "raketenkessel"
+          },
+          {
+            "part": "barrel",
+            "note": "flakkamm"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 12,
+        "animatedParts": 6,
+        "trisEstimate": 512,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Fliegende Gussplatte ≈ 9,5 × 9,5 WU ohne Flügel (Gunship-Monopol): vier Ringdüsen im Kreuz um eine gefaste Deckscheibe (team), darunter zwei hängende Glocken mit waagerechten Rohren, Raketenkessel im Bauch, vier senkrechte Flakrohre als Kamm am Heck. Keramik-Klammer an der Deckscheibe.",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": 1334.29,
+        "dpsPerMass": 0.046,
+        "hpPerMass": 2.5517,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "URA0401",
+          "mass": 29000,
+          "energy": 812000,
+          "buildTime": 48000,
+          "hp": 75000,
+          "shieldHp": null,
+          "dps": 1333.57,
+          "dpsPerMass": 0.046,
+          "hpPerMass": 2.5862,
+          "speed": 0.5,
+          "range": 60
+        },
+        "devDpsPerMassPct": 0.1,
+        "devHpPerMassPct": -1.3,
+        "devProductPct": -1.3,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "air",
+        "milestone": "PM2",
+        "features": [
+          "U21",
+          "U11",
+          "K3",
+          "K11",
+          "K12",
+          "K4",
+          "E3",
+          "P14",
+          "A16",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM1",
+          "XM4",
+          "XM8",
+          "XM9"
+        ],
+        "crush": null,
+        "counters": [
+          "Hochrost (SAM) und Trommelsieb",
+          "Turmfalken-Schwärme (Abfangjäger)",
+          "Energy-Stall halbiert die Feuerrate"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 26100
+        },
+        "faCompare": "FA-DPS = Raketen 285 + Flak 120 + Bolter 928,57 (alle Waffen außer Absturz); FA-Tempo 9 (Air.MaxAirspeed)",
+        "t3Equivalent": {
+          "unit": "core:air_t2_gunship",
+          "faT4": "URA0401",
+          "faT3": "UEA0203"
+        }
+      }
+    },
+    {
+      "id": "core:exp_str_arty",
+      "name": {
+        "de": "Konverter",
+        "en": "Converter"
+      },
+      "role": {
+        "de": "Strategische Artillerie",
+        "en": "Strategic Artillery"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_arty",
+      "ms9Core": false,
+      "msFirst": "PM3",
+      "msNote": "Post-MVP: U21 Game-Ender",
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Artillery (strategische Artillerie, Game-Ender)",
+        "bp": "UEB2401",
+        "crossCheckBp": "URL0401"
+      },
+      "categories": [
+        "STRUCTURE",
+        "ARTILLERY",
+        "INDIRECTFIRE",
+        "STRATEGIC",
+        "EXPERIMENTAL",
+        "SIZE20"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 220000,
+        "energy": 5900000,
+        "buildTime": 300000
+      },
+      "health": {
+        "max": 8000
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_converter_shell",
+          "type": "Konverterguss (Schwerstgranate)",
+          "damage": 16000,
+          "salvo": 1,
+          "reloadS": 8.0,
+          "dps": 2000.0,
+          "rangeMin": 150,
+          "range": 1500,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 160,
+          "splash": 7,
+          "layers": [
+            "land"
+          ],
+          "notes": "XM6: Streuung σ = max(8 WU, 1,2 % der Distanz) (≈ 12 WU auf 1.000 WU), Flugzeit ≈ 9 s auf 1.000 WU, Einschlagwarnung ab Abschuss; Friendly Fire (K8)"
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          10,
+          10
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Reichweite 1.500 WU deckt jede MVP-Karte (Setons-Diagonale 1.448 WU); FA 4.000 (bis 81-km-Karten, M14). Einzelschuss und Takt wie FA: ein Schuss knackt Schirm II allein, Schirm III nach 2 Treffern, den Mantel nach 6. Streuung mit Untergrenze 8 WU (> Splash 7): auf kurzen Distanzen kein Einheiten-Scharfschütze, ein stehender Vogt (12.000 HP) wird mit ≈ 32 % je Schuss getroffen und hört die Einschlagwarnung. Baustelle ab 50 % für alle Gegner sichtbar (XM9). Keine Death-Weapon (wie FA), Wrack 90 % Mass."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "W"
+      },
+      "icon": "struct_arty_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "randband"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw",
+            "note": "drehbuehne"
+          },
+          {
+            "part": "boom",
+            "note": "wange_l"
+          },
+          {
+            "part": "boom",
+            "note": "wange_r"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "pitch",
+            "note": "konverterbirne"
+          },
+          {
+            "part": "barrel",
+            "note": "steilrohr"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht_l"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht_r"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 10,
+        "animatedParts": 2,
+        "trisEstimate": 284,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Kippender Konverter auf 10×10: Drehbühne mit zwei Wangen, darin die birnenförmige Konverter-Kelle (Ø ≈ 5 WU, team, Artillerie-Monopol) mit Steilrohr ≈ 8 WU aus der Mündung (60°), zwei Gegengewichte; Höhe ≈ 14 WU – höchstes Bauwerk des Rosters. Keramik-Klammer am Sockel, kein Schlot.",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": 2000.0,
+        "dpsPerMass": 0.0091,
+        "hpPerMass": 0.0364,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2401",
+          "mass": 224775,
+          "energy": 5994000,
+          "buildTime": 300000,
+          "hp": 8000,
+          "shieldHp": null,
+          "dps": 2000.0,
+          "dpsPerMass": 0.0089,
+          "hpPerMass": 0.0356,
+          "speed": null,
+          "range": 4000
+        },
+        "devDpsPerMassPct": 2.2,
+        "devHpPerMassPct": 2.2,
+        "devProductPct": 4.4,
+        "pulk": {
+          "splash": 7,
+          "faSplash": 7,
+          "pulkDpsPerMass": 0.4016,
+          "faPulkDpsPerMass": 0.3931,
+          "devPct": 2.2
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "struct",
+        "milestone": "PM3",
+        "features": [
+          "U21",
+          "K13",
+          "K2",
+          "K4",
+          "K6",
+          "K8",
+          "K10",
+          "I2",
+          "I3",
+          "C15",
+          "P8",
+          "P14",
+          "A21",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM6",
+          "XM8",
+          "XM9"
+        ],
+        "crush": null,
+        "counters": [
+          "Mantel über der Basis (6 Treffer = 40 s bis zum Bruch)",
+          "Früher Angriff auf die Baustelle (300.000 BT: Sicht-Meldung XM9)",
+          "Stampfe/Kolkrabe-Vorstoß: 8.000 HP, keine Eigenverteidigung",
+          "Einheiten weichen dem Warnring aus (Flugzeit ≈ 9 s auf 1.000 WU)",
+          "Radar-Jamming (I5, später) verhindert Zielauflösung"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 198000
+        },
+        "faCompare": "FA-DPS = 16.000 / 8 s; Pulk-DPS/Mass mit Splash 7 wie FA",
+        "t3Equivalent": {
+          "unit": "core:str_t3_arty",
+          "faT4": "UEB2401",
+          "faT3": "UEB2302"
+        }
+      }
+    },
+    {
+      "id": "core:exp_str_eco",
+      "name": {
+        "de": "Tiefenstich",
+        "en": "Deep Tap"
+      },
+      "role": {
+        "de": "Tiefenzapfwerk",
+        "en": "Resource Works"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_eco",
+      "ms9Core": false,
+      "msFirst": "PM3",
+      "msNote": "Post-MVP: E17 Endgame-Eco",
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Resource Generator (Endgame-Eco)",
+        "bp": "XAB1401",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "MASSPRODUCTION",
+        "ENERGYPRODUCTION",
+        "EXPERIMENTAL",
+        "SIZE24"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 245000,
+        "energy": 7300000,
+        "buildTime": 325000,
+        "massPerSec": 20,
+        "energyPerSec": 1000,
+        "storageEnergy": 100000,
+        "demandMassPerSecMax": 750,
+        "demandEnergyPerSecMax": 75000
+      },
+      "health": {
+        "max": 5200
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          12,
+          12
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_deep_tap_break",
+          "damage": 35000,
+          "radius": 25,
+          "delayS": 2.0,
+          "note": "Tiefenbruch: Glutsäule bricht ein, Explosion nach 2 s (XM4), Kettenreaktion (K14), Friendly Fire; FA-Relation 35000 r25"
+        },
+        "notes": "Grundlast 20 M/s + 1.000 E/s, darüber deckt er den Bedarf des Hauses bis 750 M/s und 75.000 E/s (XM7). FA deckelt erst bei 10.000 M/s / 1.000.000 E/s (praktisch unbegrenzt); der Deckel hält ein zweites Zapfwerk sinnvoll und die Eco-Kurve im Unit-Cap. Verhältnis E:M = 100:1 wie FA."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "A"
+      },
+      "icon": "struct_mass_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "randband"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "spin",
+            "note": "kranz_1"
+          },
+          {
+            "part": "ring",
+            "anim": "spin",
+            "note": "kranz_2"
+          },
+          {
+            "part": "ring",
+            "note": "kranz_3"
+          },
+          {
+            "part": "mast",
+            "note": "bohrturm"
+          },
+          {
+            "part": "boiler",
+            "mat": "glow",
+            "note": "pumpenkopf"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_1"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_2"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_3"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "schlot_4"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 12,
+        "animatedParts": 2,
+        "trisEstimate": 396,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Bohrwerk auf 12×12: drei konzentrische Kränze (Zapfstellen-Grammatik, zwei drehen gegenläufig) um einen Bohrturm mit glühendem Pumpenkopf (Glutkern), vier Eckschlote (Energy). Liest sich als „Raute + Flamme“ in Riesengröße. Keramik-Klammer am Sockel.",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.0212,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XAB1401",
+          "mass": 250200,
+          "energy": 7506000,
+          "buildTime": 325000,
+          "hp": 5000,
+          "shieldHp": null,
+          "dps": 0.0,
+          "dpsPerMass": null,
+          "hpPerMass": 0.02,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 6.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "struct",
+        "milestone": "PM3",
+        "features": [
+          "E17",
+          "E1",
+          "E2",
+          "E3",
+          "E4",
+          "K14",
+          "K8",
+          "P14",
+          "A16",
+          "C10",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM4",
+          "XM7",
+          "XM8",
+          "XM9"
+        ],
+        "crush": null,
+        "counters": [
+          "Nur 5.200 HP: Konverter und schon ein Hochofen (5.500) töten ihn mit einem Treffer – Standort > 200 WU hinter der Front oder unter dem Mantel",
+          "Kolkrabe-Vorstoß, Bomber",
+          "Todesexplosion 35.000 r25 – nicht neben Werke stellen"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 220500
+        },
+        "faCompare": "keine Waffen; HP/Mass-Vergleich gegen `XAB1401`",
+        "t3Equivalent": {
+          "unit": "core:str_t3_mex",
+          "faT4": "XAB1401",
+          "faT3": "UEB1302"
+        }
+      }
+    },
+    {
+      "id": "core:exp_str_shield",
+      "name": {
+        "de": "Mantel",
+        "en": "Mantle"
+      },
+      "role": {
+        "de": "Großschild",
+        "en": "Bastion Shield"
+      },
+      "tech": 4,
+      "group": "exp",
+      "visual": "v_exp_shield",
+      "ms9Core": false,
+      "msFirst": "PM2",
+      "msNote": "Post-MVP: Varkan-Ergänzung zu U21 (Game-Ender-Konter)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Heavy Shield Generator ×≈5 (FA hat kein Schild-Experimental; Relation pro Mass)",
+        "bp": "UEB4301",
+        "crossCheckBp": "UEL0401"
+      },
+      "categories": [
+        "STRUCTURE",
+        "SHIELD",
+        "DEFENSE",
+        "EXPERIMENTAL",
+        "SIZE16"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 16000,
+        "energy": 260000,
+        "buildTime": 24000,
+        "upkeepEnergyPerSec": 2000
+      },
+      "health": {
+        "max": 2500
+      },
+      "shield": {
+        "hp": 80000,
+        "radius": 60,
+        "regenPerSec": 250,
+        "regenStartS": 1,
+        "rechargeS": 90,
+        "rechargeFraction": 0.25,
+        "upkeepEnergyPerSec": 2000
+      },
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 24
+      },
+      "special": {
+        "toggles": [
+          "shield (C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Eigene Varkan-Rolle ohne FA-T4-Vorbild: Kuppel Radius 60 (2,25× Fläche von Schirm III) mit 80.000 HP und 250 HP/s Regeneration (5 Schirm III: 650 HP/s verteilt). Der Konverter bricht sie nach 6 Treffern (40 s), ein einzelner Hochofen nach ≈ 9,5 min, zwei im Wechsel nach ≈ 2,5 min. Nach dem Kollaps 90 s offline, dann mit 25 % (20.000) zurück: gestapelte Mäntel verzögern einen Konverter, sperren ihn aber nicht dauerhaft. Unterhalt 2.000 E/s: ein Energy-Stall (E3) lässt die Kuppel sofort fallen."
+      },
+      "hotbuild": {
+        "menu": "Großguss",
+        "slot": "F"
+      },
+      "icon": "struct_shield_t4",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "randband"
+          },
+          {
+            "part": "boiler",
+            "note": "generator"
+          },
+          {
+            "part": "mast",
+            "note": "hauptmast"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "spin",
+            "note": "ring_oben"
+          },
+          {
+            "part": "ring",
+            "anim": "spin",
+            "note": "ring_mitte"
+          },
+          {
+            "part": "ring",
+            "note": "ring_unten"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "schuerze"
+          },
+          {
+            "part": "hull",
+            "mat": "ceramic",
+            "note": "klammer"
+          }
+        ],
+        "partCount": 9,
+        "animatedParts": 2,
+        "trisEstimate": 328,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Schildturm auf 8×8: dicker Mast mit drei gestaffelten waagerechten Ringen (oberster = größter, Ø ≈ 8 WU, team; Schild-Monopol), Generatorkessel am Fuß, gefaltete Schürze (der „Mantel“, team), vier Strebebögen tragen den unteren Ring. Höhe ≈ 12 WU (≈ 2,7× Schirm III). Keramik-Klammer am Sockel, kein Schlot.",
+        "ceramicBracket": true,
+        "trisBudget": [
+          1600,
+          800,
+          320
+        ]
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 5.1562,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEB4301",
+          "mass": 3300,
+          "energy": 55000,
+          "buildTime": 5000,
+          "hp": 500,
+          "shieldHp": 17000,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 5.303,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": -2.8,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      },
+      "tier": "T4",
+      "postMvp": true,
+      "experimental": {
+        "domain": "struct",
+        "milestone": "PM2",
+        "features": [
+          "K10",
+          "E3",
+          "C17",
+          "C15",
+          "P14",
+          "U21",
+          "A16",
+          "C2"
+        ],
+        "newMechanics": [
+          "XM8",
+          "XM9"
+        ],
+        "crush": null,
+        "counters": [
+          "Energy-Stall (2.000 E/s)",
+          "Einheiten laufen unter die Kuppel (Stampfe, Kokille)",
+          "Konverter + 2 Hochöfen im Takt",
+          "Nach dem Kollaps kehrt die Kuppel nur mit 25 % zurück (2 Konverter-Treffer)",
+          "Kuppel schützt nicht gegen Todeswaffen innerhalb"
+        ],
+        "wreck": {
+          "massFraction": 0.9,
+          "mass": 14400
+        },
+        "faCompare": "HP+Schild pro Mass gegen T3-Schildgenerator (FA-Upgradekosten)",
+        "t3Equivalent": {
+          "unit": "core:str_t3_shield",
+          "faT4": "UEB4301",
+          "faT3": "UEB4301"
+        }
       }
     }
   ]

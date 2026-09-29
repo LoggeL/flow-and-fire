@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { collectIcons } from '../../../content/icons/build.ts';
-import { FORMS, GLYPHS, iconSvg, parseIconId } from '../../../content/icons/grammar.ts';
+import { bracketMarkup, FORMS, GLYPHS, iconScale, iconSvg, notchMarkup, parseIconId } from '../../../content/icons/grammar.ts';
 import { buildEntry, loadAll } from '../../../content/models/registry.ts';
 import { exportGlb } from '../src/index.ts';
 
@@ -62,5 +62,35 @@ describe('content/icons', () => {
     }
     expect(Object.keys(GLYPHS)).toHaveLength(19);
     expect(() => parseIconId('land_nope_t1')).toThrow();
+    expect(() => parseIconId('land_bot_t5')).toThrow();
+  });
+
+  it('marks experimentals (t4) with the bracket instead of notches', () => {
+    const p = parseIconId('land_bot_t4');
+    expect(p.tech).toBe(4);
+    expect(p.glyph).toBe('bot');
+    expect(iconScale(p)).toBe(1.5);
+    const svg = iconSvg('land_bot_t4');
+    expect(svg).toContain(bracketMarkup());
+    expect(svg).not.toContain(notchMarkup(3));
+    expect(iconSvg('land_bot_t3')).not.toContain(bracketMarkup());
+    expect(iconSvg('struct_arty_t4', { variant: 'ghost' })).toContain(bracketMarkup());
+    const t4 = collectIcons().filter((i) => i.tech === 4);
+    expect(t4.map((i) => i.id).sort()).toEqual(['air_direct_t4', 'land_bot_t4', 'land_fac_land_t4', 'struct_arty_t4', 'struct_mass_t4', 'struct_shield_t4']);
+  });
+
+  it('experimental models use the T4 budget and the ceramic bracket', () => {
+    const f = factions.find((x) => x.def.slug === 'varkan')!;
+    const exps = f.models.filter((m) => m.unit.startsWith('exp_'));
+    expect(exps).toHaveLength(6);
+    for (const m of exps) {
+      const built = buildEntry(f, m);
+      expect(built.tech).toBe(4);
+      expect(built.budget.tris).toEqual([1600, 800, 320]);
+      expect(built.lods[0]!.triangles).toBeGreaterThan(350); // sichtbar mehr Detail als T1–T3
+      expect(built.lods[0]!.matArea.accent).toBeGreaterThan(0); // Keramik-Klammer
+      expect(built.footprintCheck.ok).toBe(true);
+      expect(built.warnings).toEqual([]);
+    }
   });
 });

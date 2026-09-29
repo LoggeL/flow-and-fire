@@ -206,11 +206,11 @@ for r in R['core']:
         if r in R[k] and R[k][r]['icon'] != R['core'][r]['icon']:
             why = ICON_ALLOW.get((r, k)); icon_dev.append((r, k, R[k][r]['icon'], why))
             if not why: err.append(f'Icon {k}:{r} = {R[k][r]["icon"]} ≠ Varkan {R["core"][r]["icon"]}')
-ICON_RE = re.compile(r'^(land|air|eng|struct)_[a-z_]+_t[123]$|^cmd_commander$|^wall$')
+ICON_RE = re.compile(r'^(land|air|eng|struct)_[a-z_]+_t[1234]$|^cmd_commander$|^wall$')
 for k in KEYS:
     for r, u in R[k].items():
         if r == '_doc': continue
-        g = re.sub(r'^(land|air|eng|struct)_|_t[123]$', '', u['icon'])
+        g = re.sub(r'^(land|air|eng|struct)_|_t[1234]$', '', u['icon'])
         if not ICON_RE.match(u['icon']) or (u['icon'] not in ('cmd_commander', 'wall') and g not in glyphs['core']):
             err.append(f'Icon-Grammatik verletzt: {k}:{r} {u["icon"]}')
 

@@ -9,6 +9,7 @@
  *
  * Usage: pnpm models:shots [--faction varkan] [--out /private/tmp/claude-501/faf-models] [--team blue]
  *        [--no-singles] [--smoke (also gallery + single view near/far)]
+ *        [--only exp_lnd_walker,exp_str_arty (only these single pictures, no sheets)]
  *        (heavy: run through tools/heavy)
  */
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -33,6 +34,8 @@ const { values } = parseArgs({
     singles: { type: 'boolean', default: true },
     /** Also capture the interactive viewer pages (gallery, single view near/far with icon) as a smoke test. */
     smoke: { type: 'boolean', default: false },
+    /** Comma-separated unit ids (file stems): only their single pictures, no sheets (quick iteration). */
+    only: { type: 'string' },
   },
 });
 
@@ -103,9 +106,16 @@ try {
     console.log(`  ${file}`);
   };
   const t = values.team;
+  const only = values.only === undefined ? null : new Set(values.only.split(',').map((s) => s.trim()));
   for (const f of factions) {
     const dir = join(values.out, f.slug);
     console.log(`${f.name}:`);
+    if (only !== null) {
+      for (const m of manifest.models.filter((x) => x.faction === f.slug && only.has(x.unit))) {
+        await shoot(`/shot/${f.slug}/${m.unit}?chrome=0&team=${t}`, join(dir, `${m.unit}.png`));
+      }
+      continue;
+    }
     await shoot(`/sheet/${f.slug}?chrome=0&mode=color&team=${t}`, join(dir, 'contact.png'));
     await shoot(`/sheet/${f.slug}?chrome=0&mode=silhouette`, join(dir, 'silhouettes.png'));
     await shoot(`/compare?chrome=0&f=${f.slug}&team=${t}`, join(dir, 'compare.png'), '.stage');
@@ -115,7 +125,7 @@ try {
       }
     }
   }
-  await shoot(`/icons?chrome=0&team=${t}`, join(values.out, 'icons.png'), '#app');
+  if (only === null) await shoot(`/icons?chrome=0&team=${t}`, join(values.out, 'icons.png'), '#app');
   if (values.smoke) {
     const first = manifest.models.find((m) => factions.some((f) => f.slug === m.faction));
     await shoot('/', join(values.out, 'viewer-gallery.png'), 'body');

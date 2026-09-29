@@ -1,12 +1,13 @@
 /**
  * Shared strategic-icon grammar (all factions; faction.md §6): base form = domain (team-colored fill, graphite
  * contour), glyph = role (ceramic white with dark halo), 1–3 tech notches top right outside the form, plus the
- * state variants selected / radar blip / ghost. Pure TS, no DOM: returns SVG strings (the model viewer inlines
+ * state variants selected / radar blip / ghost. Experimentals (tech 4, `_t4`) carry a ceramic square bracket
+ * around the form instead of notches (faction.md §6.4, docs/design/experimentals.md §5). Pure TS, no DOM: returns SVG strings (the model viewer inlines
  * them, `pnpm models` writes them to content/icons/svg).
  *
  * Grid: 32 × 32 design units (DE), glyph inside the central 16 × 16 field, strokes ≥ 4–5 DE, no angles < 35°.
  * The SVG viewBox adds a margin (notches above the form, contour, selection ring): x −8…40, y −14…40.
- * Icon ids: `<form>_<glyph>_t<n>` (land_direct_t1, struct_fac_land_t3), `cmd_commander`, `wall`.
+ * Icon ids: `<form>_<glyph>_t<n>` (land_direct_t1, struct_fac_land_t3, T4: land_bot_t4), `cmd_commander`, `wall`.
  */
 
 export const ICON_VIEWBOX = '-8 -14 48 54';
@@ -117,7 +118,7 @@ export function parseIconId(id: string): ParsedIcon {
   const form = segs[0] as IconForm;
   if (!(form in FORMS)) throw new Error(`icon ${id}: unknown form "${segs[0]}"`);
   const last = segs[segs.length - 1] ?? '';
-  const techMatch = /^t([1-3])$/.exec(last);
+  const techMatch = /^t([1-4])$/.exec(last);
   const tech = techMatch === null ? 0 : Number(techMatch[1]);
   const glyph = segs.slice(1, techMatch === null ? segs.length : -1).join('_');
   if (glyph !== '' && !(glyph in GLYPHS)) throw new Error(`icon ${id}: unknown glyph "${glyph}"`);
@@ -127,6 +128,8 @@ export function parseIconId(id: string): ParsedIcon {
 /** Icon size factor (× 20 px base × UI scale), faction.md §6.5. */
 export function iconScale(p: ParsedIcon): number {
   if (p.form === 'cmd') return 1.6;
+  if (p.tech === 4) return 1.5; // Experimentals: fast so groß wie der Vogt, aber nie größer
+
   if (p.form === 'wall') return 0.6;
   if (p.form === 'struct') return p.glyph === 'arty' && p.tech === 3 ? 1.3 : 1.1;
   if (p.glyph === 'intel') return 1.0;
@@ -165,6 +168,19 @@ export function notchMarkup(n: number, color = CERAMIC): string {
     out += `<rect x="${x}" y="-12" width="5" height="9" rx="1" fill="${color}" stroke="${CONTOUR}" stroke-opacity="0.8" stroke-width="1.5"/>`;
   }
   return out;
+}
+
+/**
+ * Experimental marker (tech 4): ceramic square brackets left and right of the form, 4 DE stroke with graphite halo,
+ * serifs 5 DE long – outside the 0…32 form box like the notches, so it never collides with a glyph. Readable at
+ * 20 px × 1.5 as “[■]”, i.e. the same form, but framed.
+ */
+export function bracketMarkup(color = CERAMIC): string {
+  const d = 'M-0.5 -1.5 H-4.5 V33.5 H-0.5 M32.5 -1.5 H36.5 V33.5 H32.5';
+  return (
+    `<path d="${d}" fill="none" stroke="${CONTOUR}" stroke-opacity="0.8" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter"/>` +
+    `<path d="${d}" fill="none" stroke="${color}" stroke-width="3.6" stroke-linecap="square" stroke-linejoin="miter"/>`
+  );
 }
 
 export type IconVariant = 'normal' | 'selected' | 'blip' | 'ghost';
@@ -206,7 +222,7 @@ export function iconSvg(id: string, o: IconOptions = {}): string {
     const glyph = p.glyph === null ? '' : glyphMarkup(p.glyph, CERAMIC, CONTOUR);
     return wrap(
       `<g opacity="0.48"><path d="${FORMS.struct.d}" fill="${fill}" style="filter:saturate(0.25)"/>` +
-        `<path d="${FORMS.struct.d}" fill="none" stroke="${CONTOUR}" stroke-width="3" stroke-dasharray="4 3" stroke-linejoin="round"/>${glyph}</g>`,
+        `<path d="${FORMS.struct.d}" fill="none" stroke="${CONTOUR}" stroke-width="3" stroke-dasharray="4 3" stroke-linejoin="round"/>${glyph}${p.tech === 4 ? bracketMarkup() : ''}</g>`,
       o,
     );
   }
@@ -214,7 +230,8 @@ export function iconSvg(id: string, o: IconOptions = {}): string {
   if (variant === 'selected') inner += `<path d="${form.d}" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"/>`;
   inner += `<path d="${form.d}" fill="${fill}" stroke="${CONTOUR}" stroke-opacity="0.8" stroke-width="3.2" stroke-linejoin="round"/>`;
   if (form.hasGlyph && p.glyph !== null) inner += glyphMarkup(p.glyph, glyphCol, glyphCol === CERAMIC ? CONTOUR : null);
-  if (form.hasNotches && p.tech > 0) inner += notchMarkup(p.tech);
+  if (form.hasNotches && p.tech === 4) inner += bracketMarkup();
+  else if (form.hasNotches && p.tech > 0) inner += notchMarkup(p.tech);
   return wrap(inner, o);
 }
 
@@ -232,6 +249,11 @@ export function glyphSvg(glyph: string, o: IconOptions = {}): string {
 /** Tech notches alone. */
 export function notchSvg(n: 1 | 2 | 3, o: IconOptions = {}): string {
   return wrap(`<rect x="0" y="0" width="32" height="32" rx="3" fill="none" stroke="#888" stroke-dasharray="2 2"/>${notchMarkup(n)}`, o);
+}
+
+/** Experimental bracket alone (for the grammar sheet). */
+export function bracketSvg(o: IconOptions = {}): string {
+  return wrap(`<rect x="0" y="0" width="32" height="32" rx="3" fill="none" stroke="#888" stroke-dasharray="2 2"/>${bracketMarkup()}`, o);
 }
 
 /** Radar blip of a class. */

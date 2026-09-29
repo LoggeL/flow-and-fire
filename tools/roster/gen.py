@@ -2,8 +2,12 @@
 # FA reference numbers come from fa_ref.json (FAForever/spooky-db app/data/index.json, v3810,
 # DPS via spooky-db app/js/dps.js "NotNukeDpsCalculator").
 import json, math
+from pathlib import Path
 
-FA = json.load(open('fa_ref.json'))
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+FA = json.load(open(HERE / 'fa_ref.json'))
+FEATURE_IDS = {f['id'] for c in json.load(open(REPO / 'docs' / 'features.json'))['categories'] for f in c['features']}
 
 TRIS = dict(hull=28, tracks=24, legs=60, bell=56, barrel=24, ladle=48, plumb=40, boom=24, boiler=48,
             stack=24, grate=12, mast=24, ring=48, wing=12, ductfan=56)
@@ -566,9 +570,187 @@ U(id='core:str_t3_arty', de='Hochofen', en='Blast Furnace', roleDe='Schwere Arti
   parts=P('hull@sockel boom*yaw@lafette ladle:team*pitch@kelle barrel@steilrohr hull@gegengewicht'),
   kitbash='Tiegel-Silhouette auf 8×8: Lafette, Kelle Ø 3,0 WU (Team), Steilrohr 7 WU × Ø 0,6 aus der Kelle (an die Kelle geparentet), Gegengewicht; kein Schlot, 3 Tech-Streifen.')
 
+# ---------------------------------------------------------------- Experimentals (T4, Post-MVP) – docs/design/experimentals.md
+# tech=4 und group='exp'; `domain` bestimmt Bewegung/Layer. Nicht Teil des MVP (U16/U21/E17 sind Post-MVP bzw. „Später“):
+# eigene Lints (Budget T4, Parts ≤ 16, animiert ≤ 8 = PartStream-Limit), eigene Visuals (kein Superset mit T1–T3).
+EXP_BUILD = 'ENGINEER & TECH3'
+XM = {
+    'XM1': 'Mobile Großbaustelle: Meister gießen mobile T4 als Baustelle mit Footprint (blockiert Pathing wie ein Gebäude, B1/B6), die bei 100 % zur Einheit wird und ausläuft (FA: NEEDMOBILEBUILD). '
+            'Platzierung nur, wenn der Footprint in der Clearance-Komponente (Land, sizeClass) der Hauptfläche liegt (kein T4 im Basis-Kessel); '
+            'Baustellen < 100 % haben keine Todeswaffe, ihr Wrack trägt 90 % der verbauten Mass',
+    'XM2': 'Massiv/Crush: kleinere Einheiten blockieren nicht (Steering-Priorität nach sizeClass, M7), werden beiseitegeschoben; Mauern und Wracks unter dem Footprint werden überrollt; '
+            'Fußtritt-Schaden je Schritt (FA: Footfall-Damage) im festen Sim-Takt (12 Ticks, Fuß abwechselnd), im Tick vor der Kollisionsauflösung',
+    'XM3': 'Große Größenklassen: sizeClass 6–7 mit eigenen Clearance-Komponenten (M5/M6); Pfad-Klasse nach der Breite, die Länge 9 der Kokille löst das Steering (Wenden auf der Stelle, Stuck → Repath); Abnahme mit Basisgassen 7–9 WU',
+    'XM4': 'Verzögerte Death-Weapon (Umkippen/Absturz, 1,5–3 s Fluchtfenster) mit Kamera-Shake und Großereignis-Effekt (P14); Selbstzerstörung nutzt dieselbe Verzögerung; Kettenreaktionen (K14) je Glied ≥ 3 Ticks versetzt',
+    'XM5': 'Mobile Fabrik: Bauliste (B3) in einer mobilen Einheit, Ausgang Heckrampe, Rally relativ zum Träger; baut nur im Stand',
+    'XM6': 'Strategische Reichweite: Feuern auf Radar-/Ghost-Ziele außerhalb der Sicht (baut auf I3/K6 auf), Streuung σ = max(8 WU, 1,2 % der Distanz), Einschlagwarnung für den Beschossenen ab dem Abschuss (Ring Splash + 2σ, Ansage P8)',
+    'XM7': 'Bedarfsdeckende Produktion: Ertrag = Grundlast + clamp(Bedarf − Einkommen, 0, Deckel) je Eco-Tick, deterministisch nach der Stall-Auflösung (E3)',
+    'XM8': 'T4-Icon: Klammer statt Tech-Kerben, Faktor 1,5 (content/icons/grammar.ts), Zeichenreihenfolge über T1–T3, Mesh bleibt länger vor dem Icon sichtbar (C2)',
+    'XM9': 'Großguss-Meldung: sieht ein Haus eine fremde T4-Baustelle (Sicht, nicht Radar), meldet die Ansage „Großguss gesichtet“ (P8); ab 75 % Baufortschritt zusätzlich Minimap-Ping (C16). '
+            'Konverter-Baustellen melden sich ab 50 % allen Gegnern auch ohne Sicht (Ping mit 40 WU Unschärfe, „Großguss-Signatur“)',
+}
+
+U(id='core:exp_lnd_walker', de='Stampfe', en='Stamper', roleDe='Experimenteller Sturmläufer', roleEn='Experimental Assault Walker', tech=4,
+  group='exp', domain='land', visual='v_exp_walker', ms='PM1', msNote='Post-MVP: U16 „Erstes Land-Experimental“', ms9=False,
+  faRef='UAL0401', faCross='XSL0401', faRole='Experimental Assault Bot (Riesen-Laufroboter)',
+  cats=['LAND', 'MOBILE', 'DIRECTFIRE', 'BOT', 'EXPERIMENTAL'], buildableBy=EXP_BUILD,
+  mass=27000, energy=340000, bt=51000, hp=96000, regen=10,
+  weapons=[W('core:wpn_stamper_twin_bell', 'Doppelglocke (zwei Schulterkanonen, abwechselnd)', 500, 0.4, 40, 'linear', salvo=2, minr=2, splash=1.0, mv=45),
+           W('core:wpn_stamper_footfall', 'Stampfen (Fußtritt beim Aufsetzen, Crush)', 3000, 1.2, 1.2, 'fußtritt', splash=1.2,
+             extra='XM2; trifft nur Land-Einheiten unter dem Fuß (kein Friendly Fire, FA-Relation Footfall 3500 r1); nicht in DPS/Mass gewertet')],
+  compareDpsIdx=[0], faDpsIdx=[0, 1, 2],
+  speed=2.4, turn=40, accel=1.2, sizeClass=6, footprint=[6, 6], vision=50,
+  death=dict(ref='core:wpn_stamper_break', damage=8000, radius=7, delayS=2.0,
+             note='Gussbruch: kippt in Laufrichtung, Explosion nach 2,0 s (XM4), Friendly Fire (K8); FA-Relation 8000 r7'),
+  special='Reiner Nahkampf-Koloss ohne Flugabwehr: Konter sind Luft (Krähe, Elster, Kolkrabe), Hochofen-/Pfannen-Beschuss auf Abstand und '
+          'Reißnadel-Pulks. Regeneration 10 HP/s. Nicht amphibisch (Layer Land; Amphibious erst mit U17), Wasser nur über Brücken. '
+          'Wrack 90 % Mass (24.300) – „Schlacke ist auch Erz“.',
+  hotbuild=('Großguss', 'Q'), icon='land_bot_t4',
+  parts=P('legs*legs@bein_l legs*legs@bein_r hull@becken hull:team*yaw@torso bell:team@schulter_l bell:team@schulter_r '
+          'barrel*pitch@rohr_l barrel*pitch@rohr_r boiler@rueckenkessel hull@stampffuss_l hull@stampffuss_r hull:ceramic@klammer'),
+  kitbash='Zweibeiniger Stampfkoloss, Höhe ≈ 6,3 WU (2,6× Vogt): breite Torso-Wanne (team) auf zwei Säulenbeinen mit runden Stampffüßen '
+          '(Ø 1,6 WU), zwei Schulterglocken mit waagerechten Rohren (Direktfeuer-Monopol), liegender Rückenkessel als Gegengewicht. '
+          'Keramik-Klammer (zwei Winkelleisten an den Deckkanten) statt Tech-Streifen. Kein Schlot, kein Lot-Kopf (Vogt-Monopol).',
+  exp=dict(features=['U16', 'B2', 'B1', 'B6', 'M5', 'M6', 'M7', 'K4', 'K5', 'K8', 'P14', 'A16', 'C2'], newMechanics=['XM1', 'XM2', 'XM3', 'XM4', 'XM8', 'XM9'],
+           crush=dict(walls=True, wrecks=True, pushSizeClassMax=3, footfallDamage=3000, footfallRadius=1.2, friendly=False),
+           counters=['Luft (Krähe, Elster, Kolkrabe) – keine Flugabwehr', 'Artillerie auf Abstand (Pfanne 85 WU, Hochofen 200 WU) gegen Tempo 2,4',
+                     'Reißnadel-Pulks auf 58 WU (gleiches Tempo 2,4: Abstand halten braucht Mikro)', 'Baustelle früh angreifen (XM9)'],
+           compareNote='FA-DPS = Strahl 2.500 + Greifer 0,04 (ohne Todeswaffe); Stampfen nicht gewertet (FA-Footfall ebenfalls nicht in spooky-DPS)',
+           t3Equivalent=dict(unit='core:lnd_t3_bot', faT4='UAL0401', faT3='UEL0303')))
+
+U(id='core:exp_lnd_foundry', de='Kokille', en='Mould', roleDe='Mobile Gießhalle', roleEn='Mobile Foundry', tech=4,
+  group='exp', domain='land', visual='v_exp_foundry', ms='PM2', msNote='Post-MVP: U21 (Teil Land) + mobile Fabrik', ms9=False,
+  faRef='UEL0401', faCross='XRL0403', faRole='Experimental Mobile Factory (mobile Fabrik/Festung)',
+  cats=['LAND', 'MOBILE', 'FACTORY', 'DIRECTFIRE', 'INDIRECTFIRE', 'ANTIAIR', 'SHIELD', 'EXPERIMENTAL'], buildableBy=EXP_BUILD,
+  mass=28000, energy=350000, bt=47500, bp=135, hp=13000, regen=20,
+  shield=dict(hp=20000, radius=24, regenPerSec=100, regenStartS=1, rechargeS=120, upkeepEnergyPerSec=600),
+  eco=dict(upkeepEnergyPerSec=600, storageMass=200, storageEnergy=1000),
+  weapons=[W('core:wpn_foundry_ladle', 'Deckskellen (drei Schlackenwerfer, gemeinsame Salve)', 250, 1.0, 100, 'ballistisch', salvo=3, splash=1.5, mv=25),
+           W('core:wpn_foundry_bell', 'Flankenglocken (Schnellfeuer, zwei Türme)', 150, 0.6, 45, 'linear', salvo=2, mv=60),
+           W('core:wpn_foundry_aa', 'Rostkamm (Flak)', 40, 0.7, 45, 'linear', mv=90, layers=('air',))],
+  faDpsIdx=[0, 1, 2],
+  speed=1.75, turn=30, accel=1.0, sizeClass=7, footprint=[7, 9], vision=32,
+  toggles=['shield (C17)'],
+  death=dict(ref='core:wpn_foundry_burst', damage=4000, radius=7, delayS=1.5, note='Kesselbruch (XM4), Friendly Fire (K8); FA-Relation 4000 r7'),
+  special='Mobile Fabrik mit der Bauliste von Landwerk III (Build Power 135 wie FA), Personal-Kuppel 20.000 HP (Radius 24, deckt Begleiter). '
+          'Baut nur im Stand, Ausgang über die Heckrampe (XM5), kein Assist auf fremde Baustellen. Kein Torpedo (Marine Post-MVP): FA-Vergleich ohne Anti-Navy-Waffe.',
+  hotbuild=('Großguss', 'E'), icon='land_fac_land_t4',
+  parts=P('tracks@kette_l tracks@kette_r hull@wanne hull:team@deck hull@portal stack:glow@schlot_l stack:glow@schlot_r '
+          'ladle:team*yaw@kelle_l ladle:team*yaw@kelle_r bell:team*yaw@glocke_l bell:team*yaw@glocke_r grate:team*yaw@rostkamm '
+          'mast@schildmast ring:team*spin@schildring hull:ceramic@klammer'),
+  kitbash='Rollende Gießhalle auf vier Kettenblöcken (7 × 9 WU): U-Portal (Fabrik-Monopol) mit glühendem Werkhallentor und Heckrampe, '
+          'zwei Schlote (FACTORY = Flow-Einheit), vorn zwei Deckskellen (Artillerie), seitlich zwei Glocken (Direktfeuer), am Heck ein '
+          'Rostkamm (Flak), mittig Schildmast mit waagerechtem Ring als höchstem Punkt. Keramik-Klammer an den Deckkanten.',
+  exp=dict(features=['U21', 'U5', 'B3', 'K10', 'K2', 'K4', 'K12', 'M5', 'M6', 'M7', 'C17', 'E3', 'P14', 'A16', 'C2'],
+           newMechanics=['XM1', 'XM2', 'XM3', 'XM4', 'XM5', 'XM8', 'XM9'],
+           crush=dict(walls=True, wrecks=True, pushSizeClassMax=3, footfallDamage=None, footfallRadius=None, friendly=False),
+           counters=['Energy-Stall (600 E/s Unterhalt, E3) schaltet die Kuppel ab', 'Konzentrierter Direktbeschuss (Stampfe, Fallhammer-Pulk) unter die Kuppel',
+                     'Bomber nach Kuppel-Kollaps (Flak nur 57 DPS)', 'Baut nur im Stand – dann treffen Hochofen und Konverter sicher (2 Konverter-Treffer brechen die Kuppel, der dritte zerstört die Kokille)'],
+           compareNote='FA-DPS = Artillerie 750 + Riot 500 + Flak 57,14 (ohne Torpedo 75, Marine Post-MVP)',
+           t3Equivalent=dict(unit='core:lnd_t3_bot', faT4='UEL0401', faT3='UEL0303')))
+
+U(id='core:exp_air_gunship', de='Kolkrabe', en='Raven', roleDe='Experimenteller Kampfschweber', roleEn='Experimental Gunship', tech=4,
+  group='exp', domain='air', visual='v_exp_gunship', ms='PM2', msNote='Post-MVP: U21 (Luft-Experimental); ohne T3-Luft (U12) baubar', ms9=False,
+  faRef='URA0401', faCross='UAA0310', faRole='Experimental Gunship (Luft-Experimental)',
+  cats=['AIR', 'MOBILE', 'GUNSHIP', 'DIRECTFIRE', 'ANTIAIR', 'EXPERIMENTAL'], buildableBy=EXP_BUILD,
+  mass=29000, energy=800000, bt=48000, hp=74000, regen=70,
+  eco=dict(upkeepEnergyPerSec=600),
+  weapons=[W('core:wpn_raven_bells', 'Hängeglocken (zwei schwere Schnellfeuer-Kanonen)', 320, 0.7, 30, 'linear', salvo=2, splash=3, mv=30),
+           W('core:wpn_raven_rockets', 'Rumpfraketen (Dreiersalve)', 200, 2.0, 30, 'linear', salvo=3, mv=35),
+           W('core:wpn_raven_aa', 'Flakkamm (Luftabwehr-Raketen)', 150, 2.5, 60, 'lenkflugkörper', salvo=2, mv=30, layers=('air',))],
+  speed=8, turn=20, accel=None, sizeClass=0, footprint=[7, 7], vision=46,
+  death=dict(ref='core:wpn_raven_crash', damage=5000, radius=8, delayS=3.0, note='Absturz (K12, XM4): trudelt 3 s, Aufschlag wie FA 5000 r8'),
+  special='Schwebt tief (Flughöhe ≈ 12 WU) und langsam (8 WU/s); nur Flugabwehr trifft (K3). Landet nicht, Footprint 7×7 nur für die Baustelle. Regeneration 70 HP/s. '
+          'Unterhalt 600 E/s (FA-Relation), im Energy-Stall halbe Feuerrate. Konter: Hochrost, Trommelsieb, Turmfalken-Schwärme.',
+  hotbuild=('Großguss', 'S'), icon='air_direct_t4',
+  parts=P('hull:team@deckscheibe ductfan:team*spin@duese_vl ductfan:team*spin@duese_vr ductfan:team*spin@duese_hl ductfan:team*spin@duese_hr '
+          'bell:team*yaw@glocke_l bell:team*yaw@glocke_r barrel@rohr_l barrel@rohr_r boiler@raketenkessel barrel@flakkamm hull:ceramic@klammer'),
+  kitbash='Fliegende Gussplatte ≈ 9,5 × 9,5 WU ohne Flügel (Gunship-Monopol): vier Ringdüsen im Kreuz um eine gefaste Deckscheibe (team), '
+          'darunter zwei hängende Glocken mit waagerechten Rohren, Raketenkessel im Bauch, vier senkrechte Flakrohre als Kamm am Heck. '
+          'Keramik-Klammer an der Deckscheibe.',
+  exp=dict(features=['U21', 'U11', 'K3', 'K11', 'K12', 'K4', 'E3', 'P14', 'A16', 'C2'], newMechanics=['XM1', 'XM4', 'XM8', 'XM9'],
+           crush=None,
+           counters=['Hochrost (SAM) und Trommelsieb', 'Turmfalken-Schwärme (Abfangjäger)', 'Energy-Stall halbiert die Feuerrate'],
+           compareNote='FA-DPS = Raketen 285 + Flak 120 + Bolter 928,57 (alle Waffen außer Absturz); FA-Tempo 9 (Air.MaxAirspeed)',
+           t3Equivalent=dict(unit='core:air_t2_gunship', faT4='URA0401', faT3='UEA0203')))
+
+U(id='core:exp_str_arty', de='Konverter', en='Converter', roleDe='Strategische Artillerie', roleEn='Strategic Artillery', tech=4,
+  group='exp', domain='struct', visual='v_exp_arty', ms='PM3', msNote='Post-MVP: U21 Game-Ender', ms9=False,
+  faRef='UEB2401', faCross='URL0401', faRole='Experimental Artillery (strategische Artillerie, Game-Ender)',
+  cats=['STRUCTURE', 'ARTILLERY', 'INDIRECTFIRE', 'STRATEGIC', 'EXPERIMENTAL', 'SIZE20'], buildableBy=EXP_BUILD,
+  mass=220000, energy=5900000, bt=300000, hp=8000,
+  weapons=[W('core:wpn_converter_shell', 'Konverterguss (Schwerstgranate)', 16000, 8.0, 1500, 'ballistisch', minr=150, splash=7, mv=160,
+             extra='XM6: Streuung σ = max(8 WU, 1,2 % der Distanz) (≈ 12 WU auf 1.000 WU), Flugzeit ≈ 9 s auf 1.000 WU, Einschlagwarnung ab Abschuss; Friendly Fire (K8)')],
+  footprint=[10, 10], vision=28,
+  special='Reichweite 1.500 WU deckt jede MVP-Karte (Setons-Diagonale 1.448 WU); FA 4.000 (bis 81-km-Karten, M14). Einzelschuss und Takt wie FA: '
+          'ein Schuss knackt Schirm II allein, Schirm III nach 2 Treffern, den Mantel nach 6. Streuung mit Untergrenze 8 WU (> Splash 7): auf kurzen Distanzen '
+          'kein Einheiten-Scharfschütze, ein stehender Vogt (12.000 HP) wird mit ≈ 32 % je Schuss getroffen und hört die Einschlagwarnung. '
+          'Baustelle ab 50 % für alle Gegner sichtbar (XM9). Keine Death-Weapon (wie FA), Wrack 90 % Mass.',
+  hotbuild=('Großguss', 'W'), icon='struct_arty_t4',
+  parts=P('hull@sockel hull:team@randband boom*yaw@drehbuehne boom@wange_l boom@wange_r ladle:team*pitch@konverterbirne '
+          'barrel@steilrohr hull@gegengewicht_l hull@gegengewicht_r hull:ceramic@klammer'),
+  kitbash='Kippender Konverter auf 10×10: Drehbühne mit zwei Wangen, darin die birnenförmige Konverter-Kelle (Ø ≈ 5 WU, team, Artillerie-Monopol) '
+          'mit Steilrohr ≈ 8 WU aus der Mündung (60°), zwei Gegengewichte; Höhe ≈ 14 WU – höchstes Bauwerk des Rosters. Keramik-Klammer am Sockel, kein Schlot.',
+  exp=dict(features=['U21', 'K13', 'K2', 'K4', 'K6', 'K8', 'K10', 'I2', 'I3', 'C15', 'P8', 'P14', 'A21', 'C2'], newMechanics=['XM6', 'XM8', 'XM9'],
+           crush=None,
+           counters=['Mantel über der Basis (6 Treffer = 40 s bis zum Bruch)', 'Früher Angriff auf die Baustelle (300.000 BT: Sicht-Meldung XM9)',
+                     'Stampfe/Kolkrabe-Vorstoß: 8.000 HP, keine Eigenverteidigung', 'Einheiten weichen dem Warnring aus (Flugzeit ≈ 9 s auf 1.000 WU)',
+                     'Radar-Jamming (I5, später) verhindert Zielauflösung'],
+           compareNote='FA-DPS = 16.000 / 8 s; Pulk-DPS/Mass mit Splash 7 wie FA',
+           t3Equivalent=dict(unit='core:str_t3_arty', faT4='UEB2401', faT3='UEB2302')))
+
+U(id='core:exp_str_eco', de='Tiefenstich', en='Deep Tap', roleDe='Tiefenzapfwerk', roleEn='Resource Works', tech=4,
+  group='exp', domain='struct', visual='v_exp_eco', ms='PM3', msNote='Post-MVP: E17 Endgame-Eco', ms9=False,
+  faRef='XAB1401', faRole='Experimental Resource Generator (Endgame-Eco)',
+  cats=['STRUCTURE', 'ECONOMIC', 'MASSPRODUCTION', 'ENERGYPRODUCTION', 'EXPERIMENTAL', 'SIZE24'], buildableBy=EXP_BUILD,
+  mass=245000, energy=7300000, bt=325000, hp=5200,
+  eco=dict(massPerSec=20, energyPerSec=1000, storageEnergy=100000, demandMassPerSecMax=750, demandEnergyPerSecMax=75000),
+  weapons=[], footprint=[12, 12], vision=20,
+  death=dict(ref='core:wpn_deep_tap_break', damage=35000, radius=25, delayS=2.0,
+             note='Tiefenbruch: Glutsäule bricht ein, Explosion nach 2 s (XM4), Kettenreaktion (K14), Friendly Fire; FA-Relation 35000 r25'),
+  special='Grundlast 20 M/s + 1.000 E/s, darüber deckt er den Bedarf des Hauses bis 750 M/s und 75.000 E/s (XM7). FA deckelt erst bei 10.000 M/s / '
+          '1.000.000 E/s (praktisch unbegrenzt); der Deckel hält ein zweites Zapfwerk sinnvoll und die Eco-Kurve im Unit-Cap. Verhältnis E:M = 100:1 wie FA.',
+  hotbuild=('Großguss', 'A'), icon='struct_mass_t4',
+  parts=P('hull@sockel hull:team@randband ring:team*spin@kranz_1 ring*spin@kranz_2 ring@kranz_3 mast@bohrturm boiler:glow@pumpenkopf '
+          'stack:glow@schlot_1 stack:glow@schlot_2 stack:glow@schlot_3 stack:glow@schlot_4 hull:ceramic@klammer'),
+  kitbash='Bohrwerk auf 12×12: drei konzentrische Kränze (Zapfstellen-Grammatik, zwei drehen gegenläufig) um einen Bohrturm mit glühendem Pumpenkopf '
+          '(Glutkern), vier Eckschlote (Energy). Liest sich als „Raute + Flamme“ in Riesengröße. Keramik-Klammer am Sockel.',
+  exp=dict(features=['E17', 'E1', 'E2', 'E3', 'E4', 'K14', 'K8', 'P14', 'A16', 'C10', 'C2'], newMechanics=['XM4', 'XM7', 'XM8', 'XM9'],
+           crush=None,
+           counters=['Nur 5.200 HP: Konverter und schon ein Hochofen (5.500) töten ihn mit einem Treffer – Standort > 200 WU hinter der Front oder unter dem Mantel',
+                     'Kolkrabe-Vorstoß, Bomber', 'Todesexplosion 35.000 r25 – nicht neben Werke stellen'],
+           compareNote='keine Waffen; HP/Mass-Vergleich gegen `XAB1401`',
+           t3Equivalent=dict(unit='core:str_t3_mex', faT4='XAB1401', faT3='UEB1302')))
+
+U(id='core:exp_str_shield', de='Mantel', en='Mantle', roleDe='Großschild', roleEn='Bastion Shield', tech=4,
+  group='exp', domain='struct', visual='v_exp_shield', ms='PM2', msNote='Post-MVP: Varkan-Ergänzung zu U21 (Game-Ender-Konter)', ms9=False,
+  faRef='UEB4301', faCross='UEL0401', faRole='T3 Heavy Shield Generator ×≈5 (FA hat kein Schild-Experimental; Relation pro Mass)',
+  cats=['STRUCTURE', 'SHIELD', 'DEFENSE', 'EXPERIMENTAL', 'SIZE16'], buildableBy=EXP_BUILD,
+  mass=16000, energy=260000, bt=24000, hp=2500,
+  shield=dict(hp=80000, radius=60, regenPerSec=250, regenStartS=1, rechargeS=90, rechargeFraction=0.25, upkeepEnergyPerSec=2000),
+  eco=dict(upkeepEnergyPerSec=2000), weapons=[], footprint=[8, 8], vision=24, toggles=['shield (C17)'],
+  special='Eigene Varkan-Rolle ohne FA-T4-Vorbild: Kuppel Radius 60 (2,25× Fläche von Schirm III) mit 80.000 HP und 250 HP/s Regeneration '
+          '(5 Schirm III: 650 HP/s verteilt). Der Konverter bricht sie nach 6 Treffern (40 s), ein einzelner Hochofen nach ≈ 9,5 min, zwei im Wechsel nach ≈ 2,5 min. '
+          'Nach dem Kollaps 90 s offline, dann mit 25 % (20.000) zurück: gestapelte Mäntel verzögern einen Konverter, sperren ihn aber nicht dauerhaft. '
+          'Unterhalt 2.000 E/s: ein Energy-Stall (E3) lässt die Kuppel sofort fallen.',
+  hotbuild=('Großguss', 'F'), icon='struct_shield_t4',
+  parts=P('hull@sockel hull:team@randband boiler@generator mast@hauptmast ring:team*spin@ring_oben ring*spin@ring_mitte ring@ring_unten '
+          'hull:team@schuerze hull:ceramic@klammer'),
+  kitbash='Schildturm auf 8×8: dicker Mast mit drei gestaffelten waagerechten Ringen (oberster = größter, Ø ≈ 8 WU, team; Schild-Monopol), '
+          'Generatorkessel am Fuß, gefaltete Schürze (der „Mantel“, team), vier Strebebögen tragen den unteren Ring. Höhe ≈ 12 WU '
+          '(≈ 2,7× Schirm III). Keramik-Klammer am Sockel, kein Schlot.',
+  exp=dict(features=['K10', 'E3', 'C17', 'C15', 'P14', 'U21', 'A16', 'C2'], newMechanics=['XM8', 'XM9'],
+           crush=None,
+           counters=['Energy-Stall (2.000 E/s)', 'Einheiten laufen unter die Kuppel (Stampfe, Kokille)', 'Konverter + 2 Hochöfen im Takt',
+                     'Nach dem Kollaps kehrt die Kuppel nur mit 25 % zurück (2 Konverter-Treffer)',
+                     'Kuppel schützt nicht gegen Todeswaffen innerhalb'],
+           compareNote='HP+Schild pro Mass gegen T3-Schildgenerator (FA-Upgradekosten)',
+           t3Equivalent=dict(unit='core:str_t3_shield', faT4='UEB4301', faT3='UEB4301')))
+
+
 # ---------------------------------------------------------------- derived fields
-H_TECH = {0: 1.0, 1: 1.0, 2: 1.2, 3: 1.4}      # Höhenfaktor Strukturen
-MOB_SCALE = {0: 1.0, 1: 1.0, 2: 1.3, 3: 1.7}   # uniformer Maßstab mobil
+H_TECH = {0: 1.0, 1: 1.0, 2: 1.2, 3: 1.4, 4: 1.0}      # Höhenfaktor Strukturen (T4: in Spielgröße modelliert)
+MOB_SCALE = {0: 1.0, 1: 1.0, 2: 1.3, 3: 1.7, 4: 1.0}   # uniformer Maßstab mobil (T4: in Spielgröße modelliert)
 MOB_CAP_1x1 = 1.4                              # Deckel für 1×1-Footprint
 FLOW_CATS = {'ECONOMIC', 'FACTORY', 'ENGINEER'}
 BY_ID = {u['id']: u for u in R}
@@ -590,10 +772,10 @@ def fa_weapon(bp, idx=None):
     return dict(damage=w['dmg'], salvo=salvo, reloadS=rel, splash=w['splash'] or 0)
 
 
-def fa_metrics(bp, key):
+def fa_metrics(bp, key, idx=None):
     r = FA[bp]
     hp = r['hp'] + (r['shield'] or 0)
-    dps = r['dps']
+    dps = r['dps'] if idx is None else round(sum(r['weapons'][i]['dps'] for i in idx), 2)
     if bp in ('UEL0001', 'URL0001'):
         dps = 100.0  # nur Hauptwaffe, ohne Overcharge/Enhancements
     return dict(bp=bp, mass=r['mass'], energy=r['energy'], buildTime=r['bt'], hp=r['hp'], shieldHp=r['shield'],
@@ -605,6 +787,17 @@ def fa_metrics(bp, key):
 def pulk_targets(splash):
     # Rechenannahme Review: 1 Ziel pro 4 WU² (2 WU Abstand), Zielradius 0,5 WU
     return math.pi * (splash + 0.5) ** 2 / 4
+
+
+T4_TRIS = [1600, 800, 320]   # Budget LOD0/1/2 für Experimentals (@faf/modelkit EXPERIMENTAL_BUDGET)
+
+
+def is_air(u):
+    return u['group'] == 'air' or u.get('domain') == 'air'
+
+
+def is_mobile(u):
+    return u['group'] in ('cmd', 'land', 'air') or (u['group'] == 'exp' and u.get('domain') != 'struct')
 
 
 # Visual-Basis (niedrigste Tech-Stufe je Visual) für den Strukturmaßstab
@@ -620,11 +813,12 @@ for u in R:
     ws = u['weapons']
     dps = sum(w['dps'] for i, w in enumerate(ws) if (idx is None or i in idx))
     hp_eff = u['hp'] + (u.get('shield', {}) or {}).get('hp', 0)
-    fa = fa_metrics(u['faRef'], u['id'])
+    fa = fa_metrics(u['faRef'], u['id'], u.get('faDpsIdx'))
     dpm = round(dps / u['mass'], 4) if dps else None
     hpm = round(hp_eff / u['mass'], 4)
     # Abweichungen aus ungerundeten Werten (Rundung auf 4 Stellen verfälscht sonst kleine Werte wie beim Hochofen)
     fr = FA[u['faRef']]; fa_dpm = fa['dps'] / fr['mass'] if fa['dps'] else None
+    t4 = u['tech'] == 4
     fa_hpm = (fr['hp'] + (fr['shield'] or 0)) / fr['mass']
     rd = (dps / u['mass']) / fa_dpm if dps and fa_dpm else None
     rh = (hp_eff / u['mass']) / fa_hpm
@@ -643,7 +837,7 @@ for u in R:
     parts = u['parts']
     tris = sum(TRIS[p['part']] for p in parts)
     anim = sum(1 for p in parts if p.get('anim'))
-    mobile = u['group'] in ('cmd', 'land', 'air')
+    mobile = is_mobile(u)
     # Maßstab (faction.md §3.4)
     if mobile:
         s = MOB_SCALE[u['tech']]
@@ -654,7 +848,7 @@ for u in R:
         b = VIS_BASE[u['visual']]
         xz = u['footprint'][0] / b['footprint'][0]
         scale = dict(xz=round(xz, 2), y=round(xz * H_TECH[u['tech']] / H_TECH[b['tech']], 2))
-    stripes = 0 if (u['tech'] == 0 or 'WALL' in u['cats']) else u['tech']
+    stripes = 0 if (u['tech'] in (0, 4) or 'WALL' in u['cats']) else u['tech']  # T4: Keramik-Klammer statt Streifen
     stripe_mat = 'graphite' if ('ENGINEER' in u['cats'] and 'COMMAND' not in u['cats']) else 'ceramic'
     e = dict(
         id=u['id'], name=dict(de=u['de'], en=u['en']), role=dict(de=u['roleDe'], en=u['roleEn']),
@@ -665,7 +859,7 @@ for u in R:
                                        **(u.get('eco') or {})).items() if v is not None},
         health=dict(max=u['hp'], **({'regenPerSec': u['regen']} if u.get('regen') else {})),
         shield=u.get('shield'), weapons=ws,
-        motion=(dict(layer='air' if u['group'] == 'air' else 'land', speed=u['speed'], turnRateDeg=u['turn'],
+        motion=(dict(layer='air' if is_air(u) else 'land', speed=u['speed'], turnRateDeg=u['turn'],
                      accel=u.get('accel'), sizeClass=u['sizeClass'], footprint=u['footprint']) if mobile
                 else dict(layer='land', speed=0, footprint=u['footprint'], structure=True)),
         intel={k: v for k, v in dict(vision=u.get('vision'), radar=u.get('radar')).items() if v is not None},
@@ -674,13 +868,22 @@ for u in R:
         hotbuild=(dict(menu=u['hotbuild'][0], slot=u['hotbuild'][1]) if u['hotbuild'] else None),
         icon=u['icon'],
         kitbash=dict(parts=parts, partCount=len(parts), animatedParts=anim, trisEstimate=tris, techStripes=stripes,
-                     techStripeMat=stripe_mat if stripes else None, scale=scale, description=u['kitbash']),
+                     techStripeMat=stripe_mat if stripes else None, scale=scale, description=u['kitbash'],
+                     **({'ceramicBracket': True, 'trisBudget': T4_TRIS} if t4 else {})),
         balance=dict(dps=round(dps, 2) if dps else None, dpsPerMass=dpm, hpPerMass=hpm,
                      hpBasis='HP+Schild' if (u.get('shield') or FA[u['faRef']]['shield']) else 'HP',
                      fa=fa, devDpsPerMassPct=dev_d, devHpPerMassPct=dev_h, devProductPct=dev_p,
                      pulk=pulk, withinBand25=inband, withinTarget15=in15),
     )
-    if u['group'] == 'air':
+    if t4:
+        x = u['exp']
+        e['tier'] = 'T4'
+        e['postMvp'] = True
+        e['experimental'] = dict(domain=u['domain'], milestone=u['ms'], features=x['features'],
+                                 newMechanics=x['newMechanics'], crush=x['crush'], counters=x['counters'],
+                                 wreck=dict(massFraction=0.9, mass=round(u['mass'] * 0.9)), faCompare=x['compareNote'],
+                                 t3Equivalent=x['t3Equivalent'])
+    if is_air(u):
         e['motion']['accel'] = None
         e['motion']['note'] = 'kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)'
     out.append(e)
@@ -741,17 +944,26 @@ for e in out:
 for vid, v in visuals.items():
     v['supersetParts'] = sum(v['counts'].values())
     v['trisEstimate'] = sum(TRIS[k.split(':')[0]] * n_ for k, n_ in v['counts'].items())
-    v['mobile'] = E[v['members'][0]]['group'] in ('cmd', 'land', 'air')
+    v['mobile'] = E[v['members'][0]]['motion'].get('structure') is not True
+    v['t4'] = E[v['members'][0]]['tech'] == 4
 
 # ---------------------------------------------------------------- Checks / Lints
 ids = [e['id'] for e in out]
 assert len(ids) == len(set(ids))
 for e in out:
     k = e['kitbash']; b = e['balance']
-    assert k['animatedParts'] <= 2, e['id']
-    lim = 7 if e['group'] in ('cmd', 'land', 'air') else 9
-    assert k['partCount'] <= lim, (e['id'], k['partCount'])
-    assert k['trisEstimate'] <= 350, e['id']
+    if e['tech'] == 4:
+        assert k['animatedParts'] <= 8, e['id']  # PartStream-Limit
+        assert k['partCount'] <= 16, (e['id'], k['partCount'])
+        assert k['trisEstimate'] <= T4_TRIS[0], e['id']
+        assert e['postMvp'] and not e['ms9Core'] and e['msFirst'].startswith('PM'), e['id']
+        assert all(f in FEATURE_IDS for f in e['experimental']['features']), e['id']
+        assert all(m in XM for m in e['experimental']['newMechanics']), e['id']
+    else:
+        assert k['animatedParts'] <= 2, e['id']
+        lim = 7 if e['group'] in ('cmd', 'land', 'air') else 9
+        assert k['partCount'] <= lim, (e['id'], k['partCount'])
+        assert k['trisEstimate'] <= 350, e['id']
     assert b['withinBand25'], (e['id'], b['devDpsPerMassPct'], b['devHpPerMassPct'])
     assert b['withinTarget15'], (e['id'], b['devDpsPerMassPct'], b['devHpPerMassPct'], b['devProductPct'])
     if b['pulk']: assert abs(b['pulk']['devPct']) <= 15, (e['id'], b['pulk'])
@@ -771,8 +983,84 @@ for e in out:
 for h in htk:
     assert h['match'], ('Treffer-bis-Tod', h)
 for vid, v in visuals.items():
+    if v['t4']:
+        assert len(v['members']) == 1, vid
+        continue
     assert v['supersetParts'] <= (8 if v['mobile'] else 9), (vid, v['supersetParts'])
     assert v['trisEstimate'] <= 350, (vid, v['trisEstimate'])
+
+
+# ---------------------------------------------------------------- Experimentals: T3-Äquivalent, Bauzeit, Schilde, Todeswaffen
+T4U = [e for e in out if e['tech'] == 4]
+MEISTER_BP = BY_ID['core:lnd_t3_engineer']['bp']
+FA_T3_ENG_BP = FA['UEL0309']['br']
+
+
+def fa_full(bp):
+    r = FA[bp]
+    return r['mass'], r['hp'] + (r['shield'] or 0)
+
+
+t4_equiv = []
+for e in T4U:
+    q = e['experimental']['t3Equivalent']; t3 = E[q['unit']]
+    ours_n = e['economy']['mass'] / t3['economy']['mass']
+    fa_m4, fa_h4 = fa_full(q['faT4']); fa_m3, fa_h3 = fa_full(q['faT3'])
+    fa_d4 = e['balance']['fa']['dps']; fa_d3 = fa_metrics(q['faT3'], None)['dps']
+    h4 = e['health']['max'] + ((e['shield'] or {}).get('hp', 0)); h3 = t3['health']['max'] + ((t3['shield'] or {}).get('hp', 0))
+    d4 = e['balance']['dps']; d3 = t3['balance']['dps']
+    r_h = (h4 / e['economy']['mass']) / (h3 / t3['economy']['mass']); fr_h = (fa_h4 / fa_m4) / (fa_h3 / fa_m3)
+    r_d = (d4 / e['economy']['mass']) / (d3 / t3['economy']['mass']) if d4 and d3 else None
+    fr_d = (fa_d4 / fa_m4) / (fa_d3 / fa_m3) if fa_d4 and fa_d3 else None
+    row = dict(t4=e['id'], t3=q['unit'], t3Count=round(ours_n, 1), faT3Count=round(fa_m4 / fa_m3, 1),
+               t3PoolDps=round(ours_n * d3, 1) if d3 else None, t3PoolHp=round(ours_n * h3),
+               dpsRatio=round(r_d, 3) if r_d else None, faDpsRatio=round(fr_d, 3) if fr_d else None,
+               hpRatio=round(r_h, 3), faHpRatio=round(fr_h, 3),
+               devDpsRatioPct=round((r_d / fr_d - 1) * 100, 1) if r_d and fr_d else None,
+               devHpRatioPct=round((r_h / fr_h - 1) * 100, 1))
+    if 'ECONOMIC' in e['categories']:
+        ec = e['economy']; m3 = t3['economy']
+        row['eco'] = dict(maxMassPerSec=ec['demandMassPerSecMax'], baseMassPerSec=ec['massPerSec'],
+                          paybackAtMaxS=round(ec['mass'] / ec['demandMassPerSecMax']),
+                          t3MexForMax=round(ec['demandMassPerSecMax'] / m3['massPerSec'], 1),
+                          t3MexCostForMax=round(ec['demandMassPerSecMax'] / m3['massPerSec'] * (m3['mass'] + 900 + 36)),
+                          faPaybackAt750S=round(FA['XAB1401']['mass'] / 750))
+    t4_equiv.append(row)
+
+t4_build = []
+for e in T4U:
+    bt = e['economy']['buildTime']; fr = FA[BY_ID[e['id']]['faRef']]
+    rows = []
+    for n_ in (1, 10, 20, 40):
+        t = bt / (n_ * MEISTER_BP)
+        rows.append(dict(engineers=n_, seconds=round(t), massPerSec=round(e['economy']['mass'] / t, 1),
+                         energyPerSec=round(e['economy']['energy'] / t),
+                         faSeconds=round(fr['bt'] / (n_ * FA_T3_ENG_BP)) if 'EXPERIMENTAL' in fr['cats'] else None))
+    t4_build.append(dict(unit=e['id'], buildTime=bt, builderBp=MEISTER_BP, faBuilderBp=FA_T3_ENG_BP, rows=rows))
+
+t4_shield = []
+for a, t in (('core:exp_str_arty', 'core:str_t2_shield'), ('core:exp_str_arty', 'core:str_t3_shield'), ('core:exp_str_arty', 'core:exp_str_shield'),
+             ('core:str_t3_arty', 'core:exp_str_shield'), ('core:exp_lnd_walker', 'core:exp_str_shield'), ('core:exp_air_gunship', 'core:exp_str_shield'),
+             ('core:exp_str_arty', 'core:exp_lnd_foundry')):
+    w = E[a]['weapons'][0]; sh = E[t]['shield']; n_ = shots_to_break(w, sh)
+    t4_shield.append(dict(attacker=a, target=t, shots=n_, timeS=round((n_ - 1) * w['reloadS'], 1) if n_ else None,
+                          note='ein Schütze, Hauptwaffe; Regeneration mit regenStartS'))
+
+t4_death = []
+for e in T4U:
+    dw = e['special']['deathWeapon']
+    if not dw: continue
+    fa_d = [w for w in FA[BY_ID[e['id']]['faRef']]['weapons'] if w['cat'] == 'Death']
+    fa_dmg = fa_d[0]['dmg'] if fa_d and fa_d[0]['dmg'] else (35000 if e['id'] == 'core:exp_str_eco' else None)
+    fa_rad = fa_d[0]['splash'] if fa_d and fa_d[0]['splash'] else (25 if e['id'] == 'core:exp_str_eco' else None)
+    t4_death.append(dict(unit=e['id'], damage=dw['damage'], radius=dw['radius'], delayS=dw.get('delayS'),
+                         faDamage=fa_dmg, faRadius=fa_rad,
+                         killsT3Bot=dw['damage'] >= E['core:lnd_t3_bot']['health']['max'],
+                         killsT3Pgen=dw['damage'] >= E['core:str_t3_pgen']['health']['max']))
+
+for r in t4_equiv:
+    for k in ('devDpsRatioPct', 'devHpRatioPct'):
+        if r[k] is not None: assert abs(r[k]) <= 25, ('T3-Äquivalent', r)
 
 # Icon-Glyphen
 import re
@@ -780,12 +1068,15 @@ glyphs = sorted({re.sub(r'^(land|air|eng|struct)_', '', re.sub(r'_t\d$', '', e['
                  if e['icon'] not in ('cmd_commander', 'wall')})
 
 n9 = sum(e['ms9Core'] for e in out)
-mob = sum(1 for e in out if e['group'] in ('cmd', 'land', 'air'))
+MVP = [e for e in out if e['tech'] != 4]
+mob = sum(1 for e in MVP if e['group'] in ('cmd', 'land', 'air'))
+t4mob = sum(1 for e in T4U if e['motion'].get('structure') is not True)
 doc = dict(
     schema='faf-roster/1', faction='core (Varkan-Kompakt)', generated='2026-09-29', language='de',
     sourceOfTruth='roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts; faction.md und roster.md verweisen darauf.',
-    counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9,
-                visuals=len(visuals), iconGlyphs=len(glyphs)),
+    counts=dict(total=len(out), mvp=len(MVP), mobile=mob, structures=len(MVP) - mob, ms9Core=n9,
+                visuals=len(visuals) - len(T4U), iconGlyphs=len(glyphs),
+                experimental=dict(total=len(T4U), mobile=t4mob, structures=len(T4U) - t4mob, visuals=len(T4U))),
     conventions=dict(
         units='1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s',
         buildTime='Sekunden = buildTime / Build Power des Erbauers (FA-Semantik); Upgrade-Dauer = buildTime der Zielstufe / buildPower der Vorstufe',
@@ -809,7 +1100,12 @@ doc = dict(
         visual='Ein Visual = ein Superset-Mesh pro Rolle (Vereinigung der Parts aller Tech-Stufen nach Part+Material). Jeder Vertex trägt eine '
                'Tech-Bitmaske; der Vertex-Shader kollabiert Parts, die für die Instanz-Tech nicht gelten (Skalierung 0). Ein Draw pro (Visual, LOD).',
         faSource='FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js; Stichprobe gegen FAForever/fa develop',
+        experimentals='Tier T4 (tech 4, group exp, postMvp true, msFirst PM1–PM3), Details docs/design/experimentals.md. Zählen nicht zu counts.mvp/mobile/structures/visuals. '
+                      'Gleiche Gates wie MVP (±25 % hart, ±15 % Ziel inkl. Produkt/Pulk) gegen die FA-T4-Referenz; zusätzlich checks.experimentals: '
+                      'T3-Äquivalent (T4/T3-Verhältnis von DPS/Mass und HP/Mass gegen dasselbe FA-Verhältnis, ±25 %), Bauzeit mit N Meistern, Schild- und Todeswaffen-Tabellen. '
+                      'Modelle in Spielgröße (scale 1), Keramik-Klammer statt Tech-Streifen, Budget ≤ 1.600/800/320 Tris, Parts ≤ 16, animiert ≤ 8 (PartStream).',
     ),
+    experimentalMechanics=XM,
     hotbuildGrid={
         'Landwerk': {'Q': 'Panzer (Punze/Meißel)', 'W': 'Artillerie (Kelle/Rinne/Pfanne)',
                      'E': 'Engineer (Lehrling/Geselle/Meister)', 'R': 'Flugabwehr (Sieb/Rüttelsieb/Trommelsieb)',
@@ -819,9 +1115,11 @@ doc = dict(
                      'R': 'Jagdbomber (Elster)', 'A': 'Aufklärer (Lerche)'},
         'Bau': {'Q': 'Zapfstelle', 'W': 'Glutkessel', 'E': 'Dampfquelle', 'R': 'Erzspeicher', 'T': 'Glutspeicher',
                 'A': 'Landwerk', 'S': 'Luftwerk', 'D': 'Horcher', 'F': 'Schirm',
-                'Z': 'Riegel', 'X': 'Rost/Hochrost', 'C': 'Mauer', 'V': 'Tiegel/Hochofen'},
+                'Z': 'Riegel', 'X': 'Rost/Hochrost', 'C': 'Mauer', 'V': 'Tiegel/Hochofen', 'G': 'Großguss (T4-Untermenü, Post-MVP)'},
+        'Großguss': {'Q': 'Sturmläufer (Stampfe)', 'W': 'Strategische Artillerie (Konverter)', 'E': 'Mobile Gießhalle (Kokille)',
+                     'A': 'Tiefenzapfwerk (Tiefenstich)', 'S': 'Luft-Experimental (Kolkrabe)', 'F': 'Großschild (Mantel)'},
         'rule': 'Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). '
-                'Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen.'},
+                'Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen. Post-MVP: G im Bau-Menü öffnet das Untermenü Großguss (T4); dessen Tasten folgen den Rollen der übrigen Menüs (Q Direktfeuer, W Artillerie, E Bauen, S Luft, F Schild, A Wirtschaft).'},
     silhouettePairs=dict(
         ms9=[['core:lnd_t1_tank', 'core:lnd_t1_aa'], ['core:lnd_t1_arty', 'core:lnd_t1_aa'], ['core:lnd_t2_mml', 'core:lnd_t2_aa'],
              ['core:lnd_t2_tank', 'core:lnd_t2_mml'], ['core:lnd_t1_engineer', 'core:lnd_t1_scout'], ['core:str_t1_pd', 'core:str_t1_aa'],
@@ -829,20 +1127,28 @@ doc = dict(
         ms14=[['core:air_t1_bomber', 'core:air_t1_fighter'], ['core:air_t1_fighter', 'core:air_t2_fbomber'], ['core:air_t1_scout', 'core:air_t1_bomber'],
               ['core:str_t1_radar', 'core:str_t2_shield'], ['core:lnd_t1_scout', 'core:lnd_t2_shield'], ['core:str_t3_arty', 'core:str_t3_pgen'],
               ['core:str_t3_mex', 'core:str_t1_hydro']],
+        t4=[['core:exp_lnd_walker', 'core:cmd_commander'], ['core:exp_air_gunship', 'core:air_t2_gunship'],
+            ['core:exp_str_arty', 'core:str_t3_arty'], ['core:exp_str_shield', 'core:str_t3_shield'],
+            ['core:exp_lnd_foundry', 'core:lnd_t2_shield'], ['core:exp_str_eco', 'core:str_t3_mex']],
     ),
     iconGlyphs=glyphs,
     visuals={k: dict(members=v['members'], supersetParts=v['supersetParts'], trisEstimate=v['trisEstimate'], parts=v['counts'])
              for k, v in visuals.items()},
-    checks=dict(hitsToKill=htk, shieldBreak=shield_break),
+    checks=dict(hitsToKill=htk, shieldBreak=shield_break,
+                experimentals=dict(t3Equivalent=t4_equiv, buildTime=t4_build, shieldBreak=t4_shield, deathWeapons=t4_death)),
     units=out,
 )
 for pr in doc['silhouettePairs']['ms9']:
     assert all(E[i]['ms9Core'] for i in pr), pr
-json.dump(doc, open('roster.json', 'w'), ensure_ascii=False, indent=2)
-print('total', len(out), 'mobile', mob, 'ms9', n9, 'visuals', len(visuals), 'glyphs', len(glyphs), glyphs)
+json.dump(doc, open(REPO / 'docs' / 'design' / 'roster.json', 'w'), ensure_ascii=False, indent=2)
+print('total', len(out), 'mvp', len(MVP), 't4', len(T4U), 'mobile', mob, 'ms9', n9, 'visuals', len(visuals), 'glyphs', len(glyphs), glyphs)
 for e in out:
     b = e['balance']
     print(f"{e['id']:26s} {'●' if e['ms9Core'] else '○'} {e['msFirst']:5s} dps/m {b['dpsPerMass']} ({b['devDpsPerMassPct']}) hp/m {b['hpPerMass']} ({b['devHpPerMassPct']}) prod {b['devProductPct']} pulk {b['pulk'] and b['pulk']['devPct']} scale {e['kitbash']['scale']}")
 for h in htk: print('HTK', h['attacker'], '->', h['target'], h['hits'], h['fa']['hits'], h['ttkS'], h['fa']['ttkS'])
 for s in shield_break: print('SHIELD', s)
 for k, v in visuals.items(): print('VIS', k, v['supersetParts'], v['trisEstimate'])
+for r in t4_equiv: print('T4EQ', r)
+for r in t4_build: print('T4BT', r['unit'], [(x['engineers'], x['seconds'], x['massPerSec'], x['faSeconds']) for x in r['rows']])
+for r in t4_shield: print('T4SH', r)
+for r in t4_death: print('T4DW', r)

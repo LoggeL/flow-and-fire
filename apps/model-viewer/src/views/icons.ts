@@ -1,6 +1,7 @@
 /** Strategic icon grammar overview: base forms, glyphs, tech notches, states, and every roster icon. */
 import {
   blipSvg,
+  bracketSvg,
   FORMS,
   formSvg,
   GLYPHS,
@@ -51,6 +52,8 @@ export async function mountIcons(app: HTMLElement, query: URLSearchParams): Prom
       { class: 'icon-sheet' },
       [
         ...([1, 2, 3] as const).map((n) => cell(notchSvg(n, { size: big }), `T${n}`, 'Kerben 5×9 DE')),
+        cell(bracketSvg({ size: big }), 'T4', 'Klammer statt Kerben'),
+        cell(iconSvg('land_bot_t4', { team, size: big }), 'Experimental', 'land_bot_t4, Faktor 1,5'),
         cell(iconSvg(sample, { team, size: big }), 'normal', sample),
         cell(iconSvg(sample, { team, size: big, variant: 'selected' }), 'ausgewählt', 'weißer Außenring'),
         cell(blipSvg('ground', { size: big }), 'Radar-Blip Boden', 'Achteck, neutral'),

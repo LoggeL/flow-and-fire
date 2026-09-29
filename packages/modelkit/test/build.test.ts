@@ -4,14 +4,17 @@ import {
   box,
   buildModel,
   cylinder,
+  DEFAULT_BUDGETS,
   DEFAULT_PALETTE,
   defineModel,
   definePalette,
+  EXPERIMENTAL_BUDGET,
   flipX,
   group,
   mirrorX,
   quad,
   radial,
+  rosterDefaults,
   sphere,
   srgbToLinear,
   stripes,
@@ -181,5 +184,25 @@ describe('buildModel', () => {
     const tooBig = buildModel(defineModel({ id: 't:s', class: 'struct', footprint: [1, 1], parts: [{ name: 'hull', shapes: [box({ size: [2, 1, 2] })] }] }), ctx);
     expect(tooBig.footprintCheck.ok).toBe(false);
     expect(tooBig.warnings.some((w) => w.includes('footprint'))).toBe(true);
+  });
+});
+
+describe('experimentals (tech 4)', () => {
+  it('get the experimental budget instead of the class budget, unless a model sets its own', () => {
+    const def = defineModel({ id: 'test:exp_walker', tech: 4, parts: [{ name: 'hull', shapes: [box({ size: [6, 4, 6], at: [0, 2, 0], mat: 'team' })] }] });
+    const built = buildModel(def, ctx);
+    expect(built.tech).toBe(4);
+    expect(built.budget.tris).toEqual(EXPERIMENTAL_BUDGET.tris);
+    expect(built.budget.tris).not.toEqual(DEFAULT_BUDGETS.land.tris);
+    const own = buildModel({ ...def, budget: { tris: [100, 50, 20] } }, ctx);
+    expect(own.budget.tris).toEqual([100, 50, 20]);
+    const { tech: _t, ...noTech } = def;
+    const fromRoster = buildModel(noTech, { ...ctx, defaults: { tech: 4 } });
+    expect(fromRoster.budget.tris).toEqual(EXPERIMENTAL_BUDGET.tris);
+  });
+
+  it('rosterDefaults passes tech 4 through', () => {
+    expect(rosterDefaults({ id: 'core:exp_str_arty', tech: 4, icon: 'struct_arty_t4' }).tech).toBe(4);
+    expect(rosterDefaults({ id: 'core:exp_str_arty', tech: 4, icon: 'struct_arty_t4' }).class).toBe('struct');
   });
 });

@@ -34,7 +34,7 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 - **LODs:** LOD1 und LOD2 entstehen automatisch: Kleinteile fallen weg (8 % bzw. 16 % der größten Ausdehnung),
   Segmente werden reduziert, Fasen und Profile vereinfacht. Steuerbar über `keep`, `minLod` und `maxLod`.
   Umschaltdistanzen: Standard 60 / 180 WU (`view.lod`). Unter `iconThreshold` (25 px) ersetzt das Strategic Icon das Mesh.
-- **Budgets (Tris L0/L1/L2):** Einheiten und Gebäude 350 / 220 / 110, Mauer 64 / 40 / 24. Wird ein Budget
+- **Budgets (Tris L0/L1/L2):** Einheiten und Gebäude 350 / 220 / 110, Mauer 64 / 40 / 24, Experimentals (`tech: 4`, alle Klassen) 1.600 / 800 / 320 (`EXPERIMENTAL_BUDGET`). Wird ein Budget
   überschritten, bricht `pnpm models` mit Fehler ab.
 - **Prüfungen beim Build:** Fehler bei ungültiger Geometrie, mehr als 8 animierten Parts, unbekanntem Material oder falschem Dateinamen.
   Warnungen bei Footprint (mobil ≤ 200 % der Kante, Strukturen 70–105 %), fehlender Teamfarbe, Abweichung vom Roster
@@ -47,6 +47,7 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 | Fraktion | Modelle | Roster | Tris L0 (min / Ø / max) | Tris L1 Ø | Tris L2 Ø | Status |
 |---|---|---|---|---|---|---|
 | Varkan (`content/models/varkan/`, Roster `docs/design/roster.json`) | **50** (23 mobil, 27 Strukturen) | 50 / 50, davon 26 MS9-Kern | 52 / 276 / 348 | 164 | 85 | vollständig, visuell geprüft, alle im Budget, 0 Warnungen |
+| Varkan-Experimentals (T4, Post-MVP, `exp_*.ts`) | **6** (3 mobil, 3 Strukturen) | 6 / 6 | 1.194 / 1.393 / 1.520 | 762 | 280 | vollständig, visuell geprüft (Kontaktabzug + Größenvergleich gegen T3/Vogt), im T4-Budget 1.600 / 800 / 320, 0 Warnungen ([`experimentals.md`](experimentals.md) §8) |
 
 Weitere Fraktionen (`docs/design/factions/<slug>/`) haben noch keine Modelle.
 
@@ -60,6 +61,21 @@ Weitere Fraktionen (`docs/design/factions/<slug>/`) haben noch keine Modelle.
 | Vogt | 1 | 348 | 218 | 96 | 54,4 % | 6 |
 | Strukturen | 26 | 164 / 266 / 346 | 220 | 108 | 20,1–53,9 % | 3 |
 | Mauer | 1 | 52 | 32 | 24 | 11,9 % | 1 |
+
+**Varkan-Experimentals (T4, Post-MVP):** in Spielgröße (Maßstab 1,0), Keramik-Klammer (`varkan/_t4.ts`) statt Tech-Streifen,
+`lodDistances` [120, 360/400]. Werte, Mechaniken (XM1–XM9) und Feature-IDs stehen in [`experimentals.md`](experimentals.md).
+
+| Modell (Datei) | Rolle | Tris L0/L1/L2 | Maße (WU) | Team-Draufsicht | Glut | Kupfer | anim. Parts | Meilenstein |
+|---|---|---|---|---|---|---|---|---|
+| Stampfe (`exp_lnd_walker`) | Sturmläufer, zwei Pochstempel-Beine | 1.304 / 708 / 200 | 7,3 × 6,5 × 8,3 | 43,1 % | 0,1 % | 9,8 % | 5 | PM1 (U16) |
+| Kokille (`exp_lnd_foundry`) | mobile Gießhalle (Fabrik, Heckausgang) | 1.476 / 796 / 316 | 7,3 × 7,4 × 11,8 | 53,7 % | 3,2 % | 9,1 % | 6 | PM2 (U21) |
+| Kolkrabe (`exp_air_gunship`) | Luft-Experimental, vier Ringdüsen | 1.450 / 766 / 316 | 9,2 × 3,5 × 9,5 | 66,6 % | 0,1 % | 8,3 % | 6 | PM2 (U21) |
+| Konverter (`exp_str_arty`) | strategische Artillerie (Game-Ender) | 1.414 / 768 / 276 | 9,95 × 14,5 × 9,96 | 21,7 % | 0,1 % | 11,6 % | 2 | PM3 (U21) |
+| Tiefenstich (`exp_str_eco`) | Endgame-Eco (Tiefenzapfwerk) | 1.520 / 766 / 304 | 11,95 × 13,65 × 11,95 | 25,5 % | 3,3 % | 9,4 % | 3 | PM3 (E17) |
+| Mantel (`exp_str_shield`) | Großschild (Game-Ender-Konter) | 1.194 / 770 / 270 | 8,0 × 11,8 × 8,1 | 45,9 % | 0,0 % | 8,3 % | 2 | PM2 |
+
+Zusammen 8.358 Tris in LOD0. Größenvergleich: Stampfe 6,5 WU hoch (2,1× Vogt 3,14 WU), Konverter mit 14,5 WU das höchste
+Bauwerk, Mantel 2,8× Schirm III. Jedes T4 ist in `compare.png` neben T3 und Vogt sofort als eigene Größenklasse lesbar.
 
 Zusammen sind es 13.822 Tris in LOD0 und etwa 2,6 MB GLB (unkomprimiert, ohne meshopt). Alle Pflicht-Silhouettenpaare aus
 faction.md §5.2 (9 für MS9, 7 für MS14) sind bei 32 und 48 px unterscheidbar.
@@ -80,6 +96,15 @@ faction.md §5.2 (9 für MS9, 7 für MS14) sind bei 32 und 48 px unterscheidbar.
   Tech-Streifen sind Decal-Geometrie, keine Maske. `_MASK.a` ist AO aus der Normalen, kein Ruß-Gradient. Icons liegen nur als
   SVG vor, der MSDF-Atlas fehlt noch.
 - **Werkzeug:** Der Größenvergleich (`compare.png`) ist bei 8×8-Gebäuden neben kleinen Einheiten kaum lesbar.
+**Bekannte Schwächen (Varkan-T4):**
+
+- **Konverter aus der Spielkamera (50°):** Das Rohr zeigt auf die Kamera zu und wird verkürzt; erkennbar bleibt er über die
+  A-Wangen und das Querhaupt. Den T3-Gebäuden geht es in dieser Ansicht genauso.
+- **Glut:** Stampfe, Kolkrabe, Konverter und Mantel liegen bewusst nahe 0 % (Waffen-/Schildeinheiten, Glut nur an Mündungen
+  und Todeswaffen-Nähten). Im 3–6-%-Band der Flow-Einheiten liegen Kokille (3,2 %) und Tiefenstich (3,3 %).
+- **Animierte Parts:** 5–6 bei Stampfe, Kokille und Kolkrabe. Das technische Limit von 8 halten alle ein.
+- **Werkzeug:** Im Größenvergleich überlappen die Beschriftungen der kleinen Einheiten neben den T4; für die Abnahme hilft ein
+  gefilterter Vergleich (Vogt, T3, T4).
 
 ## 4. Integrationsplan
 
@@ -123,6 +148,9 @@ faction.md §5.2 (9 für MS9, 7 für MS14) sind bei 32 und 48 px unterscheidbar.
 | MS12 Luftkrieg | Luftwerk I/II, Lerche, Turmfalke, Dohle, Krähe, Elster | Bank-Rotation, Rotoren/Propeller (`spin`) |
 | MS13 Schilde, T3, Artillerie | Schürze, Schirm II/III, Zange, Fallhammer, Reißnadel, Pfanne, Trommelsieb, Meister, Landwerk III, Zapfstelle III, Glutkessel III, Tiegel, Hochofen | Schilde, T3 und Artilleriestellungen |
 | MS14 Voll-MVP | alle 50, 0 Platzhalter | Grafik-Politur: Superset-Visuals mit Tech-Bitmaske, Ruß-Gradient, Textur und Normal Map statt Geometrie-Details |
+| PM1 (Post-MVP, U16) | Stampfe | Großbaustelle, Crush/Fußtritt (Beine im Schrittakt), Todeswaffe mit Umkippen, T4-Icon-Klammer |
+| PM2 (Post-MVP, U21 Teil 1) | Kokille, Kolkrabe, Mantel | mobile Fabrik mit Heckausgang, Luft-T4 (vier `spin`-Rotoren), Großschild mit gegenläufigen Ringen |
+| PM3 (Post-MVP, U21 Game-Ender, E17) | Konverter, Tiefenstich | Strategische Artillerie (Birne + Rohr pitch, Drehbühne yaw), Endgame-Eco |
 
 Im Spiel gelten die GLBs in `content/models/dist/` als Build-Artefakt (git-ignoriert). Die Asset-Pipeline sollte `pnpm models`
 deshalb als Vorstufe aufrufen oder `@faf/modelkit` direkt verwenden.
