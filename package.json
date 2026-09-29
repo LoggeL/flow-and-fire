@@ -22,11 +22,15 @@
     "sfx": "pnpm --filter @faf/sfx run sfx",
     "sfx:analyze": "pnpm --filter @faf/sfx run analyze",
     "sfx:audit": "pnpm --filter @faf/sfx run audit",
-    "sfx:preview": "pnpm --filter @faf/sfx run preview"
+    "sfx:preview": "pnpm --filter @faf/sfx run preview",
+    "models": "tsx packages/modelkit/scripts/models.ts",
+    "models:shots": "pnpm --filter @faf/model-shots run shots",
+    "models:viewer": "pnpm --filter @faf/model-viewer dev"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@faf/eslint-plugin-sim": "workspace:*",
+    "@faf/modelkit": "workspace:*",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.0",
     "dependency-cruiser": "^18.4.0",

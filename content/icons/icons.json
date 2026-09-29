@@ -1,0 +1,505 @@
+{
+  "schema": "faf-icons/1",
+  "icons": [
+    {
+      "id": "air_aa_t1",
+      "form": "air",
+      "glyph": "aa",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:air_t1_fighter"
+      ]
+    },
+    {
+      "id": "air_bomb_t1",
+      "form": "air",
+      "glyph": "bomb",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:air_t1_bomber"
+      ]
+    },
+    {
+      "id": "air_direct_t2",
+      "form": "air",
+      "glyph": "direct",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:air_t2_gunship"
+      ]
+    },
+    {
+      "id": "air_fbomb_t2",
+      "form": "air",
+      "glyph": "fbomb",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:air_t2_fbomber"
+      ]
+    },
+    {
+      "id": "air_intel_t1",
+      "form": "air",
+      "glyph": "intel",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:air_t1_scout"
+      ]
+    },
+    {
+      "id": "cmd_commander",
+      "form": "cmd",
+      "glyph": null,
+      "tech": 0,
+      "scale": 1.6,
+      "units": [
+        "core:cmd_commander"
+      ]
+    },
+    {
+      "id": "eng_build_t1",
+      "form": "eng",
+      "glyph": "build",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_engineer"
+      ]
+    },
+    {
+      "id": "eng_build_t2",
+      "form": "eng",
+      "glyph": "build",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_engineer"
+      ]
+    },
+    {
+      "id": "eng_build_t3",
+      "form": "eng",
+      "glyph": "build",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:lnd_t3_engineer"
+      ]
+    },
+    {
+      "id": "land_aa_t1",
+      "form": "land",
+      "glyph": "aa",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_aa"
+      ]
+    },
+    {
+      "id": "land_aa_t2",
+      "form": "land",
+      "glyph": "aa",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_aa"
+      ]
+    },
+    {
+      "id": "land_aa_t3",
+      "form": "land",
+      "glyph": "aa",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:lnd_t3_aa"
+      ]
+    },
+    {
+      "id": "land_arty_t1",
+      "form": "land",
+      "glyph": "arty",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_arty"
+      ]
+    },
+    {
+      "id": "land_arty_t3",
+      "form": "land",
+      "glyph": "arty",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:lnd_t3_arty"
+      ]
+    },
+    {
+      "id": "land_bot_t1",
+      "form": "land",
+      "glyph": "bot",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_bot"
+      ]
+    },
+    {
+      "id": "land_bot_t2",
+      "form": "land",
+      "glyph": "bot",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_bot"
+      ]
+    },
+    {
+      "id": "land_bot_t3",
+      "form": "land",
+      "glyph": "bot",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:lnd_t3_bot"
+      ]
+    },
+    {
+      "id": "land_direct_t1",
+      "form": "land",
+      "glyph": "direct",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_tank"
+      ]
+    },
+    {
+      "id": "land_direct_t2",
+      "form": "land",
+      "glyph": "direct",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_tank"
+      ]
+    },
+    {
+      "id": "land_intel_t1",
+      "form": "land",
+      "glyph": "intel",
+      "tech": 1,
+      "scale": 1,
+      "units": [
+        "core:lnd_t1_scout"
+      ]
+    },
+    {
+      "id": "land_mml_t2",
+      "form": "land",
+      "glyph": "mml",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_mml"
+      ]
+    },
+    {
+      "id": "land_shield_t2",
+      "form": "land",
+      "glyph": "shield",
+      "tech": 2,
+      "scale": 1.15,
+      "units": [
+        "core:lnd_t2_shield"
+      ]
+    },
+    {
+      "id": "land_sniper_t3",
+      "form": "land",
+      "glyph": "sniper",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:lnd_t3_sniper"
+      ]
+    },
+    {
+      "id": "struct_aa_t1",
+      "form": "struct",
+      "glyph": "aa",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_aa"
+      ]
+    },
+    {
+      "id": "struct_aa_t2",
+      "form": "struct",
+      "glyph": "aa",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_aa"
+      ]
+    },
+    {
+      "id": "struct_arty_t2",
+      "form": "struct",
+      "glyph": "arty",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_arty"
+      ]
+    },
+    {
+      "id": "struct_arty_t3",
+      "form": "struct",
+      "glyph": "arty",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "core:str_t3_arty"
+      ]
+    },
+    {
+      "id": "struct_direct_t1",
+      "form": "struct",
+      "glyph": "direct",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_pd"
+      ]
+    },
+    {
+      "id": "struct_direct_t2",
+      "form": "struct",
+      "glyph": "direct",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_pd"
+      ]
+    },
+    {
+      "id": "struct_energy_t1",
+      "form": "struct",
+      "glyph": "energy",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_pgen"
+      ]
+    },
+    {
+      "id": "struct_energy_t2",
+      "form": "struct",
+      "glyph": "energy",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_pgen"
+      ]
+    },
+    {
+      "id": "struct_energy_t3",
+      "form": "struct",
+      "glyph": "energy",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_pgen"
+      ]
+    },
+    {
+      "id": "struct_estore_t1",
+      "form": "struct",
+      "glyph": "estore",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_estore"
+      ]
+    },
+    {
+      "id": "struct_fac_air_t1",
+      "form": "struct",
+      "glyph": "fac_air",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_fac_air"
+      ]
+    },
+    {
+      "id": "struct_fac_air_t2",
+      "form": "struct",
+      "glyph": "fac_air",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_fac_air"
+      ]
+    },
+    {
+      "id": "struct_fac_land_t1",
+      "form": "struct",
+      "glyph": "fac_land",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_fac_land"
+      ]
+    },
+    {
+      "id": "struct_fac_land_t2",
+      "form": "struct",
+      "glyph": "fac_land",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_fac_land"
+      ]
+    },
+    {
+      "id": "struct_fac_land_t3",
+      "form": "struct",
+      "glyph": "fac_land",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_fac_land"
+      ]
+    },
+    {
+      "id": "struct_hydro_t1",
+      "form": "struct",
+      "glyph": "hydro",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_hydro"
+      ]
+    },
+    {
+      "id": "struct_intel_t1",
+      "form": "struct",
+      "glyph": "intel",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_radar"
+      ]
+    },
+    {
+      "id": "struct_intel_t2",
+      "form": "struct",
+      "glyph": "intel",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_radar"
+      ]
+    },
+    {
+      "id": "struct_intel_t3",
+      "form": "struct",
+      "glyph": "intel",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_radar"
+      ]
+    },
+    {
+      "id": "struct_mass_t1",
+      "form": "struct",
+      "glyph": "mass",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_mex"
+      ]
+    },
+    {
+      "id": "struct_mass_t2",
+      "form": "struct",
+      "glyph": "mass",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_mex"
+      ]
+    },
+    {
+      "id": "struct_mass_t3",
+      "form": "struct",
+      "glyph": "mass",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_mex"
+      ]
+    },
+    {
+      "id": "struct_mstore_t1",
+      "form": "struct",
+      "glyph": "mstore",
+      "tech": 1,
+      "scale": 1.1,
+      "units": [
+        "core:str_t1_mstore"
+      ]
+    },
+    {
+      "id": "struct_sam_t3",
+      "form": "struct",
+      "glyph": "sam",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_sam"
+      ]
+    },
+    {
+      "id": "struct_shield_t2",
+      "form": "struct",
+      "glyph": "shield",
+      "tech": 2,
+      "scale": 1.1,
+      "units": [
+        "core:str_t2_shield"
+      ]
+    },
+    {
+      "id": "struct_shield_t3",
+      "form": "struct",
+      "glyph": "shield",
+      "tech": 3,
+      "scale": 1.1,
+      "units": [
+        "core:str_t3_shield"
+      ]
+    },
+    {
+      "id": "wall",
+      "form": "wall",
+      "glyph": null,
+      "tech": 0,
+      "scale": 0.6,
+      "units": [
+        "core:str_t1_wall"
+      ]
+    }
+  ]
+}

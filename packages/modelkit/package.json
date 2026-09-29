@@ -1,0 +1,22 @@
+{
+  "name": "@faf/modelkit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kitbash-DSL für Einheiten-Modelle: Primitive, Parts, Materialslots, Flat-Shading, Auto-LODs, glTF-Export",
+  "exports": {
+    ".": "./src/index.ts",
+    "./materials": "./src/materials.ts",
+    "./meta": "./src/meta.ts"
+  },
+  "scripts": {
+    "models": "tsx scripts/models.ts"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15"
+  }
+}
