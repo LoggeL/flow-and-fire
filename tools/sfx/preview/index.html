@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAF SFX-Vorschau</title>
+<style>
+  :root {
+    --bg: #f4f2ef; --panel: #ffffff; --ink: #1e1c1b; --muted: #6b6560; --line: #e2ddd6;
+    --accent: #c4561c; --accent-ink: #ffffff; --warn: #a35a00; --chip: #ece7e0; --wave: #c4561c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151312; --panel: #1f1c1a; --ink: #ece7e0; --muted: #9a928a; --line: #34302c;
+      --accent: #f07a30; --accent-ink: #151312; --warn: #f0b040; --chip: #2a2623; --wave: #f07a30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151312; --panel: #1f1c1a; --ink: #ece7e0; --muted: #9a928a; --line: #34302c;
+    --accent: #f07a30; --accent-ink: #151312; --warn: #f0b040; --chip: #2a2623; --wave: #f07a30;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); padding: 12px 16px; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type="search"] { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+  button, select { font: inherit; color: inherit; }
+  .chip { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  main { padding: 12px 16px 48px; max-width: 1100px; margin: 0 auto; }
+  h2 { font-size: 15px; margin: 22px 0 8px; color: var(--muted); font-weight: 600; }
+  .sound { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .top { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+  .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; overflow-wrap: anywhere; }
+  .desc { color: var(--muted); }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--muted); font-size: 12px; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  canvas { display: none; width: 100%; height: 44px; margin-top: 8px; }
+  canvas.drawn { display: block; }
+  .warn { color: var(--warn); font-size: 12px; margin-top: 4px; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  label.small { color: var(--muted); font-size: 12px; display: inline-flex; gap: 6px; align-items: center; }
+  input[type="range"] { width: 110px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FAF SFX-Vorschau <span id="stats" class="desc" style="font-size:13px;font-weight:400"></span></h1>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Suchen (id, Beschreibung, Tag)" autocomplete="off">
+    <select id="fmt" class="btn" title="Dateiformat"><option value="opus">Opus/WebM</option><option value="wav">WAV</option></select>
+    <label class="small">Lautstärke <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7"></label>
+    <button id="stop" class="btn" title="Alles stoppen (Esc)">■ Stopp</button>
+    <button id="theme" class="btn" title="Hell/Dunkel">◐</button>
+  </div>
+  <div id="cats" class="bar" style="margin-top:8px"></div>
+</header>
+<main id="list"><div class="empty">Lade Manifest …</div></main>
+
+<!-- Manifest als Script: funktioniert auch per file:// (fetch ist dort gesperrt). -->
+<script src="../../../content/audio/dist/manifest.js" onerror="window.FAF_SFX_MANIFEST=null"></script>
+<script>
+(() => {
+  const BASE = '../../../content/audio/dist/';
+  const $ = (s) => document.querySelector(s);
+  const state = { q: '', cats: new Set(), fmt: 'opus' };
+  try { state.fmt = localStorage.getItem('faf-sfx-fmt') || 'opus'; } catch { /* storage blocked */ }
+  try { const t = localStorage.getItem('faf-sfx-theme'); if (t) document.documentElement.dataset.theme = t; } catch { /* storage blocked */ }
+  $('#fmt').value = state.fmt;
+
+  let ctx = null, master = null;
+  const buffers = new Map();
+  const playing = new Set();
+  const lastStart = new Map();
+  function audio() {
+    if (!ctx) { ctx = new AudioContext(); master = ctx.createGain(); master.gain.value = Number($('#vol').value); master.connect(ctx.destination); }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  async function load(url) {
+    if (!buffers.has(url)) {
+      buffers.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(r.status + ' ' + url); return r.arrayBuffer(); }).then((b) => audio().decodeAudioData(b)));
+    }
+    return buffers.get(url);
+  }
+  function fileOf(v) { return state.fmt === 'opus' && v.opus ? v.opus : v.wav; }
+  async function play(sound, v, opts = {}) {
+    const url = BASE + fileOf(v);
+    let buf;
+    try { buf = await load(url); } catch (e) {
+      // file:// fallback: plain <audio> element (no loop points, no waveform).
+      const el = new Audio(url); el.volume = Number($('#vol').value); el.loop = !!sound.loop && !!opts.loop; el.play();
+      const h = { stop: () => { el.pause(); playing.delete(h); } }; playing.add(h); el.onended = () => playing.delete(h);
+      return h;
+    }
+    const src = audio().createBufferSource();
+    src.buffer = buf;
+    if (sound.loop && opts.loop) {
+      // Loop points from the manifest (sample-exact; the Opus decoder may append padding).
+      src.loop = true; src.loopStart = sound.loop.startS; src.loopEnd = sound.loop.endS;
+    }
+    src.connect(master); src.start();
+    lastStart.set(sound.id, performance.now());
+    const h = { stop: () => { try { src.stop(); } catch { /* already stopped */ } playing.delete(h); }, src };
+    playing.add(h); src.onended = () => playing.delete(h);
+    if (opts.canvas) drawWave(opts.canvas, buf, sound);
+    return h;
+  }
+  function stopAll() { for (const h of [...playing]) h.stop(); document.querySelectorAll('.btn.loop.on').forEach((b) => { b.classList.remove('on'); b.textContent = '⟲ Loop'; }); }
+  function drawWave(cv, buf, sound) {
+    cv.classList.add('drawn');
+    const dpr = window.devicePixelRatio || 1; const w = cv.clientWidth * dpr, h = cv.clientHeight * dpr;
+    cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.clearRect(0, 0, w, h);
+    const d = buf.getChannelData(0); const col = getComputedStyle(document.documentElement).getPropertyValue('--wave');
+    const shown = sound.loop ? Math.round(sound.loop.endS * buf.sampleRate) : d.length;
+    g.fillStyle = col.trim() || '#f07a30';
+    for (let x = 0; x < w; x++) {
+      const a = Math.floor((x / w) * shown), b = Math.max(a + 1, Math.floor(((x + 1) / w) * shown));
+      let mn = 0, mx = 0; for (let i = a; i < b; i++) { const v = d[i] || 0; if (v < mn) mn = v; if (v > mx) mx = v; }
+      g.fillRect(x, (1 - mx) * h / 2, 1, Math.max(1, (mx - mn) * h / 2));
+    }
+  }
+  const pick = (s) => s.variants[Math.floor(Math.random() * s.variants.length)];
+
+  function fmt(n, d = 1) { return Number.isFinite(n) ? n.toFixed(d) : '–'; }
+  function render(m) {
+    const list = $('#list'); list.textContent = '';
+    const q = state.q.toLowerCase();
+    const shown = m.sounds.filter((s) => (state.cats.size === 0 || state.cats.has(s.category)) &&
+      (!q || (s.id + ' ' + s.description + ' ' + s.tags.join(' ')).toLowerCase().includes(q)));
+    if (!shown.length) { list.innerHTML = '<div class="empty">Keine Sounds für diesen Filter.</div>'; return; }
+    const byCat = new Map();
+    for (const s of shown) { if (!byCat.has(s.category)) byCat.set(s.category, []); byCat.get(s.category).push(s); }
+    const order = Object.keys(m.categories);
+    for (const [cat, sounds] of [...byCat].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))) {
+      const h = document.createElement('h2'); h.textContent = (m.categories[cat]?.label || cat) + ' · ' + cat; list.append(h);
+      for (const s of sounds) list.append(row(s));
+    }
+  }
+  function row(s) {
+    const el = document.createElement('div'); el.className = 'sound';
+    const v0 = s.variants[0] || {};
+    const lim = Math.max(...s.variants.map((v) => v.limitedDb || 0));
+    el.innerHTML = `
+      <div class="top"><span class="id"></span><span class="desc"></span></div>
+      <div class="meta">
+        <span>${fmt(s.durationS, 2)} s</span>
+        <span>${s.channels === 1 ? 'mono' : 'stereo'}${s.spatial ? ' · räumlich' : ''}</span>
+        ${s.loop ? `<span>Loop ${fmt(s.loop.startS, 2)}–${fmt(s.loop.endS, 3)} s</span>` : ''}
+        <span>Ziel ${s.targetLufs} LUFS (${s.loudnessMode === 'integrated' ? 'I' : 'M-max'}) · gemessen ${fmt(v0.lufs, 1)}</span>
+        <span>TP ${fmt(v0.truePeakDb, 1)} dBTP</span>
+        <span>Schwerpunkt ${v0.centroidHz ?? '–'} Hz</span>
+        ${lim > 0.05 ? `<span>Limiter ≤ ${fmt(lim, 1)} dB</span>` : ''}
+        <span>Prio ${s.priority} · Cooldown ${s.cooldownMs} ms · max ${s.maxVoices} Stimmen · Bus ${s.bus}</span>
+      </div>
+      <div class="actions"></div>
+      <canvas></canvas>`;
+    el.querySelector('.id').textContent = s.id;
+    el.querySelector('.desc').textContent = s.description;
+    const cv = el.querySelector('canvas');
+    const actions = el.querySelector('.actions');
+    const btn = (label, title, fn, cls = '') => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.title = title; b.onclick = fn; actions.append(b); return b; };
+    s.variants.forEach((v) => btn('▶ v' + v.index, `${v.wav} · ${fmt(v.durationS, 3)} s · ${fmt(v.lufs, 1)} LUFS`, () => play(s, v, { canvas: cv })));
+    if (s.variants.length > 1) btn('🎲 Zufall', 'Zufällige Variante', () => play(s, pick(s), { canvas: cv }));
+    if (!s.loop) {
+      btn('Salve ×8', 'Schnellfeuer-Test: 8 zufällige Varianten, Abstand = max(Cooldown, 90–220 ms)', () => {
+        let t = 0; for (let i = 0; i < 8; i++) { t += Math.max(s.cooldownMs, 90 + Math.random() * 130); setTimeout(() => play(s, pick(s), { canvas: cv }), t); }
+      });
+    } else {
+      let h = null;
+      const b = btn('⟲ Loop', 'Nahtlos loopen (Loop-Punkte aus dem Manifest)', async () => {
+        if (h) { h.stop(); h = null; b.classList.remove('on'); b.textContent = '⟲ Loop'; return; }
+        h = await play(s, pick(s), { loop: true, canvas: cv }); b.classList.add('on'); b.textContent = '■ Loop';
+      }, 'loop');
+    }
+    for (const w of s.warnings || []) { const d = document.createElement('div'); d.className = 'warn'; d.textContent = '⚠ ' + w; el.append(d); }
+    return el;
+  }
+  function start(m) {
+    if (!m) { $('#list').innerHTML = '<div class="empty">Kein Manifest gefunden. Erst <code>pnpm sfx</code> ausführen, dann <code>pnpm sfx:preview</code>.</div>'; return; }
+    const nv = m.sounds.reduce((a, s) => a + s.variants.length, 0);
+    $('#stats').textContent = `${m.sounds.length} Sounds · ${nv} Varianten · ${m.sampleRate / 1000} kHz · max. ${m.maxVoices} Stimmen`;
+    const counts = {}; for (const s of m.sounds) counts[s.category] = (counts[s.category] || 0) + 1;
+    const cats = $('#cats');
+    for (const c of Object.keys(m.categories)) {
+      if (!counts[c]) continue;
+      const b = document.createElement('button'); b.className = 'chip'; b.textContent = `${m.categories[c].label} (${counts[c]})`; b.setAttribute('aria-pressed', 'false');
+      b.onclick = () => { state.cats.has(c) ? state.cats.delete(c) : state.cats.add(c); b.setAttribute('aria-pressed', String(state.cats.has(c))); render(m); };
+      cats.append(b);
+    }
+    $('#q').oninput = (e) => { state.q = e.target.value; render(m); };
+    $('#fmt').onchange = (e) => { state.fmt = e.target.value; buffers.clear(); try { localStorage.setItem('faf-sfx-fmt', state.fmt); } catch { /* storage blocked */ } };
+    $('#vol').oninput = (e) => { if (master) master.gain.value = Number(e.target.value); };
+    $('#stop').onclick = stopAll;
+    $('#theme').onclick = () => {
+      const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+      try { localStorage.setItem('faf-sfx-theme', document.documentElement.dataset.theme); } catch { /* storage blocked */ }
+    };
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') stopAll(); });
+    render(m);
+  }
+  if (window.FAF_SFX_MANIFEST) start(window.FAF_SFX_MANIFEST);
+  else fetch(BASE + 'manifest.json').then((r) => (r.ok ? r.json() : null)).catch(() => null).then(start);
+})();
+</script>
+</body>
+</html>
