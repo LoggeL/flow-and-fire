@@ -18,7 +18,11 @@
     "ci:local": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:xengine && pnpm test:e2e && pnpm bench && pnpm --filter @faf/assets-pipeline run check && pnpm bench:spk4 -- --quick",
     "maps": "pnpm --filter @faf/formats run maps",
     "assets": "pnpm --filter @faf/assets-pipeline run build",
-    "bench:spk4": "pnpm --filter @faf/render-bench run spk4"
+    "bench:spk4": "pnpm --filter @faf/render-bench run spk4",
+    "sfx": "pnpm --filter @faf/sfx run sfx",
+    "sfx:analyze": "pnpm --filter @faf/sfx run analyze",
+    "sfx:audit": "pnpm --filter @faf/sfx run audit",
+    "sfx:preview": "pnpm --filter @faf/sfx run preview"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

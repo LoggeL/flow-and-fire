@@ -11,6 +11,13 @@ dist/
 tools/render-bench/dist/
 tools/headless/dist-harness/
 content/generated/
+# Audio: Opus/WebM + Manifest werden eingecheckt (≈ 3 MB, Spiel/Vorschau ohne ffmpeg nutzbar);
+# WAVs (≈ 60 MB) und der Build-Cache entstehen lokal mit `pnpm sfx`. Siehe docs/design/audio.md §7.
+!content/audio/dist/
+!content/audio/dist/**/
+!content/audio/dist/**/*.webm
+!content/audio/dist/manifest.json
+!content/audio/dist/manifest.js
 
 # test / bench output
 coverage/

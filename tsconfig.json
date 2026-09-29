@@ -16,6 +16,7 @@
     { "path": "tools/headless/tsconfig.harness.json" },
     { "path": "tools/headless/tsconfig.harness-worker.json" },
     { "path": "tools/assets-pipeline" },
-    { "path": "tools/render-bench" }
+    { "path": "tools/render-bench" },
+    { "path": "tools/sfx" }
   ]
 }
