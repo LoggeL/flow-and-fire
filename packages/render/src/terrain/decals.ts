@@ -4,7 +4,8 @@
  *
  * GPU layout (built by {@link DecalBinner}):
  * - decal data, RGBA32I, 2 texels per decal, {@link DECALS_PER_ROW} decals per row:
- *   texel 0 = (xRaw, zRaw, radiusRaw, widthRaw), texel 1 = (kind, rgba8 packed little endian, 0, 0)
+ *   texel 0 = (xRaw, zRaw, radiusRaw, widthRaw), texel 1 = (kind, rgba8 packed little endian,
+ *   minimum radius in 1/16 px (0 = none), maximum radius raw)
  * - chunk index, R32UI, one texel per 32 × 32 WU chunk: `(listStart << 6) | count` (count ≤ 32)
  * - decal list, R32UI, {@link DECAL_LIST_WIDTH} entries per row: decal indices per chunk, in input order
  *   (later decals are drawn on top).
@@ -14,7 +15,8 @@
  */
 import { TERRAIN_PATCH_WU } from './heightfield.ts';
 
-export type TerrainDecalKind = 'ring' | 'disc';
+/** Ring (circle line), disc (filled) or diamond (square line rotated by 45°, e.g. hydro spots). */
+export type TerrainDecalKind = 'ring' | 'disc' | 'diamond';
 
 export interface TerrainDecal {
   readonly kind: TerrainDecalKind;
@@ -29,6 +31,13 @@ export interface TerrainDecal {
   readonly color: number;
   /** Opacity 0..1, default 0.9. */
   readonly alpha?: number;
+  /**
+   * Minimum on-screen radius in pixels (default 0 = none): zoomed out, the decal grows (line width
+   * with it, at least 2 px) up to {@link maxRadiusWU}, so resource spots stay readable as symbols.
+   */
+  readonly minRadiusPx?: number;
+  /** Largest radius the decal may grow to (WU, default = radiusWU); bounds the chunk binning. */
+  readonly maxRadiusWU?: number;
 }
 
 export const MAX_TERRAIN_DECALS = 4096;
@@ -43,6 +52,9 @@ const BIN_MARGIN_WU = 0.5;
 
 export const DECAL_KIND_RING = 0;
 export const DECAL_KIND_DISC = 1;
+export const DECAL_KIND_DIAMOND = 2;
+/** Grown decals keep their line at most this fraction of the radius (binning reach, shader). */
+export const DECAL_MAX_WIDTH_FRACTION = 0.45;
 
 export interface DecalBinStats {
   /** Decals stored in the data texture. */
@@ -81,7 +93,9 @@ export class DecalBinner {
 
   /** Chunk range covered by a decal: [cx0, cz0, cx1, cz1] (inclusive), or cx0 > cx1 when off-map. */
   coverage(d: TerrainDecal, out: Int32Array, o = 0): void {
-    const reach = (d.radiusWU + (d.widthWU ?? 0.3) * 0.5 + BIN_MARGIN_WU) * 4096;
+    const rMax = Math.max(d.radiusWU, d.maxRadiusWU ?? 0);
+    const w = Math.max(d.widthWU ?? 0.3, (d.minRadiusPx ?? 0) > 0 ? rMax * DECAL_MAX_WIDTH_FRACTION : 0);
+    const reach = (rMax + w * 0.5 + BIN_MARGIN_WU) * 4096;
     const span = TERRAIN_PATCH_WU * 4096;
     const last = this.chunks - 1;
     out[o] = Math.max(0, Math.floor((d.x - reach) / span));
@@ -110,10 +124,12 @@ export class DecalBinner {
       data[o + 1] = Math.round(d.z);
       data[o + 2] = Math.round(d.radiusWU * 4096);
       data[o + 3] = Math.max(1, Math.round((d.widthWU ?? 0.3) * 4096));
-      data[o + 4] = d.kind === 'disc' ? DECAL_KIND_DISC : DECAL_KIND_RING;
+      data[o + 4] = d.kind === 'disc' ? DECAL_KIND_DISC : d.kind === 'diamond' ? DECAL_KIND_DIAMOND : DECAL_KIND_RING;
       const a = Math.round(Math.min(1, Math.max(0, d.alpha ?? 0.9)) * 255);
       const c = d.color;
       data[o + 5] = (((c >> 16) & 255) | (((c >> 8) & 255) << 8) | ((c & 255) << 16) | (a << 24)) | 0;
+      data[o + 6] = Math.max(0, Math.min(0xffff, Math.round((d.minRadiusPx ?? 0) * 16)));
+      data[o + 7] = Math.round(Math.max(d.radiusWU, d.maxRadiusWU ?? 0) * 4096);
       this.coverage(d, cover, i * 4);
     }
     // Pass 1: per-chunk counts (capped); pass 2: prefix sums; pass 3: scatter in input order.

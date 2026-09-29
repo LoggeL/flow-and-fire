@@ -18,6 +18,12 @@
       "kind": "map",
       "url": "maps/hollow-ridge.fd3b31d7.rtsmap"
     },
+    "maps/setons": {
+      "bytes": 2698440,
+      "hash": "sha256-EQvQ1keHIaJNubtBUMDJiGjNdC3xBAjxzDswiX3dgjw=",
+      "kind": "map",
+      "url": "maps/setons.110bd0d6.rtsmap"
+    },
     "units/cube_bot": {
       "bytes": 8388,
       "fallback": {

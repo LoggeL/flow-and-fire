@@ -6,8 +6,9 @@ eigene WebGL2-Pipeline, Preact-UI. Plan: [`docs/PLAN.md`](docs/PLAN.md), Entsche
 [`docs/DECISIONS.md`](docs/DECISIONS.md), Stand: [`docs/STATUS.md`](docs/STATUS.md).
 
 **Stand:** Meilensteine MS1 (deterministisches Skelett) und MS2 (Terrain, Karte & Kamera) sind abgeschlossen. Im
-Browser läuft die 512-WU-Karte *Hollow Ridge* (eigenes `.rtsmap`-Format, aus Quellen per CLI erzeugt) mit
-Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 + 24 Würfel fahren auf der Terrainhöhe
+Browser läuft als Standardkarte *Setons* (1.024 WU, 8 Starts, eigener Nachbau nach dem Layout von *Seton's Clutch*;
+eigenes `.rtsmap`-Format, aus Quellen per Generator + CLI erzeugt; die MS2-Karte *Hollow Ridge* per `?map=hollow-ridge`)
+mit Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 + 24 Würfel fahren auf der Terrainhöhe
 der deterministischen Sim (Tiefwasser blockiert, Furten passierbar). Hash-Ketten sind bitgleich in Node, Chromium,
 Firefox und WebKit. Details, Abnahme und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
 
@@ -20,11 +21,15 @@ pnpm dev            # http://localhost:5173/ – Spiel im Browser; mit Strg+C be
 
 Steuerung: Linksklick/-ziehen wählt aus (Strg/⌘+A = alle eigenen), **Rechtsklick bewegt**, S tippen = Stop,
 **Mausrad = Zoom zum Cursor**, Mittelklick ziehen = Karte greifen, WASD/Pfeile/Bildschirmrand = Pan,
-Strg+Mittelklick = Rotation (Pos1 = zurück), H = eigener Start, Alt+Enter = Vollbild, **P = Pause**,
+Strg+Mittelklick = Rotation (Pos1 = zurück), H = eigener Start (auf Setons SW-Mid, Gegner NO-Mid gegenüber der
+Landbrücke), Alt+Enter = Vollbild, **P = Pause**,
 N = Einzelschritt, **^ / ` / F1 = Dev-Konsole** (`help`, `spawn`, `kill`, `pause`, `resume`, `step`, `speed`, `hash`,
 `budget`, `export`, `map`, `camera`, `preset`).
-URL-Parameter: `?map=hollow-ridge|testplane`, `?preset=low|medium|high|ultra`, `?units=<n>` (Flugtest),
-`?assets=raw`, `?cubes=<n>`, `?enemy=<n>`, `?seed=<u32>`, `?transport=sab|transfer`, `?autostart=0`.
+URL-Parameter: `?map=setons|hollow-ridge|testplane` (Standard `setons`; `hollow-ridge` = 512-WU-Karte aus MS2,
+`testplane` = flache MS1-Ebene), `?preset=low|medium|high|ultra`, `?units=<n>` (Flugtest über das Land der ganzen
+Karte), `?assets=raw`, `?cubes=<n>` (eigene Würfel am eigenen Start), `?enemy=<n>` (Gegner-Würfel), `?seed=<u32>`,
+`?transport=sab|transfer`, `?autostart=0`. Ohne Pathing (MS3) fahren Einheiten geradeaus: auf Setons führt Mid ↔ Mid
+direkt über die Landbrücke, andere Ziele brauchen Wegpunkte um die Seen.
 
 Testen: `pnpm typecheck && pnpm lint && pnpm test`; Cross-Engine `pnpm test:xengine`; Browser-E2E `pnpm test:e2e`;
 alles nacheinander `pnpm ci:local`.
@@ -48,7 +53,7 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
 | `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/ms2-p2-sim.md` |
-| `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen + mapc → `content/maps/*.rtsmap`, deterministisch) |
+| `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen inkl. Setons-Generator `mapgen-setons.ts` + mapc → `content/maps/*.rtsmap`, deterministisch) |
 | `pnpm assets` | Asset-Pipeline (glTF/meshopt, Karte, `sim.bin`, Manifest) → `content/generated/assets/`; nach `pnpm maps` oder Blueprint-Änderungen ausführen |
 | `pnpm bench:spk4` | SPK4-Render-Benchmark in Chromium, Firefox, WebKit (`-- --quick` = nur Chromium, 3 s) |
 | `pnpm --filter @faf/render smoke` | Render-Smoke in 3 Browsern (GPU-Höhensonde == CPU, Decals, Context-Loss) |

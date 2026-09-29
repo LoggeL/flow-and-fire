@@ -42,10 +42,16 @@ describe('session assets', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it('setons (default map): content, the map and every model', () => {
+    const ids = sessionAssetIds(manifest, 'setons');
+    expect(ids.slice(0, 3)).toEqual([SIM_BIN_ASSET, VIEW_JSON_ASSET, mapAssetId('setons')]);
+    expect(manifest.assets[mapAssetId('setons')]?.kind).toBe('map');
+  });
+
   it('testplane loads no map asset (it is generated); an unknown map names the available ones', () => {
     const ids = sessionAssetIds(manifest, 'testplane');
     expect(ids.some((id) => id.startsWith('maps/'))).toBe(false);
-    expect(() => sessionAssetIds(manifest, 'nowhere')).toThrow(/nowhere.*hollow-ridge, testplane/);
+    expect(() => sessionAssetIds(manifest, 'nowhere')).toThrow(/nowhere.*hollow-ridge, setons, testplane/);
   });
 });
 

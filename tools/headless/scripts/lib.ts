@@ -19,7 +19,7 @@ export const SIM_BIN_PATH = resolve(REPO_DIR, 'content/generated/sim.bin');
 export const XXH32_WASM_PATH = resolve(HEADLESS_DIR, 'src/spk5/xxh32.wasm');
 
 /** Map files the scenarios reference (repo-relative paths, see src/scenarios.ts). */
-export const MAP_PATHS: readonly string[] = ['content/maps/hollow-ridge.rtsmap'];
+export const MAP_PATHS: readonly string[] = ['content/maps/hollow-ridge.rtsmap', 'content/maps/setons.rtsmap'];
 
 /** Bytes of every scenario map by repo-relative path (RunOptions.maps / JobAssets.maps). */
 export function loadMaps(): Record<string, Uint8Array> {

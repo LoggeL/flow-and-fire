@@ -142,3 +142,72 @@ Referenz-Laptop; Details und Rohdaten in `docs/STATUS.md` („Spike-Ergebnisse�
     `@faf/protocol` (`encodeUtf8`/`decodeUtf8`) und wird von simId, `.rtsmap` (über `@faf/formats`, Re-Export) und dem
     Command-Log-Kopf benutzt; `protocol.utf8Encode` (ersetzte still durch U+FFFD) und der lose Decoder im Log-Format
     sind entfernt.
+
+## Nachtrag 2026-09-29 – Karte Setons (Standardkarte)
+
+22. **Setons ist die Standardkarte; MS1/MS2-E2E bleiben auf hollow-ridge fixiert.** `DEFAULT_MAP = 'setons'`
+    (`apps/game/src/params.ts`); `?map=hollow-ridge` und `?map=testplane` bleiben erreichbar. Die E2E-Specs, die
+    hollow-ridge-Identitäten und -Positionen prüfen, öffnen die Seite über `openGame`, das ohne `map=` in der Query
+    `map=hollow-ridge` ergänzt (`test/e2e/support/game.ts`, `withPinnedMap`); nur `setons.spec.ts` und
+    `map-load.spec.ts` laden die Standardkarte ohne Parameter. Spieler = Armee 0 (SW-Mid), Gegner = Armee 1 (NO-Mid)
+    wie in der Spezifikation vorgeschlagen (Mid gegen Mid über die Landbrücke).
+23. **Setons ohne Terrain-LOD: keine Render-Änderung nötig.** Gemessen (Apple M5 Pro, Chromium headless, Medium,
+    1280×720): Gesamtansicht mit allen 1.024 Terrain-Patches (≈ 2,1 Mio. Dreiecke, 1 Draw) 60 FPS (vsync), GPU p50/p95
+    ≈ 3,3–5,6 / 6,1–6,5 ms, Render-JS p95 ≈ 0,3 ms. Patchgröße (32 WU), Chunk-Culling und Sim-Höhe bleiben
+    unverändert; die auto-berechnete Kamera-Maximaldistanz (`maxDistanceForMap`) zeigt die ganze Karte (alle vier
+    Ecken im Bild, E2E-gegated). Für die iGPU (Faktor 4–5 angenommen, nicht gemessen) läge die Gesamtansicht bei
+    ≈ 25–30 ms – Terrain-LOD (M11, MS14) bleibt dafür nötig.
+24. **Setons wird geskriptet, nicht importiert.** `packages/formats/scripts/mapgen-setons.ts` baut Heightmap,
+    Splat (8 Layer, 256²) und `markers.json` aus der Spezifikation `content/maps/src/setons.spec.md` (eigene
+    Formen: Signed-Distance-Felder der Uferpolygone mit antisymmetrischem Domain-Warp, Profile für Schelf/Strand/
+    Tiefwasser, Inseln, Kapsel-Gebirge, deterministisches Lattice-Rauschen aus `rng32`). Der Generator ist exakt
+    punktsymmetrisch (symmetrische Funktion + Spiegelung der kanonischen NO-Hälfte). Referenzbilder und
+    Original-Dateien liegen nicht im Repo.
+
+## Nachtrag 2026-09-29 – Setons-Review Runde 1 (Optik)
+
+25. **Medium nutzt 8 Splat-Layer und Triplanar-Klippen (Abweichung von DECISIONS 17 / PLAN §3.7 „Triplanar ab
+    High“).** Ohne Ebene 1 fehlten auf Medium Erde, trockenes Gras, dunkler Fels und Moos (Karte einheitlich grün).
+    Gemessen (Apple M5 Pro, Chromium headless, Setons-Gesamtansicht, 1.024 Patches, unkontendierte A/B-Läufe
+    abwechselnd alt/neu): GPU p50 5,5–6,3 ms neu gegen 5,7–6,2 ms alt, beide 60 FPS; im Kameraflug p50 1,9–3,8
+    gegen 1,4–2,4 ms. Low bleibt bei 4 Layern ohne Triplanar. Kosten bleiben klein, weil der Terrain-FS nur Layer mit
+    Gewicht > 1/256 abtastet (explizite Gradienten, `textureGrad`) und die Seitenprojektionen nur an steilen Flächen.
+26. **Gemalte Splatmaps können die Auto-Splat-Basis vollständig ersetzen – kein neues Formatfeld.** Der Terrain-FS
+    überblendet die gemalten Layer weiterhin der Reihe nach (FA-artig); ist in Ebene 0 R = 1, ersetzt die gemalte
+    Verteilung Auto-Splat und automatisches Uferband ganz. Der Setons-Generator legt dafür zuerst das Endgewicht jedes
+    Layers fest und kodiert daraus exakte Überblendfaktoren (Ebene 0 als 4-Layer-Näherung für Low, Ebene 1 obenauf).
+    So braucht es kein Karten-Flag „Uferband aus“ im META (Format und hollow-ridge bleiben unverändert).
+27. **Wasser: Tiefenfarbe pro Karte, Rand exakt an der Kartenkante.** Volle Tiefenfarbe bei 85 % der tiefsten Stelle
+    (3–13 WU; Setons 13 WU, hollow-ridge 3 WU; seit Review Runde 2: tiefste Stelle, 3–16 WU, Tiefblau erst ab 55 %,
+    Rand-Abdunkelung 10 statt 24 WU – siehe 29), drei Farbstufen (Schelf türkis → Blau → Tiefblau) mit leichtem
+    Tiefenrauschen, Flachwasser deckender (α 0,55). Wellen auf der Weltposition mit unregelmäßigen Richtungen und
+    inkommensurablen Wellenlängen (kein gemeinsames 32-WU-Raster mehr), je Welle Ausblendung nach Pixel-Footprint,
+    Böen-Rauschen und ruhigeres Fernfeld; schwächeres Glanzlicht. `WATER_BORDER_WU = 0`; Terrain und Wasser dunkeln
+    über die letzten 24 WU zur Kartenkante ab (FA-artiger Rand statt harter Kante).
+28. **Ressourcen-Spots bleiben aus der Ferne lesbar.** Terrain-Decals haben eine Mindestgröße in Pixeln
+    (`minRadiusPx`, begrenzt durch `maxRadiusWU` für das Chunk-Binning), Linien ≥ 2 px; Hydro ist eine eigene Form
+    (Raute, Decal-Art `diamond`), Mass ein Ring. Echte strategische Symbole (Overlay) folgen mit MS8/MS14.
+
+## Nachtrag 2026-09-29 – Setons-Review Runde 2 (Politur)
+
+29. **Setons-Review Runde 2: Nahdetail im Terrain-FS statt größerer Texturen.** Detail-Normal (zwei Rausch-Oktaven,
+    0,9/2,6 WU Wellenlänge, nur Beleuchtung) und rauschgeschärfte Splat-Übergänge werden prozedural im Terrain-FS
+    berechnet und nach Pixel-Footprint ausgeblendet; die Albedo-Kacheln (128², 8 WU) bleiben, nur mit mehr Kontrast
+    (≈ ±25 %). Keine neuen Texturen/Formatfelder; Gesamtansicht ohne Mehrkosten (A/B gemessen, status/setons-map.md).
+    `terrainAlbedoTri` bekommt das Schärfungsrauschen vom Aufrufer (`TERRAIN_SPLAT_GLSL` bleibt ohne Rausch-Helfer,
+    tools/render-bench unverändert). Die Kantenabdunkelung wirkt vor den Decals und nur noch 10 WU; Karten halten
+    Spots ≥ 12 WU vom Rand.
+
+## Fraktion Varkan-Kompakt (2026-09-29)
+
+Konzept, Roster (50 Einträge, 26 bis MS9) und Werte: `docs/design/faction.md`, `roster.md`, `roster.json` (einzige Zahlenquelle).
+Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, autonom entschieden:
+
+1. **Hochofen (T3-Artillerie) vs. Kartengröße:** Alle MVP-Karten haben ≥ 354 WU Kantenlänge (Setons 1.024, Hollow Ridge 512). Der Balancing-Gate im Blueprint-Compiler (PLAN §3.9) bleibt und sperrt kleinere Karten.
+2. **`iconThreshold`:** Der Roster-Wert (25 px für mobile Einheiten) gilt; das Beispiel in PLAN §3.9 (14) ist veraltet.
+3. **FA-Referenzwerte:** vor MS9 gegen den aktuellen FAF-Stand neu rechnen (Aufgabe in MS9).
+4. **Abstich (Overcharge):** Formel als ganzzahlige Tabelle in MS6 festlegen.
+5. **Vogt-Wrack, Luft-Drehraten, Beschleunigungen:** werden im jeweiligen Meilenstein (MS5, MS12, MS3) festgelegt und in `roster.json` nachgetragen.
+6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
+7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
+8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.

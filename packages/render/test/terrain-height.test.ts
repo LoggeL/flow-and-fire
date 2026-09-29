@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TERRAIN_HEIGHT_GLSL, TERRAIN_SPLAT_GLSL, generateTerrainAlbedo, TERRAIN_ALBEDO_LAYERS, TERRAIN_ALBEDO_SIZE } from '../src/terrain/glsl.ts';
+import { NOISE_GLSL, TERRAIN_HEIGHT_GLSL, TERRAIN_SPLAT_GLSL, generateTerrainAlbedo, TERRAIN_ALBEDO_LAYERS, TERRAIN_ALBEDO_SIZE } from '../src/terrain/glsl.ts';
 import type { TerrainDesc } from '../src/terrain/heightfield.ts';
 import { computeChunkBounds, sampleTerrainHeightRaw, validateTerrain, TERRAIN_PATCH_WU } from '../src/terrain/heightfield.ts';
 
@@ -110,6 +110,53 @@ describe('terrain height formula (CPU mirror of TERRAIN_HEIGHT_GLSL)', () => {
     expect(heightFn).not.toMatch(/\bfloat\b|\bvec[234]\b|texture\(/);
     expect(TERRAIN_SPLAT_GLSL).toContain('vec4 terrainAutoWeights(float heightWU, float slope, vec4 bands)');
     expect(TERRAIN_SPLAT_GLSL).toContain('sampler2DArray albedo');
+    // Weights of all 8 layers, explicit-gradient sampling (safe in the per-layer branches),
+    // triplanar variant and the old top-projection signature for tools/render-bench.
+    expect(TERRAIN_SPLAT_GLSL).toContain('void terrainLayerWeights(');
+    expect(TERRAIN_SPLAT_GLSL).toContain('textureGrad(albedo');
+    expect(TERRAIN_SPLAT_GLSL).toContain('vec3 terrainAlbedoTri(');
+    expect(TERRAIN_SPLAT_GLSL).toContain('vec3 terrainAlbedo(highp sampler2DArray albedo');
+    expect(TERRAIN_SPLAT_GLSL).not.toMatch(/\btexture\(albedo/);
+    // Detail normals need the analytic noise gradient.
+    expect(NOISE_GLSL).toContain('vec3 terrainValueNoiseD(vec2 p)');
+    // Noise-sharpened splat transitions (review R2 P2-3); the noise comes from the caller.
+    expect(TERRAIN_SPLAT_GLSL).toContain('void terrainSharpenWeights(inout vec4 wA, inout vec4 wB, vec3 sharp)');
+    expect(TERRAIN_SPLAT_GLSL).not.toContain('terrainValueNoise');
+  });
+});
+
+describe('procedural albedo', () => {
+  it('has close-up grain (≈ ±25 %, review R2 P2-3) but no periodic stripes (rows and columns look alike)', () => {
+    const layers = generateTerrainAlbedo();
+    const n = TERRAIN_ALBEDO_SIZE;
+    for (let l = 0; l < layers.length; l++) {
+      const g = layers[l]!;
+      const lum = (x: number, y: number): number => {
+        const o = (y * n + x) * 4;
+        return g[o]! + g[o + 1]! + g[o + 2]!;
+      };
+      let sum = 0;
+      let sum2 = 0;
+      const rowMean = new Float64Array(n);
+      const colMean = new Float64Array(n);
+      for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+          const v = lum(x, y);
+          sum += v;
+          sum2 += v * v;
+          rowMean[y]! += v / n;
+          colMean[x]! += v / n;
+        }
+      }
+      const mean = sum / (n * n);
+      const sd = Math.sqrt(sum2 / (n * n) - mean * mean);
+      expect(sd / mean, `layer ${l} contrast`).toBeGreaterThan(0.08);
+      expect(sd / mean, `layer ${l} contrast`).toBeLessThan(0.18);
+      // Stripes (the old sine strata/ripples) show as a strong variation of the row means.
+      const spread = (a: Float64Array): number => Math.max(...a) - Math.min(...a);
+      expect(spread(rowMean) / mean, `layer ${l} row stripes`).toBeLessThan(0.25);
+      expect(spread(colMean) / mean, `layer ${l} column stripes`).toBeLessThan(0.25);
+    }
   });
 });
 

@@ -3,10 +3,12 @@ import { expect, test, type Page } from '@playwright/test';
 import type { LoadTimings } from '../../apps/game/src/loading.ts';
 import { attachJson, captureErrors, expectNoErrors, MEASURED_LOCALLY, PERF_GATE, SERVERS, writeReport } from './support/game.ts';
 
-// Map load (P3, MS2 acceptance "512-WU-Karte: Laden ≤ 3 s aus dem Cache, ≤ 8 s kalt"):
+// Map load (P3, MS2 acceptance "Laden ≤ 3 s aus dem Cache, ≤ 8 s kalt"; since the Setons package on
+// the default map Setons, 1,024 WU ≈ 2.7 MB – 4.5× the MS2 map, so the MS2 limits are kept as a
+// stricter check):
 // - cold: a new persistent browser context on a fresh profile directory (empty HTTP cache, empty
 //   Cache API – like a first visit in a normal browser window) loads the manifest, sim.bin,
-//   view.json, hollow-ridge.rtsmap and the models over the network, verifies them (SHA-256) and puts
+//   view.json, setons.rtsmap and the models over the network, verifies them (SHA-256) and puts
 //   them into the Cache API;
 // - cached: a second navigation in the same context serves every asset from the Cache API (cache
 //   hits > 0, no network bytes for assets; only the unhashed manifest is revalidated).
@@ -125,8 +127,8 @@ for (const server of SERVERS) {
     // Cold: everything from the network into the (empty) Cache API.
     expect(cold.timings.fromCache).toBe(0);
     expect(cold.timings.fromNetwork).toBeGreaterThanOrEqual(4);
-    expect(cold.timings.bytesNetwork).toBeGreaterThan(590_000);
-    expect(cold.timings.sources['maps/hollow-ridge']).toBe('network');
+    expect(cold.timings.bytesNetwork).toBeGreaterThan(2_600_000);
+    expect(cold.timings.sources['maps/setons']).toBe('network');
     expect(cold.timings.cacheApi, 'Cache API available').toBe(true);
     // Cached: every asset is a Cache API hit, no network bytes for assets.
     expect(cached.timings.fromCache).toBeGreaterThan(0);

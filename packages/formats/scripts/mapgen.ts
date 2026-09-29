@@ -1,6 +1,6 @@
 /**
  * mapgen — deterministic procedural generator for the MS2 map "Hollow Ridge" (512 WU, 2 players,
- * own design). Integer-only (value noise from rng32 of @faf/fixed, no Math.random, no float
+ * own design) and registry of all generated maps (Setons: ./mapgen-setons.ts). Integer-only (value noise from rng32 of @faf/fixed, no Math.random, no float
  * trigonometry), so the output is byte-identical on every run and engine.
  *
  *   pnpm --filter @faf/formats mapgen            (writes content/maps/src/hollow-ridge/* and
@@ -26,6 +26,7 @@ import { pathToFileURL } from 'node:url';
 import { isqrt, rng32, sinA, type Ang16 } from '@faf/fixed';
 import { encodeHeightmapPng, decodeHeightmapPng, type HeightmapData } from './heightmap-io.ts';
 import { compileMapSource, MAPS_DIR, MAPS_SRC_DIR } from './mapc.ts';
+import { SETONS, writeSetonsSources } from './mapgen-setons.ts';
 
 export const HOLLOW_RIDGE = 'hollow-ridge';
 
@@ -308,6 +309,7 @@ export function writeHollowRidgeSources(log: (msg: string) => void = () => {}): 
 /** All generated maps (name → source writer). */
 export const GENERATORS: Readonly<Record<string, (log: (msg: string) => void) => string>> = {
   [HOLLOW_RIDGE]: writeHollowRidgeSources,
+  [SETONS]: writeSetonsSources,
 };
 
 function main(): void {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseTransport, DEFAULT_CUBES, DEFAULT_ENEMY_CUBES, DEFAULT_SEED, parseParams } from '../src/params.ts';
+import { chooseTransport, DEFAULT_CUBES, DEFAULT_ENEMY_CUBES, DEFAULT_MAP, DEFAULT_SEED, parseParams } from '../src/params.ts';
 
 describe('URL parameters', () => {
   it('defaults', () => {
@@ -9,7 +9,7 @@ describe('URL parameters', () => {
       cubes: DEFAULT_CUBES,
       enemyCubes: DEFAULT_ENEMY_CUBES,
       autostart: true,
-      map: 'hollow-ridge',
+      map: 'setons',
       preset: 'medium',
       units: 0,
     });
@@ -23,7 +23,7 @@ describe('URL parameters', () => {
       cubes: 12,
       enemyCubes: 0,
       autostart: false,
-      map: 'hollow-ridge',
+      map: 'setons',
       preset: 'medium',
       units: 0,
     });
@@ -44,7 +44,9 @@ describe('URL parameters', () => {
   it('map, preset, units (MS2)', () => {
     expect(parseParams('?map=testplane').map).toBe('testplane');
     expect(parseParams('?map=Hollow-Ridge').map).toBe('hollow-ridge');
-    expect(parseParams('?map=../etc').map).toBe('hollow-ridge');
+    expect(parseParams('?map=../etc').map).toBe('setons');
+    expect(parseParams('?map=hollow-ridge').map).toBe('hollow-ridge');
+    expect(DEFAULT_MAP).toBe('setons');
     for (const p of ['low', 'medium', 'high', 'ultra'] as const) expect(parseParams(`?preset=${p}`).preset).toBe(p);
     expect(parseParams('?preset=potato').preset).toBe('medium');
     // ?units= replaces the default start armies unless they are given explicitly.

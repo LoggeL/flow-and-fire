@@ -96,7 +96,7 @@ async function main(): Promise<void> {
       return;
     }
     const sp = `/session/${session}`;
-    await wd(driverBase, 'POST', `${sp}/url`, { url: `http://localhost:${webPort}/` });
+    await wd(driverBase, 'POST', `${sp}/url`, { url: `http://localhost:${webPort}/?map=hollow-ridge` });
     const exec = async <T>(script: string): Promise<T> => (await wd(driverBase, 'POST', `${sp}/execute/sync`, { script, args: [] })).value as T;
     const t0 = Date.now();
     while (Date.now() - t0 < 60_000 && (await exec<string | null>('return document.documentElement.dataset.ready || null')) !== '1') {

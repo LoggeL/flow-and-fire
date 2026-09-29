@@ -1,0 +1,45 @@
+#!/bin/zsh
+# FAF heavy-job gate. Wrap every memory-hungry command (full test suites, vite/tsc builds, Playwright E2E,
+# benchmarks, cross-engine runs) so that at most FAF_HEAVY_SLOTS of them run at once across ALL worktrees
+# and agents, and only while enough memory is free. The Mac has no swap: overbooking kills the machine.
+#
+# Usage: tools/heavy <command...>        e.g.  tools/heavy pnpm test:e2e
+# Env:   FAF_HEAVY_SLOTS (default 2), FAF_HEAVY_MINFREE (% free memory required to start, default 25)
+emulate -L zsh
+SLOTS=${FAF_HEAVY_SLOTS:-2}
+MINFREE=${FAF_HEAVY_MINFREE:-25}
+DIR=/tmp/faf-heavy
+mkdir -p $DIR
+got=""
+
+release() { [[ -n $got ]] && rm -rf "$DIR/slot$got"; got="" }
+trap 'release; exit 130' INT TERM
+trap release EXIT
+
+free_pct() { memory_pressure 2>/dev/null | awk -F': ' '/free percentage/ {gsub("%","",$2); print $2}' }
+
+waited=0
+while true; do
+  for i in {1..$SLOTS}; do
+    if mkdir "$DIR/slot$i" 2>/dev/null; then
+      echo $$ > "$DIR/slot$i/pid"; got=$i; break
+    fi
+    pid=$(cat "$DIR/slot$i/pid" 2>/dev/null)
+    age=$(( $(date +%s) - $(stat -f %m "$DIR/slot$i" 2>/dev/null || date +%s) ))
+    if { [[ -n $pid ]] && ! kill -0 $pid 2>/dev/null } || { [[ -z $pid ]] && (( age > 30 )) }; then
+      rm -rf "$DIR/slot$i"   # stale slot of a dead job
+    fi
+  done
+  if [[ -n $got ]]; then
+    f=$(free_pct)
+    if [[ -z $f ]] || (( f >= MINFREE )); then break; fi
+    release
+    (( waited % 60 == 0 )) && echo "[heavy] slot free, but only ${f}% memory free (< ${MINFREE}%) - waiting" >&2
+  else
+    (( waited % 60 == 0 )) && echo "[heavy] all $SLOTS heavy slots busy - waiting" >&2
+  fi
+  sleep 5; waited=$(( waited + 5 ))
+done
+
+(( waited > 0 )) && echo "[heavy] got slot $got after ${waited}s: $*" >&2
+"$@"

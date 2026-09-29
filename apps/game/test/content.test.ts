@@ -15,6 +15,7 @@ import {
 const repo = resolve(import.meta.dirname, '../../..');
 const generated = resolve(repo, 'content/generated');
 const ridge = ClientMap.fromBytes(new Uint8Array(readFileSync(resolve(repo, 'content/maps/hollow-ridge.rtsmap'))));
+const setons = ClientMap.fromBytes(new Uint8Array(readFileSync(resolve(repo, 'content/maps/setons.rtsmap'))));
 
 describe('content glue', () => {
   it('view.json → one visual per blueprint sim id (placeholder spec + view.lod)', () => {
@@ -67,6 +68,25 @@ describe('start layout', () => {
     expect(discIsLand(ridge, l.enemy.x / RAW_PER_WU, l.enemy.z / RAW_PER_WU, spawnSpreadWU(24))).toBe(true);
     // The lake centre is deep water.
     expect(discIsLand(ridge, 256, 256, 3)).toBe(false);
+  });
+});
+
+describe('start layout on Setons (default map)', () => {
+  it('own = army 0 (SW mid), enemy = army 1 (NO mid, across the land bridge); both spawn discs are dry land', () => {
+    const l = startLayout(setons, 0, 1);
+    expect([l.own.x / RAW_PER_WU, l.own.z / RAW_PER_WU]).toEqual([354, 678]);
+    expect([l.enemy.x / RAW_PER_WU, l.enemy.z / RAW_PER_WU]).toEqual([670, 346]);
+    expect(discIsLand(setons, 354, 678, spawnSpreadWU(1000))).toBe(true);
+    expect(discIsLand(setons, 670, 346, spawnSpreadWU(1000))).toBe(true);
+    // Lake centres are deep water.
+    expect(discIsLand(setons, 250, 250, 3)).toBe(false);
+    expect(discIsLand(setons, 774, 774, 3)).toBe(false);
+  });
+
+  it('flight clusters find land on Setons', () => {
+    const cl = flightClusters(setons, 2000, [0, 1], 1);
+    expect(cl.reduce((n, c) => n + c.count, 0)).toBe(2000);
+    for (const c of cl) expect(discIsLand(setons, c.x / RAW_PER_WU, c.z / RAW_PER_WU, c.spread / RAW_PER_WU)).toBe(true);
   });
 });
 

@@ -6,8 +6,9 @@
  * - `?cubes=<n>` — own cubes spawned around the own start position (default 1000, 0..8192).
  * - `?enemy=<n>` — cubes of the second army around its start (default 24, 0..8192).
  * - `?autostart=0` — the sim starts paused (deterministic E2E: advance with `step`).
- * - `?map=<name>` — map asset `maps/<name>` from the asset manifest (default `hollow-ridge`);
- *   `?map=testplane` = the flat MS1 test plane (no map sent to the sim).
+ * - `?map=<name>` — map asset `maps/<name>` from the asset manifest (default `setons`, the 1,024 WU
+ *   8-player map; `?map=hollow-ridge` = the 512 WU MS2 map); `?map=testplane` = the flat MS1 test
+ *   plane (a generated map).
  * - `?preset=low|medium|high|ultra` — render preset (default medium: render scale 0.8).
  * - `?units=<n>` — flight test: n placeholders of both armies spread over the land of the whole map
  *   (0..16384). When set, `cubes`/`enemy` default to 0 (explicit values still add their start armies).
@@ -33,7 +34,7 @@ export interface GameParams {
 export const DEFAULT_SEED = 1;
 export const DEFAULT_CUBES = 1000;
 export const DEFAULT_ENEMY_CUBES = 24;
-export const DEFAULT_MAP = 'hollow-ridge';
+export const DEFAULT_MAP = 'setons';
 /** `?map=testplane`: the flat 512 WU MS1 test plane (no `.rtsmap`). */
 export const TEST_PLANE_MAP = 'testplane';
 export const DEFAULT_PRESET: RenderPresetName = 'medium';

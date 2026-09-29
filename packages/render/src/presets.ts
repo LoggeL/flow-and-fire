@@ -39,7 +39,7 @@ export interface RenderPreset {
   readonly bloom: boolean;
   /** MSAA samples of the main target (PLAN: "MSAA ab High"). */
   readonly msaa: number;
-  /** Triplanar terrain mapping on steep slopes (PLAN: "Triplanar ab High"). */
+  /** Triplanar terrain mapping on steep slopes (PLAN: "Triplanar ab High"; since DECISIONS 25 ab Medium). */
   readonly triplanar: boolean;
   readonly caps: RenderCaps;
 }
@@ -62,7 +62,9 @@ export const RENDER_PRESETS: { readonly [K in RenderPresetName]: RenderPreset } 
   medium: {
     name: 'medium',
     renderScale: 0.8,
-    splatLayers: 4,
+    // 8 layers and triplanar cliffs on Medium as well (Setons review R1: without plane 1 the map
+    // lacks earth/dry grass/moss; measured cost negligible, DECISIONS 25).
+    splatLayers: 8,
     lodBias: 0.8,
     waterQuality: 'medium',
     shadows: 'none',
@@ -70,7 +72,7 @@ export const RENDER_PRESETS: { readonly [K in RenderPresetName]: RenderPreset } 
     hdr: false,
     bloom: false,
     msaa: 0,
-    triplanar: false,
+    triplanar: true,
     caps: { particles: 16384, props: 32768, decals: 2048, unitInstances: 8192 },
   },
   high: {

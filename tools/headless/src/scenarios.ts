@@ -11,7 +11,10 @@
  * - `ridge-water-block`: group A is ordered across the deep river/lake, stays on its bank (sliding)
  *   and goes idle; group B crosses at the NE ford and reaches its target, then crosses back and
  *   forth; cheat spawns into the lake are rejected (M2).
- * Both map scenarios check after every tick that no land unit stands in deep water and every
+ * Setons (default map, content/maps/setons.rtsmap, 1,024 WU):
+ * - `setons-bridge-move`: both mid armies drive over the land bridge to the enemy mid start and
+ *   push through each other in the centre; a group ordered into the NW lake stops at the shore.
+ * All map scenarios check after every tick that no land unit stands in deep water and every
  * 10 ticks that y == rules.sampleHeightRaw for every unit.
  *
  * Tick 1 carries the cheat spawns; the first move group follows in tick 2 because handles only
@@ -25,6 +28,8 @@ import { ScenarioBuilder, type Scenario, type ScenarioContext } from './scenario
 const MAP = 512;
 /** Repo-relative path of the MS2 reference map (loaded by the caller, see RunOptions.maps). */
 export const HOLLOW_RIDGE_PATH = 'content/maps/hollow-ridge.rtsmap';
+/** Repo-relative path of the default map Setons (1,024 WU, 8 starts). */
+export const SETONS_PATH = 'content/maps/setons.rtsmap';
 
 /** Every `n`-th element starting at `offset`. */
 function every<T>(list: readonly T[], n: number, offset = 0): T[] {
@@ -409,12 +414,84 @@ export function ridgeWaterBlock(): Scenario {
     .build();
 }
 
+/**
+ * Setons golden: the two mid armies (starts 0 and 1, 458 WU apart) drive straight at each other's
+ * start over the land bridge (the only ground route), meet in the centre and push through; a
+ * quarter of army 0 is sent straight into the NW lake and must stop at the shore.
+ */
+export function setonsBridgeMove(): Scenario {
+  const SW = [354, 678] as const;
+  const NO = [670, 346] as const;
+  const LAKE = [250, 250] as const;
+  const MAP_EDGE = 1024;
+  /** Units of `key` on the NO side of the team line x = z. */
+  const onNoSide = (c: ScenarioContext, key: string): number => {
+    let n = 0;
+    for (const h of handlesVar(c, key)) {
+      const u = c.info(h);
+      if (u !== null && u.x > u.z) n++;
+    }
+    return n;
+  };
+  return new ScenarioBuilder('setons-bridge-move')
+    .map({ path: SETONS_PATH })
+    .seed(0x5eed0005)
+    .armies(2)
+    .ticks(2000)
+    .spawn({ army: 0, count: 200, x: SW[0], z: SW[1], spread: 18 })
+    .spawn({ army: 1, count: 200, x: NO[0], z: NO[1], spread: 18 })
+    .assert(1, 'spawned 200 + 200 at the mid starts', (c) =>
+      all(expectEq('army 0', c.count(0), 200), expectEq('army 1', c.count(1), 200), expectEq('rejected', spawnRejectedCount(c.world), 0)),
+    )
+    .at(2, (c) => {
+      const a0 = c.handles(0);
+      c.vars['main'] = part(a0, 0, 0.75);
+      c.vars['lake'] = part(a0, 0.75, 1);
+      c.vars['a1'] = c.handles(1);
+      return [
+        { kind: 'move', army: 0, units: part(a0, 0, 0.75), x: NO[0], z: NO[1] },
+        { kind: 'move', army: 0, units: part(a0, 0.75, 1), x: LAKE[0], z: LAKE[1] },
+        { kind: 'move', army: 1, units: c.handles(1), x: SW[0], z: SW[1] },
+      ];
+    })
+    .assert(900, 'the lake group stopped at the NW-lake shore and is idle', (c) => {
+      for (const h of handlesVar(c, 'lake')) {
+        const u = c.info(h);
+        if (u !== null && u.moving) return `unit ${h} still moving`;
+      }
+      return nearCount(c, handlesVar(c, 'lake'), LAKE[0], LAKE[1], 150) === 0 ? true : 'a unit got into the lake';
+    })
+    .assert(1000, 'both armies crossed the bridge centre', (c) => {
+      const n0 = onNoSide(c, 'main');
+      const n1 = 200 - onNoSide(c, 'a1');
+      return n0 >= 120 && n1 >= 160 ? true : `crossed: army 0 ${n0}/150, army 1 ${n1}/200`;
+    })
+    .assert(1990, 'army 0 reached the NO mid start, army 1 the SW mid start', (c) => {
+      const n0 = nearCount(c, handlesVar(c, 'main'), NO[0], NO[1], 80);
+      const n1 = nearCount(c, handlesVar(c, 'a1'), SW[0], SW[1], 80);
+      return n0 >= 120 && n1 >= 160 ? true : `at the target: army 0 ${n0}/150, army 1 ${n1}/200`;
+    })
+    .invariant(1, 'no land unit in deep water', noLandInDeepWater)
+    .invariant(10, 'y == sampleHeightRaw for every unit', yOnTerrain)
+    .assert(2000, 'all 400 cubes alive', (c) => expectEq('units', c.total(), 400))
+    .assert(2000, 'all cubes inside the map', (c) => {
+      const max = MAP_EDGE * FX_ONE;
+      for (const h of c.handles()) {
+        const u = c.info(h)!;
+        if (u.x < 0 || u.z < 0 || u.x > max || u.z > max) return `unit ${h} outside the map`;
+      }
+      return true;
+    })
+    .build();
+}
+
 /** All golden scenarios by name. */
 export const SCENARIOS: Readonly<Record<string, () => Scenario>> = {
   'cubes-1000-move': cubes1000Move,
   'cubes-churn': cubesChurn,
   'ridge-1000-move': ridge1000Move,
   'ridge-water-block': ridgeWaterBlock,
+  'setons-bridge-move': setonsBridgeMove,
 };
 
 export const SCENARIO_NAMES: readonly string[] = Object.keys(SCENARIOS);

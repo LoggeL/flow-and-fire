@@ -477,7 +477,10 @@ Keiner der Befunde wurde verworfen.
 - FPS-Messung ohne Fremdlast wiederholen (`FAF_PERF_GATE=1 pnpm test:e2e`), WebKit lag unter Last bei 31–40 Hz rAF.
 - Transfer-Transport allokiert weiterhin pro Frame (nur SAB allokationsfrei); gemessen jetzt auch im Flug mit
   2.000 Einheiten: Main-JS p95 ≤ 1,0 ms (1-ms-Uhr), Draws max 4 wie im SAB-Lauf, LOD-Verteilung gleichwertig.
-- Setons (1.024 WU) als nächste Standardkarte: Sim/Host/Client sind auf 1.024 WU getestet, Terrain-LOD (M11) folgt MS14.
+- ~~Setons (1.024 WU) als nächste Standardkarte~~ – erledigt: Setons ist Standardkarte ([setons-map](status/setons-map.md),
+  DECISIONS 22–24); Terrain-LOD (M11) folgt MS14. Optik-Review Runde 1 behoben (Wasser, Sand, Farben, Kachelmuster,
+  Gebirge/Fels, Relief, Kartenrand, Spot-Lesbarkeit; DECISIONS 25–28, [setons-map](status/setons-map.md)); Medium nutzt
+  seitdem 8 Splat-Layer und Triplanar. Wracks/Bäume und Felsbrocken als echte Props weiterhin erst ab MS8.
 - **Preset-Werte aus SPK4** (Medium = Blob-Schatten + HDR/Bloom, CSM ab High) sind entschieden, aber noch nicht in
   `packages/render/src/presets.ts` eingetragen (dort noch `shadows: 'none'`, HDR/Bloom aus) – mit MS8/MS14. Terrain- und
   Unit-Pass brauchen dafür Schatten-Eingänge; Caster-Bündelung bzw. `WEBGL_multi_draw` gegen das Draw-Wachstum (MS14).
@@ -522,3 +525,60 @@ check`, `headless goldens` (4/4 gleich), `test:xengine` (80 Hash-Ketten bitgleic
 (107 bestanden, 4 übersprungen: Pointer-Lock im Vollbild in headless Chromium/WebKit, je SAB und Transfer),
 `bench:spk4 -- --quick` (Exit 0; Draws 25/90, Main-JS p95 0,23/0,45 ms; GPU p95 86/230 ms unter Fremdlast
 durch parallelen MLX-Job, als `CONTENDED` markiert – laut DECISIONS 5 nicht gegated).
+
+## Karte Setons (Standardkarte, 2026-09-29)
+
+**Setons** ist seit 2026-09-29 die Standardkarte (`DEFAULT_MAP = 'setons'`): ein eigener, geskripteter Nachbau nach
+dem Layout von *Seton's Clutch* (FA-Karte `SCMP_009`). Es sind **keine** Original-Dateien (`.scmap`, Texturen,
+Vorschaubilder) im Repo; Grundlage ist die eigene Layout-Spezifikation `content/maps/src/setons.spec.md`
+([B]eleg/[V]orschau/[S]chätzung markiert), daraus erzeugt der Generator `packages/formats/scripts/mapgen-setons.ts`
+(in `pnpm maps` registriert) Heightmap, 8-Layer-Splat und `markers.json`; `mapc` baut `content/maps/setons.rtsmap`.
+Details, Tabellen und beide Review-Runden: [setons-map](status/setons-map.md); Entscheidungen DECISIONS
+„Erste Karte: Setons“ und 22–29. `?map=hollow-ridge` (MS2-Karte) und `?map=testplane` bleiben erreichbar; die
+MS1/MS2-E2E-Specs sind per `openGame` auf hollow-ridge fixiert.
+
+| Eckdaten | Wert |
+|---|---|
+| Größe | 1.024 × 1.024 WU (Heightmap 1.025², u16; Splat 2 × 256² RGBA8 = 8 Layer), exakt punktsymmetrisch (2 Teams à 4) |
+| Datei | `setons.rtsmap` 2.698.440 B, SHA-256 `110bd0d6…823c`, **mapSimHash `0x52eccf92`** (Golden im Test) |
+| Starts | 8 (je Team Rear/Mid/Rock/Beach); Spieler = Armee 0 auf **SW-Mid (354/678)**, Gegner = Armee 1 auf **NO-Mid (670/346)**, Mid gegen Mid über die Landbrücke; Kamera startet über der eigenen Basis |
+| Spots | **108 Mass** (je Start 4 Start-Mex, Gelände-Mex je Team, 2 Inseln à 5), **8 Hydro**, 72 Fels-Props (`core:rock_01/02`) |
+| Gelände | Wasser 56,1 % (Spec ≈ 57 %; 64²-Raster zu 96,7 % deckungsgleich mit der Referenzklassifikation), **eine** Landbrücke als einzige Landverbindung (engste Stelle 76,4 WU, flach), 2 erhöhte Inseln (Plateau ≈ 40 WU, Klippenring, nur per Luft/See), Eckgebirge bis ≈ 77 WU, Felsrippen am Rock-Spot, Felsgruppe an der Buchtspitze, Teiche, Strände nur an den Beach-Küsten |
+| Tests | Kartenvertrag `packages/formats/test/setons.test.ts` (Symmetrie, Wasseranteil, Starts/Spots flach und trocken, Konnektivität nur über die Brücke, Brückenbreite, Inseln unerreichbar, Klippen, Sand, Randabstand), Frische (mapgen == Quellen, mapc bytegleich), Golden `setons-bridge-move`, E2E `test/e2e/setons.spec.ts` |
+
+**Messwerte** (Apple M5 Pro, lokal, kein Referenz-Laptop – DECISIONS 5): Laden Navigation → ready 230–447 ms
+(Chromium), 294–410 ms (Firefox), 282–620 ms (WebKit); `map-load` kalt 235–540 ms, aus dem Cache 160–216 ms.
+Gesamtansicht (alle 1.024 Patches, ≈ 2,1 Mio. Dreiecke, Terrain 1 Draw, Draws ≤ 50) unbelastet **60 FPS**, GPU p50
+5,9–6,3 ms (Medium) / 6,3–7,5 ms (High), Kameraflug 60 FPS, Main-JS p95 ≤ 0,5 ms; unter Fremdlast immer auf dem
+verfügbaren rAF-Takt. Generator ≈ 0,6 s. `test:xengine` 100/100 Hash-Ketten bitgleich (inkl. `setons-bridge-move`).
+
+**Abschluss-Verifikation (2026-09-29, sequenziell, über `tools/heavy`):** `pnpm typecheck` ✓, `pnpm lint` ✓
+(339 Module, keine Abhängigkeitsverstöße), `pnpm test` ✓ (90 Dateien / 747 Tests, 4 Worker), `pnpm build` ✓,
+`pnpm test:e2e` ✓ (113 bestanden, 4 übersprungen: Pointer-Lock im Vollbild headless; 12,0 min;
+Firefox/WebKit mussten vorher per `pnpm exec playwright install firefox webkit` nachinstalliert werden – der erste Lauf
+scheiterte nur am fehlenden Browser-Binary, Chromium 37 bestanden, 2 übersprungen). Setons-E2E dieses Laufs (Fremdlast möglich):
+Laden Nav → ready Chromium 175/276 ms (SAB/Transfer), Firefox 238/225 ms, WebKit 182/511 ms; Gesamtansicht
+Chromium 58 FPS (GPU p50 5,3 ms SAB), Firefox 120/87 FPS, WebKit 47/52 FPS (rAF-Leerlauf 37–46 Hz); Kameraflug
+Chromium 60 FPS, Firefox 120/108, WebKit 52/58 FPS; Main-JS p95 ≤ 0,5 ms (≤ 1 ms mit 1-ms-Uhr); 2,7 MB Netz kalt.
+
+**Abweichungen vom Original**
+
+- Nachbau aus einer Draufsicht: **alle Höhen geschätzt** (FA-typisch), Tiefen nur relativ gemessen; Uferformen eigene
+  Polygone mit Rauschen statt Original-Heightmap.
+- Symmetrie: NO-Hälfte kanonisch, SW gespiegelt – die kleinen Asymmetrien des Originals (zwei SW-Mex ≈ 0,09 in z
+  versetzt) sind **nicht** übernommen; Rand-Mex von x = 1.016 auf 1.012 bzw. 12 WU gezogen (Spots ≥ 12 WU vom Rand).
+- Heller Schelf ist bewusst **nicht** begehbar (im Original offen).
+- Reclaim nur als Fels-Props; **Wracks auf der Landbrücke, Bäume und Unterwasser-Wracks fehlen** (keine Prop-Blueprints
+  vor MS8). Props werden noch weder simuliert noch gerendert.
+- Mass-Zahl 108 aus dem Vorschaubild gezählt (keine Textquelle); 4 Start-Mex für alle Starts per Analogie zum Rear-Bauplan.
+- Eigene Optik (Oliv-Wiese, prozedurale Albedo, eigene Wasserfarben), keine FA-Texturen.
+
+**Offene Punkte**
+
+- Kein Pathing (MS3): Einheiten fahren geradeaus; Mid ↔ Mid klappt direkt über die Brücke, andere Starts brauchen
+  Wegpunkte um die Seen.
+- Keine Terrain-LOD: die Gesamtansicht zeichnet alle 1.024 Patches; auf der iGPU geschätzt 25–30 ms → CDLOD-Stufen
+  (M11) in MS14.
+- Wracks/Bäume/Unterwasser-Wracks und sichtbare Fels-Props ab MS8; strategische Spot-Symbole (Overlay) ab MS8/MS14.
+- Schelf-Begehbarkeit und Neigungsgrenze (Klippen aktuell befahrbar) mit MS3 entscheiden.
+- Messungen auf iGPU/echtem Safari und unbelastete `FAF_PERF_GATE=1`-Wiederholung stehen aus.

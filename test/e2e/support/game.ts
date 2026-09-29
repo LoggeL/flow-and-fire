@@ -29,6 +29,19 @@ export const PERF_GATE = process.env['FAF_PERF_GATE'] === '1';
 /** Label for locally measured performance numbers (DECISIONS 5). */
 export const MEASURED_LOCALLY = 'lokal gemessen (Apple M5 Pro, Playwright headless), kein iGPU-/GPU-Runner';
 
+/** Setons (content/maps/setons.rtsmap), the default map: identities fixed by the Setons package. */
+export const SETONS = {
+  name: 'Setons',
+  sizeWu: 1024,
+  mapSimHash: 0x52eccf92,
+  /** Starts in WU: army 0 (player) SW mid, army 1 NO mid, across the land bridge. */
+  own: { x: 354, z: 678 },
+  enemy: { x: 670, z: 346 },
+  starts: 8,
+  mass: 108,
+  hydro: 8,
+} as const;
+
 /** hollow-ridge (content/maps/hollow-ridge.rtsmap): identities fixed by ms2-p0/ms2-p2. */
 export const HOLLOW_RIDGE = {
   name: 'Hollow Ridge',
@@ -71,11 +84,29 @@ export function expectNoErrors(errors: readonly string[]): void {
   expect(errors, errors.join('\n')).toEqual([]);
 }
 
-/** Opens the game (root URL → redirect to /b/<hash>/) and waits for `ready` and the first units. */
-export async function openGame(page: Page, base: string, query = '', minUnits = 1): Promise<void> {
+/**
+ * Map the MS1/MS2 specs run on unless their query names one: they assert hollow-ridge identities and
+ * positions (starts, lake, spots). The default map of the game is Setons since the Setons package
+ * (setons.spec.ts, map-load.spec.ts open the page without `map=`).
+ */
+export const PINNED_MAP_QUERY = 'map=hollow-ridge';
+
+/** Adds {@link PINNED_MAP_QUERY} unless the query already selects a map. */
+export function withPinnedMap(query: string): string {
+  if (/(^|&)map=/.test(query)) return query;
+  return query === '' ? PINNED_MAP_QUERY : `${PINNED_MAP_QUERY}&${query}`;
+}
+
+/**
+ * Opens the game (root URL → redirect to /b/<hash>/) and waits for `ready` and the first units.
+ * Without `map=` in the query the page opens hollow-ridge ({@link withPinnedMap}); `pinMap: false`
+ * opens the game's default map (Setons).
+ */
+export async function openGame(page: Page, base: string, query = '', minUnits = 1, opts: { pinMap?: boolean } = {}): Promise<void> {
+  const q = opts.pinMap === false ? query : withPinnedMap(query);
   // 'commit': the root page redirects with an inline location.replace before its load event
   // (Firefox then resolves goto() with null / may report an aborted navigation).
-  await page.goto(base + (query === '' ? '' : `?${query}`), { waitUntil: 'commit' });
+  await page.goto(base + (q === '' ? '' : `?${q}`), { waitUntil: 'commit' });
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
   await page.waitForFunction(() => window.__faf?.ready === true, null, { timeout: 30_000 });
   if (minUnits > 0) {

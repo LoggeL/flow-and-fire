@@ -7,6 +7,7 @@ import { readRtsMap, writeRtsMap } from '../src/index.ts';
 import { decodePgm, decodeR16, encodeHeightmapPng, encodePgm, encodeR16, HeightmapError, readHeightmap, type HeightmapData } from '../scripts/heightmap-io.ts';
 import { compileMap, compileMapSource, MapcError, mapcFiles, MAPS_DIR, MAPS_SRC_DIR, wuToRaw, degToAng16 } from '../scripts/mapc.ts';
 import { generateHollowRidgeHeights, hollowRidgeMarkers } from '../scripts/mapgen.ts';
+import { generateSetonsSources, SETONS_SPLAT_RES } from '../scripts/mapgen-setons.ts';
 import { decodePng, encodePng } from '../scripts/png.ts';
 
 const tmp = mkdtempSync(join(tmpdir(), 'faf-mapc-'));
@@ -163,5 +164,27 @@ describe('checked-in maps are fresh', () => {
     expect(png.width).toBe(gen.dim);
     expect(Buffer.from(png.samples.buffer).equals(Buffer.from(gen.samples.buffer))).toBe(true);
     expect(readFileSync(join(dir, 'markers.json'), 'utf8')).toBe(`${JSON.stringify(hollowRidgeMarkers(), null, 2)}\n`);
+  });
+
+  it('mapc from content/maps/src/setons reproduces content/maps/setons.rtsmap byte-exactly', () => {
+    const checkedIn = new Uint8Array(readFileSync(join(MAPS_DIR, 'setons.rtsmap')));
+    const { bytes, map } = compileMapSource(join(MAPS_SRC_DIR, 'setons'));
+    expect(bytes.length).toBe(checkedIn.length);
+    expect(Buffer.from(bytes).equals(Buffer.from(checkedIn))).toBe(true);
+    expect(map.splat?.layers).toBe(8);
+  });
+
+  it('mapgen reproduces the checked-in Setons sources (heights, splat planes, markers.json)', () => {
+    const dir = join(MAPS_SRC_DIR, 'setons');
+    const gen = generateSetonsSources();
+    const png = decodePng(new Uint8Array(readFileSync(join(dir, 'heightmap.png'))));
+    expect([png.bitDepth, png.channels, png.width]).toEqual([16, 1, gen.heightmap.dim]);
+    expect(Buffer.from(png.samples.buffer).equals(Buffer.from(gen.heightmap.samples.buffer))).toBe(true);
+    gen.splat.forEach((plane, k) => {
+      const img = decodePng(new Uint8Array(readFileSync(join(dir, `splat-${k}.png`))));
+      expect([img.bitDepth, img.channels, img.width, img.height]).toEqual([8, 4, SETONS_SPLAT_RES, SETONS_SPLAT_RES]);
+      expect(Buffer.from(img.samples.buffer).equals(Buffer.from(plane.buffer))).toBe(true);
+    });
+    expect(readFileSync(join(dir, 'markers.json'), 'utf8')).toBe(`${JSON.stringify(gen.markers, null, 2)}\n`);
   });
 });

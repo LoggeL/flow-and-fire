@@ -363,6 +363,7 @@ class RendererImpl implements Renderer {
     }
     this.units.setLodBias(preset.lodBias);
     this.terrainPass?.setMaxSplatLayers(preset.splatLayers);
+    this.terrainPass?.setTriplanar(preset.triplanar);
     this.waterPass?.setQuality(preset.waterQuality);
     if (this.decals.length > preset.caps.decals && this.terrainPass !== null) this.applyDecals();
   }
@@ -416,7 +417,7 @@ class RendererImpl implements Renderer {
     const dev = this.device;
     const res = new TerrainHeightResources(dev, desc);
     this.terrainRes = res;
-    this.terrainPass = new TerrainPass(dev, this.frameGroup, res, { maxSplatLayers: this.preset.splatLayers });
+    this.terrainPass = new TerrainPass(dev, this.frameGroup, res, { maxSplatLayers: this.preset.splatLayers, triplanar: this.preset.triplanar });
     this.waterPass = desc.waterLevelRaw !== null ? new WaterPass(dev, this.frameGroup, res, this.preset.waterQuality) : null;
     this.probe = new HeightProbe(dev, res);
     this.applyDecals();

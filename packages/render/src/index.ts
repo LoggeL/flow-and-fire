@@ -67,6 +67,7 @@ export type { ChunkBounds, HeightfieldLike, TerrainDesc, TerrainLight, TerrainSp
 export {
   TERRAIN_HEIGHT_GLSL,
   TERRAIN_SPLAT_GLSL,
+  NOISE_GLSL,
   TERRAIN_HEIGHT_LAYOUT,
   TERRAIN_ALBEDO_LAYERS,
   TERRAIN_ALBEDO_SIZE,
@@ -86,9 +87,9 @@ export {
   DECAL_LIST_WIDTH,
 } from './terrain/decals.ts';
 export type { DecalBinStats, TerrainDecal, TerrainDecalKind } from './terrain/decals.ts';
-export { TerrainPass, TerrainHeightResources, PATCH_INDEX_COUNT } from './passes/terrain.ts';
+export { TerrainPass, TerrainHeightResources, PATCH_INDEX_COUNT, TERRAIN_EDGE_FADE_WU, TERRAIN_EDGE_DARKEN } from './passes/terrain.ts';
 export type { TerrainPassOptions } from './passes/terrain.ts';
-export { WaterPass, WATER_BORDER_WU, WATER_FOAM_DEPTH_WU } from './passes/water.ts';
+export { WaterPass, WATER_BORDER_WU, WATER_FOAM_DEPTH_WU, WATER_FULL_DEPTH_MAX_WU, waterFullDepthWu } from './passes/water.ts';
 export { HeightProbe, PROBE_WIDTH, PROBE_HEIGHT, PROBE_BATCH } from './passes/probe.ts';
 export {
   RENDER_PRESETS,

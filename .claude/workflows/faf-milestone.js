@@ -12,13 +12,14 @@ export const meta = {
   ],
 }
 
-const REPO = '/Users/logge/Documents/Projects/flow-and-fire'
+const REPO = args.repo || '/Users/logge/Documents/Projects/flow-and-fire'
+const MAXPAR = args.maxParallel || 3
 const MS = args.ms
 const EXTRA = args.extra || ''
 const COMMON = `Projekt: Flow & Fire (FAF) — Browser-RTS nach Vorbild Supreme Commander: Forged Alliance (eigene Fraktion, keine FA-Namen/Assets).
 Repo: ${REPO} (pnpm-Monorepo, Paket-Scope @faf/*). Maßgeblich: docs/PLAN.md (Architektur §2–§3, Meilenstein ${MS} in §5.2, Spikes §4), docs/DECISIONS.md (autonom getroffene Entscheidungen), docs/features.json (Feature-IDs). Falls vorhanden: docs/STATUS.md (Stand früherer Meilensteine, Abweichungen).
 Regeln:
-- SPEICHER: Mac ohne Swap, 48 GB. Keine speicherhungrigen Prozesse parallel. Vitest mit maxWorkers ≤ 4, Playwright workers=1, keine Dev-Server im Hintergrund liegen lassen (immer beenden).
+- SPEICHER: Mac ohne Swap, 48 GB. Schwere Befehle (pnpm test / vitest über mehrere Pakete, pnpm build, tsc -b, pnpm test:e2e / playwright, pnpm bench, pnpm test:xengine, pnpm ci:local) IMMER über das globale Gate ausführen: /Users/logge/Documents/Projects/flow-and-fire/tools/heavy <befehl> (max. 2 gleichzeitig über alle Agenten/Worktrees, wartet bei wenig freiem Speicher). Einzelne Testdateien/typecheck eines Pakets dürfen direkt laufen. Vitest maxWorkers ≤ 4, Playwright workers=1, keine Dev-Server im Hintergrund liegen lassen (immer beenden).
 - Kein git commit/push (macht der Commit-Schritt). Keine Rückfragen an den Nutzer — triff Entscheidungen im Sinne des Plans und dokumentiere Abweichungen in docs/STATUS.md.
 - Echter, lauffähiger Code. Keine Stubs/TODO-Platzhalter für Features dieses Meilensteins. Determinismus-Vertrag (§3.1, §3.12) ist heilig: Sim-Pakete ohne Float-Mathe/Math.random/Date/Map-als-State etc.
 - Code-Kommentare/Identifier englisch, Doku (docs/*) deutsch.
@@ -80,7 +81,7 @@ const plan = args.plan ? args.plan : await agent(`${COMMON}
 
 Du bist der Tech-Lead. Lies docs/PLAN.md (vollständig relevante Teile: §2, §3, §4, §5.2 ${MS}), docs/DECISIONS.md, ggf. docs/STATUS.md, und den aktuellen Repo-Stand (git log, Dateibaum, package.json-Dateien).
 Zerlege ${MS} in 3–8 Arbeitspakete, angeordnet in Wellen (wave 0,1,2,…). Regeln:
-- Pakete derselben Welle haben DISJUNKTE owns (Pfade/Globs, die NUR dieses Paket anlegt/ändert). Höchstens 2 Pakete pro Welle.
+- Pakete derselben Welle haben DISJUNKTE owns (Pfade/Globs, die NUR dieses Paket anlegt/ändert). Höchstens 3 Pakete pro Welle — möglichst breit parallelisieren (disjunkte Pakete/Ordner), damit Wellen kurz bleiben.
 - Root-Konfiguration (package.json im Root, pnpm-workspace.yaml, tsconfig.base.json, eslint.config.*, vitest.workspace, playwright.config) gehört exklusiv EINEM Paket (typisch Welle 0). Neue Pakete dürfen eigene package.json/tsconfig anlegen. Abhängigkeiten installiert jedes Paket selbst mit pnpm (Root-Lockfile-Konflikte vermeiden: in einer Welle mit 2 Paketen darf nur eines 'pnpm add' ausführen — plane Dependencies möglichst in Welle 0 vor).
 - task: sehr konkrete Anweisung (Dateien, Interfaces aus PLAN §3, Tests die geschrieben werden müssen, Abnahmekriterien des Pakets, Befehle zum Selbsttest). Das implementierende Agent kennt NUR diesen Text + Repo + PLAN.md.
 - Spikes/Benchmarks aus §4, die zu ${MS} gehören, als echte Benchmarks im Repo (tools/headless o.ä.) mit dokumentierten Messwerten.
@@ -98,8 +99,8 @@ const waves = [...new Set(todo.map(p => p.wave))].sort((a, b) => a - b)
 const buildReports = []
 for (const w of waves) {
   const pkgs = todo.filter(p => p.wave === w)
-  for (let i = 0; i < pkgs.length; i += 2) {
-    const chunk = pkgs.slice(i, i + 2)
+  for (let i = 0; i < pkgs.length; i += MAXPAR) {
+    const chunk = pkgs.slice(i, i + MAXPAR)
     const others = chunk.length > 1 ? `Parallel arbeitet ein anderes Agent an: ${chunk.map(c => c.title + ' (owns ' + c.owns.join(', ') + ')').join('; ')}. Ändere NUR deine eigenen owns-Pfade.` : ''
     const res = await parallel(chunk.map(p => () =>
       agent(`${COMMON}

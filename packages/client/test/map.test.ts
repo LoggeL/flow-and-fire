@@ -126,7 +126,7 @@ describe('ClientMap', () => {
     expect(() => ClientMap.testPlane(96)).toThrow(FormatError);
   });
 
-  it('toTerrainDesc feeds render.setTerrain; spotDecals are green/cyan rings on the spots', () => {
+  it('toTerrainDesc feeds render.setTerrain; spotDecals are green rings / cyan diamonds on the spots', () => {
     const m = hollowRidge();
     const d = m.toTerrainDesc();
     expect(d).toMatchObject({ sizeWu: 512, dim: 513, heightScaleRaw: 32, waterLevelRaw: 40960 });
@@ -138,7 +138,9 @@ describe('ClientMap', () => {
     for (let i = 0; i < decals.length; i++) {
       const s = m.spots[i]!;
       const want = s.kind === 'mass' ? MASS_SPOT_DECAL : HYDRO_SPOT_DECAL;
-      expect(decals[i]).toEqual({ kind: 'ring', x: s.x, z: s.z, radiusWU: want.radiusWU, widthWU: want.widthWU, color: want.color, alpha: want.alpha });
+      expect(decals[i]).toEqual({ ...want, x: s.x, z: s.z });
+      expect(decals[i]!.kind).toBe(s.kind === 'mass' ? 'ring' : 'diamond');
+      expect(decals[i]!.minRadiusPx).toBeGreaterThanOrEqual(4);
     }
     expect(m.spotDecals().filter((x) => x.color === 0x40ff50)).toHaveLength(16);
     expect(m.spotDecals().filter((x) => x.color === 0x20e0ff)).toHaveLength(2);

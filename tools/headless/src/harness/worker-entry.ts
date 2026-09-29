@@ -12,6 +12,7 @@ const XXH32_WASM_URL = new URL('../spk5/xxh32.wasm', import.meta.url);
 /** Scenario maps by repo-relative path (must match scripts/lib.ts MAP_PATHS). */
 const MAP_URLS: Readonly<Record<string, URL>> = {
   'content/maps/hollow-ridge.rtsmap': new URL('../../../../content/maps/hollow-ridge.rtsmap', import.meta.url),
+  'content/maps/setons.rtsmap': new URL('../../../../content/maps/setons.rtsmap', import.meta.url),
 };
 const clock = (): number => performance.now();
 

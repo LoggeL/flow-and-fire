@@ -11,7 +11,11 @@
  * - Normals from central differences in the VS; auto-splat by height and slope (4 procedural layers:
  *   shore/sand near the water level, grass, rock from a slope threshold, highland) plus optional
  *   painted splat weights (4 or 8 layers, limited by the preset) over a runtime-generated
- *   TEXTURE_2D_ARRAY of procedural layer albedos.
+ *   TEXTURE_2D_ARRAY of procedural layer albedos; only layers with weight are sampled, each from two
+ *   differently rotated/scaled tiles mixed by macro noise (no visible repetition), steep faces
+ *   triplanar (preset flag). Close up, noise-sharpened splat transitions and a two-octave detail
+ *   normal (lighting only) add ground structure; both fade out by pixel footprint. Terrain darkens
+ *   towards the map edge ({@link TERRAIN_EDGE_FADE_WU}).
  * - Light: one directional light + hemisphere (Frame block, set from the map's light parameters).
  * - Decals (rings/discs, SDF) from a data texture, binned per chunk ({@link DecalBinner}).
  *
@@ -22,7 +26,7 @@ import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH, TexH, VertexStrea
 import { vf } from '../rhi/types.ts';
 import { Std140Writer, std140Layout } from '../std140.ts';
 import type { DecalBinStats, TerrainDecal } from '../terrain/decals.ts';
-import { DECAL_DATA_HEIGHT, DECAL_DATA_WIDTH, DECAL_LIST_WIDTH, DECALS_PER_ROW, DecalBinner } from '../terrain/decals.ts';
+import { DECAL_DATA_HEIGHT, DECAL_DATA_WIDTH, DECAL_LIST_WIDTH, DECAL_MAX_WIDTH_FRACTION, DECALS_PER_ROW, DecalBinner } from '../terrain/decals.ts';
 import {
   SLOT_TERRAIN_HEIGHT,
   TERRAIN_ALBEDO_LAYERS,
@@ -30,6 +34,7 @@ import {
   TERRAIN_HEIGHT_GLSL,
   TERRAIN_HEIGHT_LAYOUT,
   TERRAIN_SPLAT_GLSL,
+  NOISE_GLSL,
   UNIT_HEIGHTMAP,
   generateTerrainAlbedo,
 } from '../terrain/glsl.ts';
@@ -54,6 +59,19 @@ const UNIT_DECAL_LIST = 6;
 
 /** Water rendering constants shared with the water pass. */
 export const NO_WATER_RAW = -0x80000000;
+/**
+ * Terrain and water darken towards the map edge over this many WU (FA-like border). Short enough to
+ * stay out of the playable area: edge spots sit ≥ 12 WU from the border (Setons review R2 P3-1).
+ */
+export const TERRAIN_EDGE_FADE_WU = 10;
+/** Brightness factor right at the map edge. */
+export const TERRAIN_EDGE_DARKEN = 0.3;
+/** Noise cell (WU) of the splat-transition sharpening (second octave at 0.4 ×). */
+export const SPLAT_SHARPEN_CELL_WU = 4;
+/** Noise cells (WU) of the two detail-normal octaves (wavelength ≈ 2 cells: ≈ 0.9 and 2.6 WU). */
+export const DETAIL_BUMP_CELLS_WU: readonly [number, number] = [0.45, 1.3];
+/** Tilt of the detail normal per unit noise gradient (flat ground; steep faces up to 1.6 ×). */
+export const DETAIL_BUMP_STRENGTH = 0.18;
 
 // -------------------------------------------------------------------------------------------------
 // Shared heightmap resources (terrain, water, probe)
@@ -124,7 +142,7 @@ const TERRAIN_PASS_BLOCK = /* glsl */ `
 layout(std140) uniform TerrainPass {
   vec4 u_bands;    // shore top WU, highland start WU, highland blend WU, rock slope (1 - n.y)
   ivec4 u_tparams; // x: splat layers (0/4/8), y: has water, z: water level raw, w: decal count
-  vec4 u_tmisc;    // x: 1 / sizeWu, y: albedo tiles per WU, z: underwater darkening, w: 0
+  vec4 u_tmisc;    // x: 1 / sizeWu, y: albedo tiles per WU, z: underwater darkening, w: triplanar (0/1)
 };
 `;
 
@@ -165,6 +183,7 @@ precision highp float;
 precision highp int;
 ${FRAME_BLOCK_GLSL}
 ${TERRAIN_PASS_BLOCK}
+${NOISE_GLSL}
 ${TERRAIN_SPLAT_GLSL}
 uniform highp sampler2DArray u_albedo;
 uniform highp sampler2D u_splat0;
@@ -181,14 +200,48 @@ out vec4 o_color;
 
 void main() {
   vec3 n = normalize(v_normal);
-  vec3 albedo = terrainAlbedo(u_albedo, u_splat0, u_splat1, v_tile, v_splatUV, n, v_heightWU, u_bands, u_tparams.x);
-  float ndl = max(dot(n, u_sunDir.xyz), 0.0);
-  vec3 hemi = mix(u_groundColor.rgb, u_skyColor.rgb, n.y * 0.5 + 0.5);
+  // World position (WU) for macro variation and the map-edge fade (float is exact enough here).
+  vec2 world = v_pos.xz + vec2(u_camPosInt.xz) / 4096.0;
+  float macro = terrainValueNoise(world / 37.0) * 0.65 + terrainValueNoise(world / 13.0) * 0.35;
+  vec3 tilePos = vec3(v_tile.x, v_heightWU * u_tmisc.y, v_tile.y);
+  // WU per pixel: the close-up detail below fades out before it could alias (overview unchanged).
+  float px = max(length(fwidth(world)), 1e-4) * 0.70710678;
+  // Sharpened splat transitions (${SPLAT_SHARPEN_CELL_WU} WU noise cells): irregular, crisp borders
+  // instead of round blobs where the bilinear 4-WU splat blends.
+  vec3 sharp = vec3(0.0);
+  float sharpKeep = 1.0 - smoothstep(0.15, 0.5, px);
+  if (sharpKeep > 0.0) {
+    sharp = vec3(terrainValueNoise(world / ${SPLAT_SHARPEN_CELL_WU.toFixed(1)}),
+                 0.5 * terrainValueNoise(world / ${(SPLAT_SHARPEN_CELL_WU * 0.4).toFixed(2)} + vec2(13.7, 5.3)),
+                 0.25 * sharpKeep);
+  }
+  vec3 albedo = terrainAlbedoTri(u_albedo, u_splat0, u_splat1, tilePos, v_splatUV, n, v_heightWU, u_bands, u_tparams.x,
+                                 0.5 + 0.35 * macro, u_tmisc.w > 0.5, sharp);
+  albedo *= 1.0 + 0.08 * terrainValueNoise(world / 61.0);
+  // Detail normal (bump, two octaves with ≈ ${DETAIL_BUMP_CELLS_WU[0]}/${DETAIL_BUMP_CELLS_WU[1]} WU cells) for the
+  // lighting only; stronger on steep ground. Each octave fades out once a pixel covers ≈ 1/3 cell.
+  vec3 nl = n;
+  float bumpKeep0 = 1.0 - smoothstep(0.12, 0.35, px / ${DETAIL_BUMP_CELLS_WU[0].toFixed(2)});
+  float bumpKeep1 = 1.0 - smoothstep(0.12, 0.35, px / ${DETAIL_BUMP_CELLS_WU[1].toFixed(2)});
+  if (bumpKeep1 > 0.0) {
+    float k = ${DETAIL_BUMP_STRENGTH.toFixed(2)} * (0.7 + 1.5 * clamp(1.0 - n.y, 0.0, 0.6));
+    vec2 g = terrainValueNoiseD(world / ${DETAIL_BUMP_CELLS_WU[1].toFixed(2)}).yz * bumpKeep1 * 0.6;
+    if (bumpKeep0 > 0.0) g += terrainValueNoiseD(world / ${DETAIL_BUMP_CELLS_WU[0].toFixed(2)} + vec2(7.1, 3.9)).yz * bumpKeep0 * 0.4;
+    nl = normalize(n - k * vec3(g.x, 0.0, g.y));
+  }
+  float ndl = max(dot(nl, u_sunDir.xyz), 0.0);
+  vec3 hemi = mix(u_groundColor.rgb, u_skyColor.rgb, nl.y * 0.5 + 0.5);
   vec3 color = albedo * (hemi + u_sunColor.rgb * ndl);
   if (u_tparams.y != 0) {
     float depth = float(u_tparams.z) / 4096.0 - v_heightWU;
     color *= 1.0 - u_tmisc.z * clamp(depth / 6.0, 0.0, 1.0);
   }
+
+  // Darkened map edge (FA-like): the terrain fades out over the last ${TERRAIN_EDGE_FADE_WU} WU. Before the
+  // decals, so spots near the edge keep their full color.
+  float sizeWu = 1.0 / u_tmisc.x;
+  float edge = min(min(world.x, world.y), min(sizeWu - world.x, sizeWu - world.y));
+  color *= mix(${TERRAIN_EDGE_DARKEN.toFixed(2)}, 1.0, smoothstep(0.0, ${TERRAIN_EDGE_FADE_WU.toFixed(1)}, edge));
 
   // Decals of this chunk (SDF rings/discs), anti-aliased over the pixel footprint.
   float aa = max(length(fwidth(v_pos.xz)), 1e-3);
@@ -201,15 +254,22 @@ void main() {
     ivec4 t0 = texelFetch(u_decalData, tc, 0);
     ivec4 t1 = texelFetch(u_decalData, tc + ivec2(1, 0), 0);
     vec2 c = vec2(t0.xy - u_camPosInt.xz) / 4096.0;
-    float dist = length(v_pos.xz - c);
+    vec2 dv = v_pos.xz - c;
     float r = float(t0.z) / 4096.0;
     float w = float(t0.w) / 4096.0;
+    if (t1.z > 0) {
+      // Zoomed out: grow to the minimum pixel radius (≤ max radius), line at least 2 px.
+      float grow = clamp(float(t1.z) / 16.0 * px / max(r, 1e-3), 1.0, float(t1.w) / 4096.0 / max(r, 1e-3));
+      r *= grow;
+      w = min(max(w * grow, 2.0 * px), ${DECAL_MAX_WIDTH_FRACTION} * r);
+    }
     float cov;
-    if (t1.x == 0) {
-      float sd = abs(dist - r) - 0.5 * w;
-      cov = 1.0 - smoothstep(-aa, aa, sd);
+    if (t1.x == 1) {
+      cov = 1.0 - smoothstep(r - max(w, aa), r + aa, length(dv));
     } else {
-      cov = 1.0 - smoothstep(r - max(w, aa), r + aa, dist);
+      // Ring: circle line; diamond: line of the L1 "circle" (exact distance on its edges).
+      float sd = t1.x == 2 ? abs((abs(dv.x) + abs(dv.y) - r) * 0.70710678) : abs(length(dv) - r);
+      cov = 1.0 - smoothstep(-aa, aa, sd - 0.5 * w);
     }
     uint rgba = uint(t1.y);
     vec4 dc = vec4(float(rgba & 255u), float((rgba >> 8u) & 255u), float((rgba >> 16u) & 255u), float(rgba >> 24u)) / 255.0;
@@ -256,6 +316,8 @@ function buildPatch(): { vertices: Uint8Array; indices: Uint16Array } {
 export interface TerrainPassOptions {
   /** Painted splat layers allowed by the preset (4 or 8). */
   readonly maxSplatLayers?: 4 | 8;
+  /** Triplanar projection on steep faces (preset flag, default true). */
+  readonly triplanar?: boolean;
 }
 
 export class TerrainPass {
@@ -281,6 +343,7 @@ export class TerrainPass {
   private lastCamVersion = -1;
   private dirty = true;
   private splatLayers = 0;
+  private triplanar = true;
   private readonly offRestored: () => void;
 
   constructor(
@@ -439,6 +502,7 @@ export class TerrainPass {
         { unit: UNIT_DECAL_LIST, texture: this.decalListTex },
       ],
     });
+    this.triplanar = opts.triplanar ?? true;
     this.setMaxSplatLayers(opts.maxSplatLayers ?? 8);
     this.offRestored = dev.onRestored(() => {
       this.dirty = true;
@@ -459,8 +523,20 @@ export class TerrainPass {
     const w = this.data;
     w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('bands'), shoreTop, highland, range * 0.08 + 0.5, 0.28);
     w.ivec4(TERRAIN_PASS_LAYOUT.offsetOf('params'), this.splatLayers, water !== null ? 1 : 0, water ?? 0, this.decals.stats.decals);
-    w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('misc'), 1 / desc.sizeWu, 1 / 8, 0.45, 0);
+    w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('misc'), 1 / desc.sizeWu, 1 / 8, 0.45, this.triplanar ? 1 : 0);
     this.dev.writeBuffer(this.ubo, 0, w.bytes);
+  }
+
+  /** Triplanar projection on steep faces on/off (preset). */
+  setTriplanar(on: boolean): void {
+    this.triplanar = on;
+    this.data.float(TERRAIN_PASS_LAYOUT.offsetOf('misc') + 12, on ? 1 : 0);
+    this.dev.writeBuffer(this.ubo, 0, this.data.bytes);
+  }
+
+  /** Triplanar projection active. */
+  triplanarEnabled(): boolean {
+    return this.triplanar;
   }
 
   /** Painted splat layers in use (0, 4 or 8). */

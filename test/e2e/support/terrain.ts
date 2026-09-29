@@ -81,22 +81,29 @@ export interface SpotCheck {
   readonly samples: number;
 }
 
-/** Samples 16 points on the decal ring of a spot (mass r 1.6 WU green, hydro r 2.6 WU cyan). */
+/**
+ * Samples 16 points on the decal line of a spot (mass: green ring r 1.6 WU; hydro: cyan diamond,
+ * vertices 3.2 WU from the centre – `client.MASS_SPOT_DECAL` / `HYDRO_SPOT_DECAL`). Close up
+ * (distance 16) the minimum pixel size does not enlarge them.
+ */
 export async function checkSpot(page: Page, kind: 'mass' | 'hydro', spot: { x: number; z: number }, distance = 16): Promise<SpotCheck> {
-  const radius = kind === 'mass' ? 1.6 : 2.6;
+  const radius = kind === 'mass' ? 1.6 : 3.2;
+  const diamond = kind === 'hydro';
   await page.evaluate(({ s, d }) => window.__faf!.setCamera(s.x, s.z, d), { s: spot, d: distance });
   await settle(page);
-  const pts = await page.evaluate(({ s, r }) => {
+  const pts = await page.evaluate(({ s, r, dm }) => {
     const h = window.__faf!;
     const out: ({ x: number; y: number } | null)[] = [];
     for (let k = 0; k < 16; k++) {
       const a = (k / 16) * Math.PI * 2;
-      const x = s.x + Math.cos(a) * r;
-      const z = s.z + Math.sin(a) * r;
+      // Diamond: the L1 "circle" |dx| + |dz| = r.
+      const k1 = dm ? 1 / (Math.abs(Math.cos(a)) + Math.abs(Math.sin(a))) : 1;
+      const x = s.x + Math.cos(a) * r * k1;
+      const z = s.z + Math.sin(a) * r * k1;
       out.push(h.project(x, h.heightAt(x, z), z));
     }
     return out;
-  }, { s: spot, r: radius });
+  }, { s: spot, r: radius, dm: diamond });
   const shot = await cssShot(page);
   const test = kind === 'mass' ? isMassDecal : isHydroDecal;
   let hits = 0;

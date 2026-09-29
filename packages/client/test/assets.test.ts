@@ -23,6 +23,8 @@ const BASE = 'https://faf.test/b/abc/assets/';
 const MANIFEST_URL = `${BASE}manifest.json`;
 const manifestText = readFileSync(join(ASSET_DIR, 'manifest.json'), 'utf8');
 const manifest: AssetManifest = parseAssetManifest(manifestText);
+/** Assets in the checked-in manifest (content 2, maps hollow-ridge + setons, 1 model). */
+const N = Object.keys(manifest.assets).length;
 const fileBytes = (rel: string): Uint8Array => new Uint8Array(readFileSync(join(ASSET_DIR, rel)));
 
 beforeAll(async () => {
@@ -179,13 +181,13 @@ describe('asset loader (fakes)', () => {
     const w = new FakeWorld();
     const msgs = await run(w);
     const m = msgs.find((x) => x.t === 'manifest')!;
-    expect(m.t === 'manifest' && m.assets).toBe(4);
+    expect(m.t === 'manifest' && m.assets).toBe(N);
     const done = msgs.find((x) => x.t === 'done')!;
     if (done.t !== 'done') throw new Error();
-    expect(done.stats).toMatchObject({ assets: 4, fromNetwork: 4, fromCache: 0, bytesCache: 0, cache: true });
+    expect(done.stats).toMatchObject({ assets: N, fromNetwork: N, fromCache: 0, bytesCache: 0, cache: true });
     const expectedBytes = Object.values(manifest.assets).reduce((n, e) => n + e.bytes, 0);
     expect(done.stats.bytesNetwork).toBe(expectedBytes);
-    expect(w.cacheStore.size).toBe(4);
+    expect(w.cacheStore.size).toBe(N);
     const prog = msgs.filter((x): x is AssetProgressMsg => x.t === 'progress');
     expect(prog.length).toBeGreaterThanOrEqual(8);
     let last = 0;
@@ -201,7 +203,7 @@ describe('asset loader (fakes)', () => {
     const map = msgs.find((x) => x.t === 'asset' && x.kind === 'map')!;
     expect(map.t === 'asset' && map.bytes.byteLength).toBe(manifest.assets['maps/hollow-ridge']!.bytes);
     // Order: content, maps, models.
-    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'units/cube_bot']);
+    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'maps/setons', 'units/cube_bot']);
   });
 
   it('warm: a cache hit needs no network (no asset bytes), only the manifest', async () => {
@@ -212,7 +214,7 @@ describe('asset loader (fakes)', () => {
     const msgs = await run(w);
     const done = msgs.find((x) => x.t === 'done')!;
     if (done.t !== 'done') throw new Error();
-    expect(done.stats).toMatchObject({ fromCache: 4, fromNetwork: 0, bytesNetwork: 0 });
+    expect(done.stats).toMatchObject({ fromCache: N, fromNetwork: 0, bytesNetwork: 0 });
     expect(w.networkRequests).toEqual([]);
     expect(msgs.filter((x) => x.t === 'progress').every((x) => x.t === 'progress' && x.source === 'cache')).toBe(true);
   });
@@ -240,7 +242,7 @@ describe('asset loader (fakes)', () => {
     await run(w);
     const msgs = await run(w);
     const done = msgs.find((x) => x.t === 'done')!;
-    expect(done.t === 'done' && done.stats).toMatchObject({ cache: false, fromNetwork: 4, fromCache: 0 });
+    expect(done.t === 'done' && done.stats).toMatchObject({ cache: false, fromNetwork: N, fromCache: 0 });
     expect(w.cacheStore.size).toBe(0);
   });
 
@@ -305,11 +307,11 @@ describe('AssetManager', () => {
     const res = await mgr.load();
     expect(mgr.mode).toBe('worker');
     expect(res.mode).toBe('worker');
-    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge']);
+    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'maps/setons']);
     expect(decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids).toEqual(['core:cube']);
     expect(res.models.get('units/cube_bot')!.variant).toBe('meshopt');
-    expect(progress.at(-1)!.assetsDone).toBe(4);
-    expect(progress.at(-1)!.assetsTotal).toBe(4);
+    expect(progress.at(-1)!.assetsDone).toBe(N);
+    expect(progress.at(-1)!.assetsTotal).toBe(N);
     // Second load: from the cache.
     const again = await mgr.load(['maps/hollow-ridge']);
     expect(again.files.get('maps/hollow-ridge')!.source).toBe('cache');
