@@ -1,6 +1,10 @@
 import json
-D = json.load(open('roster.json'))
-U = D['units']
+from pathlib import Path
+DOCS = Path(__file__).resolve().parents[2] / 'docs' / 'design'
+D = json.load(open(DOCS / 'roster.json'))
+U_ALL = D['units']
+U = [u for u in U_ALL if u['tech'] != 4]   # MVP (§1–§18)
+T4 = [u for u in U_ALL if u['tech'] == 4]  # Experimentals (§19, Post-MVP)
 
 def n(x, d=None):
     if x is None: return '–'
@@ -76,7 +80,7 @@ def hk(u):
 def mv(u):
     m = u['motion']
     if m.get('structure'): return '–'
-    return f"{n(m['speed'],1)} / {n(m['turnRateDeg'])}°"
+    return f"{n(m['speed'],2)} / {n(m['turnRateDeg'])}°"
 
 def fp(u):
     m = u['motion']
@@ -91,15 +95,15 @@ def intel(u):
 
 L = []
 A = L.append
-UID = {u['id']: u for u in U}
+UID = {u['id']: u for u in U_ALL}
 def nm(i): return UID[i]['name']['de']
 
 A('# Roster: Varkan-Kompakt (MVP)')
 A('')
 A('> **Status:** Startwerte für alle MVP-Blueprints (U3) auf Basis von `docs/design/faction.md`, überarbeitet nach Balance- und Lesbarkeits-Review (§17). Maschinenlesbar in `docs/design/roster.json` (Schema `faf-roster/1`). **`roster.json` ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts**; dieses Dokument und `faction.md` §7.4 sind daraus abgeleitet. Später Grundlage der Blueprints (`content/blueprints/core/…`).')
 c = D['counts']
-A(f"> **Umfang:** **{c['total']} Blueprints** ({c['mobile']} mobil, {c['structures']} Gebäude, jede Upgrade-Stufe einzeln), davon **{c['ms9Core']} im MS9-Kern (●)**, Rest bis MS14 (○). Zielbänder PLAN: MS9 25–30, MS14 45–55. {c['visuals']} Visuals (ein Superset-Mesh pro Rolle, Tech per Kitbash), {c['iconGlyphs']} Icon-Glyphen. Waffen-, Projektil- und Basis-BPs (`core:base_*`) sind nicht mitgezählt.")
-A('> **Ausgeschlossen (Post-MVP laut features.json):** TML/TMD, Nukes/SMD, Transporter (U13), T3-Luft (U12), Marine und Torpedobomber (U17/U18), Experimentals, Mass Fabricator (E15), SACU (U15), ACU-Enhancements (U14), Stealth/Omni (I4/I5, damit auch der Stealth-Teil von U6). Kein T3-Panzer (Reservename *Amboss*).')
+A(f"> **Umfang:** **{c['mvp']} MVP-Blueprints** ({c['mobile']} mobil, {c['structures']} Gebäude, jede Upgrade-Stufe einzeln), davon **{c['ms9Core']} im MS9-Kern (●)**, Rest bis MS14 (○). Zielbänder PLAN: MS9 25–30, MS14 45–55. {c['visuals']} Visuals (ein Superset-Mesh pro Rolle, Tech per Kitbash), {c['iconGlyphs']} Icon-Glyphen. Waffen-, Projektil- und Basis-BPs (`core:base_*`) sind nicht mitgezählt. Dazu kommen **{c['experimental']['total']} Experimentals (T4, Post-MVP)** in §19, Design in [`experimentals.md`](experimentals.md).")
+A('> **Ausgeschlossen (Post-MVP laut features.json):** TML/TMD, Nukes/SMD, Transporter (U13), T3-Luft (U12), Marine und Torpedobomber (U17/U18), Experimentals (nur als Post-MVP-Daten in §19), Mass Fabricator (E15), SACU (U15), ACU-Enhancements (U14), Stealth/Omni (I4/I5, damit auch der Stealth-Teil von U6). Kein T3-Panzer (Reservename *Amboss*).')
 A('> **Balancing:** Hartes Gate PLAN U3: DPS/Mass und HP/Mass je ±25 % der FA-Referenz. Der Generator erzwingt strenger: Einzelachsen, **Produkt** (DPS/Mass × HP/Mass) und **Pulk-DPS/Mass** der Artillerie je ±15 %, dazu eine **Treffer-bis-Tod-Matrix**, die exakt der FA-Referenz entspricht (§14). Die Zahlen sind Startwerte für das Balancing in MS8/MS9, keine Endwerte.')
 A('')
 A('---')
@@ -155,8 +159,8 @@ A('')
 A('Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechselt **nur die Tech-Stufe** (höchste baubare zuerst), nie den Typ. Upgrade-Stufen laufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die fünfte Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen.')
 A('')
 g = D['hotbuildGrid']
-for menu in ('Landwerk', 'Luftwerk', 'Bau'):
-    title = {'Landwerk': 'Landwerk (Fabrik-Menü)', 'Luftwerk': 'Luftwerk (Fabrik-Menü)', 'Bau': 'Bau-Menü (Vogt und Engineers)'}[menu]
+for menu in ('Landwerk', 'Luftwerk', 'Bau', 'Großguss'):
+    title = {'Landwerk': 'Landwerk (Fabrik-Menü)', 'Luftwerk': 'Luftwerk (Fabrik-Menü)', 'Bau': 'Bau-Menü (Vogt und Engineers)', 'Großguss': 'Großguss (T4-Untermenü über Bau: G, nur Meister, Post-MVP)'}[menu]
     A(f'**{title}**')
     A('')
     A('| | Q / A / Z | W / S / X | E / D / C | R / F / V | T / G / B |')
@@ -311,6 +315,7 @@ A('')
 A('| Visual | Mitglieder | Superset-Parts | ≈ Tris |')
 A('|---|---|---|---|')
 for vid, v in D['visuals'].items():
+    if all(UID[i]['tech'] == 4 for i in v['members']): continue
     A(f"| `{vid}` | {', '.join(nm(i) for i in v['members'])} | {v['supersetParts']} | {v['trisEstimate']} |")
 A('')
 A(f"**Icon-Glyphen ({len(D['iconGlyphs'])} Tokens):** " + ', '.join(f"`{x}`" for x in D['iconGlyphs']) + '. Vogt (`cmd_commander`) und Mauer (`wall`) haben keine Glyphe. Formen und Maße: `faction.md` §6.')
@@ -401,5 +406,99 @@ A('9. **Pulk-Gate für Bomber und Flak:** Das Pulk-Gate gilt nur für `ARTILLERY
 A('10. **Superset-Zählung:** Die Visual-Vereinigung zählt nach (Part, Material). Sitzen gleiche Parts auf verschiedenen Positionen (Punze-Rohr mittig, Meißel-Rohre parallel), zählen sie beim Mesh-Bau doppelt; die Grenzen (8 / 9 Parts) dann erneut prüfen und notfalls das Visual teilen.')
 A('11. **Namen:** Markenrecherche zu allen Rufnamen, „Varkan“ und „Kessa“ steht aus; der FA-Namens-Grep ist erledigt (§17.2 E1).')
 A('')
-open('roster.md', 'w').write('\n'.join(L) + '\n')
+
+# ---------------------------------------------------------------- 19 Experimentals (T4, Post-MVP)
+X = D['checks']['experimentals']
+A('---')
+A('')
+A('## 19. Experimentals (T4, Post-MVP)')
+A('')
+A('> **Nicht Teil des MVP.** U16 (erstes Land-Experimental) ist Post-MVP, U21 (volles Roster, Game-Ender) und E17 (Endgame-Eco) sind „Später“. Die Einträge stehen als vollständige Daten bereit (`tech: 4`, `postMvp: true`, Meilenstein PM1–PM3), damit Modelle, Icons und Balancing-Relationen früh prüfbar sind. Design, Mechaniken und Konter: [`experimentals.md`](experimentals.md). Gleiche Gates wie das MVP gegen die FA-T4-Referenz (±25 % hart, ±15 % Ziel inkl. Produkt/Pulk) plus T3-Äquivalent-Relation (±25 %).')
+A('')
+A('**Stammdaten**')
+A('')
+A('| | ID | DE / EN | Rolle | FA-Referenzrolle (dev-only) | MS | Mass / Energy / BT | HP | Tempo / Drehung | Footprint | Sicht | Hotbuild | Icon |')
+A('|---|---|---|---|---|---|---|---|---|---|---|---|---|')
+for u in T4:
+    e = u['economy']; f = u['faReference']
+    ref = f"{f['role']} (`{f['bp']}`" + (f", Gegenprobe `{f['crossCheckBp']}`" if f.get('crossCheckBp') else '') + ')'
+    A(f"| T4 | `{u['id']}` | **{u['name']['de']}** / {u['name']['en']} | {u['role']['de']} / {u['role']['en']} | {ref} | {u['msFirst']} | "
+      f"{n(e['mass'])} / {n(e['energy'])} / {n(e['buildTime'])} | {n(u['health']['max'])} | {mv(u)} | {fp(u)} | {intel(u)} | {hk(u)} | `{u['icon']}` |")
+A('')
+A('**Waffen und Balance** (Δ gegenüber der FA-T4-Referenz; Vergleichsbasis in der letzten Spalte)')
+A('')
+A('| ID | Waffen | DPS/Mass (FA) | Δ DPS/Mass | HP/Mass (FA) | Δ HP/Mass | Δ Produkt | Vergleich |')
+A('|---|---|---|---|---|---|---|---|')
+for u in T4:
+    b = u['balance']; fa = b['fa']
+    hpb = ' (inkl. Schild)' if b['hpBasis'] != 'HP' else ''
+    pk = f"<br>Pulk-DPS/Mass {n(b['pulk']['pulkDpsPerMass'],4)} (FA {n(b['pulk']['faPulkDpsPerMass'],4)}): {pct(b['pulk']['devPct'])}" if b.get('pulk') else ''
+    A(f"| `{u['id'].split(':')[1]}` | {weapons(u)}{pk} | {n(b['dpsPerMass'],4)} ({n(fa['dpsPerMass'],4)}) | {pct(b['devDpsPerMassPct'])} | "
+      f"{n(b['hpPerMass'],4)} ({n(fa['hpPerMass'],4)}){hpb} | {pct(b['devHpPerMassPct'])} | {pct(b['devProductPct'])} | {u['experimental']['faCompare']} |")
+A('')
+A('**Besonderheiten, Mechaniken, Kitbash**')
+A('')
+A('| ID | Kategorien / buildableBy | Besonderheiten | Feature-IDs · neue Mechaniken | Kitbash (Parts) |')
+A('|---|---|---|---|---|')
+for u in T4:
+    x = u['experimental']
+    cr = x['crush']
+    crs = ''
+    if cr:
+        crs = f"<br>Crush: Mauern {'ja' if cr['walls'] else 'nein'}, Wracks {'ja' if cr['wrecks'] else 'nein'}, schiebt sizeClass ≤ {cr['pushSizeClassMax']}" + (
+            f", Fußtritt {n(cr['footfallDamage'])}/r{n(cr['footfallRadius'],1)}" if cr['footfallDamage'] else '')
+    dw = u['special']['deathWeapon']
+    dl = f" (Verzögerung {n(dw['delayS'],1)} s)" if dw and dw.get('delayS') else ''
+    A(f"| `{u['id'].split(':')[1]}` | {' '.join(u['categories'])}<br>*von:* `{u['buildableBy']}` | {special(u)}{dl}{crs}<br>Wrack {n(x['wreck']['mass'])} Mass<br>**Konter:** {'; '.join(x['counters'])} | "
+      f"{', '.join(x['features'])} · {', '.join(x['newMechanics'])} | {u['kitbash']['description']}<br>{parts(u)} · Budget {'/'.join(str(t) for t in u['kitbash']['trisBudget'])} Tris |")
+A('')
+A('**Neue Mechaniken (Vorschlag, noch ohne Eintrag in `features.json`)**')
+A('')
+A('| Code | Mechanik | gebraucht von |')
+A('|---|---|---|')
+for k, v in D['experimentalMechanics'].items():
+    A(f"| {k} | {v} | {', '.join(u['name']['de'] for u in T4 if k in u['experimental']['newMechanics'])} |")
+A('')
+A('**T3-Äquivalent** (gleiche Mass in der stärksten T3-Einheit derselben Rolle; Relation T4/T3 von DPS/Mass bzw. HP/Mass gegen dasselbe Verhältnis in FA, Gate ±25 %)')
+A('')
+A('| T4 → T3 | Anzahl T3 für gleiche Mass (FA) | Pool-DPS / Pool-HP der T3 | T4/T3 DPS/Mass (FA) | Δ | T4/T3 HP/Mass (FA) | Δ |')
+A('|---|---|---|---|---|---|---|')
+for r in X['t3Equivalent']:
+    A(f"| {nm(r['t4'])} → {nm(r['t3'])} | {n(r['t3Count'],1)} ({n(r['faT3Count'],1)}) | {n(r['t3PoolDps'],0) if r['t3PoolDps'] else '–'} / {n(r['t3PoolHp'])} | "
+      f"{n(r['dpsRatio'],3) if r['dpsRatio'] else '–'} ({n(r['faDpsRatio'],3) if r['faDpsRatio'] else '–'}) | {pct(r['devDpsRatioPct'])} | {n(r['hpRatio'],3)} ({n(r['faHpRatio'],3)}) | {pct(r['devHpRatioPct'])} |")
+A('')
+eco = [r for r in X['t3Equivalent'] if r.get('eco')]
+for r in eco:
+    e = r['eco']
+    A(f"**Tiefenstich als Mass-Quelle:** Deckel {n(e['maxMassPerSec'])} M/s ≙ {n(e['t3MexForMax'],1)} Zapfstellen III (Kette I→III je 5.436 Mass, zusammen {n(e['t3MexCostForMax'])} Mass und {n(round(e['t3MexForMax']))} Spots); Amortisation bei vollem Bedarf {n(e['paybackAtMaxS'])} s (Paragon bei gleichem Verbrauch {n(e['faPaybackAt750S'])} s).")
+    A('')
+A('**Bauzeit mit N Meistern** (Build Power 32 je Meister; Mass-/Energy-Fluss, den die Baustelle dann zieht; FA mit T3-Engineer BP 32,5)')
+A('')
+A('| Einheit | BT | 1 Meister | 10 | 20 | 40 | Fluss bei 20 Meistern |')
+A('|---|---|---|---|---|---|---|')
+for r in X['buildTime']:
+    rows = {x['engineers']: x for x in r['rows']}
+    def c_(k):
+        x = rows[k]; fa_ = f" (FA {n(x['faSeconds'])} s)" if x['faSeconds'] else ''
+        return f"{n(x['seconds'])} s{fa_}"
+    x20 = rows[20]
+    A(f"| {nm(r['unit'])} | {n(r['buildTime'])} | {c_(1)} | {c_(10)} | {c_(20)} | {c_(40)} | {n(x20['massPerSec'],0)} M/s, {n(x20['energyPerSec'])} E/s |")
+A('')
+A('**Schildbrechen mit T4** (ein Schütze, Hauptwaffe, Regeneration nach `regenStartS`)')
+A('')
+A('| Angreifer → Schild | Salven (Zeit) |')
+A('|---|---|')
+for s in X['shieldBreak']:
+    A(f"| {nm(s['attacker'])} → {nm(s['target'])} | {str(s['shots']) + ' (' + n(s['timeS'],1) + ' s)' if s['shots'] else 'bricht allein nicht'} |")
+A('')
+A('**Silhouetten-Pflichtpaare T4** (Rollen-Verwandte gleicher Grammatik; getrennt durch Größe ≥ 2,5×, Keramik-Klammer und Icon-Klammer): ' + ', '.join(f"{nm(a)} ↔ {nm(b)}" for a, b in D['silhouettePairs']['t4']) + '.')
+A('')
+A('**Todeswaffen** (Friendly Fire, K8/K14; FA-Relation)')
+A('')
+A('| Einheit | Schaden / Radius (FA) | Verzögerung | tötet Fallhammer | tötet Glutkessel III |')
+A('|---|---|---|---|---|')
+for d in X['deathWeapons']:
+    A(f"| {nm(d['unit'])} | {n(d['damage'])} / r{n(d['radius'])} ({n(d['faDamage'])} / r{n(d['faRadius'])}) | {n(d['delayS'],1)} s | {'ja' if d['killsT3Bot'] else 'nein'} | {'ja' if d['killsT3Pgen'] else 'nein'} |")
+A('')
+open(DOCS / 'roster.md', 'w').write('\n'.join(L) + '\n')
 print(len(L))

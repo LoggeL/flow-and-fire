@@ -2,7 +2,7 @@
  * Writes the icon grammar as SVG files (called by `pnpm models`):
  *   svg/forms/<form>.svg        base forms (domain)
  *   svg/glyphs/<glyph>.svg      role glyphs
- *   svg/notches/t1..t3.svg      tech notches
+ *   svg/notches/t1..t4.svg      tech notches (t4 = experimental bracket)
  *   svg/states/blip_<kind>.svg  radar blips (ground / air / struct)
  *   svg/icons/<id>.svg          every icon id used by a roster (+ .selected.svg, structures also .ghost.svg)
  *   icons.json                  index (id → form, glyph, tech, scale, units)
@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { blipSvg, formSvg, FORMS, GLYPHS, glyphSvg, iconScale, iconSvg, notchSvg, parseIconId, type IconForm } from './grammar.ts';
+import { blipSvg, bracketSvg, formSvg, FORMS, GLYPHS, glyphSvg, iconScale, iconSvg, notchSvg, parseIconId, type IconForm } from './grammar.ts';
 
 export const ICONS_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(ICONS_DIR, '../..');
@@ -69,6 +69,7 @@ export function writeIcons(): number {
   for (const form of Object.keys(FORMS) as IconForm[]) files.set(`forms/${form}.svg`, formSvg(form, { title: FORMS[form].label }));
   for (const g of Object.keys(GLYPHS).sort()) files.set(`glyphs/${g}.svg`, glyphSvg(g, { title: GLYPHS[g]!.label }));
   for (const n of [1, 2, 3] as const) files.set(`notches/t${n}.svg`, notchSvg(n, { title: `Tech ${n}` }));
+  files.set('notches/t4.svg', bracketSvg({ title: 'Experimental (T4): Klammer statt Kerben' }));
   for (const k of ['ground', 'air', 'struct'] as const) files.set(`states/blip_${k}.svg`, blipSvg(k, { title: `Radar-Blip ${k}` }));
   const icons = collectIcons();
   for (const e of icons) {

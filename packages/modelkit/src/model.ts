@@ -49,6 +49,13 @@ export const DEFAULT_BUDGETS: Readonly<Record<ModelClass, Budget>> = {
   wall: { tris: [64, 40, 24] },
 };
 
+/**
+ * Budget of experimentals (tech 4, docs/design/experimentals.md): one unit is the size of a base section, is seen
+ * from further away and comes in single digits per match, so LOD0 may be ~4.5× a T1–T3 mesh. LOD1/LOD2 keep the
+ * same share of the whole scene as ~2–3 ordinary units. Applies to every class unless a model sets `budget`.
+ */
+export const EXPERIMENTAL_BUDGET: Budget = { tris: [1600, 800, 320] };
+
 /** Default LOD switch distances in WU (PLAN §3.9 `view.lod`). */
 export const DEFAULT_LOD_DISTANCES: readonly [number, number] = [60, 180];
 /** Default `iconThreshold`: screen length in px below which the strategic icon replaces the mesh (faction.md §3.2). */
@@ -62,7 +69,8 @@ export interface ModelDef {
   readonly role?: string;
   /** Default from the roster (group/icon). */
   readonly class?: ModelClass;
-  readonly tech?: 0 | 1 | 2 | 3;
+  /** 1–3 = T1–T3, 4 = Experimental (T4, budget `EXPERIMENTAL_BUDGET`), 0 = no tier (commander). */
+  readonly tech?: 0 | 1 | 2 | 3 | 4;
   /** Footprint in grid cells [x, z] (default from the roster). */
   readonly footprint?: readonly [number, number];
   /** Roster scale (T2 1.3, …) baked into the export; default from the roster, else 1. */

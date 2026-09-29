@@ -1,7 +1,7 @@
 # Fraktion: Das Varkan-Kompakt
 
 > **Status:** finales Designkonzept für U3 („Eine spielbare Fraktion (eigenes Design)“). Grundlage ist Konzept 3 „Varkan“, ergänzt um die Lesbarkeitsregeln aus Konzept 2 „Kalder“ und die Glut-, Budget- und Mix-Regeln aus Konzept 1 „Sinter“ (Herleitung in §9).
-> **Umfang:** MS9 = 26 Blueprints (Kern, ●), MS14 = 50 Blueprints (●+○). Waffen- und Projektil-BPs sind nicht mitgezählt.
+> **Umfang:** MS9 = 26 Blueprints (Kern, ●), MS14 = 50 Blueprints (●+○). Waffen- und Projektil-BPs sind nicht mitgezählt. Post-MVP kommen 6 Experimentals (T4) dazu: [`experimentals.md`](experimentals.md), `roster.md` §19.
 > **Quelle der Zahlen:** `docs/design/roster.json` ist die einzige Quelle für Werte, ●/○-Status, Kitbash-Parts und Maßstäbe; `roster.md` ist daraus generiert, §7.4 und §10.1 hier sind Auszüge. Bei Widerspruch gilt `roster.json`.
 > **Mechanik:** Die Fraktion ist ein symmetrischer Allrounder mit FA-naher Mechanik. Das Balancing hält DPS/Mass und HP/Mass innerhalb von ±25 % der FA-Relation (PLAN U3); das Roster zielt strenger auf ±15 % inklusive Produkt und Pulk-DPS/Mass und hält die FA-Treffer-Breakpoints exakt (`roster.md` §14). Die Identität steckt in Optik, Namen, Icons und Klang, nicht in Sonderregeln.
 > **Abgrenzung:** keine FA-Namen, keine FA-Lore, keine FA-Designs und keine FA-Assets (DECISIONS, Punkt „Name“). Mechanik-Begriffe der UI bleiben neutral: Mass, Energy, Build Power, Assist, Reclaim, T1–T3.
@@ -323,7 +323,7 @@ Ein Icon hat drei Schichten und wird im IconPass als **ein Draw** aus einem MSDF
 
 - 1, 2 oder 3 kurze senkrechte Kerben (**5 × 9 DE**, Abstand 3 DE) oben rechts **außerhalb** der Grundform. Dadurch sind sie nicht mit der AA-Glyphe verwechselbar.
 - Auch T1 bekommt eine Kerbe. Die Zahl entspricht den Tech-Streifen am Modell (§3.4).
-- Keine Kerben bei Vogt und Mauer. Experimentals (Post-MVP) bekommen eine eckige Klammer um die Grundform.
+- Keine Kerben bei Vogt und Mauer. Experimentals (Post-MVP, `_t4`) bekommen statt der Kerben eine keramikweiße eckige Klammer „[ ]“ links und rechts der Grundform (4 DE Strich, Graphit-Halo), Faktor 1,5; am Modell entspricht ihr die Keramik-Klammer statt der Tech-Streifen. Details: [`experimentals.md`](experimentals.md) §3.5–3.6.
 
 ### 6.5 Größe und Zustände
 
@@ -334,6 +334,7 @@ Ein Icon hat drei Schichten und wird im IconPass als **ein Draw** aus einem MSDF
 | Späher (Funke, Lerche) | 1,0 (Glyphe und Kerben müssen ≥ 3 px bleiben) |
 | Mauer | 0,6 (ohne Glyphe und Kerben) |
 | Vogt | 1,6 |
+| Experimentals (T4, Post-MVP) | 1,5 (Klammer statt Kerben) |
 
 - **Auswahl:** weißer Außenring, 2 px, ohne Formänderung.
 - **Radar-Blip (I3):** nur drei Konturen in Neutralgrau, ohne Füllung, Glyphe und Kerben, einheitlich Faktor 1,0: **Achteck** für alles Mobile am Boden (auch Engineers und Vogt), **Dreieck** für Luft, **Sechseck** für Gebäude. So verrät der Blip weder Rolle noch Tech noch den Vogt-Standort (MS10-Abnahme „Blip-Records verraten nie den Blueprint“).
@@ -371,6 +372,7 @@ Beispiele: `land_direct_t1`, `land_bot_t1`, `land_arty_t1`, `land_mml_t2`, `land
 | Luft | Schornsteinvögel | Lerche, Turmfalke, Dohle, Krähe, Elster |
 | Aufklärung / Intel | Funken, Horchen | Funke, Horcher |
 | Schild | Schutzkleidung der Gießer | Schürze, Schirm |
+| Experimentals (T4, Post-MVP) | größtes Gerät des Rollen-Wortfelds | Stampfe, Kokille, Kolkrabe, Konverter, Mantel; Gebäude-Funktionsname Tiefenstich ([`experimentals.md`](experimentals.md) §3.7) |
 
 ### 7.3 Unit-IDs und i18n
 

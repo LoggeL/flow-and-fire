@@ -71,7 +71,7 @@ export function rosterDefaults(u: RosterUnit, lang: 'de' | 'en' = 'de'): RosterD
   if (name !== undefined) out['name'] = name;
   if (role !== undefined) out['role'] = role;
   if (cls !== undefined) out['class'] = cls;
-  if (u.tech !== undefined && [0, 1, 2, 3].includes(u.tech)) out['tech'] = u.tech;
+  if (u.tech !== undefined && [0, 1, 2, 3, 4].includes(u.tech)) out['tech'] = u.tech;
   if (fp !== undefined && fp.length === 2) out['footprint'] = [fp[0]!, fp[1]!];
   if (sc !== undefined) out['scale'] = { xz: sc.xz ?? 1, y: sc.y ?? sc.xz ?? 1 };
   if (u.icon !== undefined) out['icon'] = u.icon;

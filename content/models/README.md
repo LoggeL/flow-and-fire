@@ -102,8 +102,9 @@ Umschaltdistanzen (PLAN §3.9 `view.lod`) Standard 60 / 180 WU; das Strategic Ic
 |---|---|---|---|
 | land, air, eng, cmd, struct, naval | 350 | 220 | 110 |
 | wall | 64 | 40 | 24 |
+| Experimentals (`tech: 4`, jede Klasse, `EXPERIMENTAL_BUDGET`) | 1.600 | 800 | 320 |
 
-LOD0 ≤ 350 ist die Roster-Obergrenze (faction.md §3.3). Budgetüberschreitung, ungültige Geometrie, mehr als
+LOD0 ≤ 350 ist die Roster-Obergrenze (faction.md §3.3). Experimentals (T4) werden in Spielgröße modelliert (Maßstab 1,0), tragen die Keramik-Klammer aus `varkan/_t4.ts` statt Tech-Streifen und setzen `lodDistances` [120, 360/400] (docs/design/experimentals.md §3.5). Budgetüberschreitung, ungültige Geometrie, mehr als
 8 animierte Parts, unbekanntes Material oder falscher Dateiname sind **Fehler** (`pnpm models` bricht ab).
 **Warnungen:** Footprint-Check (mobil ≤ 200 % der Footprint-Kante, Strukturen 70–105 %), fehlende Teamfarbe,
 Abweichung vom Roster, Part ohne Dreiecke, LOD mit mehr Tris als der vorige.

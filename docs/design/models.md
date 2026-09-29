@@ -34,7 +34,7 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 - **LODs:** LOD1 und LOD2 entstehen automatisch: Kleinteile fallen weg (8 % bzw. 16 % der größten Ausdehnung),
   Segmente werden reduziert, Fasen und Profile vereinfacht. Steuerbar über `keep`, `minLod` und `maxLod`.
   Umschaltdistanzen: Standard 60 / 180 WU (`view.lod`). Unter `iconThreshold` (25 px) ersetzt das Strategic Icon das Mesh.
-- **Budgets (Tris L0/L1/L2):** Einheiten und Gebäude 350 / 220 / 110, Mauer 64 / 40 / 24. Wird ein Budget
+- **Budgets (Tris L0/L1/L2):** Einheiten und Gebäude 350 / 220 / 110, Mauer 64 / 40 / 24, Experimentals (`tech: 4`, alle Klassen) 1.600 / 800 / 320 (`EXPERIMENTAL_BUDGET`). Wird ein Budget
   überschritten, bricht `pnpm models` mit Fehler ab.
 - **Prüfungen beim Build:** Fehler bei ungültiger Geometrie, mehr als 8 animierten Parts, unbekanntem Material oder falschem Dateinamen.
   Warnungen bei Footprint (mobil ≤ 200 % der Kante, Strukturen 70–105 %), fehlender Teamfarbe, Abweichung vom Roster
@@ -47,6 +47,7 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 | Fraktion | Modelle | Roster | Tris L0 (min / Ø / max) | Tris L1 Ø | Tris L2 Ø | Status |
 |---|---|---|---|---|---|---|
 | Varkan (`content/models/varkan/`, Roster `docs/design/roster.json`) | **50** (23 mobil, 27 Strukturen) | 50 / 50, davon 26 MS9-Kern | 52 / 276 / 348 | 164 | 85 | vollständig, visuell geprüft, alle im Budget, 0 Warnungen |
+| Varkan-Experimentals (T4, Post-MVP, `exp_*.ts`) | **6** (3 mobil, 3 Strukturen) | 6 / 6 | 796 / 1.043 / 1.290 | 637 | 260 | vollständig, im T4-Budget 1.600 / 800 / 320, 0 Warnungen ([`experimentals.md`](experimentals.md) §8) |
 
 Weitere Fraktionen (`docs/design/factions/<slug>/`) haben noch keine Modelle.
 

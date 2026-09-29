@@ -9,6 +9,7 @@ import {
   DEFAULT_BUDGETS,
   DEFAULT_ICON_THRESHOLD,
   DEFAULT_LOD_DISTANCES,
+  EXPERIMENTAL_BUDGET,
   type Budget,
   type ModelClass,
   type ModelDef,
@@ -26,7 +27,7 @@ export interface RosterDefaults {
   readonly name?: string;
   readonly role?: string;
   readonly class?: ModelClass;
-  readonly tech?: 0 | 1 | 2 | 3;
+  readonly tech?: 0 | 1 | 2 | 3 | 4;
   readonly footprint?: readonly [number, number];
   readonly scale?: { readonly xz: number; readonly y: number };
   readonly icon?: string;
@@ -283,7 +284,8 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
   const scaleIn = def.scale ?? d.scale ?? 1;
   const scale = typeof scaleIn === 'number' ? { xz: scaleIn, y: scaleIn } : { xz: scaleIn.xz, y: scaleIn.y };
   const footprint = def.footprint ?? d.footprint ?? [1, 1];
-  const budget = def.budget ?? ctx.budgets?.[cls] ?? DEFAULT_BUDGETS[cls];
+  const tech = def.tech ?? d.tech ?? 1;
+  const budget = def.budget ?? (tech === 4 ? EXPERIMENTAL_BUDGET : (ctx.budgets?.[cls] ?? DEFAULT_BUDGETS[cls]));
   const pal = resolvePalette(ctx.palette);
   const root = scaling([scale.xz, scale.y, scale.xz]);
 
@@ -452,7 +454,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
     name: def.name ?? d.name ?? unitOf(def.id),
     role: def.role ?? d.role ?? '',
     class: cls,
-    tech: def.tech ?? d.tech ?? 1,
+    tech,
     footprint: [footprint[0], footprint[1]],
     scale,
     icon: def.icon ?? d.icon ?? '',
