@@ -8,6 +8,7 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
+  "exclude": ["src/harness/**"],
   "references": [
     { "path": "../../packages/fixed" },
     { "path": "../../packages/heap" },

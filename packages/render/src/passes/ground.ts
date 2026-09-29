@@ -6,7 +6,8 @@
  * and 32 WU spacing. Grid coordinates are `rel + (camPosInt mod 32 WU)`, which stays small and
  * therefore precise even at 2^26 raw.
  */
-import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH } from '../rhi/types.ts';
+import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH, VertexStreamBinding } from '../rhi/types.ts';
+import { vf } from '../rhi/types.ts';
 import { Std140Writer, std140Layout } from '../std140.ts';
 import { FRAME_BLOCK_GLSL, SLOT_FRAME, SLOT_PASS } from './shared.ts';
 
@@ -42,15 +43,14 @@ precision highp float;
 precision highp int;
 ${FRAME_BLOCK_GLSL}
 ${GROUND_BLOCK}
+layout(location = 0) in uvec2 a_corner; // (0|1, 0|1): selects min/max per axis
 out vec3 v_rel;
 out vec3 v_grid;
 out vec2 v_edge;
 
 void main() {
-  // Two triangles: (0,0) (1,0) (1,1) / (0,0) (1,1) (0,1), counter-clockwise seen from above.
-  int id = gl_VertexID;
-  int cx = (id == 1 || id == 2 || id == 4) ? 1 : 0;
-  int cz = (id == 2 || id == 4 || id == 5) ? 1 : 0;
+  int cx = int(a_corner.x);
+  int cz = int(a_corner.y);
   ivec3 p = ivec3(cx == 1 ? u_max.x : u_min.x, u_min.y, cz == 1 ? u_max.z : u_min.z);
   vec3 rel = vec3(p - u_camPosInt.xyz) / 4096.0;
   v_rel = rel - u_camFrac.xyz;
@@ -103,8 +103,17 @@ void main() {
 }
 `;
 
+/**
+ * Corner codes of the two triangles (0,0) (1,0) (1,1) / (0,0) (1,1) (0,1), u8×2 padded to 4 bytes.
+ * A real vertex stream on location 0 (instead of gl_VertexID only) avoids the attribute-0
+ * emulation path of Firefox on desktop GL/macOS.
+ */
+const CORNERS = Uint8Array.of(0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0);
+
 export class GroundPass {
   readonly pipeline: PipeH;
+  private readonly corners: BufH;
+  private readonly streams: VertexStreamBinding[];
   private readonly ubo: BufH;
   private readonly group: BindGroupH;
   private readonly data = new Std140Writer(GROUND_LAYOUT);
@@ -120,7 +129,9 @@ export class GroundPass {
       label: 'ground',
       vertex: GROUND_VS,
       fragment: GROUND_FS,
-      streams: [],
+      streams: [
+        { stepMode: 'vertex', stride: 4, attributes: [{ location: 0, format: vf('u8', 2, 'int'), offset: 0 }] },
+      ],
       uniformBlocks: [
         { name: 'Frame', slot: SLOT_FRAME },
         { name: 'Ground', slot: SLOT_PASS },
@@ -130,6 +141,14 @@ export class GroundPass {
       depthWrite: true,
       depthCompare: 'less',
     });
+    this.corners = dev.createBuffer({
+      label: 'ground.corners',
+      usage: 'vertex',
+      size: CORNERS.byteLength,
+      restore: (h) => dev.writeBuffer(h, 0, CORNERS),
+    });
+    dev.writeBuffer(this.corners, 0, CORNERS);
+    this.streams = [{ buffer: this.corners, offset: 0 }];
     this.ubo = dev.createBuffer({
       label: 'ground.ubo',
       usage: 'uniform',
@@ -164,15 +183,14 @@ export class GroundPass {
     enc.setPipeline(this.pipeline);
     enc.setBindGroup(this.frameGroup);
     enc.setBindGroup(this.group);
-    enc.setVertexStreams(NO_STREAMS);
+    enc.setVertexStreams(this.streams);
     enc.drawInstanced(6, 1);
   }
 
   dispose(): void {
     this.dev.destroyBindGroup(this.group);
     this.dev.destroyBuffer(this.ubo);
+    this.dev.destroyBuffer(this.corners);
     this.dev.destroyPipeline(this.pipeline);
   }
 }
-
-const NO_STREAMS: readonly never[] = [];

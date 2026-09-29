@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "demo": "vite",
+    "smoke": "tsx scripts/smoke.ts"
+  },
   "exports": {
     ".": "./src/index.ts"
   },

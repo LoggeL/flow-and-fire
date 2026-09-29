@@ -7,6 +7,9 @@
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts"
   },
+  "scripts": {
+    "bench": "node --expose-gc --import tsx bench/tick.ts"
+  },
   "dependencies": {
     "@faf/blueprints": "workspace:*",
     "@faf/fixed": "workspace:*",

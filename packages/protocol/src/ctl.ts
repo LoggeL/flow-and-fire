@@ -184,3 +184,31 @@ export function parseCtlMessage(x: unknown): CtlMessage | null {
       return null;
   }
 }
+
+/** Validates an incoming `init` message; null if malformed. */
+export function parseInitMessage(x: unknown): InitMessage | null {
+  if (!isObj(x) || x.t !== 'init') return null;
+  if (!(x.simBin instanceof ArrayBuffer)) return null;
+  if (!isInt(x.seed, 0, 0xffffffff)) return null;
+  if (!isInt(x.armyCount, 1, MAX_ARMIES) || !isInt(x.playerArmy, VIEWER_ALL, MAX_ARMIES - 1)) return null;
+  if (x.transport !== 'sab' && x.transport !== 'transfer') return null;
+  if (x.transport === 'sab' && (typeof SharedArrayBuffer === 'undefined' || !(x.frameSab instanceof SharedArrayBuffer))) {
+    return null;
+  }
+  if (!isInt(x.frameCapacity, 16, 0x10000000) || typeof x.buildHash !== 'string') return null;
+  return x as unknown as InitMessage;
+}
+
+/** Validates an incoming `cmd` message; null if malformed. */
+export function parseCmdMessage(x: unknown): CmdMessage | null {
+  if (!isObj(x) || x.t !== 'cmd' || !(x.batch instanceof ArrayBuffer)) return null;
+  return x as unknown as CmdMessage;
+}
+
+/** Validates any main → host message (init, cmd or ctl); null if malformed or unknown. */
+export function parseMainToHostMessage(x: unknown): MainToHostMessage | null {
+  if (!isObj(x)) return null;
+  if (x.t === 'init') return parseInitMessage(x);
+  if (x.t === 'cmd') return parseCmdMessage(x);
+  return parseCtlMessage(x);
+}

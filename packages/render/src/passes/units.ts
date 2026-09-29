@@ -186,6 +186,7 @@ export class UnitPass {
   private lastVersion = Number.NaN;
   private lastHighlightVersion = Number.NaN;
   private lastBytes: Uint8Array | null = null;
+  private lastHighlight: Uint8Array | undefined = undefined;
   private dirty = true;
 
   private readonly streams: VertexStreamBinding[] = [
@@ -315,11 +316,13 @@ export class UnitPass {
       version !== undefined &&
       version === this.lastVersion &&
       bytes === this.lastBytes &&
+      highlight === this.lastHighlight &&
       (highlight === undefined || (highlightVersion !== undefined && highlightVersion === this.lastHighlightVersion));
     if (unchanged) return false;
     this.lastVersion = version ?? Number.NaN;
     this.lastHighlightVersion = highlightVersion ?? Number.NaN;
     this.lastBytes = bytes;
+    this.lastHighlight = highlight;
     this.dirty = false;
 
     const b = this.buckets;

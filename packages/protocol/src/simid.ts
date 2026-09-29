@@ -3,14 +3,14 @@
  * Two sessions/replays are compatible iff their simIds match.
  *
  * Canonical bytes (little-endian):
- *   "IFSIMID1" | u32 len + UTF-8 simBuild | u32 bpSimHash | u32 mapSimHash |
+ *   "FAFSIMID" | u32 len + UTF-8 simBuild | u32 bpSimHash | u32 mapSimHash |
  *   u32 modCount | per mod (in load order): u32 len + UTF-8 mod id
  */
 
 import { xxHash32 } from '@faf/fixed';
 import { utf8Encode } from './bytes.ts';
 
-const TAG = 'IFSIMID1';
+const TAG = 'FAFSIMID';
 
 /** Canonical byte encoding of the simId inputs. */
 export function simIdBytes(

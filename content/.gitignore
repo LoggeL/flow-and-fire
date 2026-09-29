@@ -1,0 +1,3 @@
+# The root .gitignore excludes content/generated/, but the compiled blueprint bundle is checked in
+# (PLAN §3.9, MS1 task P3): the game and the sim-host load it without running the compiler.
+!/generated/

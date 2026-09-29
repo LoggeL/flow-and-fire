@@ -23,12 +23,6 @@
       "path": "../protocol"
     },
     {
-      "path": "../rules"
-    },
-    {
-      "path": "../blueprints"
-    },
-    {
       "path": "../fixed"
     }
   ]

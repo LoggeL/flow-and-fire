@@ -169,7 +169,7 @@ export class VisualBuckets {
   private cursor = new Uint32Array(0);
   private srcBuffer: ArrayBufferLike | null = null;
   private srcOffset = -1;
-  private src32 = new Uint32Array(0);
+  private src32: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
 
   /** Ensures room for `capacity` records and `visualCount` buckets. */
   ensure(capacity: number, visualCount: number): void {

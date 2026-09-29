@@ -1,13 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "harness/worker",
+    "rootDir": "src",
     "outDir": "dist/tsc-harness-worker",
     "tsBuildInfoFile": "dist/tsc-harness-worker/.tsbuildinfo",
     "lib": ["ES2022", "WebWorker"],
     "types": []
   },
-  "include": ["harness/worker/**/*.ts"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/harness/page/**"],
   "references": [
     { "path": "../../packages/fixed" },
     { "path": "../../packages/heap" },

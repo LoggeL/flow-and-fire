@@ -1,0 +1,2736 @@
+{
+  "format": "faf-bench-report",
+  "version": 1,
+  "date": "2026-09-28T19:41:13.832Z",
+  "machine": "Apple M5 Pro (lokal gemessen, nicht Referenz-Laptop)",
+  "node": "v24.18.0",
+  "jobs": [
+    {
+      "kind": "tickBench",
+      "ticks": 1000
+    },
+    {
+      "kind": "spk1",
+      "ticks": 300,
+      "rampTicks": 40
+    },
+    {
+      "kind": "spk5",
+      "reps": 10
+    }
+  ],
+  "budgets": {
+    "tickP95Ms": 2,
+    "spk1P95Ms": 25,
+    "hashTickMs": 2
+  },
+  "decisions": {
+    "ms1Tick": {
+      "maxP95Ms": 0.2156,
+      "where": "node kalt",
+      "ok": true
+    },
+    "spk1": {
+      "maxP95Ms": 1.12,
+      "where": "firefox kalt",
+      "ok": true,
+      "decision": "typescript"
+    },
+    "spk5": {
+      "maxHashTickMs": 0.395,
+      "ok": true,
+      "decision": "js-live-range-hash"
+    }
+  },
+  "problems": [],
+  "series": {
+    "node/tickBench": {
+      "engine": {
+        "engine": "node",
+        "userAgent": "Node.js/24",
+        "crossOriginIsolated": false,
+        "clockResolutionMs": 0.0001
+      },
+      "job": {
+        "kind": "tickBench",
+        "ticks": 1000
+      },
+      "cold": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.19,
+          "p50": 0.1701,
+          "p95": 0.2156,
+          "p99": 0.3484,
+          "max": 6.4668
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0019,
+            "p50": 0.0018,
+            "p95": 0.0028,
+            "p99": 0.0084,
+            "max": 0.0269
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.0132,
+            "p50": 0.0129,
+            "p95": 0.0139,
+            "p99": 0.0201,
+            "max": 0.0858
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.1459,
+            "p50": 0.1309,
+            "p95": 0.1527,
+            "p99": 0.2461,
+            "max": 6.3115
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0211,
+            "p50": 0.0204,
+            "p95": 0.0288,
+            "p99": 0.0337,
+            "max": 0.0618
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0015,
+            "p50": 0.0015,
+            "p95": 0.0015,
+            "p99": 0.0017,
+            "max": 0.0125
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.006,
+            "p50": 0,
+            "p95": 0.0402,
+            "p99": 0.1717,
+            "max": 0.5313
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.0591,
+          "p50": 0.04,
+          "p95": 0.1765,
+          "p99": 0.2032,
+          "max": 0.5301
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 191.195834
+      },
+      "warm": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.1731,
+          "p50": 0.1685,
+          "p95": 0.2077,
+          "p99": 0.2223,
+          "max": 0.2328
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0012,
+            "p50": 0.0011,
+            "p95": 0.0013,
+            "p99": 0.0017,
+            "max": 0.0026
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.0128,
+            "p50": 0.0129,
+            "p95": 0.013,
+            "p99": 0.014,
+            "max": 0.0324
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.1324,
+            "p50": 0.1308,
+            "p95": 0.1491,
+            "p99": 0.1527,
+            "max": 0.1775
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.021,
+            "p50": 0.0203,
+            "p95": 0.0295,
+            "p99": 0.0352,
+            "max": 0.0414
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0014,
+            "p50": 0.0015,
+            "p95": 0.0015,
+            "p99": 0.0016,
+            "max": 0.0062
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.004,
+            "p50": 0,
+            "p95": 0.0397,
+            "p99": 0.0403,
+            "max": 0.0625
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.0399,
+          "p50": 0.0396,
+          "p95": 0.0425,
+          "p99": 0.0475,
+          "max": 0.0624
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 173.614417
+      },
+      "warmupChains": []
+    },
+    "node/spk1": {
+      "engine": {
+        "engine": "node",
+        "userAgent": "Node.js/24",
+        "crossOriginIsolated": false,
+        "clockResolutionMs": 0.0001
+      },
+      "job": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40
+      },
+      "cold": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 0.9413,
+          "p50": 0.9269,
+          "p95": 1.045,
+          "p99": 1.2011,
+          "max": 1.5395
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.149,
+            "p50": 0.148,
+            "p95": 0.1612,
+            "p99": 0.1762,
+            "max": 0.1904
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0112,
+            "p50": 0.0097,
+            "p95": 0.0146,
+            "p99": 0.0402,
+            "max": 0.0541
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.075,
+            "p50": 0.0741,
+            "p95": 0.0861,
+            "p99": 0.098,
+            "max": 0.1047
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0298,
+            "p50": 0.0297,
+            "p95": 0.0335,
+            "p99": 0.0357,
+            "max": 0.0409
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.4623,
+            "p50": 0.456,
+            "p95": 0.5081,
+            "p99": 0.547,
+            "max": 1.0513
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0386,
+            "p50": 0.0372,
+            "p95": 0.0486,
+            "p99": 0.0537,
+            "max": 0.1003
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1621,
+            "p50": 0.1584,
+            "p95": 0.1901,
+            "p99": 0.2572,
+            "max": 0.5186
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0039,
+            "p50": 0.0037,
+            "p95": 0.0062,
+            "p99": 0.0119,
+            "max": 0.0244
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.0865,
+            "p50": 0.0502,
+            "p95": 0.22,
+            "p99": 0.2263,
+            "max": 0.2263
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 282.56941600000005
+      },
+      "warm": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 0.9236,
+          "p50": 0.9183,
+          "p95": 0.9967,
+          "p99": 1.0358,
+          "max": 1.0485
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.147,
+            "p50": 0.1462,
+            "p95": 0.1552,
+            "p99": 0.1749,
+            "max": 0.1818
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0091,
+            "p50": 0.0088,
+            "p95": 0.0108,
+            "p99": 0.0119,
+            "max": 0.0136
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.0747,
+            "p50": 0.0741,
+            "p95": 0.0878,
+            "p99": 0.1009,
+            "max": 0.1122
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0291,
+            "p50": 0.0289,
+            "p95": 0.0324,
+            "p99": 0.0345,
+            "max": 0.0525
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.461,
+            "p50": 0.4573,
+            "p95": 0.5015,
+            "p99": 0.5455,
+            "max": 0.6042
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0378,
+            "p50": 0.0371,
+            "p95": 0.0465,
+            "p99": 0.0515,
+            "max": 0.0774
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1559,
+            "p50": 0.1536,
+            "p95": 0.1739,
+            "p99": 0.184,
+            "max": 0.2002
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0038,
+            "p50": 0.0036,
+            "p95": 0.0053,
+            "p99": 0.0059,
+            "max": 0.0234
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.0482,
+            "p50": 0.0485,
+            "p95": 0.0513,
+            "p99": 0.0515,
+            "max": 0.0515
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 277.18870900000013
+      },
+      "warmupChains": []
+    },
+    "node/spk5": {
+      "engine": {
+        "engine": "node",
+        "userAgent": "Node.js/24",
+        "crossOriginIsolated": false,
+        "clockResolutionMs": 0.0001
+      },
+      "job": {
+        "kind": "spk5",
+        "reps": 10
+      },
+      "cold": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 5.6473,
+            "p50": 5.4583,
+            "p95": 7.3007,
+            "p99": 7.3007,
+            "max": 7.3007
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.7973,
+            "p50": 1.5652,
+            "p95": 4.0397,
+            "p99": 4.0397,
+            "max": 4.0397
+          },
+          "jsGBps": 3.8421,
+          "wasmGBps": 13.3986
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0574,
+            "p50": 0.0399,
+            "p95": 0.1694,
+            "p99": 0.1859,
+            "max": 0.2898
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0604,
+            "p50": 0.06,
+            "p95": 0.0642,
+            "p99": 0.0676,
+            "max": 0.0726
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0109,
+            "p50": 0.0108,
+            "p95": 0.0109,
+            "p99": 0.0113,
+            "max": 0.0164
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.4447,
+              "p50": 0.3312,
+              "p95": 1.4054,
+              "p99": 1.4054,
+              "max": 1.4054
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.2942,
+              "p50": 0.2951,
+              "p95": 0.3148,
+              "p99": 0.3148,
+              "max": 0.3148
+            },
+            "GBps": 63.3198
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0177,
+              "p50": 0.0165,
+              "p95": 0.0172,
+              "p99": 0.0204,
+              "max": 0.1286
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0171,
+              "p50": 0.0166,
+              "p95": 0.0171,
+              "p99": 0.026,
+              "max": 0.0526
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 40232,
+            "ratio": 36.1096,
+            "deflate": {
+              "n": 10,
+              "mean": 2.3052,
+              "p50": 2.3165,
+              "p95": 2.4207,
+              "p99": 2.4207,
+              "max": 2.4207
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 1.4882,
+              "p50": 1.2129,
+              "p95": 2.3059,
+              "p99": 2.3059,
+              "max": 2.3059
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836902,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 239.6239,
+              "p50": 239.5715,
+              "p95": 241.8645,
+              "p99": 241.8645,
+              "max": 241.8645
+            }
+          }
+        }
+      },
+      "warm": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 12.1555,
+            "p50": 12.1151,
+            "p95": 12.2604,
+            "p99": 12.2604,
+            "max": 12.2604
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.5574,
+            "p50": 1.565,
+            "p95": 1.585,
+            "p99": 1.585,
+            "max": 1.585
+          },
+          "jsGBps": 1.731,
+          "wasmGBps": 13.4003
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0379,
+            "p50": 0.0371,
+            "p95": 0.0416,
+            "p99": 0.0485,
+            "max": 0.0564
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0596,
+            "p50": 0.0587,
+            "p95": 0.0647,
+            "p99": 0.0805,
+            "max": 0.0849
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0102,
+            "p50": 0.0102,
+            "p95": 0.0102,
+            "p99": 0.0102,
+            "max": 0.0104
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.2965,
+              "p50": 0.2925,
+              "p95": 0.3105,
+              "p99": 0.3105,
+              "max": 0.3105
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.2876,
+              "p50": 0.285,
+              "p95": 0.2999,
+              "p99": 0.2999,
+              "max": 0.2999
+            },
+            "GBps": 71.6975
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0168,
+              "p50": 0.0165,
+              "p95": 0.0175,
+              "p99": 0.0186,
+              "max": 0.0638
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.016,
+              "p50": 0.0152,
+              "p95": 0.0166,
+              "p99": 0.0363,
+              "max": 0.0364
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 40232,
+            "ratio": 36.1096,
+            "deflate": {
+              "n": 10,
+              "mean": 2.215,
+              "p50": 2.2014,
+              "p95": 2.3368,
+              "p99": 2.3368,
+              "max": 2.3368
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 1.2843,
+              "p50": 1.0141,
+              "p95": 2.0318,
+              "p99": 2.0318,
+              "max": 2.0318
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836902,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 236.7097,
+              "p50": 236.546,
+              "p95": 237.9125,
+              "p99": 237.9125,
+              "max": 237.9125
+            }
+          }
+        }
+      },
+      "warmupChains": []
+    },
+    "chromium/tickBench": {
+      "engine": {
+        "engine": "chromium",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.005
+      },
+      "job": {
+        "kind": "tickBench",
+        "ticks": 1000
+      },
+      "cold": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.1284,
+          "p50": 0.12,
+          "p95": 0.145,
+          "p99": 0.49,
+          "max": 0.885
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0014,
+            "p50": 0,
+            "p95": 0.005,
+            "p99": 0.01,
+            "max": 0.02
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.006,
+            "p50": 0.005,
+            "p95": 0.01,
+            "p99": 0.015,
+            "max": 0.065
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.09,
+            "p50": 0.085,
+            "p95": 0.11,
+            "p99": 0.18,
+            "max": 0.61
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0215,
+            "p50": 0.02,
+            "p95": 0.03,
+            "p99": 0.035,
+            "max": 0.045
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0007,
+            "p50": 0,
+            "p95": 0.005,
+            "p99": 0.005,
+            "max": 0.02
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0081,
+            "p50": 0,
+            "p95": 0.015,
+            "p99": 0.365,
+            "max": 0.705
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.08,
+          "p50": 0.015,
+          "p95": 0.395,
+          "p99": 0.565,
+          "max": 0.7
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 129.60499999672174
+      },
+      "warm": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.1151,
+          "p50": 0.115,
+          "p95": 0.135,
+          "p99": 0.145,
+          "max": 0.17
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0007,
+            "p50": 0,
+            "p95": 0.005,
+            "p99": 0.005,
+            "max": 0.005
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.0055,
+            "p50": 0.005,
+            "p95": 0.01,
+            "p99": 0.01,
+            "max": 0.01
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.0846,
+            "p50": 0.085,
+            "p95": 0.105,
+            "p99": 0.11,
+            "max": 0.135
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0215,
+            "p50": 0.02,
+            "p95": 0.03,
+            "p99": 0.035,
+            "max": 0.04
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0007,
+            "p50": 0,
+            "p95": 0.005,
+            "p99": 0.005,
+            "max": 0.005
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0014,
+            "p50": 0,
+            "p95": 0.015,
+            "p99": 0.015,
+            "max": 0.02
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.0126,
+          "p50": 0.01,
+          "p95": 0.015,
+          "p99": 0.02,
+          "max": 0.02
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 116.01999999955297
+      },
+      "warmupChains": []
+    },
+    "chromium/spk1": {
+      "engine": {
+        "engine": "chromium",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.005
+      },
+      "job": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40
+      },
+      "cold": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 0.9109,
+          "p50": 0.885,
+          "p95": 1.01,
+          "p99": 1.505,
+          "max": 1.535
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.1377,
+            "p50": 0.135,
+            "p95": 0.145,
+            "p99": 0.155,
+            "max": 0.165
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0086,
+            "p50": 0.01,
+            "p95": 0.015,
+            "p99": 0.02,
+            "max": 0.045
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.0759,
+            "p50": 0.075,
+            "p95": 0.09,
+            "p99": 0.1,
+            "max": 0.115
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0259,
+            "p50": 0.025,
+            "p95": 0.03,
+            "p99": 0.035,
+            "max": 0.035
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.444,
+            "p50": 0.44,
+            "p95": 0.495,
+            "p99": 0.52,
+            "max": 0.825
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0365,
+            "p50": 0.035,
+            "p95": 0.045,
+            "p99": 0.085,
+            "max": 0.11
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1585,
+            "p50": 0.155,
+            "p95": 0.175,
+            "p99": 0.245,
+            "max": 0.465
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.003,
+            "p50": 0.005,
+            "p95": 0.01,
+            "p99": 0.01,
+            "max": 0.025
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.2003,
+            "p50": 0.025,
+            "p95": 0.565,
+            "p99": 0.57,
+            "max": 0.57
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 273.41999999806285
+      },
+      "warm": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 0.877,
+          "p50": 0.875,
+          "p95": 0.94,
+          "p99": 0.97,
+          "max": 1.025
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.1356,
+            "p50": 0.135,
+            "p95": 0.145,
+            "p99": 0.16,
+            "max": 0.165
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0068,
+            "p50": 0.005,
+            "p95": 0.01,
+            "p99": 0.01,
+            "max": 0.015
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.0747,
+            "p50": 0.075,
+            "p95": 0.085,
+            "p99": 0.1,
+            "max": 0.11
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0254,
+            "p50": 0.025,
+            "p95": 0.03,
+            "p99": 0.035,
+            "max": 0.055
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.4407,
+            "p50": 0.435,
+            "p95": 0.48,
+            "p99": 0.52,
+            "max": 0.56
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0345,
+            "p50": 0.035,
+            "p95": 0.045,
+            "p99": 0.045,
+            "max": 0.09
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1535,
+            "p50": 0.15,
+            "p95": 0.17,
+            "p99": 0.18,
+            "max": 0.19
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0029,
+            "p50": 0.005,
+            "p95": 0.005,
+            "p99": 0.01,
+            "max": 0.01
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.021,
+            "p50": 0.02,
+            "p95": 0.03,
+            "p99": 0.035,
+            "max": 0.035
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 263.179999999702
+      },
+      "warmupChains": []
+    },
+    "chromium/spk5": {
+      "engine": {
+        "engine": "chromium",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.005
+      },
+      "job": {
+        "kind": "spk5",
+        "reps": 10
+      },
+      "cold": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 5.681,
+            "p50": 5.5,
+            "p95": 7.2,
+            "p99": 7.2,
+            "max": 7.2
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.77,
+            "p50": 1.5,
+            "p95": 4.065,
+            "p99": 4.065,
+            "max": 4.065
+          },
+          "jsGBps": 3.813,
+          "wasmGBps": 13.981
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0618,
+            "p50": 0.015,
+            "p95": 0.3,
+            "p99": 0.355,
+            "max": 0.38
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0332,
+            "p50": 0.015,
+            "p95": 0.18,
+            "p99": 0.26,
+            "max": 0.275
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.011,
+            "p50": 0.01,
+            "p95": 0.015,
+            "p99": 0.015,
+            "max": 0.02
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.407,
+              "p50": 0.29,
+              "p95": 1.34,
+              "p99": 1.34,
+              "max": 1.34
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.2795,
+              "p50": 0.28,
+              "p95": 0.29,
+              "p99": 0.29,
+              "max": 0.29
+            },
+            "GBps": 72.3156
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0178,
+              "p50": 0.015,
+              "p95": 0.02,
+              "p99": 0.025,
+              "max": 0.135
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0167,
+              "p50": 0.015,
+              "p95": 0.02,
+              "p99": 0.02,
+              "max": 0.045
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 40232,
+            "ratio": 36.1096,
+            "deflate": {
+              "n": 10,
+              "mean": 2.0915,
+              "p50": 2.07,
+              "p95": 2.21,
+              "p99": 2.21,
+              "max": 2.21
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.38,
+              "p50": 0.365,
+              "p95": 0.44,
+              "p99": 0.44,
+              "max": 0.44
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836902,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 216.8033,
+              "p50": 216.67,
+              "p95": 218.705,
+              "p99": 218.705,
+              "max": 218.705
+            }
+          }
+        }
+      },
+      "warm": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 1.7085,
+            "p50": 1.7,
+            "p95": 1.825,
+            "p99": 1.825,
+            "max": 1.825
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.588,
+            "p50": 1.58,
+            "p95": 1.62,
+            "p99": 1.62,
+            "max": 1.62
+          },
+          "jsGBps": 12.3362,
+          "wasmGBps": 13.2731
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0132,
+            "p50": 0.015,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.03
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0116,
+            "p50": 0.01,
+            "p95": 0.015,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0109,
+            "p50": 0.01,
+            "p95": 0.015,
+            "p99": 0.015,
+            "max": 0.015
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.4205,
+              "p50": 0.325,
+              "p95": 1.28,
+              "p99": 1.28,
+              "max": 1.28
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.3055,
+              "p50": 0.305,
+              "p95": 0.33,
+              "p99": 0.33,
+              "max": 0.33
+            },
+            "GBps": 64.5278
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0182,
+              "p50": 0.015,
+              "p95": 0.02,
+              "p99": 0.025,
+              "max": 0.145
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0173,
+              "p50": 0.015,
+              "p95": 0.02,
+              "p99": 0.02,
+              "max": 0.055
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 40232,
+            "ratio": 36.1096,
+            "deflate": {
+              "n": 10,
+              "mean": 2.093,
+              "p50": 2.055,
+              "p95": 2.21,
+              "p99": 2.21,
+              "max": 2.21
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.439,
+              "p50": 0.44,
+              "p95": 0.465,
+              "p99": 0.465,
+              "max": 0.465
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836902,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 219.4767,
+              "p50": 220,
+              "p95": 220.215,
+              "p99": 220.215,
+              "max": 220.215
+            }
+          }
+        }
+      },
+      "warmupChains": []
+    },
+    "firefox/tickBench": {
+      "engine": {
+        "engine": "firefox",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.02
+      },
+      "job": {
+        "kind": "tickBench",
+        "ticks": 1000
+      },
+      "cold": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.1414,
+          "p50": 0.14,
+          "p95": 0.18,
+          "p99": 0.22,
+          "max": 0.52
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0017,
+            "p50": 0,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.04
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.002,
+            "p50": 0,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.04
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.1163,
+            "p50": 0.12,
+            "p95": 0.14,
+            "p99": 0.18,
+            "max": 0.3
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0146,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.04,
+            "max": 0.1
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0008,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0056,
+            "p50": 0,
+            "p95": 0.04,
+            "p99": 0.06,
+            "max": 0.4
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.0552,
+          "p50": 0.04,
+          "p95": 0.08,
+          "p99": 0.3,
+          "max": 0.4
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 142.84
+      },
+      "warm": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 1,
+        "total": {
+          "n": 1000,
+          "mean": 0.1416,
+          "p50": 0.14,
+          "p95": 0.18,
+          "p99": 0.2,
+          "max": 0.22
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0009,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.002,
+            "p50": 0,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.1192,
+            "p50": 0.12,
+            "p95": 0.14,
+            "p99": 0.14,
+            "max": 0.16
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0141,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.04,
+            "max": 0.04
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0004,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0046,
+            "p50": 0,
+            "p95": 0.04,
+            "p99": 0.06,
+            "max": 0.08
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.0458,
+          "p50": 0.04,
+          "p95": 0.06,
+          "p99": 0.06,
+          "max": 0.08
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0,
+        "wallMs": 142.51999999999992
+      },
+      "warmupChains": []
+    },
+    "firefox/spk1": {
+      "engine": {
+        "engine": "firefox",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.02
+      },
+      "job": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40
+      },
+      "cold": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 1.0191,
+          "p50": 1,
+          "p95": 1.12,
+          "p99": 1.22,
+          "max": 1.6
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.2113,
+            "p50": 0.22,
+            "p95": 0.22,
+            "p99": 0.24,
+            "max": 0.24
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0147,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.04,
+            "max": 0.08
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.067,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.1,
+            "max": 0.1
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.063,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.08,
+            "max": 0.08
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.4347,
+            "p50": 0.44,
+            "p95": 0.48,
+            "p99": 0.52,
+            "max": 1.04
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0205,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.04,
+            "max": 0.06
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1963,
+            "p50": 0.2,
+            "p95": 0.22,
+            "p99": 0.32,
+            "max": 0.42
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0042,
+            "p50": 0,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.04
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.0673,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.1,
+            "max": 0.1
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 305.96
+      },
+      "warm": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 1,
+        "total": {
+          "n": 300,
+          "mean": 1.0061,
+          "p50": 1,
+          "p95": 1.08,
+          "p99": 1.14,
+          "max": 1.16
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.2093,
+            "p50": 0.2,
+            "p95": 0.22,
+            "p99": 0.22,
+            "max": 0.24
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0138,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.0661,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.08,
+            "max": 0.1
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0627,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.08,
+            "max": 0.08
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.4293,
+            "p50": 0.42,
+            "p95": 0.48,
+            "p99": 0.5,
+            "max": 0.54
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0201,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.04,
+            "max": 0.04
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1954,
+            "p50": 0.2,
+            "p95": 0.2,
+            "p99": 0.22,
+            "max": 0.22
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.003,
+            "p50": 0,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.04
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.06,
+            "p50": 0.06,
+            "p95": 0.08,
+            "p99": 0.08,
+            "max": 0.08
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0,
+        "wallMs": 301.86
+      },
+      "warmupChains": []
+    },
+    "firefox/spk5": {
+      "engine": {
+        "engine": "firefox",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 0.02
+      },
+      "job": {
+        "kind": "spk5",
+        "reps": 10
+      },
+      "cold": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 2.862,
+            "p50": 2.74,
+            "p95": 3.56,
+            "p99": 3.56,
+            "max": 3.56
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.726,
+            "p50": 1.62,
+            "p95": 2.64,
+            "p99": 2.64,
+            "max": 2.64
+          },
+          "jsGBps": 7.6538,
+          "wasmGBps": 12.9454
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0486,
+            "p50": 0.05,
+            "p95": 0.06,
+            "p99": 0.11,
+            "max": 0.25
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0182,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0111,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.702,
+              "p50": 0.58,
+              "p95": 1.56,
+              "p99": 1.56,
+              "max": 1.56
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.56,
+              "p50": 0.56,
+              "p95": 0.6,
+              "p99": 0.6,
+              "max": 0.6
+            },
+            "GBps": 36.1578
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0171,
+              "p50": 0.02,
+              "p95": 0.02,
+              "p99": 0.03,
+              "max": 0.1
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0166,
+              "p50": 0.02,
+              "p95": 0.02,
+              "p99": 0.03,
+              "max": 0.03
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 38527,
+            "ratio": 37.7076,
+            "deflate": {
+              "n": 10,
+              "mean": 0.66,
+              "p50": 0.64,
+              "p95": 0.7,
+              "p99": 0.7,
+              "max": 0.7
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.64,
+              "p50": 0.42,
+              "p95": 2.28,
+              "p99": 2.28,
+              "max": 2.28
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836897,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 188.3133,
+              "p50": 188.48,
+              "p95": 191.18,
+              "p99": 191.18,
+              "max": 191.18
+            }
+          }
+        }
+      },
+      "warm": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 3.024,
+            "p50": 2.9,
+            "p95": 3.88,
+            "p99": 3.88,
+            "max": 3.88
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.778,
+            "p50": 1.64,
+            "p95": 2.96,
+            "p99": 2.96,
+            "max": 2.96
+          },
+          "jsGBps": 7.2316,
+          "wasmGBps": 12.7875
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0484,
+            "p50": 0.05,
+            "p95": 0.05,
+            "p99": 0.11,
+            "max": 0.27
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0184,
+            "p50": 0.02,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.03
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0113,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.674,
+              "p50": 0.56,
+              "p95": 1.6,
+              "p99": 1.6,
+              "max": 1.6
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.58,
+              "p50": 0.58,
+              "p95": 0.6,
+              "p99": 0.6,
+              "max": 0.6
+            },
+            "GBps": 37.4491
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0177,
+              "p50": 0.02,
+              "p95": 0.02,
+              "p99": 0.02,
+              "max": 0.11
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0171,
+              "p50": 0.02,
+              "p95": 0.02,
+              "p99": 0.02,
+              "max": 0.05
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 38527,
+            "ratio": 37.7076,
+            "deflate": {
+              "n": 10,
+              "mean": 0.624,
+              "p50": 0.6,
+              "p95": 0.68,
+              "p99": 0.68,
+              "max": 0.68
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.416,
+              "p50": 0.4,
+              "p95": 0.5,
+              "p99": 0.5,
+              "max": 0.5
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836897,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 191.9533,
+              "p50": 189.5,
+              "p95": 197.06,
+              "p99": 197.06,
+              "max": 197.06
+            }
+          }
+        }
+      },
+      "warmupChains": []
+    },
+    "webkit/tickBench": {
+      "engine": {
+        "engine": "webkit",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 1
+      },
+      "job": {
+        "kind": "tickBench",
+        "ticks": 1000
+      },
+      "cold": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 20,
+        "total": {
+          "n": 1000,
+          "mean": 0.0513,
+          "p50": 0.0322,
+          "p95": 0.0822,
+          "p99": 0.1322,
+          "max": 0.2322
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0008,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.05
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.0022,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.05
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.0332,
+            "p50": 0.05,
+            "p95": 0.1,
+            "p99": 0.1,
+            "max": 0.15
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.0125,
+            "p50": 0,
+            "p95": 0.05,
+            "p99": 0.1,
+            "max": 0.1
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0005,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0.05
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0011,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.1
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.01,
+          "p50": 0,
+          "p95": 0.05,
+          "p99": 0.1,
+          "max": 0.1
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0.018779342723004695,
+        "wallMs": 1448
+      },
+      "warm": {
+        "kind": "tickBench",
+        "units": 1000,
+        "ticks": 1000,
+        "reps": 20,
+        "total": {
+          "n": 1000,
+          "mean": 0.0504,
+          "p50": 0.0339,
+          "p95": 0.0839,
+          "p99": 0.0839,
+          "max": 0.0839
+        },
+        "phases": {
+          "CommandApply": {
+            "n": 1000,
+            "mean": 0.0002,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0.05
+          },
+          "Orders": {
+            "n": 1000,
+            "mean": 0.0015,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.05
+          },
+          "Movement": {
+            "n": 1000,
+            "mean": 0.0318,
+            "p50": 0.05,
+            "p95": 0.1,
+            "p99": 0.1,
+            "max": 0.1
+          },
+          "SpatialRebuild": {
+            "n": 1000,
+            "mean": 0.011,
+            "p50": 0,
+            "p95": 0.05,
+            "p99": 0.1,
+            "max": 0.1
+          },
+          "Cleanup": {
+            "n": 1000,
+            "mean": 0.0008,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.05
+          },
+          "Output": {
+            "n": 1000,
+            "mean": 0.0007,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.05,
+            "max": 0.05
+          }
+        },
+        "hashTick": {
+          "n": 100,
+          "mean": 0.007,
+          "p50": 0,
+          "p95": 0.05,
+          "p99": 0.05,
+          "max": 0.05
+        },
+        "movingAtEnd": 1000,
+        "finalHash": "0x2c4c0e87",
+        "restoreMs": 0.016963528413910092,
+        "wallMs": 1370
+      },
+      "warmupChains": []
+    },
+    "webkit/spk1": {
+      "engine": {
+        "engine": "webkit",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 1
+      },
+      "job": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40
+      },
+      "cold": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 4,
+        "total": {
+          "n": 300,
+          "mean": 0.6106,
+          "p50": 0.4956,
+          "p95": 0.7456,
+          "p99": 0.9956,
+          "max": 1.2456
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.1133,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0117,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.25,
+            "max": 0.25
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.05,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0167,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.25,
+            "max": 0.25
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.2325,
+            "p50": 0.25,
+            "p95": 0.5,
+            "p99": 0.5,
+            "max": 1
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.025,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.25,
+            "max": 0.5
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1475,
+            "p50": 0,
+            "p95": 0.5,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0025,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0.25
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0.1083,
+            "p50": 0,
+            "p95": 0.5,
+            "p99": 1,
+            "max": 1
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0.005847953216374269,
+        "wallMs": 743
+      },
+      "warm": {
+        "kind": "spk1",
+        "ticks": 300,
+        "rampTicks": 40,
+        "reps": 4,
+        "total": {
+          "n": 300,
+          "mean": 0.549,
+          "p50": 0.4956,
+          "p95": 0.7456,
+          "p99": 0.7456,
+          "max": 0.7456
+        },
+        "phases": {
+          "Movement": {
+            "n": 300,
+            "mean": 0.0892,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Air": {
+            "n": 300,
+            "mean": 0.0067,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.25,
+            "max": 0.25
+          },
+          "Spatial": {
+            "n": 300,
+            "mean": 0.0517,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Vision": {
+            "n": 300,
+            "mean": 0.0192,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.25,
+            "max": 0.5
+          },
+          "Targeting": {
+            "n": 300,
+            "mean": 0.2158,
+            "p50": 0.25,
+            "p95": 0.5,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Weapons": {
+            "n": 300,
+            "mean": 0.0175,
+            "p50": 0,
+            "p95": 0.25,
+            "p99": 0.25,
+            "max": 0.5
+          },
+          "Projectiles": {
+            "n": 300,
+            "mean": 0.1442,
+            "p50": 0,
+            "p95": 0.5,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "Cleanup": {
+            "n": 300,
+            "mean": 0.0017,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0.25
+          },
+          "Hash": {
+            "n": 30,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0
+          }
+        },
+        "meanProjectiles": 3863,
+        "minProjectiles": 3792,
+        "counts": {
+          "ground": 1000,
+          "air": 300,
+          "projectiles": 3868,
+          "shots": 50602,
+          "hits": 41523,
+          "kills": 437
+        },
+        "finalHash": "0xe14862d1",
+        "restoreMs": 0.005815644082582146,
+        "wallMs": 671
+      },
+      "warmupChains": []
+    },
+    "webkit/spk5": {
+      "engine": {
+        "engine": "webkit",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+        "crossOriginIsolated": true,
+        "clockResolutionMs": 1
+      },
+      "job": {
+        "kind": "spk5",
+        "reps": 10
+      },
+      "cold": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 1.655,
+            "p50": 1.6,
+            "p95": 1.85,
+            "p99": 1.85,
+            "max": 1.85
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.635,
+            "p50": 1.6,
+            "p95": 1.8,
+            "p99": 1.8,
+            "max": 1.8
+          },
+          "jsGBps": 13.1072,
+          "wasmGBps": 13.1072
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0135,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.06
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.0112,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0109,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.72,
+              "p50": 0.75,
+              "p95": 0.8,
+              "p99": 0.8,
+              "max": 0.8
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.74,
+              "p50": 0.7,
+              "p95": 0.85,
+              "p99": 0.85,
+              "max": 0.85
+            },
+            "GBps": 27.962
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.019,
+              "p50": 0.02,
+              "p95": 0.03,
+              "p99": 0.03,
+              "max": 0.03
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0174,
+              "p50": 0.02,
+              "p95": 0.02,
+              "p99": 0.02,
+              "max": 0.02
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 35857,
+            "ratio": 40.5154,
+            "deflate": {
+              "n": 10,
+              "mean": 3.3,
+              "p50": 3,
+              "p95": 4,
+              "p99": 4,
+              "max": 4
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.7,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836896,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 288.3333,
+              "p50": 286,
+              "p95": 302,
+              "p99": 302,
+              "max": 302
+            }
+          }
+        }
+      },
+      "warm": {
+        "kind": "spk5",
+        "arenaBytes": 20971520,
+        "equality": {
+          "full20MB": true,
+          "jsFull": "0x0f8fdbef",
+          "wasmFull": "0x0f8fdbef",
+          "liveRange": true,
+          "randomRanges": {
+            "cases": 400,
+            "mismatches": 0,
+            "firstMismatch": null
+          }
+        },
+        "full20MB": {
+          "js": {
+            "n": 10,
+            "mean": 1.85,
+            "p50": 1.85,
+            "p95": 2,
+            "p99": 2,
+            "max": 2
+          },
+          "wasm": {
+            "n": 10,
+            "mean": 1.73,
+            "p50": 1.7,
+            "p95": 1.8,
+            "p99": 1.8,
+            "max": 1.8
+          },
+          "jsGBps": 11.336,
+          "wasmGBps": 12.3362
+        },
+        "live": {
+          "units": 1000,
+          "bytes": 141648,
+          "simRuleHash": {
+            "n": 100,
+            "mean": 0.0148,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.03
+          },
+          "jsContiguous": {
+            "n": 100,
+            "mean": 0.013,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          },
+          "wasmContiguous": {
+            "n": 100,
+            "mean": 0.0125,
+            "p50": 0.01,
+            "p95": 0.02,
+            "p99": 0.02,
+            "max": 0.02
+          }
+        },
+        "snapshot": {
+          "arena20MB": {
+            "snapshot": {
+              "n": 10,
+              "mean": 0.915,
+              "p50": 0.9,
+              "p95": 1.1,
+              "p99": 1.1,
+              "max": 1.1
+            },
+            "restore": {
+              "n": 10,
+              "mean": 0.575,
+              "p50": 0.35,
+              "p95": 0.95,
+              "p99": 0.95,
+              "max": 0.95
+            },
+            "GBps": 23.3017
+          },
+          "sim": {
+            "bytes": 1452760,
+            "snapshot": {
+              "n": 100,
+              "mean": 0.0225,
+              "p50": 0.02,
+              "p95": 0.03,
+              "p99": 0.03,
+              "max": 0.03
+            },
+            "restore": {
+              "n": 100,
+              "mean": 0.0211,
+              "p50": 0.02,
+              "p95": 0.03,
+              "p99": 0.03,
+              "max": 0.04
+            }
+          }
+        },
+        "keyframe": {
+          "sim": {
+            "bytes": 1452760,
+            "compressedBytes": 35857,
+            "ratio": 40.5154,
+            "deflate": {
+              "n": 10,
+              "mean": 3.5,
+              "p50": 3,
+              "p95": 4,
+              "p99": 4,
+              "max": 4
+            },
+            "inflate": {
+              "n": 10,
+              "mean": 0.6,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "roundtrip": true
+          },
+          "random20MB": {
+            "compressedBytes": 20836896,
+            "ratio": 1.0065,
+            "deflate": {
+              "n": 3,
+              "mean": 292,
+              "p50": 294,
+              "p95": 299,
+              "p99": 299,
+              "max": 299
+            }
+          }
+        }
+      },
+      "warmupChains": []
+    }
+  }
+}

@@ -1,19 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "harness/page",
+    "rootDir": ".",
     "outDir": "dist/tsc-harness-page",
     "tsBuildInfoFile": "dist/tsc-harness-page/.tsbuildinfo",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": []
+    "types": ["node"]
   },
-  "include": ["harness/page/**/*.ts"],
-  "references": [
-    { "path": "../../packages/fixed" },
-    { "path": "../../packages/heap" },
-    { "path": "../../packages/protocol" },
-    { "path": "../../packages/rules" },
-    { "path": "../../packages/blueprints" },
-    { "path": "../../packages/sim" }
-  ]
+  "include": ["src/harness/page/**/*.ts", "browser/**/*.ts", "playwright.xengine.config.ts"],
+  "references": [{ "path": "./tsconfig.harness-worker.json" }]
 }

@@ -1,0 +1,59 @@
+{
+  "categories": ["CUBE", "LAND", "MOBILE", "TECH1"],
+  "format": "faf-bundle",
+  "simHash": "0xD4135AF1",
+  "units": [
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "TECH1", "CUBE"],
+        "extends": "core:base_cube",
+        "id": "core:cube",
+        "sim": {
+          "health": {
+            "max": 100
+          },
+          "intel": {
+            "vision": 16
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [1, 1],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.3,
+            "sizeClass": 1,
+            "speed": 3,
+            "turnRateDeg": 180
+          }
+        },
+        "view": {
+          "descKey": "unit.core.cube.desc",
+          "icon": "land_cube",
+          "iconThreshold": 8,
+          "nameKey": "unit.core.cube.name",
+          "placeholder": {
+            "color": [0.62, 0.66, 0.72],
+            "hull": "box",
+            "size": [0.5, 0.5, 0.5]
+          }
+        }
+      },
+      "id": "core:cube",
+      "simId": 0,
+      "simUnits": {
+        "accelPerTick": 123,
+        "categoryMask": ["0x0000000F", "0x00000000", "0x00000000", "0x00000000"],
+        "layer": 0,
+        "maxHp": 100,
+        "maxSlope": 2458,
+        "radius": 1229,
+        "speedPerTick": 1229,
+        "turnRatePerTick": 3277,
+        "vision": 65536
+      },
+      "source": "content/blueprints/core/units/cube.ts"
+    }
+  ],
+  "version": 1,
+  "viewHash": "0xB5139443"
+}
