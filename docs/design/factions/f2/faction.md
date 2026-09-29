@@ -428,6 +428,8 @@ Das ist der Plan für `roster.json`. Status ●/○ und Meilensteine sind 1:1 vo
 | `f2:nav_t2_destroyer` | Bisamratte / Muskrat | Zerstörer, der an Land laufen kann | U17 + M13 |
 | `f2:lnd_t3_armored` | Schildwanze / Shieldbug | schwer gepanzerter T3-Läufer | U10-Erweiterung (keine neue Mechanik, nur Budget) |
 
+**Experimentals (T4, Post-MVP, „Plagen“):** Skolopender, Assel, Tsetse, Bärenklau (Game-Ender) und Myzel (Eco), IDs `f2:exp_*`. Design, Werte und Gates in `experimentals.md`, Daten in `roster.json` → `experimentals[]` (nicht gezählt).
+
 ---
 
 ## 8. Audio-Charakter „Stollenfunk und Schwirren“

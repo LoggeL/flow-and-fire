@@ -2,21 +2,34 @@
  * Builds a model definition into merged-part meshes (LOD0–2) with flat-shading normals, vertex colors, masks and
  * statistics. Pure and deterministic: same definition + palette → same arrays.
  */
-import { aoFromNormalY, MATERIAL_SLOTS, resolvePalette, resolveSlot, SLOT_INDEX, type MaterialSlot, type Palette } from './materials.ts';
-import { apply, det, mul, newell, normalize, scaling, snap, sub, cross, dot, type Mat, type Vec3 } from './math.ts';
+import {
+  aoFromNormalY,
+  paletteSlots,
+  resolvePalette,
+  resolveSlot,
+  SLOT_INDEX,
+  type CoreSlot,
+  type ExtraSlot,
+  type MaterialSlot,
+  type Palette,
+} from './materials.ts';
+import { apply, det, mul, newell, normalize, scaling, snap, sub, cross, dot, translation, type Mat, type Vec3 } from './math.ts';
 import {
   checkModelDef,
   DEFAULT_BUDGETS,
   DEFAULT_ICON_THRESHOLD,
   DEFAULT_LOD_DISTANCES,
-  EXPERIMENTAL_BUDGET,
+  T4_BUDGET,
+  T4_LOD_DISTANCES,
   type Budget,
   type ModelClass,
   type ModelDef,
   type PartAnim,
+  type Tech,
 } from './model.ts';
+import { paletteByName } from './palettes.ts';
 import { dedupe, type Lod, type Poly } from './primitives.ts';
-import { groupMatrix, placeMatrix, type PrimGen, type Shape } from './shapes.ts';
+import { groupMatrix, placeMatrix, type PrimGen, type Shape, type Smooth } from './shapes.ts';
 
 export const LOD_COUNT = 3;
 /** Automatic LOD reduction: shapes whose largest extent is below this share of the model's largest extent vanish. */
@@ -27,20 +40,28 @@ export interface RosterDefaults {
   readonly name?: string;
   readonly role?: string;
   readonly class?: ModelClass;
-  readonly tech?: 0 | 1 | 2 | 3 | 4;
+  readonly tech?: Tech;
   readonly footprint?: readonly [number, number];
   readonly scale?: { readonly xz: number; readonly y: number };
   readonly icon?: string;
   readonly iconThreshold?: number;
   /** Roster estimate for LOD0 tris (informational). */
   readonly trisEstimate?: number;
+  /** View hover height (roster `motion.hoverHeightView`), WU. */
+  readonly hover?: number;
 }
+
+/** Budgets per class plus the T4 budget (`t4`, any class). */
+export type BudgetTable = Partial<Record<ModelClass | 't4', Budget>>;
+
+/** Surface area per material slot: the 7 core slots plus the extra slots the palette defines. */
+export type MatArea = Readonly<Record<CoreSlot, number>> & Readonly<Partial<Record<ExtraSlot, number>>>;
 
 export interface BuildContext {
   readonly faction: string;
   readonly palette: Palette;
   readonly defaults?: RosterDefaults;
-  readonly budgets?: Partial<Record<ModelClass, Budget>>;
+  readonly budgets?: BudgetTable;
 }
 
 export interface LodMesh {
@@ -60,7 +81,7 @@ export interface LodMesh {
   /** Triangles per part index. */
   readonly partTris: readonly number[];
   /** Surface area per material slot (WU²). */
-  readonly matArea: Readonly<Record<MaterialSlot, number>>;
+  readonly matArea: MatArea;
   /** Share of `team` in the top-down view (orthographic from above, with occlusion; 96² raster). */
   readonly teamTopShare: number;
 }
@@ -105,6 +126,8 @@ export interface BuiltModel {
   readonly lodDistances: readonly [number, number];
   readonly budget: Budget;
   readonly trisEstimate: number | null;
+  /** Hover height baked into the geometry (0 = ground unit), see HOVER_HEIGHT. */
+  readonly hover: number;
   readonly parts: readonly BuiltPart[];
   readonly lods: readonly LodMesh[];
   readonly bounds: Bounds;
@@ -124,12 +147,28 @@ interface Inst {
   readonly maxLod: number;
   size: number;
   readonly type: string;
+  /** Crease angle in degrees for smooth normals; 0 = flat shading. */
+  readonly smooth: number;
+  /** Smoothing group: smooth shapes of one part with the same group share normals across their seams. */
+  readonly smoothGroup: string | undefined;
 }
 
 interface Flags {
   keep: boolean;
   minLod: number;
   maxLod: number;
+  smooth?: Smooth | undefined;
+  smoothGroup?: string | undefined;
+}
+
+/** Default crease angle of `smooth: true`. */
+export const SMOOTH_CREASE_DEG = 80;
+
+function creaseOf(s: Smooth | undefined): number {
+  if (s === undefined || s === false) return 0;
+  if (s === true) return SMOOTH_CREASE_DEG;
+  if (!(s >= 0 && s <= 180)) throw new Error(`smooth crease angle ${s} must be 0–180°`);
+  return s;
 }
 
 function collect(shape: Shape, parent: Mat, mat: string | undefined, flags: Flags, part: number, palette: Palette, out: Inst[]): void {
@@ -137,6 +176,8 @@ function collect(shape: Shape, parent: Mat, mat: string | undefined, flags: Flag
     keep: flags.keep || shape.place.keep === true,
     minLod: Math.max(flags.minLod, shape.place.minLod ?? 0),
     maxLod: Math.min(flags.maxLod, shape.place.maxLod ?? 2),
+    smooth: shape.place.smooth ?? flags.smooth,
+    smoothGroup: shape.place.smoothGroup ?? flags.smoothGroup,
   };
   const m2 = shape.place.mat ?? mat;
   if (shape.kind === 'group') {
@@ -156,6 +197,8 @@ function collect(shape: Shape, parent: Mat, mat: string | undefined, flags: Flag
     maxLod: f.maxLod,
     size: 0,
     type: shape.type,
+    smooth: creaseOf(f.smooth),
+    smoothGroup: f.smoothGroup,
   });
 }
 
@@ -281,13 +324,24 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
   const warnings: string[] = [];
   const d = ctx.defaults ?? {};
   const cls: ModelClass = def.class ?? d.class ?? classFromIcon(def.icon ?? d.icon) ?? 'land';
+  const tech: Tech = def.tech ?? d.tech ?? 1;
   const scaleIn = def.scale ?? d.scale ?? 1;
   const scale = typeof scaleIn === 'number' ? { xz: scaleIn, y: scaleIn } : { xz: scaleIn.xz, y: scaleIn.y };
   const footprint = def.footprint ?? d.footprint ?? [1, 1];
-  const tech = def.tech ?? d.tech ?? 1;
-  const budget = def.budget ?? (tech === 4 ? EXPERIMENTAL_BUDGET : (ctx.budgets?.[cls] ?? DEFAULT_BUDGETS[cls]));
-  const pal = resolvePalette(ctx.palette);
-  const root = scaling([scale.xz, scale.y, scale.xz]);
+  const budget = def.budget ?? (tech === 4 ? (ctx.budgets?.t4 ?? T4_BUDGET) : (ctx.budgets?.[cls] ?? DEFAULT_BUDGETS[cls]));
+  let palette = ctx.palette;
+  if (def.palette !== undefined) {
+    try {
+      palette = typeof def.palette === 'string' ? paletteByName(def.palette) : def.palette;
+    } catch (e) {
+      errors.push((e as Error).message);
+    }
+  }
+  const pal = resolvePalette(palette);
+  const slots = paletteSlots(palette);
+  const hover = def.hover ?? d.hover ?? 0;
+  // hover convention (model.ts HOVER_HEIGHT): lift after the roster scale; ground units keep the plain scale matrix
+  const root = hover > 0 ? mul(translation([0, hover, 0]), scaling([scale.xz, scale.y, scale.xz])) : scaling([scale.xz, scale.y, scale.xz]);
 
   // Parts
   const partIndex = new Map<string, number>();
@@ -298,7 +352,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
       index: i,
       name: p.name,
       parent: i === 0 ? 0 : (partIndex.get(p.parent ?? 'hull') ?? 0),
-      pivot: [snap(pv[0] * scale.xz), snap(pv[1] * scale.y), snap(pv[2] * scale.xz)] as Vec3,
+      pivot: [snap(pv[0] * scale.xz), snap(hover > 0 ? pv[1] * scale.y + hover : pv[1] * scale.y), snap(pv[2] * scale.xz)] as Vec3,
       anim: p.anim ?? (i === 0 ? 'none' : 'yaw'),
     };
   });
@@ -308,7 +362,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
   def.parts.forEach((p, i) => {
     for (const s of p.shapes) {
       try {
-        collect(s, root, undefined, { keep: false, minLod: 0, maxLod: 2 }, i, ctx.palette, insts);
+        collect(s, root, undefined, { keep: false, minLod: 0, maxLod: 2, smooth: p.smooth }, i, palette, insts);
       } catch (e) {
         errors.push(`part ${p.name}: ${(e as Error).message}`);
       }
@@ -361,7 +415,8 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
   for (let l = 0 as Lod; l < LOD_COUNT; l = (l + 1) as Lod) {
     const acc = new MeshAccumulator();
     const partTris = parts.map(() => 0);
-    const matArea = Object.fromEntries(MATERIAL_SLOTS.map((s) => [s, 0])) as Record<MaterialSlot, number>;
+    const matArea = Object.fromEntries(slots.map((s) => [s, 0])) as Record<MaterialSlot, number>;
+    const groups = new Map<string, SmoothItem[]>();
     for (const inst of insts) {
       if (l < inst.minLod || l > inst.maxLod) continue;
       const minFeature = LOD_REMOVE_RATIO[l]! * maxExtent;
@@ -375,6 +430,17 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
         continue;
       }
       const res = pal[inst.slot];
+      if (inst.smooth > 0) {
+        if (inst.smoothGroup !== undefined) {
+          const key = `${inst.part}|${inst.smoothGroup}`;
+          const list = groups.get(key);
+          if (list === undefined) groups.set(key, [{ inst, polys }]);
+          else list.push({ inst, polys });
+          continue;
+        }
+        emitSmooth(acc, [{ inst, polys }], pal, partTris, matArea, errors);
+        continue;
+      }
       for (const raw of polys) {
         const poly = dedupe(raw);
         if (poly.length < 3) continue;
@@ -406,6 +472,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
         }
       }
     }
+    for (const items of groups.values()) emitSmooth(acc, items, pal, partTris, matArea, errors);
     const vcount = acc.pos.length / 3;
     const tris = acc.idx.length / 3;
     for (const v of acc.pos) if (!Number.isFinite(v)) errors.push(`LOD${l}: non-finite position`);
@@ -421,7 +488,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
       triangles: tris,
       vertices: vcount,
       partTris,
-      matArea: Object.fromEntries(MATERIAL_SLOTS.map((s) => [s, Math.round(matArea[s] * 1e4) / 1e4])) as Record<MaterialSlot, number>,
+      matArea: Object.fromEntries(slots.map((s) => [s, Math.round(matArea[s] * 1e4) / 1e4])) as unknown as MatArea,
       teamTopShare: topShare(acc, bounds, 'team'),
     });
   }
@@ -438,6 +505,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
     if (lods[0]!.partTris[i] === 0) warnings.push(`part ${p.name} has no triangles in LOD0`);
   });
   if (lods[0]!.matArea.team <= 0) warnings.push('no team-color surface (faction rule: ≥ 1 team part)');
+  if (hover > 0 && bounds.min[1] < hover - 1e-3) warnings.push(`hover unit reaches below its hover height ${hover} (author it standing on y = 0)`);
 
   // Footprint
   const ext: [number, number] = [bounds.size[0], bounds.size[2]];
@@ -459,9 +527,10 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
     scale,
     icon: def.icon ?? d.icon ?? '',
     iconThreshold: def.iconThreshold ?? d.iconThreshold ?? DEFAULT_ICON_THRESHOLD,
-    lodDistances: def.lodDistances ?? DEFAULT_LOD_DISTANCES,
+    lodDistances: def.lodDistances ?? (tech === 4 ? T4_LOD_DISTANCES : DEFAULT_LOD_DISTANCES),
     budget,
     trisEstimate: d.trisEstimate ?? null,
+    hover,
     parts,
     lods,
     bounds,
@@ -469,4 +538,88 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
     warnings,
     errors,
   };
+}
+
+interface SmoothItem {
+  readonly inst: Inst;
+  readonly polys: Poly[];
+}
+
+/**
+ * Smooth shading of one shape instance or one smoothing group (several shapes of a part): every triangle corner gets
+ * the area-weighted mean of the face normals of all triangles of the item(s) that share its position and deviate less
+ * than the crease angle (of the corner's own shape) from its own face normal. Hard edges stay hard: cylinder caps,
+ * flat hemisphere bottoms, blade edges; a group makes seams between shapes invisible (team inlays flush in a shell).
+ */
+function emitSmooth(
+  acc: MeshAccumulator,
+  items: readonly SmoothItem[],
+  pal: Record<MaterialSlot, { readonly linear: readonly number[]; readonly mask: readonly number[] }>,
+  partTris: number[],
+  matArea: Record<MaterialSlot, number>,
+  errors: string[],
+): void {
+  interface Tri {
+    readonly v: readonly [Vec3, Vec3, Vec3];
+    readonly n: Vec3;
+    readonly area: number;
+    readonly inst: Inst;
+  }
+  const tris: Tri[] = [];
+  for (const { inst, polys } of items) {
+    for (const raw of polys) {
+      const poly = dedupe(raw);
+      if (poly.length < 3) continue;
+      const nn = newell(poly);
+      if (Math.hypot(nn[0], nn[1], nn[2]) < AREA_EPS) continue;
+      for (let k = 1; k + 1 < poly.length; k++) {
+        const a = poly[0]!;
+        const b = poly[k]!;
+        const c = poly[k + 1]!;
+        const tn = cross(sub(b, a), sub(c, a));
+        const area = Math.hypot(tn[0], tn[1], tn[2]) / 2;
+        if (area < AREA_EPS) continue;
+        tris.push({ v: [a, b, c], n: normalize(tn), area, inst });
+      }
+    }
+  }
+  const key = (p: Vec3): string => `${snap(p[0])},${snap(p[1])},${snap(p[2])}`;
+  const byPos = new Map<string, number[]>();
+  tris.forEach((t, i) => {
+    for (const p of t.v) {
+      const k = key(p);
+      const list = byPos.get(k);
+      if (list === undefined) byPos.set(k, [i]);
+      else if (list[list.length - 1] !== i) list.push(i);
+    }
+  });
+  for (const t of tris) {
+    const cosCrease = Math.cos((t.inst.smooth * Math.PI) / 180) - 1e-9;
+    const res = pal[t.inst.slot];
+    const idx: number[] = [];
+    for (const p of t.v) {
+      let sx = 0;
+      let sy = 0;
+      let sz = 0;
+      for (const j of byPos.get(key(p)) ?? []) {
+        const o = tris[j]!;
+        if (dot(o.n, t.n) < cosCrease) continue;
+        sx += o.n[0] * o.area;
+        sy += o.n[1] * o.area;
+        sz += o.n[2] * o.area;
+      }
+      let n = normalize([sx, sy, sz]);
+      if (!(Number.isFinite(n[0]) && Number.isFinite(n[1]) && Number.isFinite(n[2])) || (n[0] === 0 && n[1] === 0 && n[2] === 0)) n = t.n;
+      if (!(Number.isFinite(n[0]) && Number.isFinite(n[1]) && Number.isFinite(n[2]))) {
+        errors.push(`non-finite normal in ${t.inst.type}`);
+        n = [0, 1, 0];
+      }
+      idx.push(acc.vertex(p, n, t.inst.part, t.inst.slot, res.linear, res.mask));
+    }
+    const [ia, ib, ic] = idx as [number, number, number];
+    if (ia === ib || ib === ic || ia === ic) continue;
+    acc.idx.push(ia, ib, ic);
+    partTris[t.inst.part]!++;
+    matArea[t.inst.slot] += t.area;
+  }
 }

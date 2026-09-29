@@ -5,8 +5,9 @@
  * only), parts 1…8 rotate with their PartStream entry around their pivot (yaw about +Y, pitch about the part's
  * side axis) and follow their parent chain. Static kitbash pieces all belong to `hull`.
  */
+import type { Palette } from './materials.ts';
 import type { Vec3 } from './math.ts';
-import type { Shape } from './shapes.ts';
+import type { Shape, Smooth } from './shapes.ts';
 
 /** Max animated parts per unit (PartStream limit, `MAX_PARTS_PER_UNIT` in @faf/protocol). */
 export const MAX_ANIMATED_PARTS = 8;
@@ -22,6 +23,12 @@ export interface PartDef {
   readonly pivot?: Vec3;
   /** Intended animation (metadata for the renderer/sim authors). Default `none` for hull, `yaw` otherwise. */
   readonly anim?: PartAnim;
+  /**
+   * Smooth vertex normals for all shapes of the part (shapes may override with their own `smooth`): `true` = crease
+   * angle 80°, a number = crease angle in degrees, `false`/absent = flat shading (Varkan, Skarn). Sael and Aurith
+   * bodies are smooth.
+   */
+  readonly smooth?: Smooth;
   /** Shapes in model space (not relative to the pivot). */
   readonly shapes: readonly Shape[];
 }
@@ -50,14 +57,35 @@ export const DEFAULT_BUDGETS: Readonly<Record<ModelClass, Budget>> = {
 };
 
 /**
- * Budget of experimentals (tech 4, docs/design/experimentals.md): one unit is the size of a base section, is seen
- * from further away and comes in single digits per match, so LOD0 may be ~4.5× a T1–T3 mesh. LOD1/LOD2 keep the
- * same share of the whole scene as ~2–3 ordinary units. Applies to every class unless a model sets `budget`.
+ * T4 (experimental) budget (docs/design/experimentals.md), used for every class when `tech` is 4 unless the faction
+ * overrides it (`budgets.t4`, e.g. Skarn 1,200/700/350) or a model sets its own `budget`. One unit is the size of a
+ * base section, is seen from further away and comes in single digits per match (one or two on screen), so LOD0 may
+ * be ~4.5× a T1–T3 mesh; LOD1/LOD2 keep the same share of the whole scene as ~2–3 ordinary units.
  */
-export const EXPERIMENTAL_BUDGET: Budget = { tris: [1600, 800, 320] };
+export const T4_BUDGET: Budget = { tris: [1600, 800, 320] };
+/** Alias of `T4_BUDGET` (name used by the Varkan experimentals). */
+export const EXPERIMENTAL_BUDGET: Budget = T4_BUDGET;
+
+/** Tech levels: 0 = commander/wall, 1–3, 4 = experimental. */
+export type Tech = 0 | 1 | 2 | 3 | 4;
 
 /** Default LOD switch distances in WU (PLAN §3.9 `view.lod`). */
 export const DEFAULT_LOD_DISTANCES: readonly [number, number] = [60, 180];
+/** Default LOD distances of T4 units (larger models keep their detail further out). */
+export const T4_LOD_DISTANCES: readonly [number, number] = [120, 360];
+
+/**
+ * Hover-offset convention: hover and glide units are authored standing on the ground (lowest point of the hover
+ * pad / keel at y = 0). The build lifts the whole model (geometry and pivots) by `hover` WU **after** the roster
+ * scale, so the GLB floats at its in-game view height and the gap shows in every tool. Metadata and scene extras
+ * carry `hover`; the renderer adds only the idle bob (± HOVER_BOB, period HOVER_PERIOD_S, phase from the entity id)
+ * and draws shadow/ground light at y = 0. Sim positions are unaffected (view only).
+ * Heights: Sael hover by tech (f3 §3.2; roster `motion.hoverHeightView` is used automatically), Aurith glide 0.25.
+ */
+export const HOVER_HEIGHT: Readonly<Record<Tech, number>> = { 0: 0.25, 1: 0.25, 2: 0.3, 3: 0.35, 4: 0.45 };
+export const GLIDE_HEIGHT = 0.25;
+export const HOVER_BOB = 0.03;
+export const HOVER_PERIOD_S = 3;
 /** Default `iconThreshold`: screen length in px below which the strategic icon replaces the mesh (faction.md §3.2). */
 export const DEFAULT_ICON_THRESHOLD = 25;
 
@@ -69,8 +97,8 @@ export interface ModelDef {
   readonly role?: string;
   /** Default from the roster (group/icon). */
   readonly class?: ModelClass;
-  /** 1–3 = T1–T3, 4 = Experimental (T4, budget `EXPERIMENTAL_BUDGET`), 0 = no tier (commander). */
-  readonly tech?: 0 | 1 | 2 | 3 | 4;
+  /** 1–3 = T1–T3, 4 = experimental (T4: `T4_BUDGET`/faction `budgets.t4` and `T4_LOD_DISTANCES`), 0 = no tier (commander). */
+  readonly tech?: Tech;
   /** Footprint in grid cells [x, z] (default from the roster). */
   readonly footprint?: readonly [number, number];
   /** Roster scale (T2 1.3, …) baked into the export; default from the roster, else 1. */
@@ -81,6 +109,16 @@ export interface ModelDef {
   readonly lodDistances?: readonly [number, number];
   /** Budget override (rarely needed; justify in `notes`). */
   readonly budget?: Budget;
+  /**
+   * Material palette of this model: a palette name (`'varkan'`, `'skarn'`, `'sael'`, `'aurith'`, `'default'`) or an
+   * own `definePalette({...})`. Default: the faction palette from `_faction.ts`.
+   */
+  readonly palette?: string | Palette;
+  /**
+   * Hover/glide height in WU (in-game, not scaled; see HOVER_HEIGHT): the build lifts the model by this amount.
+   * Default from the roster (`motion.hoverHeightView`), else 0 (ground unit).
+   */
+  readonly hover?: number;
   readonly parts: readonly PartDef[];
   readonly notes?: string;
 }
@@ -115,5 +153,7 @@ export function checkModelDef(def: ModelDef): string[] {
   if (def.lodDistances !== undefined && !(def.lodDistances[0] > 0 && def.lodDistances[1] > def.lodDistances[0])) {
     errors.push('lodDistances must be increasing and positive');
   }
+  if (def.tech !== undefined && ![0, 1, 2, 3, 4].includes(def.tech)) errors.push(`tech ${String(def.tech)} must be 0–4`);
+  if (def.hover !== undefined && !(def.hover >= 0 && def.hover <= 2)) errors.push(`hover ${def.hover} must be 0–2 WU`);
   return errors;
 }

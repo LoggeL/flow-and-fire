@@ -901,6 +901,11 @@ RESERVED = [
          needs=['U10-Erweiterung (nur Budget)', 'M13 (nur für die Amphibik der Referenz)'], faRefDevOnly='XRL0305', hotbuild=None, icon='land_direct_t3'),
 ]
 
+# Experimentals (T4, Post-MVP): Daten und Gates in exp.py, Design in experimentals.md; nicht in units/counts.total
+import exp as EXP  # noqa: E402
+EXPERIMENTALS, exp_err = EXP.build(icon_glyphs=glyphs, own_units=E)
+assert not exp_err, ('T4-Gates', exp_err)
+
 n9 = sum(e['ms9Core'] for e in out)
 mob = sum(1 for e in out if e['group'] in ('cmd', 'land', 'air'))
 conv = dict(CORE['conventions'])
@@ -922,13 +927,18 @@ conv.update(
                 'und Pulk-DPS/Mass der Artillerie je ≤ ±15 %; Treffer-bis-Tod-Matrix exakt wie die Vorbild-FA; Kreuz-Pflichtpaare gegen Varkan.',
     visual=CORE['conventions']['visual'] + ' Beinzahl ist Instanzparameter, kein Part.',
     faSource='FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js; Extraktion tools/roster/f2/fa_extract.py',
+    experimentals='experimentals[] = T4-Rollen (Post-MVP, tier T4, nicht in counts.total/units). Gates gegen die T4-Referenz der Vorbild-Fraktion '
+                  '(tools/roster/f2/fa_ref_t4.json): ±25 % hart, Einzelachsen + Produkt + Pulk ±15 %, Identität (Mass ≤, Tempo ≥, HP/Mass ≤ Referenz); '
+                  'Eco ohne Vorbild: Amortisation 1,5–3,0 × Egel-Kette. Setons-Brücke: Außenmaß ≤ 12 WU (≥ 6 nebeneinander auf 72 WU). '
+                  'T4-Kitbash-Budget: Tris L0/L1/L2 1200/700/350, ≤ 12 Part-Einträge, ≤ 3 animiert, Beine ≥ 8. Design: experimentals.md.',
 )
 names = {e['id'].split(':')[1]: e['name']['de'] for e in out}
 doc = dict(
     schema='faf-roster/1', faction='f2 (Skarn)', generated='2026-09-29', language='de',
     sourceOfTruth='roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts; faction.md (f2) und roster.md verweisen darauf.',
     counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9,
-                visuals=len(visuals), iconGlyphs=len(glyphs), reservedPostMvp=len(RESERVED)),
+                visuals=len(visuals), iconGlyphs=len(glyphs), reservedPostMvp=len(RESERVED),
+                experimentals=len(EXPERIMENTALS)),
     conventions=conv,
     hotbuildGrid={
         'Landnest': {'Q': 'Kampfläufer (Zecke/Ohrwurm)', 'W': 'Artillerie (Nessel/Wolfsmilch/Stechapfel)',
@@ -940,6 +950,7 @@ doc = dict(
         'Bau': {'Q': 'Egel', 'W': 'Druse', 'E': 'Fumarole', 'R': 'Wabe', 'T': 'Glimmzelle',
                 'A': 'Landnest', 'S': 'Luftnest', 'D': 'Fühler', 'F': 'Kokon', 'G': 'reserviert: Tarnfeld-Generator (Nachtschatten, I5)',
                 'Z': 'Falle', 'X': 'Schlehe/Igel', 'C': 'Hecke', 'V': 'Schierling/Bilsenkraut'},
+        'Bau (T4-Tab, Post-MVP)': {'Q': 'Skolopender', 'W': 'Bärenklau', 'E': 'Assel', 'R': 'Tsetse', 'T': 'Myzel'},
         'rule': CORE['hotbuildGrid']['rule'] + ' Raster identisch zu Varkan (gleiche Taste = gleiche Rolle in jeder Fraktion).'},
     silhouettePairs=dict(
         ms9=[['f2:lnd_t1_tank', 'f2:lnd_t1_aa'], ['f2:lnd_t1_arty', 'f2:lnd_t1_aa'], ['f2:lnd_t2_mml', 'f2:lnd_t2_aa'],
@@ -956,6 +967,7 @@ doc = dict(
     visuals={k: dict(members=v['members'], supersetParts=v['supersetParts'], trisEstimate=v['trisEstimate'], legs=v['legs'], parts=v['counts'])
              for k, v in visuals.items()},
     reservedPostMvp=RESERVED,
+    experimentals=EXPERIMENTALS,
     checks=dict(hitsToKill=htk, crossFaction=cross, shieldBreak=shield_break),
     units=out,
 )

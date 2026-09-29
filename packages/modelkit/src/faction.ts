@@ -2,9 +2,9 @@
  * Faction config of the model content (`content/models/<slug>/_faction.ts`) and the mapping of roster entries
  * (`faf-roster/1`, docs/design/roster.json or docs/design/factions/<slug>/roster.json) onto build defaults.
  */
-import type { RosterDefaults } from './build.ts';
+import type { BudgetTable, RosterDefaults } from './build.ts';
 import type { Palette } from './materials.ts';
-import type { Budget, ModelClass } from './model.ts';
+import type { ModelClass } from './model.ts';
 
 export interface FactionDef {
   /** Folder name under content/models (`varkan`). */
@@ -13,8 +13,10 @@ export interface FactionDef {
   readonly name: string;
   /** Repo-relative roster path; default `docs/design/factions/<slug>/roster.json`. */
   readonly roster?: string;
+  /** Faction default palette (kit palettes: VARKAN_PALETTE, SKARN_PALETTE, SAEL_PALETTE, AURITH_PALETTE). */
   readonly palette: Palette;
-  readonly budgets?: Partial<Record<ModelClass, Budget>>;
+  /** Budget overrides per class, `t4` for experimentals. */
+  readonly budgets?: BudgetTable;
   /** Language of roster names shown in tools (default `de`). */
   readonly language?: 'de' | 'en';
 }
@@ -35,7 +37,15 @@ export interface RosterUnit {
   readonly icon?: string;
   readonly iconThreshold?: number;
   readonly footprint?: readonly number[];
-  readonly motion?: { readonly footprint?: readonly number[] } | null;
+  readonly motion?: {
+    readonly footprint?: readonly number[];
+    /** `hover` | `walker` | `air` (Sael). */
+    readonly gait?: string;
+    /** View hover height in WU (Sael hover units). */
+    readonly hoverHeightView?: number;
+    /** Leg count (Skarn, view only). */
+    readonly legs?: number;
+  } | null;
   readonly kitbash?: {
     readonly scale?: { readonly xz?: number; readonly y?: number };
     readonly trisEstimate?: number;
@@ -45,6 +55,8 @@ export interface RosterUnit {
 
 export interface RosterFile {
   readonly units: readonly RosterUnit[];
+  /** T4 (Post-MVP) entries of the faction rosters f2–f4; same shape as `units`. */
+  readonly experimentals?: readonly RosterUnit[];
 }
 
 function text(v: RosterUnit['name'], lang: 'de' | 'en'): string | undefined {
@@ -77,5 +89,7 @@ export function rosterDefaults(u: RosterUnit, lang: 'de' | 'en' = 'de'): RosterD
   if (u.icon !== undefined) out['icon'] = u.icon;
   if (u.iconThreshold !== undefined) out['iconThreshold'] = u.iconThreshold;
   if (u.kitbash?.trisEstimate !== undefined) out['trisEstimate'] = u.kitbash.trisEstimate;
+  const hover = u.motion?.hoverHeightView;
+  if (hover !== undefined && hover > 0 && (u.motion?.gait === undefined || u.motion.gait === 'hover')) out['hover'] = hover;
   return out as RosterDefaults;
 }

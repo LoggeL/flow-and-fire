@@ -396,7 +396,7 @@ Die Icon-Grammatik ist **fraktionsübergreifend identisch** und in Varkan `facti
 
 **Zählung:** 22 mobile + 27 Struktur-Blueprints = **49** (Band 45–55). **26 im MS9-Kern** (Band 25–30): 11 mobile (Kantor, Chorist, Solist, Pfiff, Triller, Horn, Pfeife, Heuler, Brüller, Posaune, Bordun) und dieselben 15 Strukturen wie Varkan. Der Brüller ist Kern statt Nachzügler, weil „wenige, große Einheiten“ ab T2 die Fraktion trägt; dafür entfällt der separate T1-Bot.
 **Hotbuild:** dieselbe Rollen-Belegung wie Varkan (`roster.md` §3). Der Pfiff liegt auf A **und** S, weil er beide T1-Rollen abdeckt. D (Support) belegt erst ab T3 die Stille.
-**Reserve-Namen:** *Hymne / Hymn* (Experimental, U16), *Unterkantor / Succentor* (SACU, U15), *Kadenz / Cadence* (T3-Luft, U12).
+**Reserve-Namen:** *Unterkantor / Succentor* (SACU, U15), *Kadenz / Cadence* (T3-Luft, U12). *Hymne / Hymn* ist als T4-Sturmläufer eingelöst; alle Experimentals (Hymne, Ensemble, Heupferd, Tuba, Klangschale) stehen in [`experimentals.md`](experimentals.md) und `roster.json` → `experimentals` (Post-MVP).
 
 ---
 
@@ -499,7 +499,7 @@ Alle Einträge sind **rein additiv**. Die Kernwerte in `roster.json` werden ohne
 | **U15** SACU | Unterkantor | – | entfällt |
 | **P19** ACU-Warp-in-Sequenz | Aufklang: Bernsteinsäule steigt auf und zerspringt | Kantor | 3-s-View-Platzhalter (§2.2) |
 | **K10 über MVP hinaus** | keiner: Die Aurith nutzen nur Bubble-Schilde (Stille, Dämpfer) und keine Personal Shields | – | – |
-| **U16/U21** Experimentals | Reserve *Hymne* | – | – |
+| **U16/U21, E17, K17** Experimentals | Hymne (Sturmläufer), Ensemble (wandernde Halle), Heupferd (Bomber), Tuba (Strategiewerfer), Klangschale (Resonanzgenerator); Details [`experimentals.md`](experimentals.md) | – (T4) | nicht baubar |
 | **U12** T3-Luft | Reserve *Kadenz* | – | – |
 
 ---

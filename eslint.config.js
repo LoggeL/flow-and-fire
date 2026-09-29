@@ -34,6 +34,8 @@ export default defineConfig(
       'test-results/**',
       'playwright-report/**',
       '**/*.wasm',
+      // static HTML/JS design mockups (docs/design/ui.md), not product code
+      'docs/design/ui-mockups/**',
     ],
   },
   js.configs.recommended,

@@ -401,7 +401,7 @@ Vorläufig; `roster.json` wird die einzige Quelle. ●/○-Status und Meilenstei
 
 **Zählung:** 23 mobile + 27 Struktur-Blueprints = **50**, davon **26 im MS9-Kern**, dieselben Rollen wie bei Varkan.
 **Grep-Stand (Review 2026-09-29):** Jedes Wort aller Rufnamen (DE und EN) wird bei jedem Prüferlauf gegen 357 Einheiten- und 218 Waffennamen aus spooky-db 3810 geprüft (`tools/roster/fa_names.json`, dev-only); erlaubt sind nur generische Wörter (Air, Land, High, Sea). Der Volltext-Grep fand „Crab“ (FA „Crab Egg“), deshalb heißt der T1-Läufer jetzt Knallkrebs / Pistol Shrimp. Zusätzlich prüft der Prüfer Abstand ≥ 2 Buchstaben zu allen Rufnamen der anderen Roster (Regel 8).
-**Reservenamen:** *Nautilus* (T3-Schwebepanzer, gleich reserviert wie Varkans *Amboss*), *Perle / Pearl* (Experimental, U16).
+**Reservenamen:** *Nautilus* (T3-Schwebepanzer, gleich reserviert wie Varkans *Amboss*). *Perle / Pearl* ist seit dem T4-Entwurf das Eco-Experimental; alle Experimentals (Karkinos, Ammonit, Pelikan, Kreuzsee, Perle) stehen in `experimentals.md` und `roster.json` → `experimentals[]` (Post-MVP, U16/U21).
 
 ---
 

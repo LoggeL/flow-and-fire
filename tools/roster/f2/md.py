@@ -39,7 +39,7 @@ w('> **Status:** Startwerte für alle MVP-Blueprints der zweiten Fraktion auf Ba
 w(f"> **Umfang:** **{D['counts']['total']} Blueprints** ({D['counts']['mobile']} mobil, {D['counts']['structures']} Gebäude, jede Upgrade-Stufe einzeln), "
   f"davon **{D['counts']['ms9Core']} im MS9-Kern (●)**, Rest bis MS14 (○). Gleiche Rollen-IDs, Feature-IDs, Icons und Hotbuild-Tasten wie Varkan. "
   f"{D['counts']['visuals']} Visuals, {D['counts']['iconGlyphs']} Icon-Glyphen (dieselben wie Varkan). Dazu {D['counts']['reservedPostMvp']} reservierte "
-  'Post-MVP-Rollen (§16), nicht mitgezählt.')
+  f"Post-MVP-Rollen (§16) und {D['counts'].get('experimentals', 0)} Experimentals (T4, §20), nicht mitgezählt.")
 w('> **Ausgeschlossen:** wie Varkan (TML/TMD, Nukes, Transporter, T3-Luft, Marine, Experimentals, SACU, Enhancements, Stealth/Omni). Eigenheiten der '
   'Vorbild-Fraktion, die solche Mechaniken brauchen, sind pro Einheit als `special.postMvp` mit Feature-ID markiert (§16). Die Kern-Balance gilt ohne sie.')
 w('> **Balancing:** gegen die **Vorbild-Fraktion** als FA-Referenz (nur über Blueprint-Präfix `UR*`/`DR*` referenziert, dev-only). Hartes Gate ±25 % '
@@ -475,5 +475,66 @@ w('| V1 | Rollen gegen Varkan | ✓ | Geprüft: 50/50 Rollen-IDs, gleiche MS-Zuo
 w('| V2 | Vorbild-Fähigkeiten gegen Post-MVP-Markierungen | ◐ | Alle `Display.Abilities` der 50 Referenzen abgeglichen. Ergänzt: Schabe mit **I5** (Tarnung, die Referenz hat Cloaking). Nicht markiert, weil Varkan sie ebenso ignoriert: Omni am Kommandanten (I4), `Aquatic`-Bauplatz der Flugabwehrtürme (U17), Radar der Stechmücke. |')
 w('| V3 | Reserve-Rollen | ✓ | Vollständig für die Vorbild-Signaturen: mobiles und stationäres Tarnfeld, amphibischer T2-Läufer, Zerstörer an Land, gepanzerter T3-Läufer (jetzt mit M13). |')
 w('')
+# ---------------------------------------------------------------- 20 Experimentals
+XP = D.get('experimentals', [])
+if XP:
+    w('---')
+    w('')
+    w('## 20. Experimentals (T4, Post-MVP)')
+    w('')
+    w(f"{len(XP)} T4-Rollen, **nicht** in der Zählung oben und ohne Sim-Wirkung vor ihren Features. Design, Lore, Kitbash und Icons: "
+      "`experimentals.md`. Daten und Gates: `tools/roster/f2/exp.py` (von `gen.py` eingebunden), Referenzen `fa_ref_t4.json` (Vorbild-T4, dev-only). "
+      "Gates: DPS/Mass, HP/Mass und Produkt je ±15 % gegen die Vorbild-T4, Pulk ±15 % bei Artillerie, Identität „billiger, schneller, "
+      "zerbrechlicher“ (Mass ≤, Tempo ≥, HP/Mass ≤ Referenz), Setons-Brücke (≥ 6 nebeneinander auf 72 WU), T4-Budget (≤ 1.200 Tris L0, ≤ 12 Parts, ≤ 3 animiert).")
+    w('')
+    w('| ID | Name DE / EN | Rolle | Mass | Energy | BT | HP | Regen | DPS | Tempo | Footprint · s | Beine | Icon | Hotbuild |')
+    w('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|')
+    for x in XP:
+        e = x['economy']; mo = x['motion']
+        w(f"| `{x['id']}` | **{x['name']['de']}** / {x['name']['en']} | {x['role']['de']} | {f(e['mass'])} | {f(e['energy'])} | {f(e['buildTime'])} | "
+          f"{f(x['health']['max'])} | {f(x['health']['regenPerSec'])} | {f(x['balance']['dps'], 0)} | {f(mo['speed']) if mo['speed'] else '–'} | "
+          f"{mo['footprint'][0]}×{mo['footprint'][1]}{' · ' + str(mo['sizeClass']) if mo.get('sizeClass') is not None else ''} | {mo.get('legs') or '–'} | `{x['icon']}` | {x['hotbuild']['slot']} |")
+    w('')
+    w('**Waffen:**')
+    w('')
+    w('| Einheit | Waffe | Schaden × Salve / Nachladen | DPS | RW (min) | Splash | Ziel |')
+    w('|---|---|---|---|---|---|---|')
+    for x in XP:
+        for wp in x['weapons']:
+            w(f"| {x['name']['de']} | {wp['type']} | {f(wp['damage'])} × {wp['salvo']} / {f(wp['reloadS'])} s | {f(wp['dps'], 0)} | "
+              f"{f(wp['range'])}{' (' + f(wp['rangeMin']) + ')' if wp.get('rangeMin') else ''} | {f(wp['splash']) if wp['splash'] else '–'} | {', '.join(wp['layers'])} |")
+        dw = x['special']['deathWeapon']
+        w(f"| {x['name']['de']} | Todeswaffe | {f(dw['damage'])} im Radius {f(dw['radius'])} | – | – | – | – |")
+    w('')
+    w('**Balance gegen die Vorbild-T4** (Referenz dev-only über Blueprint-Präfix):')
+    w('')
+    w('| Einheit | Referenz | ΔDPS/Mass | ΔHP/Mass | ΔProdukt | Pulk | Identität (Mass ≤ · Tempo ≥ · HP/Mass ≤) | Amortisation |')
+    w('|---|---|---|---|---|---|---|---|')
+    for x in XP:
+        b = x['balance']; idt = b.get('identity')
+        pay = b.get('payback')
+        w(f"| {x['name']['de']} | `{x['faReference']['bp'] or x['faReference'].get('infoBp') + ' (Fremdreferenz, Info)'}` | {pct(b.get('devDpsPerMassPct'))} | "
+          f"{pct(b.get('devHpPerMassPct'))} | {pct(b.get('devProductPct'))} | {pct((b.get('pulk') or {}).get('devPct'))} | "
+          f"{' · '.join('✓' if v else '✗' for v in idt.values()) if idt else '–'} | "
+          f"{(f(pay['paybackS'], 0) + ' s = ' + f(pay['ratio'], 2) + ' × Egel-Kette (' + f(pay['mexChainPaybackS'], 0) + ' s)') if pay else '–'} |")
+    w('')
+    w('**Kitbash:**')
+    w('')
+    w('| Einheit | Monopol-Merkmal | Parts | animiert | ≈ Tris L0 (ohne Beine) | Außenmaß (L × B × H, Beinspanne) | Brücke |')
+    w('|---|---|---|---|---|---|---|')
+    for x in XP:
+        k = x['kitbash']; dm = x['motion']['dimensionsWU']; br = x['motion'].get('bridge')
+        w(f"| {x['name']['de']} | {k['monopoly']} | {k['partCount']} | {k['animatedParts']} | {k['trisEstimate']} | "
+          f"{f(dm['length'])} × {f(dm['width'])} × {f(dm['height'])}{', ' + f(dm['legSpan']) if dm.get('legSpan') else ''} WU | "
+          f"{str(br['abreast']) + ' nebeneinander' if br else '–'} |")
+    w('')
+    w('**Post-MVP-Features je Einheit:**')
+    w('')
+    w('| Einheit | braucht | Eigenheiten mit Feature-ID |')
+    w('|---|---|---|')
+    for x in XP:
+        w(f"| {x['name']['de']} | {', '.join(x['needs'])} | " + '<br>'.join(f"**{p['feature']}**: {p['effect']}" for p in x['special']['postMvp']) + ' |')
+    w('')
+
 open(os.path.join(P, 'roster.md'), 'w').write('\n'.join(L))
 print('roster.md', len(L), 'Zeilen')

@@ -151,7 +151,7 @@ Schlacke auf dem Feld. Das ist der Reclaim-Schub, der FA-Spätspiele kippt („S
   Glutkern gibt es nur bei Flow-Einheiten (Kokille = FACTORY, Tiefenstich = ECONOMIC).
 - **T4-Kennung am Modell: Keramik-Klammer.** Statt 1–3 Tech-Streifen tragen T4 zwei keramikweiße Winkelleisten „[ ]“ auf Deck bzw. Sockel
   (`content/models/varkan/_t4.ts`), als Gegenstück zur Icon-Klammer. Ab LOD1 entfällt die Klammer mit den Kleinteilen, dann übernimmt das Icon.
-- **Budget:** LOD0/1/2 ≤ **1.600 / 800 / 320** Tris (`EXPERIMENTAL_BUDGET` in `@faf/modelkit`, greift automatisch bei `tech: 4`), Parts ≤ 16,
+- **Budget:** LOD0/1/2 ≤ **1.600 / 800 / 320** Tris (`T4_BUDGET` bzw. Alias `EXPERIMENTAL_BUDGET` in `@faf/modelkit`, greift automatisch bei `tech: 4`; Fraktions-Override `budgets.t4`), Parts ≤ 16,
   animiert ≤ 8 (PartStream-Limit). Jedes T4 hat ein **eigenes Visual** (kein Superset mit T1–T3). Das sind 28 + 6 = 34 Visuals, also unter
   den 40, mit denen DECISIONS 17 das Draw-Budget getestet hat.
 - **LOD-Distanzen:** 120 / 360 WU (Gebäude 120 / 400) statt 60 / 180. Die Meshes sind 4–10× so groß.
@@ -445,7 +445,7 @@ laut Featureliste an E15 (Mass Fabricator) und U15 (SACU). Der Tiefenstich brauc
 |---|---|
 | `content/models/varkan/exp_*.ts` | 6 Modelle in Spielgröße (Kitbash-DSL) |
 | `content/models/varkan/_t4.ts` | `ceramicBracket()`, die gemeinsame T4-Kennung |
-| `packages/modelkit/src/model.ts`, `build.ts`, `faction.ts` | `tech: 4`, `EXPERIMENTAL_BUDGET` (1.600 / 800 / 320), Roster-Übernahme von `tech: 4` |
+| `packages/modelkit/src/model.ts`, `build.ts`, `faction.ts` | `tech: 4` (`type Tech`), `T4_BUDGET` = `EXPERIMENTAL_BUDGET` (1.600 / 800 / 320, Override `budgets.t4`), Roster-Übernahme von `tech: 4` |
 | `content/icons/grammar.ts`, `build.ts` | `_t4`-IDs, Klammer statt Kerben, Faktor 1,5, `svg/notches/t4.svg` |
 | `apps/model-viewer/src/views/icons.ts` | Klammer und Beispiel-Icon in der Icon-Übersicht |
 | `tools/model-shots` | neue Option `--only exp_lnd_walker,…` (nur Einzelbilder, schnelle Iteration) |

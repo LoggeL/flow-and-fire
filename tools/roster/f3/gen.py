@@ -821,12 +821,22 @@ glyphs = sorted({re.sub(r'^(land|air|eng|struct)_', '', re.sub(r'_t\d$', '', e['
                  if e['icon'] not in ('cmd_commander', 'wall')})
 assert glyphs == VK['iconGlyphs']
 
+# Experimentals (T4, Post-MVP): Daten und Gates in exp.py, Design in experimentals.md; nicht in units/counts.total
+import sys as _sys  # noqa: E402
+_sys.path.insert(0, str(HERE))
+import exp as EXP  # noqa: E402
+EXPERIMENTALS, exp_err = EXP.build(icon_glyphs=glyphs, own_units=E)
+assert not exp_err, ('T4-Gates', exp_err)
+
 n9 = sum(e['ms9Core'] for e in out)
 mob = sum(1 for e in out if e['group'] in ('cmd', 'land', 'air'))
 hb = json.loads(rn(json.dumps(VK['hotbuildGrid'], ensure_ascii=False)))
 hb = {MENU.get(k, k): v for k, v in hb.items()}
 hb['Landkapitel']['Q'] = hb['Landkapitel']['Q'].replace('Panzer', 'Schwebepanzer')
 hb['Landkapitel']['S'] = hb['Landkapitel']['S'].replace('Bots', 'Läufer')
+_rule = hb.pop('rule')
+hb['Bau (T4-Tab, Post-MVP)'] = {e['hotbuild']['slot']: e['name']['de'] for e in sorted(EXPERIMENTALS, key=lambda e: 'QWERT'.index(e['hotbuild']['slot']))}
+hb['rule'] = _rule + ' T4 im eigenen Tab des Bau-Menüs (Q Land-Sturm, W Game-Ender, E Land-Festung, R Luft, T Eco), Tastenbelegung fraktionsübergreifend.'
 conv = dict(VK['conventions'])
 conv.update(
     commander='Prior: Mass 2000 nominell (nicht baubar), DPS nur Hauptwaffe (Lanze)',
@@ -847,12 +857,21 @@ conv.update(
     rush='checks.rush: Mindestzahl T1-Einheiten, die einen Kommandanten im offenen Schlagabtausch töten (ohne/mit Sonderschuss), '
          'Modell in tools/roster/f3/rush.py; required=true muss der FA-Paarung entsprechen.',
     hpBasis='Bei Schild-Einheiten (eigene, Personal-Schild-Fallback oder FA-Referenz) wird HP+Schild-HP verglichen',
+    experimentals='experimentals[] = T4-Rollen (Post-MVP, tier T4, nicht in counts.total/units). Gates gegen die T4-Referenz der Vorbild-Fraktion '
+                  '(tools/roster/f3/fa_ref_t4.json, spooky 3810 + FA_T4_OVERRIDES in exp.py): ±25 % hart; Boden-DPS/Mass, Luft-DPS/Mass, '
+                  'HP(+Schild)/Mass, Produkt und Pulk je ±15 %. Sael-Identität: Hauptwaffen-RW ≥ Vorbild, Schild-Anteil mobiler T4 ≥ 25 %, '
+                  'T4-Strukturen HP/Mass < Vorbild (A6). Setons-Brücke: Außenmaß ≤ 12 WU (≥ 6 nebeneinander auf 72 WU). T4-Kitbash-Budget: '
+                  'Tris L0/L1/L2 1500/800/320 wie @faf/modelkit T4_BUDGET (T4-Tris-Tabelle in exp.py), ≤ 10 Part-Einträge, ≤ 3 animiert; Monopol-Lints wie §5.3 Nr. 6. '
+                  'sizeClass = ceil(Außenmaß / 2) (Clearance-Radius, wie f4). '
+                  'reservedPostMvp[] spiegelt die T4-Namen für den Namensabgleich in cross.py. Design: experimentals.md.',
+    faT4DevelopCheck=EXP.FA_T4_DEVELOP,
 )
 doc = dict(
     schema='faf-roster/1', faction='f3 (Orden von Sael)', generated='2026-09-29', language='de',
     sourceOfTruth='roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts der Fraktion f3; '
                   'docs/design/factions/f3/faction.md und roster.md verweisen darauf.',
-    counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9, visuals=len(visuals), iconGlyphs=len(glyphs)),
+    counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9, visuals=len(visuals), iconGlyphs=len(glyphs),
+                reservedPostMvp=len(EXPERIMENTALS), experimentals=len(EXPERIMENTALS)),
     conventions=conv,
     hotbuildGrid=hb,
     silhouettePairs=dict(
@@ -863,12 +882,16 @@ doc = dict(
         ms14=[[S('air_t1_bomber'), S('air_t1_fighter')], [S('air_t1_fighter'), S('air_t2_fbomber')], [S('air_t1_scout'), S('air_t1_bomber')],
               [S('str_t1_radar'), S('str_t2_shield')], [S('lnd_t1_scout'), S('lnd_t2_shield')], [S('lnd_t3_sniper'), S('lnd_t2_tank')],
               [S('str_t3_arty'), S('str_t3_pgen')], [S('str_t3_mex'), S('str_t1_hydro')]],
+        t4=[['f3:exp_lnd_assault', S('lnd_t3_bot')], ['f3:exp_lnd_fortress', S('lnd_t3_sniper')], ['f3:exp_lnd_assault', 'f3:exp_lnd_fortress'],
+            ['f3:exp_air_carrier', S('air_t1_bomber')], ['f3:exp_str_arty', S('str_t3_arty')], ['f3:exp_str_eco', S('str_t3_mex')]],
         crossFaction=[[S('lnd_t1_tank'), V('lnd_t1_tank')], [S('lnd_t1_aa'), V('lnd_t1_aa')], [S('lnd_t1_arty'), V('lnd_t1_arty')],
                       [S('lnd_t1_engineer'), V('lnd_t1_engineer')], [S('str_t1_pd'), V('str_t1_pd')]],
     ),
     iconGlyphs=glyphs,
     visuals={k: dict(members=v['members'], supersetParts=v['supersetParts'], trisEstimate=v['trisEstimate'], parts=v['counts'])
              for k, v in visuals.items()},
+    reservedPostMvp=EXP.reserved(EXPERIMENTALS),
+    experimentals=EXPERIMENTALS,
     checks=dict(hitsToKill=htk, crossHitsToKill=cross_htk, shieldBreak=shield_break, rush=rush),
     units=out,
 )

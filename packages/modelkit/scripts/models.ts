@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseArgs } from 'node:util';
-import { exportGlb, modelMeta, MATERIAL_SLOTS, type Manifest, type ManifestFaction, type ModelMeta } from '../src/index.ts';
+import { exportGlb, modelMeta, paletteSlots, type Manifest, type ManifestFaction, type ModelMeta } from '../src/index.ts';
 import { writeIcons } from '../../../content/icons/build.ts';
 import { buildEntry, DIST_DIR, loadAll, REPO_ROOT } from '../../../content/models/registry.ts';
 
@@ -58,8 +58,9 @@ for (const f of factions) {
     }
   }
   const palette: Record<string, string> = {};
-  for (const s of MATERIAL_SLOTS) palette[s] = f.def.palette.slots[s].color;
-  manifestFactions.push({ slug: f.def.slug, name: f.def.name, palette, models: ids });
+  for (const s of paletteSlots(f.def.palette)) palette[s] = f.def.palette.slots[s]!.color;
+  const teamAlt = f.def.palette.teamAlt;
+  manifestFactions.push({ slug: f.def.slug, name: f.def.name, palette, ...(teamAlt === undefined ? {} : { teamAlt }), models: ids });
 }
 
 const manifest: Manifest = { schema: 'faf-models/1', factions: manifestFactions, models: metas };

@@ -247,6 +247,20 @@ th {
   display: block;
   font-size: 13px;
 }
+.label.faction-row {
+  transform: translate(-100%, -50%);
+  text-align: right;
+}
+.label.low {
+  transform: translate(-50%, 30px);
+}
+.label.faction-group {
+  transform: translate(-50%, -100%);
+}
+.label.faction-row b,
+.label.faction-group b {
+  font-size: 16px;
+}
 .sheet {
   position: relative;
   display: inline-block;

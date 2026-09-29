@@ -10,7 +10,9 @@
     "structures": 27,
     "ms9Core": 26,
     "visuals": 28,
-    "iconGlyphs": 19
+    "iconGlyphs": 19,
+    "experimentals": 5,
+    "experimentalVisuals": 5
   },
   "conventions": {
     "units": "1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s",
@@ -33,6 +35,17 @@
     "techStripes": "Bei f4 = Tonpunkte (faction.md §3.4): 1–3 runde Punkte auf dem hinteren Kamm, Ø 0,12 WU × Maßstab, Abstand 0,08 WU; Perlglas (pearl), bei Engineers Pechglas (body); Kantor und Grat ohne Punkte. Feldname wie Varkan (Schema faf-roster/1).",
     "dreipass": "Dreipass-Sockel = drei lens-Parts mit mat team (Teamfarbe nur als Randmaske, 20–30 % der Draufsicht)",
     "visual": "Ein Visual = ein Superset-Mesh pro Rolle (Vereinigung der Parts aller Tech-Stufen nach Part+Material). Jeder Vertex trägt eine Tech-Bitmaske; v_fac trägt zusätzlich ein Rollenbit (Land/Luft). Ein Draw pro (Visual, LOD).",
+    "experimentals": "T4 stehen im eigenen Schlüssel `experimentals` (tier T4, postMvp true) und zählen nicht in total/ms9Core/visuals; cross.py und die MVP-Gates sehen sie nicht. Referenz: tools/roster/f4/fa_ref_t4.json (Vorbild XSL0401/XSA0402/XSB2401, Fremdreferenz UEL0401/XAB1401). Gates: Δ DPS/Mass (Boden), Δ HP/Mass, Produkt je ≤ ±15 %, Δ Luft-DPS/Mass ≤ ±25 %, Δ Mass ≤ ±15 %. Icon: gemeinsame Grammatik mit Stufe `t4` (eckige Klammer um die Grundform statt Kerben, wie f2). Design: experimentals.md.",
+    "t4Budget": {
+      "maxParts": 10,
+      "maxAnimated": 4,
+      "lod0": 1500,
+      "lod1": 800,
+      "lod2": 320,
+      "segmentFactor": 3,
+      "note": "Tris-Schätzung = Summe der Primitive (faction.md §3.3) × Segmentfaktor 3 (T4 füllt bis 15 % des Bildschirms, runde Primitive mit dreifacher Segmentzahl). Teile ≤ 10, davon ≤ 4 animiert (PartStream-Limit 8 bleibt frei). Tris L0/L1/L2 = @faf/modelkit T4_BUDGET (1500/800/320), LOD-Distanzen T4 120/360 WU."
+    },
+    "t4Bridge": "Setons-Brücke (engste Stelle ≈ 74 WU, Gate 72 WU, wie f2): Außenmaß ≤ 12 WU, also ≥ 6 T4 nebeneinander; sizeClass = ceil(Außenmaß / 2) ≤ 7 (Clearance ≥ Radius, Schema 0–7).",
     "faSource": "FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js, extrahiert mit tools/roster/f4/ref.py; Stichprobe und Schild-Regeneration gegen FAForever/fa develop (2026-09-29)"
   },
   "hotbuildGrid": {
@@ -183,6 +196,48 @@
       [
         "f4:lnd_t1_arty",
         "f3:lnd_t1_arty"
+      ]
+    ],
+    "t4": [
+      [
+        "f4:exp_assault",
+        "f4:cmd_commander"
+      ],
+      [
+        "f4:exp_assault",
+        "f4:lnd_t2_bot"
+      ],
+      [
+        "f4:exp_mobile_fac",
+        "f4:str_t3_fac_land"
+      ],
+      [
+        "f4:exp_mobile_fac",
+        "f4:lnd_t3_shield"
+      ],
+      [
+        "f4:exp_air_bomber",
+        "f4:air_t1_bomber"
+      ],
+      [
+        "f4:exp_air_bomber",
+        "f4:air_t2_fbomber"
+      ],
+      [
+        "f4:exp_strat_missile",
+        "f4:str_t3_arty"
+      ],
+      [
+        "f4:exp_strat_missile",
+        "f4:str_t3_sam"
+      ],
+      [
+        "f4:exp_resource",
+        "f4:str_t3_pgen"
+      ],
+      [
+        "f4:exp_resource",
+        "f4:str_t3_mex"
       ]
     ],
     "crossFactionRule": "Schattenriss: dieselbe Rolle (Winkel-Code); Graustufenbild: verschiedene Fraktionen (faction.md §5.4)"
@@ -8626,6 +8681,1196 @@
           "faPulkDpsPerMass": 0.312,
           "devPct": -1.6
         },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    }
+  ],
+  "experimentals": [
+    {
+      "id": "f4:exp_assault",
+      "name": {
+        "de": "Hymne",
+        "en": "Hymn"
+      },
+      "role": {
+        "de": "Experimenteller Sturmläufer",
+        "en": "Experimental Assault Walker"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "postMvp": true,
+      "feature": "U16",
+      "group": "land",
+      "visual": "v_exp_assault",
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "A16",
+        "K1-Erweiterung",
+        "K14",
+        "M13",
+        "P14",
+        "U16"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Assault Bot",
+        "bp": "XSL0401",
+        "kind": "Vorbild"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "EXPERIMENTAL",
+        "DIRECTFIRE",
+        "INDIRECTFIRE",
+        "ANTIAIR",
+        "BOT"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | COMMAND & TECH3",
+      "economy": {
+        "mass": 26500,
+        "energy": 330000,
+        "buildTime": 46875
+      },
+      "health": {
+        "max": 72000,
+        "regenPerSec": 20
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f4:wpn_hymn_beam",
+          "type": "Große Schwebung (Strahl zwischen den Brustzinken)",
+          "damage": 500,
+          "salvo": 10,
+          "reloadS": 5.0,
+          "dps": 1000.0,
+          "rangeMin": 4,
+          "range": 46,
+          "projectile": "hitscan-puls",
+          "splash": 3,
+          "layers": [
+            "land"
+          ],
+          "notes": "Strahl nach Konvention `beam` (10 Pulse pro Zyklus). Glyphen sammeln sich 1,5 s vor dem Zyklus an den Zinken (nur View)."
+        },
+        {
+          "ref": "f4:wpn_hymn_fork",
+          "type": "Doppelgabelton (beide Brustzinken)",
+          "damage": 560,
+          "salvo": 2,
+          "reloadS": 0.6,
+          "dps": 1866.67,
+          "range": 46,
+          "projectile": "linear",
+          "muzzleVelocity": 30,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f4:wpn_hymn_horn",
+          "type": "Stoßklang (Schultertrichter)",
+          "damage": 2000,
+          "salvo": 1,
+          "reloadS": 3.5,
+          "dps": 571.43,
+          "range": 46,
+          "projectile": "ballistisch (flach)",
+          "muzzleVelocity": 40,
+          "splash": 6,
+          "layers": [
+            "land"
+          ],
+          "notes": "Sammelbewegung der Glyphen 1,5 s vor dem Schuss (§3.5)."
+        },
+        {
+          "ref": "f4:wpn_hymn_pipes",
+          "type": "Pfeifenkranz (Flugabwehr, gestuft)",
+          "damage": 30,
+          "salvo": 6,
+          "reloadS": 1.0,
+          "dps": 180.0,
+          "range": 46,
+          "projectile": "linear",
+          "muzzleVelocity": 30,
+          "splash": 3,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.4,
+        "turnRateDeg": 60,
+        "accel": 0.8,
+        "sizeClass": 3,
+        "footprint": [
+          4,
+          4
+        ],
+        "bridge": {
+          "minBridgeWU": 72,
+          "setonsBridgeWU": 74,
+          "outerWidthWU": 6.0,
+          "abreast": 12,
+          "sizeClassRule": "sizeClass = ceil(Außenmaß / 2) (Clearance ≥ Radius)",
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 50
+      },
+      "special": {
+        "missile": null,
+        "deathWeapon": {
+          "ref": "f4:wpn_hymn_afterring",
+          "damage": 6000,
+          "radius": 6,
+          "field": {
+            "durationS": 20,
+            "radius": 14,
+            "pulseS": 0.5,
+            "damagePerPulse": 500,
+            "targets": "zufällig, Freund und Feind"
+          },
+          "note": "Nachhall: Aufprall 6000/6, danach 20 s ein stehendes Resonanzfeld (Entladungsbögen, 1000 DPS gegen je ein Ziel im Umkreis 14). Kein eigener Blueprint, keine Einheit (Vorbild: bewegliches Energiewesen 30 s)."
+        },
+        "notes": "Linienbrecher der späten Phase. Weniger, schwerere und sichtbar geladene Schüsse als das Vorbild (Δ DPS/Mass −9 %), dafür zäher (Δ HP/Mass +7,5 %). Reichweite 46 liegt unter dem Heerhorn (88) und dem Großhorn (200): Konter sind Artillerie, Bomber, Masse an Diskanten.",
+        "postMvp": [
+          {
+            "feature": "U16",
+            "behavior": "Erstes Land-Experimental: Bau durch Vorsänger vor Ort, großes Wrack",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "K14",
+            "behavior": "Todeswaffe mit Nachwirkung: 20-s-Resonanzfeld mit Pulsen (DoT-Feld, Erweiterung von K14)",
+            "mvp": "nur Aufprall 6000/6"
+          },
+          {
+            "feature": "M13",
+            "behavior": "amphibisch: läuft über den Seegrund (Vorbild ebenso)",
+            "mvp": "nur Land"
+          },
+          {
+            "feature": "P14",
+            "behavior": "Großereignis-Effekt beim Zerspringen (Glassturm, Kamera-Shake)",
+            "mvp": "normaler Struktur-Tod-Effekt"
+          },
+          {
+            "feature": "A16",
+            "behavior": "KI baut und eskortiert T4 mit Engineer-Pulks",
+            "mvp": "KI baut keine T4"
+          }
+        ],
+        "needsBeam": true
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "Q"
+      },
+      "icon": "land_bot_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "keel",
+            "mat": "amber",
+            "note": "spindel_torso"
+          },
+          {
+            "part": "fork",
+            "anim": "yawpitch",
+            "note": "brustgabel"
+          },
+          {
+            "part": "lens",
+            "note": "strahllinse"
+          },
+          {
+            "part": "horn",
+            "mat": "team",
+            "anim": "pitch",
+            "note": "schultertrichter"
+          },
+          {
+            "part": "pipe",
+            "note": "pfeifen_links"
+          },
+          {
+            "part": "pipe",
+            "note": "pfeifen_rechts"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "kamm"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "zweiter_kamm"
+          }
+        ],
+        "partCount": 9,
+        "animatedParts": 2,
+        "trisEstimate": 864,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "techStripes": 0,
+        "techMark": "Klammer im Icon, am Modell keine Tonpunkte",
+        "description": "Riesiges Dreibein (legs count 3, rückwärts geknickt), Höhe ≈ 9 WU (3,2 × Kantor), hoher Spindel-Torso aus Bernstein. Waagerechte Brustgabel mit Strahllinse zwischen den Zinken (Zinken 4,2 WU, ragen 1,5 WU über die Brust), rechts auf der Schulter ein kleiner Trichter (Länge ≤ Gabel ÷ 1,5, Hybrid-Regel §5.3), auf dem Rücken zwei Gruppen aus je drei gestuften senkrechten Pfeifen, dazwischen zwei parallele teamfarbene Kämme, die nach hinten bis über die Hüfte auslaufen. Kein Kristall, keine Krone, kein Kopf, keine Arme: Der Kantor liest sich über Krone und Sichel, die Hymne über Größe, Doppelkamm und Pfeifen."
+      },
+      "silhouettePairs": [
+        "f4:cmd_commander",
+        "f4:lnd_t2_bot"
+      ],
+      "balance": {
+        "dpsGround": 3438.1,
+        "dpsAir": 180.0,
+        "dpsPerMass": 0.12974,
+        "hpPerMass": 2.71698,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XSL0401",
+          "mass": 26500,
+          "energy": 330000,
+          "buildTime": 46875,
+          "hp": 67000,
+          "shieldHp": null,
+          "dpsGround": 3793.94,
+          "dpsAir": 187.5,
+          "speed": 2.5,
+          "range": 47
+        },
+        "devMassPct": 0.0,
+        "devDpsPerMassPct": -9.4,
+        "devAirDpsPerMassPct": -4.0,
+        "devHpPerMassPct": 7.5,
+        "devProductPct": -2.6,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "f4:exp_mobile_fac",
+      "name": {
+        "de": "Ensemble",
+        "en": "Ensemble"
+      },
+      "role": {
+        "de": "Wandernde Halle",
+        "en": "Roving Hall"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "postMvp": true,
+      "feature": "U21",
+      "group": "land",
+      "visual": "v_exp_mobile_fac",
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "B12",
+        "K10",
+        "M13",
+        "U21"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Mobile Factory (Fremdreferenz, Vorbild ohne mobile Fabrik)",
+        "bp": "UEL0401",
+        "kind": "Fremdreferenz (Vorbild ohne mobile Fabrik)"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "EXPERIMENTAL",
+        "FACTORY",
+        "ARTILLERY",
+        "INDIRECTFIRE",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "SHIELD"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | COMMAND & TECH3",
+      "economy": {
+        "mass": 28000,
+        "energy": 350000,
+        "buildTime": 47500,
+        "buildPower": 135,
+        "upkeepEnergyPerSec": 600
+      },
+      "health": {
+        "max": 11000,
+        "regenPerSec": 20
+      },
+      "shield": {
+        "hp": 24000,
+        "radius": 26,
+        "regenPerSec": 130,
+        "regenStartS": 3,
+        "rechargeS": 60,
+        "upkeepEnergyPerSec": 600
+      },
+      "weapons": [
+        {
+          "ref": "f4:wpn_ensemble_horn",
+          "type": "Chorstoß (zwei Trichter im Wechsel)",
+          "damage": 1400,
+          "salvo": 2,
+          "reloadS": 1.0,
+          "dps": 2800.0,
+          "rangeMin": 10,
+          "range": 90,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 25,
+          "splash": 1.5,
+          "layers": [
+            "land"
+          ],
+          "notes": "Die Trichter feuern abwechselnd; Sammelbewegung der Glyphen 0,5 s vor jedem Stoß."
+        },
+        {
+          "ref": "f4:wpn_ensemble_fork",
+          "type": "Gabelkranz (Nahabwehr)",
+          "damage": 150,
+          "salvo": 2,
+          "reloadS": 0.3,
+          "dps": 1000.0,
+          "range": 40,
+          "projectile": "linear",
+          "muzzleVelocity": 40,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f4:wpn_ensemble_pipes",
+          "type": "Pfeifenbank (Flugabwehr)",
+          "damage": 40,
+          "salvo": 3,
+          "reloadS": 1.0,
+          "dps": 120.0,
+          "range": 40,
+          "projectile": "linear",
+          "muzzleVelocity": 40,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 1.7,
+        "turnRateDeg": 30,
+        "accel": 0.5,
+        "sizeClass": 3,
+        "footprint": [
+          6,
+          6
+        ],
+        "bridge": {
+          "minBridgeWU": 72,
+          "setonsBridgeWU": 74,
+          "outerWidthWU": 6.0,
+          "abreast": 12,
+          "sizeClassRule": "sizeClass = ceil(Außenmaß / 2) (Clearance ≥ Radius)",
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 32
+      },
+      "special": {
+        "missile": null,
+        "deathWeapon": {
+          "ref": "f4:wpn_ensemble_shatter",
+          "damage": 4000,
+          "radius": 7,
+          "note": "Zerspringen der Apsis, Vorbild-Relation 1:1"
+        },
+        "notes": "Singt T1–T3-Landeinheiten der Grundhalle in Bewegung (Build Power 135, Ausgang durch die Apsis am Heck) und trägt eine große Glocke (24.000 Schild-HP, Radius 26). Gegenüber der Fremdreferenz verschoben Richtung Schild und Halle: DPS/Mass −5 %, HP+Schild/Mass +7,7 %. Die Aurith-Asymmetrie: stärkster mobiler Schild der Fraktion (Stille 9.600), aber die langsamste Einheit (1,7 WU/s, 30 °/s).",
+        "postMvp": [
+          {
+            "feature": "U21",
+            "behavior": "Volles Experimental-Roster",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "B12",
+            "behavior": "NEU: Mobile Fabrik – Bauen während der Fahrt, Ausgang und Rally relativ zur Einheit, Queue auf der Einheit",
+            "mvp": "keine Produktion"
+          },
+          {
+            "feature": "K10",
+            "behavior": "mobiler Blasen-Schild auf einer T4 (wie Stille, größer)",
+            "mvp": "HP ohne Schild (11.000)"
+          },
+          {
+            "feature": "M13",
+            "behavior": "Hover: gleitet über Wasser (Gleiter-Look wird echt)",
+            "mvp": "nur Land"
+          }
+        ],
+        "needsBeam": false
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "W"
+      },
+      "icon": "land_arty_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "keel",
+            "mat": "amber",
+            "note": "riesenkiel"
+          },
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "apsis_heck"
+          },
+          {
+            "part": "crystal",
+            "mat": "glow",
+            "note": "resonanzkern"
+          },
+          {
+            "part": "horn",
+            "mat": "team",
+            "anim": "yawpitch",
+            "note": "trichter_links"
+          },
+          {
+            "part": "horn",
+            "mat": "team",
+            "anim": "yawpitch",
+            "note": "trichter_rechts"
+          },
+          {
+            "part": "fork",
+            "anim": "yaw",
+            "note": "gabelkranz"
+          },
+          {
+            "part": "mast",
+            "note": "schildmast"
+          },
+          {
+            "part": "ring",
+            "note": "glocke_waagerecht"
+          },
+          {
+            "part": "pipe",
+            "note": "pfeifenbank"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "kamm"
+          }
+        ],
+        "partCount": 10,
+        "animatedParts": 3,
+        "trisEstimate": 960,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "techStripes": 0,
+        "techMark": "Klammer im Icon, am Modell keine Tonpunkte",
+        "description": "Überlanger Gleiter-Kiel 7 × 5 WU, Höhe ≈ 5 WU, 0,3 WU Schwebespalt. Hinten eine halb offene Muschel-Apsis (offene Seite nach hinten = Ausgang) mit Kristall über dem Scheitel (Resonanzkern, Flow-Einheit: FACTORY). Vorn links und rechts je ein offener Trichter 50° (Artillerie), mittig ein Mast mit waagerechtem Reif Ø 5 WU als höchstem Punkt (Schild), vor dem Mast ein kurzer Gabelkranz, seitlich eine Pfeifenbank. Teamfarbener Kamm über die ganze Länge. Lesereihenfolge von oben: Reif (Schild) → Trichter (Artillerie) → Apsis (Halle)."
+      },
+      "silhouettePairs": [
+        "f4:str_t3_fac_land",
+        "f4:lnd_t3_shield"
+      ],
+      "balance": {
+        "dpsGround": 3800.0,
+        "dpsAir": 120.0,
+        "dpsPerMass": 0.13571,
+        "hpPerMass": 1.25,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEL0401",
+          "mass": 28000,
+          "energy": 350000,
+          "buildTime": 47500,
+          "hp": 12500,
+          "shieldHp": 20000,
+          "dpsGround": 4000.0,
+          "dpsAir": 114.29,
+          "speed": 1.75,
+          "range": 100
+        },
+        "devMassPct": 0.0,
+        "devDpsPerMassPct": -5.0,
+        "devAirDpsPerMassPct": 5.0,
+        "devHpPerMassPct": 7.7,
+        "devProductPct": 2.3,
+        "pulk": {
+          "splash": 1.5,
+          "faSplash": 1.5,
+          "pulkDpsPerMass": 0.3142,
+          "faPulkDpsPerMass": 0.3366,
+          "devPct": -6.7
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "f4:exp_air_bomber",
+      "name": {
+        "de": "Heupferd",
+        "en": "Katydid"
+      },
+      "role": {
+        "de": "Experimenteller Bomber",
+        "en": "Experimental Bomber"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "postMvp": true,
+      "feature": "U21",
+      "group": "air",
+      "visual": "v_exp_air_bomber",
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "P14",
+        "U12",
+        "U21"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Bomber",
+        "bp": "XSA0402",
+        "kind": "Vorbild"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "EXPERIMENTAL",
+        "BOMBER",
+        "ANTIAIR",
+        "HIGHALTAIR"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | COMMAND & TECH3",
+      "economy": {
+        "mass": 48000,
+        "energy": 1920000,
+        "buildTime": 67500
+      },
+      "health": {
+        "max": 50000,
+        "regenPerSec": 25
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f4:wpn_katydid_bomb",
+          "type": "Dröhnbombe (ein Abwurf pro Anflug)",
+          "damage": 12000,
+          "salvo": 1,
+          "reloadS": 14.0,
+          "dps": 857.14,
+          "range": 90,
+          "projectile": "Bombe",
+          "splash": 17,
+          "layers": [
+            "land"
+          ],
+          "notes": "Bomber-DPS nach Konvention (Salvenschaden / Nachladezeit). Auftreffen mit 1 s Brummton-Vorwarnung am Boden (nur View/Audio)."
+        },
+        {
+          "ref": "f4:wpn_katydid_pipes",
+          "type": "Zirpkranz (vier Pfeifengruppen)",
+          "damage": 400,
+          "salvo": 4,
+          "reloadS": 1.0,
+          "dps": 1600.0,
+          "range": 64,
+          "projectile": "linear",
+          "muzzleVelocity": 90,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 16,
+        "turnRateDeg": 40,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          6,
+          6
+        ]
+      },
+      "intel": {
+        "vision": 70
+      },
+      "special": {
+        "missile": null,
+        "deathWeapon": {
+          "ref": "f4:wpn_air_crash_xl",
+          "damage": 8000,
+          "radius": 10,
+          "note": "Absturzschaden (K12), Vorbild-Relation 1:1"
+        },
+        "notes": "Hybrid Bomber + Flugabwehr (Fächer primär, Pfeifen sekundär). Langsamer als das Vorbild (16 statt 18 WU/s, „schwer statt schnell“, A10), dafür schwerere Bombe (12.000 statt 11.000, Radius 17 statt 19). Eine Bombe tötet jede T3-Landeinheit außer Grollen-Pulks unter Schild. Konter: Hochorgel-Netz, Abfangjäger in Masse, Schilde.",
+        "postMvp": [
+          {
+            "feature": "U21",
+            "behavior": "Luft-Experimental",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "U12",
+            "behavior": "T3-Luft (Flughöhe HIGHALTAIR, Jäger-Gegenstück) als Voraussetzung",
+            "mvp": "fliegt auf normaler Flughöhe"
+          },
+          {
+            "feature": "P14",
+            "behavior": "Großereignis-Effekt beim Bombeneinschlag und Absturz",
+            "mvp": "normaler Einschlag"
+          }
+        ],
+        "needsBeam": false
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "R"
+      },
+      "icon": "air_bomb_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "faecher_oben"
+          },
+          {
+            "part": "shell",
+            "mat": "amber",
+            "note": "deckfluegel"
+          },
+          {
+            "part": "lens",
+            "note": "bauchkammer"
+          },
+          {
+            "part": "keel",
+            "mat": "amber",
+            "note": "mittelkiel"
+          },
+          {
+            "part": "pipe",
+            "anim": "yaw",
+            "note": "pfeifen_vorn"
+          },
+          {
+            "part": "pipe",
+            "anim": "yaw",
+            "note": "pfeifen_hinten"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "fluegelrippe_links"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "fluegelrippe_rechts"
+          }
+        ],
+        "partCount": 8,
+        "animatedParts": 2,
+        "trisEstimate": 684,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "techStripes": 0,
+        "techMark": "Klammer im Icon, am Modell keine Tonpunkte",
+        "description": "Breiter Fächer (Muschel von oben) mit Spannweite 12 WU und Länge 8 WU, darunter ein zweiter, kleinerer Amber-Fächer als Deckflügel, mittig ein kurzer Kiel und eine große Bauch-Linse (Bombenkammer). Auf der Fächeroberseite vier Gruppen gestufter senkrechter Pfeifen (Flugabwehr), zwei teamfarbene Flügelrippen strahlen vom Kiel zur Fächerkante. Breit ≥ lang wie jeder Aurith-Bomber; keine Pfeilung, keine Gabel, keine Reifen. Teamfarbe ≥ 45 % der Draufsicht (Fächer)."
+      },
+      "silhouettePairs": [
+        "f4:air_t1_bomber",
+        "f4:air_t2_fbomber"
+      ],
+      "balance": {
+        "dpsGround": 857.14,
+        "dpsAir": 1600.0,
+        "dpsPerMass": 0.01786,
+        "hpPerMass": 1.04167,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XSA0402",
+          "mass": 48000,
+          "energy": 1920000,
+          "buildTime": 67500,
+          "hp": 52000,
+          "shieldHp": null,
+          "dpsGround": 785.71,
+          "dpsAir": 1800.0,
+          "speed": 18,
+          "range": 90
+        },
+        "devMassPct": 0.0,
+        "devDpsPerMassPct": 9.1,
+        "devAirDpsPerMassPct": -11.1,
+        "devHpPerMassPct": -3.8,
+        "devProductPct": 5.0,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "f4:exp_strat_missile",
+      "name": {
+        "de": "Tuba",
+        "en": "Tuba"
+      },
+      "role": {
+        "de": "Experimenteller Strategiewerfer",
+        "en": "Experimental Strategic Launcher"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "postMvp": true,
+      "feature": "U21",
+      "group": "def",
+      "visual": "v_exp_strat_missile",
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "A21",
+        "K17",
+        "P14",
+        "U21"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Missile Launcher (strategisch)",
+        "bp": "XSB2401",
+        "kind": "Vorbild"
+      },
+      "categories": [
+        "STRUCTURE",
+        "EXPERIMENTAL",
+        "STRATEGIC",
+        "SILO",
+        "NUKE",
+        "INDIRECTFIRE"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | COMMAND & TECH3",
+      "economy": {
+        "mass": 185000,
+        "energy": 10000000,
+        "buildTime": 250000,
+        "buildPower": 2160
+      },
+      "health": {
+        "max": 12500
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f4:wpn_tuba_final",
+          "type": "Schlussakkord (strategische Rakete)",
+          "damage": 1000000,
+          "salvo": 1,
+          "reloadS": 60.0,
+          "dps": 16666.67,
+          "range": 20000,
+          "projectile": "Lenkrakete (strategisch)",
+          "muzzleVelocity": 30,
+          "splash": 42,
+          "layers": [
+            "land"
+          ],
+          "notes": "Innenring 1.000.000 Schaden, Radius 42 (alles verstummt, auch Kommandanten); Außenring 7.500 Schaden, Radius 58. Rakete singt sich selbst: 600 M / 6.000 E / buildTime 129.600 bei Build Power 2.160 = 60 s; Lager 1, Start leer. Aurith-Signatur: 3 s vor dem Einschlag erscheint am Ziel ein phasenblauer Glyphenring (für alle sichtbar)."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "missile": {
+          "mass": 600,
+          "energy": 6000,
+          "buildTime": 129600,
+          "buildS": 60,
+          "hp": 60000,
+          "inner": {
+            "damage": 1000000,
+            "radius": 42
+          },
+          "outer": {
+            "damage": 7500,
+            "radius": 58
+          },
+          "storage": 1,
+          "initialStorage": 0,
+          "warningRingS": 3
+        },
+        "deathWeapon": {
+          "ref": "f4:wpn_tuba_shatter",
+          "inner": {
+            "damage": 20000,
+            "radius": 15
+          },
+          "outer": {
+            "damage": 5000,
+            "radius": 20
+          },
+          "note": "Zerspringen des Trichters, Vorbild-Relation 1:1"
+        },
+        "notes": "Game-Ender. Kosten ≈ 1,0 × Vorbild (Mass −1,4 %), Innenring −7 % (42 statt 45), dafür für den Verteidiger sichtbare Vorwarnung 3 s. Eine Rakete pro 60 s ohne eigene Munitionskosten außer 600 M: Die Antwort muss eine Raketenabwehr (K17) oder der Angriff auf die Tuba sein.",
+        "postMvp": [
+          {
+            "feature": "K17",
+            "behavior": "Strategische Raketen und Raketenabwehr (manueller Start, Abfangen)",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "U21",
+            "behavior": "Game-Ender im vollen Experimental-Roster",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "P14",
+            "behavior": "Großereignis-Effekt: Stille-Welle (Druckring, Farbentzug, 2 s Audio-Ducking)",
+            "mvp": "Struktur-Tod-Effekt"
+          },
+          {
+            "feature": "A21",
+            "behavior": "KI startet strategische Raketen und baut Abwehr",
+            "mvp": "KI nutzt die Tuba nicht"
+          }
+        ],
+        "needsBeam": false
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "V"
+      },
+      "icon": "struct_mml_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_1"
+          },
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_2"
+          },
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_3"
+          },
+          {
+            "part": "ring",
+            "anim": "yaw",
+            "note": "drehkranz"
+          },
+          {
+            "part": "horn",
+            "mat": "team",
+            "anim": "pitch",
+            "note": "riesentrichter"
+          },
+          {
+            "part": "spindle",
+            "note": "raketenspitze"
+          },
+          {
+            "part": "fin",
+            "note": "gegengewicht"
+          },
+          {
+            "part": "fin",
+            "mat": "team",
+            "note": "zweiter_kamm"
+          }
+        ],
+        "partCount": 8,
+        "animatedParts": 2,
+        "trisEstimate": 732,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "techStripes": 0,
+        "techMark": "Klammer im Icon, am Modell keine Tonpunkte",
+        "description": "Dreipass-Sockel 6 × 6 WU, darauf ein Drehkranz und ein riesiger offener Trichter (Öffnung Ø 3,6 WU, Länge 5 WU), 55° geneigt, also schräg = indirekt (nie ≥ 75°, das wäre Flugabwehr). Solange eine Rakete geladen ist, ragt eine dicke Spindel (Ø 1,2 WU) aus der Trichteröffnung (Zustand „geladen“ ohne HUD lesbar, nur View). Zwei Kämme als Gegengewicht nach hinten. Keine Kristalle (keine Flow-Struktur)."
+      },
+      "silhouettePairs": [
+        "f4:str_t3_arty",
+        "f4:str_t3_sam"
+      ],
+      "balance": {
+        "dpsGround": null,
+        "dpsAir": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.06757,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XSB2401",
+          "mass": 187650,
+          "energy": 10008000,
+          "buildTime": 250000,
+          "hp": 12000,
+          "shieldHp": null,
+          "dpsGround": null,
+          "dpsAir": null,
+          "speed": null,
+          "range": null
+        },
+        "devMassPct": -1.4,
+        "devDpsPerMassPct": null,
+        "devAirDpsPerMassPct": null,
+        "devHpPerMassPct": 5.7,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "f4:exp_resource",
+      "name": {
+        "de": "Klangschale",
+        "en": "Singing Bowl"
+      },
+      "role": {
+        "de": "Experimenteller Resonanzgenerator",
+        "en": "Experimental Resource Generator"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "postMvp": true,
+      "feature": "E17",
+      "group": "eco",
+      "visual": "v_exp_resource",
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json E17); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "E17",
+        "P14",
+        "U21"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Resource Generator (Fremdreferenz, Vorbild ohne T4-Eco)",
+        "bp": "XAB1401",
+        "kind": "Fremdreferenz (Vorbild ohne Ressourcengenerator)"
+      },
+      "categories": [
+        "STRUCTURE",
+        "EXPERIMENTAL",
+        "ECONOMIC",
+        "MASSPRODUCTION",
+        "ENERGYPRODUCTION",
+        "STRATEGIC"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | COMMAND & TECH3",
+      "economy": {
+        "mass": 250200,
+        "energy": 7506000,
+        "buildTime": 325000,
+        "massPerSecMax": 4000,
+        "energyPerSecMax": 400000,
+        "storageMass": 10000,
+        "storageEnergy": 100000,
+        "rampUpS": 90
+      },
+      "health": {
+        "max": 5500
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 14
+      },
+      "special": {
+        "missile": null,
+        "deathWeapon": {
+          "ref": "f4:wpn_bowl_shatter",
+          "damage": 35000,
+          "radius": 24,
+          "note": "Zerspringen der Schale: ein Ring, Radius 24 statt 25 (Dreipass 8 × 8)"
+        },
+        "notes": "Ertrag folgt dem Verbrauch der Armee bis höchstens 4.000 M/s und 400.000 E/s (FAF-Relation). Aurith-Asymmetrie „Einschwingen“: Nach Fertigstellung steigt die Obergrenze in 90 s linear von 0 auf den Höchstwert (Vorbild: sofort). Dafür HP +10 %. Amortisation bei 1.000 M/s Verbrauch ≈ 250 s + 45 s Einschwingen.",
+        "postMvp": [
+          {
+            "feature": "E17",
+            "behavior": "Endgame-Eco: Ertrag folgt dem Verbrauch (Paragon-Mechanik) plus Einschwing-Rampe",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "U21",
+            "behavior": "volles Experimental-Roster",
+            "mvp": "nicht baubar"
+          },
+          {
+            "feature": "P14",
+            "behavior": "Großereignis-Effekt beim Zerspringen",
+            "mvp": "Struktur-Tod-Effekt"
+          }
+        ],
+        "needsBeam": false
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "T"
+      },
+      "icon": "struct_mass_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_1"
+          },
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_2"
+          },
+          {
+            "part": "lens",
+            "mat": "team",
+            "note": "dreipass_3"
+          },
+          {
+            "part": "lens",
+            "mat": "amber",
+            "note": "schalenboden"
+          },
+          {
+            "part": "ring",
+            "mat": "amber",
+            "note": "schalenrand"
+          },
+          {
+            "part": "crystal",
+            "mat": "glow",
+            "note": "kristall_1"
+          },
+          {
+            "part": "crystal",
+            "mat": "glow",
+            "note": "kristall_2"
+          },
+          {
+            "part": "crystal",
+            "mat": "glow",
+            "note": "kristall_3"
+          },
+          {
+            "part": "crystal",
+            "mat": "glow",
+            "anim": "spin",
+            "note": "kloeppel"
+          }
+        ],
+        "partCount": 9,
+        "animatedParts": 1,
+        "trisEstimate": 864,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "techStripes": 0,
+        "techMark": "Klammer im Icon, am Modell keine Tonpunkte",
+        "description": "Dreipass-Sockel 8 × 8 WU, darin eine flache Riesenschale: Linse als Boden und waagerechter Amber-Reif Ø 6,5 WU als Rand (Reif ohne Mast = Flow-Anschluss). Drei stehende Kristalle (Höhe 5 WU) im Dreieck außen um die Schale (Resonator-Grammatik, drei = höchste Stufe), ein kleinerer Kristall als „Klöppel“ kreist langsam auf dem Rand (spin, nur View; beim Einschwingen schneller). Kein Mast, keine Muschel, keine Pfeifen."
+      },
+      "silhouettePairs": [
+        "f4:str_t3_pgen",
+        "f4:str_t3_mex"
+      ],
+      "balance": {
+        "dpsGround": null,
+        "dpsAir": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.02198,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XAB1401",
+          "mass": 250200,
+          "energy": 7506000,
+          "buildTime": 325000,
+          "hp": 5000,
+          "shieldHp": null,
+          "dpsGround": null,
+          "dpsAir": null,
+          "speed": null,
+          "range": null
+        },
+        "devMassPct": 0.0,
+        "devDpsPerMassPct": null,
+        "devAirDpsPerMassPct": null,
+        "devHpPerMassPct": 10.0,
+        "devProductPct": null,
+        "pulk": null,
         "withinBand25": true,
         "withinTarget15": true
       }

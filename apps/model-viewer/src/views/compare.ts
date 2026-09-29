@@ -11,6 +11,7 @@ import { el, esc, markReady, teamHex, type Cleanup } from '../util.ts';
 
 const GAP = 0.8;
 const ROW_GAP = 3;
+const GROUP_GAP = 2.5;
 
 interface Placed {
   readonly meta: ModelMeta;
@@ -23,6 +24,17 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
   const selected = (query.get('f') ?? manifest.factions.map((f) => f.slug).join(',')).split(',').filter((s) => s !== '');
   const silhouette = query.get('mode') === 'silhouette';
   const team = teamHex(query.get('team'));
+  // optional subset: `u=unit,faction.unit,…` (unit names, optionally faction-qualified; the row keeps this order)
+  // or `sel=t4` (T4 next to commander and mobile T3)
+  const units = (query.get('u') ?? '').split(',').filter((s) => s !== '');
+  const sel = query.get('sel');
+  const rank = (m: ModelMeta): number => {
+    const i = units.indexOf(`${m.faction}.${m.unit}`);
+    return i >= 0 ? i : units.indexOf(m.unit);
+  };
+  const pick = (m: ModelMeta): boolean =>
+    (units.length === 0 || rank(m) >= 0) &&
+    (sel !== 't4' || m.tech === 4 || m.class === 'cmd' || (m.tech === 3 && m.class !== 'struct'));
 
   const tabs = el('div', { class: 'tabs' });
   tabs.innerHTML =
@@ -30,30 +42,47 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
       .map((f) => {
         const on = selected.includes(f.slug);
         const next = on ? selected.filter((s) => s !== f.slug) : [...selected, f.slug];
-        return `<a href="#/compare?f=${next.join(',')}${silhouette ? '&mode=silhouette' : ''}" class="${on ? 'active' : ''}">${esc(f.name)}</a>`;
+        return `<a href="#/compare?f=${next.join(',')}${silhouette ? '&mode=silhouette' : ''}${sel === null ? '' : `&sel=${sel}`}" class="${on ? 'active' : ''}">${esc(f.name)}</a>`;
       })
       .join('') +
     `<a href="#/compare?f=${selected.join(',')}${silhouette ? '' : '&mode=silhouette'}">${silhouette ? 'Farbe' : 'Silhouette'}</a>`;
   app.append(tabs, el('p', { class: 'small' }, 'Raster 1 WU (kräftig alle 4 WU), gelb = Footprint. Maßstab laut Roster (in den GLBs eingebacken). Mausrad = Zoom, Rechtsziehen = Verschieben.'));
 
-  // layout: one row per faction along x, sorted by footprint area then length
+  // layout: one row per faction along x, sorted by footprint area then length (with `u=`: in list order);
+  // `layout=line`: all factions in a single row, one group per faction (no occlusion by tall T4 in the row before)
+  const line = query.get('layout') === 'line';
   const placed: Placed[] = [];
+  const groups: { slug: string; x0: number; x1: number; z: number; top: number }[] = [];
   let z = 0;
+  let x = 0;
+  let depth = 0;
   for (const slug of selected) {
     const metas = manifest.models
-      .filter((m) => m.faction === slug)
+      .filter((m) => m.faction === slug && pick(m))
       .slice()
-      .sort((a, b) => a.footprint[0] * a.footprint[1] - b.footprint[0] * b.footprint[1] || a.bounds.size[2] - b.bounds.size[2]);
-    let x = 0;
-    let depth = 0;
+      .sort((a, b) =>
+        units.length > 0
+          ? rank(a) - rank(b)
+          : a.footprint[0] * a.footprint[1] - b.footprint[0] * b.footprint[1] || a.bounds.size[2] - b.bounds.size[2],
+      );
+    if (!line) {
+      x = 0;
+      depth = 0;
+    }
+    const x0 = x;
+    let top = 0;
     for (const m of metas) {
       const w = Math.max(m.bounds.size[0], m.footprint[0]);
       placed.push({ meta: m, x: x + w / 2 - (m.bounds.min[0] + m.bounds.max[0]) / 2, z });
       x += w + GAP;
       depth = Math.max(depth, m.bounds.size[2], m.footprint[1]);
+      top = Math.max(top, m.bounds.max[1]);
     }
-    z -= depth + ROW_GAP;
+    if (metas.length > 0) groups.push({ slug, x0, x1: x - GAP, z, top });
+    if (line) x += GROUP_GAP;
+    else z -= depth + ROW_GAP;
   }
+  if (line) z -= depth + ROW_GAP;
 
   const stage = el('div', { class: 'stage' });
   const canvas = el('canvas');
@@ -65,7 +94,7 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
   const views: UnitView[] = [];
   const labels: { el: HTMLElement; pos: THREE.Vector3 }[] = [];
   let maxX = 1;
-  for (const p of placed) {
+  for (const [i, p] of placed.entries()) {
     const v = new UnitView(await loadModel(p.meta));
     v.setTeam(team);
     v.setSilhouette(silhouette);
@@ -78,9 +107,20 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
     }
     views.push(v);
     maxX = Math.max(maxX, p.x + p.meta.bounds.size[0]);
-    const label = el('div', { class: 'label' }, `<b>${esc(p.meta.name)}</b>${p.meta.bounds.size.map((s) => s.toFixed(2)).join('×')} WU`);
+    // line layout: every second label a bit lower, small neighbours would overlap otherwise
+    const label = el('div', { class: line && i % 2 === 1 ? 'label low' : 'label' }, `<b>${esc(p.meta.name)}</b>${p.meta.bounds.size.map((s) => s.toFixed(2)).join('×')} WU`);
     stage.append(label);
     labels.push({ el: label, pos: new THREE.Vector3(p.x, 0, p.z + Math.max(p.meta.bounds.max[2], p.meta.footprint[1] / 2) + 0.3) });
+  }
+  // with several factions: faction name at the start of each row (left margin for it) or above each group
+  const minX = selected.length > 1 && !line ? -5 : 0;
+  if (selected.length > 1) {
+    for (const g of groups) {
+      const name = manifest.factions.find((f) => f.slug === g.slug)?.name ?? g.slug;
+      const label = el('div', { class: `label ${line ? 'faction-group' : 'faction-row'}` }, `<b>${esc(name)}</b>`);
+      stage.append(label);
+      labels.push({ el: label, pos: line ? new THREE.Vector3((g.x0 + g.x1) / 2, g.top + 0.8, g.z) : new THREE.Vector3(-0.8, 0, g.z) });
+    }
   }
   const minZ = z;
   if (!silhouette) {
@@ -90,7 +130,7 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
   }
 
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -500, 500);
-  const target = new THREE.Vector3(maxX / 2, 0.3, (minZ + ROW_GAP) / 2);
+  const target = new THREE.Vector3((maxX + minX) / 2, 0.3, (minZ + ROW_GAP) / 2);
   cam.position.copy(target).addScaledVector(viewDir(20, 28), 100);
   cam.lookAt(target);
   const orbit = new OrbitControls(cam, canvas);
@@ -104,7 +144,7 @@ export async function mountCompare(app: HTMLElement, query: URLSearchParams): Pr
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     const rowsDepth = -minZ - ROW_GAP;
-    const span = Math.max(maxX + 1.5, (rowsDepth + 1.5) * 1.8, 4);
+    const span = Math.max(maxX - minX + 1.5, (rowsDepth + 1.5) * 1.8, 4);
     const aspect = w / h;
     cam.left = (-span / 2) * 1.05;
     cam.right = (span / 2) * 1.05;

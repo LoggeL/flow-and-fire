@@ -25,6 +25,9 @@ import {
 
 export type LodLevel = Lod;
 
+/** Smooth-normal setting: `true` = crease angle 80°, number = crease angle in degrees (0–180), `false` = flat. */
+export type Smooth = boolean | number;
+
 /** Placement and flags shared by all shapes (primitives and groups). */
 export interface Place {
   /** Center of the shape (primitives) or origin of the group, WU. */
@@ -43,6 +46,16 @@ export interface Place {
   readonly minLod?: LodLevel;
   /** Free kitbash tag for lints and statistics (`bell`, `barrel`, `stack`, …). */
   readonly tag?: string;
+  /**
+   * Vertex normals: flat (default, Varkan/Skarn) or smooth within this shape up to a crease angle (Sael/Aurith).
+   * Overrides the part's `smooth`; groups pass it to children without own value.
+   */
+  readonly smooth?: Smooth;
+  /**
+   * Smoothing group: smooth shapes of the same part with the same group name share normals across their seams (team
+   * inlays flush in a shell, skirt lanes). Groups pass it to children without own value.
+   */
+  readonly smoothGroup?: string;
 }
 
 /**
@@ -71,6 +84,9 @@ export type Shape = PrimNode | GroupNode;
 function prim(type: string, place: Place, gen: PrimGen): PrimNode {
   return { kind: 'prim', type, gen, place };
 }
+
+/** Primitive node from a custom generator (used by forms.ts; authors normally use the named primitives). */
+export const primNode = prim;
 
 /** Placement matrix of a shape. */
 export function placeMatrix(p: Place): Mat {

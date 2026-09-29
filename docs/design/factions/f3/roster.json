@@ -10,7 +10,9 @@
     "structures": 27,
     "ms9Core": 26,
     "visuals": 28,
-    "iconGlyphs": 19
+    "iconGlyphs": 19,
+    "reservedPostMvp": 5,
+    "experimentals": 5
   },
   "conventions": {
     "units": "1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s",
@@ -112,7 +114,40 @@
     "gait": "motion.gait: hover | walker | air. hoverHeightView = Schwebehöhe nur im View (faction.md §3.2). Im MVP laufen Schweber im Layer land (M13 markiert).",
     "postMvp": "special.postMvp: Asymmetrien mit Post-MVP-Mechanik, je {feature, what, fallback}; die Kern-Balance gilt mit dem fallback.",
     "firingRandomness": "weapons[].firingRandomness (optional, Review 2026-09-29): Streuung in FA-Semantik (FiringRandomness aus FAF develop); Pflicht bei ballistischen ARTILLERY-Waffen. K1 legt die Umrechnung in Sim-Einheiten fest.",
-    "rush": "checks.rush: Mindestzahl T1-Einheiten, die einen Kommandanten im offenen Schlagabtausch töten (ohne/mit Sonderschuss), Modell in tools/roster/f3/rush.py; required=true muss der FA-Paarung entsprechen."
+    "rush": "checks.rush: Mindestzahl T1-Einheiten, die einen Kommandanten im offenen Schlagabtausch töten (ohne/mit Sonderschuss), Modell in tools/roster/f3/rush.py; required=true muss der FA-Paarung entsprechen.",
+    "experimentals": "experimentals[] = T4-Rollen (Post-MVP, tier T4, nicht in counts.total/units). Gates gegen die T4-Referenz der Vorbild-Fraktion (tools/roster/f3/fa_ref_t4.json, spooky 3810 + FA_T4_OVERRIDES in exp.py): ±25 % hart; Boden-DPS/Mass, Luft-DPS/Mass, HP(+Schild)/Mass, Produkt und Pulk je ±15 %. Sael-Identität: Hauptwaffen-RW ≥ Vorbild, Schild-Anteil mobiler T4 ≥ 25 %, T4-Strukturen HP/Mass < Vorbild (A6). Setons-Brücke: Außenmaß ≤ 12 WU (≥ 6 nebeneinander auf 72 WU). T4-Kitbash-Budget: Tris L0/L1/L2 1500/800/320 wie @faf/modelkit T4_BUDGET (T4-Tris-Tabelle in exp.py), ≤ 10 Part-Einträge, ≤ 3 animiert; Monopol-Lints wie §5.3 Nr. 6. sizeClass = ceil(Außenmaß / 2) (Clearance-Radius, wie f4). reservedPostMvp[] spiegelt die T4-Namen für den Namensabgleich in cross.py. Design: experimentals.md.",
+    "faT4DevelopCheck": [
+      {
+        "bp": "UAA0310",
+        "spooky": "45.000 M / 1.530.000 E / BT 50.625, Schild-Regen 180/s",
+        "develop": "42.750 M / 1.453.500 E / BT 48.094, Schild-Regen 240/s, Luft-Tempo 8 (Air.MaxAirspeed)",
+        "verdict": "nach 3810 um 5 % verbilligt; Relation DPS/Mass +5 %, HP/Mass +5 % → beim Nachziehen Pelikan-Kosten mitziehen."
+      },
+      {
+        "bp": "UAS0401",
+        "spooky": "24.000 M / 380.000 E / BT 38.400, Kanone 8.000 / 10 s",
+        "develop": "25.000 M / 400.000 E / BT 40.000, Kanone 10.000 / 11 s (RackSalvoReloadTime 10,9)",
+        "verdict": "nach 3810 stärker (DPS/Mass +9 %); Ammonit beim Nachziehen auf 10.000 / 11 s."
+      },
+      {
+        "bp": "XAB2307",
+        "spooky": "220 / 3,1 s = 70,97 DPS",
+        "develop": "6 Splitter × 220 / 3,1 s = 425,81 DPS, 15.000 E pro Schuss",
+        "verdict": "spooky-Fehler (Splitter nicht gezählt) → FA_T4_OVERRIDES."
+      },
+      {
+        "bp": "XAB1401",
+        "spooky": "kein Ertrag (Skript)",
+        "develop": "Skript XAB1401: Grundertrag 20 M/s + 1.000 E/s, deckt Mehrbedarf bis 10.000 M/s bzw. 1.000.000 E/s; Todeswaffe 35.000 im Radius 25",
+        "verdict": "Ertragsmodell aus develop übernommen (spooky führt es nicht)."
+      },
+      {
+        "bp": "UAL0401",
+        "spooky": "identisch",
+        "develop": "Greifklauen RW 30 (spooky 41), TractorDamage 240",
+        "verdict": "ohne Einfluss (Klauen nicht übernommen)."
+      }
+    ]
   },
   "hotbuildGrid": {
     "Landkapitel": {
@@ -147,7 +182,14 @@
       "C": "Deich",
       "V": "Brandung/Sintflut"
     },
-    "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen."
+    "Bau (T4-Tab, Post-MVP)": {
+      "Q": "Karkinos",
+      "W": "Kreuzsee",
+      "E": "Ammonit",
+      "R": "Pelikan",
+      "T": "Perle"
+    },
+    "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen. T4 im eigenen Tab des Bau-Menüs (Q Land-Sturm, W Game-Ender, E Land-Festung, R Luft, T Eco), Tastenbelegung fraktionsübergreifend."
   },
   "silhouettePairs": {
     "ms9": [
@@ -224,6 +266,32 @@
       [
         "f3:str_t3_mex",
         "f3:str_t1_hydro"
+      ]
+    ],
+    "t4": [
+      [
+        "f3:exp_lnd_assault",
+        "f3:lnd_t3_bot"
+      ],
+      [
+        "f3:exp_lnd_fortress",
+        "f3:lnd_t3_sniper"
+      ],
+      [
+        "f3:exp_lnd_assault",
+        "f3:exp_lnd_fortress"
+      ],
+      [
+        "f3:exp_air_carrier",
+        "f3:air_t1_bomber"
+      ],
+      [
+        "f3:exp_str_arty",
+        "f3:str_t3_arty"
+      ],
+      [
+        "f3:exp_str_eco",
+        "f3:str_t3_mex"
       ]
     ],
     "crossFaction": [
@@ -653,6 +721,1314 @@
       }
     }
   },
+  "reservedPostMvp": [
+    {
+      "id": "f3:exp_lnd_assault",
+      "de": "Karkinos",
+      "en": "Karkinos",
+      "role": "Riesen-Sturmläufer",
+      "tier": "T4",
+      "needs": [
+        "U16",
+        "K10",
+        "M13",
+        "K5",
+        "P14"
+      ],
+      "faRefDevOnly": "UAL0401",
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "Q"
+      },
+      "icon": "land_direct_t4",
+      "detail": "experimentals"
+    },
+    {
+      "id": "f3:exp_lnd_fortress",
+      "de": "Ammonit",
+      "en": "Ammonite",
+      "role": "Schwebende Festung",
+      "tier": "T4",
+      "needs": [
+        "U21",
+        "M13",
+        "K10",
+        "B3-Erweiterung",
+        "I3",
+        "P14"
+      ],
+      "faRefDevOnly": "UAS0401",
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "E"
+      },
+      "icon": "land_sniper_t4",
+      "detail": "experimentals"
+    },
+    {
+      "id": "f3:exp_air_carrier",
+      "de": "Pelikan",
+      "en": "Pelican",
+      "role": "Schwebeträger",
+      "tier": "T4",
+      "needs": [
+        "U21",
+        "U12",
+        "K10",
+        "B3-Erweiterung",
+        "U13",
+        "U20",
+        "K12",
+        "I3",
+        "P14"
+      ],
+      "faRefDevOnly": "UAA0310",
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "R"
+      },
+      "icon": "air_direct_t4",
+      "detail": "experimentals"
+    },
+    {
+      "id": "f3:exp_str_arty",
+      "de": "Kreuzsee",
+      "en": "Cross Sea",
+      "role": "Fernartillerie",
+      "tier": "T4",
+      "needs": [
+        "U21",
+        "K13",
+        "K2",
+        "K4",
+        "K1-Erweiterung",
+        "E3",
+        "I3",
+        "K14",
+        "P14"
+      ],
+      "faRefDevOnly": "XAB2307",
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "W"
+      },
+      "icon": "struct_arty_t4",
+      "detail": "experimentals"
+    },
+    {
+      "id": "f3:exp_str_eco",
+      "de": "Perle",
+      "en": "Pearl",
+      "role": "Ressourcenperle",
+      "tier": "T4",
+      "needs": [
+        "U21",
+        "E17",
+        "E4",
+        "K14",
+        "P14"
+      ],
+      "faRefDevOnly": "XAB1401",
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "T"
+      },
+      "icon": "struct_mass_t4",
+      "detail": "experimentals"
+    }
+  ],
+  "experimentals": [
+    {
+      "id": "f3:exp_lnd_assault",
+      "name": {
+        "de": "Karkinos",
+        "en": "Karkinos"
+      },
+      "role": {
+        "de": "Riesen-Sturmläufer",
+        "en": "Colossal Assault Walker"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "land",
+      "visual": "v_exp_karkinos",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U16",
+        "K10",
+        "M13",
+        "K5",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Assault Bot (amphibisch, Strahl, Greifklauen)",
+        "bp": "UAL0401",
+        "crossCheckBp": "UEL0401"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "BOT",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 27500,
+        "energy": 343750,
+        "buildTime": 51500
+      },
+      "health": {
+        "max": 102000,
+        "hull": 76000,
+        "regenPerSec": 10
+      },
+      "shield": {
+        "hp": 26000,
+        "kind": "personal",
+        "regenPerSec": 90,
+        "regenStartS": 3,
+        "rebuildS": 60,
+        "upkeepEnergyPerSec": 150
+      },
+      "weapons": [
+        {
+          "ref": "f3:wpn_karkinos_lance",
+          "type": "Tiefenlanze (Doppellanze, Einzelstoß)",
+          "damage": 1200,
+          "salvo": 1,
+          "reloadS": 0.5,
+          "dps": 2400.0,
+          "rangeMin": 2,
+          "range": 42,
+          "projectile": "linear",
+          "muzzleVelocity": 60,
+          "splash": 0.5,
+          "layers": [
+            "land"
+          ],
+          "notes": "Vorbild: Dauerstrahl 250 alle 0,1 s. Sael-Präzision: gleicher DPS als großer Einzelstoß (−4 %), RW +5 %; kein Strahl-Feature nötig."
+        },
+        {
+          "ref": "f3:wpn_karkinos_claw",
+          "type": "Scherenlanzen (2 × kurz)",
+          "damage": 60,
+          "salvo": 2,
+          "reloadS": 0.5,
+          "dps": 240.0,
+          "range": 30,
+          "projectile": "linear",
+          "muzzleVelocity": 45,
+          "splash": 0,
+          "layers": [
+            "land"
+          ],
+          "notes": "Eigene Antwort auf Schwärme statt der Greifklauen des Vorbilds: zwei kurze Lanzen in den Scherenschalen, feuern unabhängig."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.4,
+        "turnRateDeg": 40,
+        "accel": 0.8,
+        "sizeClass": 5,
+        "footprint": [
+          4,
+          4
+        ],
+        "gait": "walker",
+        "legs": 10,
+        "dimensionsWU": {
+          "length": 5.2,
+          "width": 6.4,
+          "height": 5.0,
+          "legSpan": 8.4
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 8.4,
+          "abreast": 8,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 50
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f3:wpn_karkinos_crack",
+          "damage": 8000,
+          "radius": 7,
+          "note": "Schalenbruch: Rückenschild birst in Perlmutt-Splittern (P14); FA-Relation 1:1."
+        },
+        "notes": "Einziger Läufer unter den Sael-T4: geht heran (Gangart-Regel §5.1 Nr. 3) und hält mit Personal-Schild. Keine Flugabwehr: wie das Vorbild verwundbar aus der Luft, Begleitung durch Diadem oder Pelikan nötig. Schild-Anteil 25 % der Balance-HP (Sael-Identität A3/A5).",
+        "postMvp": [
+          {
+            "feature": "K10",
+            "what": "Personal-Schild 26.000 (Regen 90/s ab 3 s, Neuaufbau 60 s, 150 E/s), Rumpf 76.000 HP",
+            "fallback": "vor K10: health.max = HP + Schild = 102.000"
+          },
+          {
+            "feature": "M13",
+            "what": "Amphibisch: schreitet über den Grund von Wasser, feuert nicht unter Wasser (Vorbild amphibisch)",
+            "fallback": "Layer land, Wasser unpassierbar"
+          },
+          {
+            "feature": "U16",
+            "what": "Erstes Land-Experimental des Ordens: Bau durch Kustos/Prior, großes Wrack (90 % Mass, K5)",
+            "fallback": "kein Blueprint vor U16"
+          },
+          {
+            "feature": "P14",
+            "what": "Großereignis-Effekt beim Schalenbruch (Klangschalen-Schlag, Splitterregen)",
+            "fallback": "Standard-Todeseffekt"
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "Q"
+      },
+      "icon": "land_direct_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs",
+            "count": 10
+          },
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "rueckenschild"
+          },
+          {
+            "part": "shell",
+            "mat": "jade",
+            "note": "bauchschale"
+          },
+          {
+            "part": "shell",
+            "mat": "team",
+            "count": 2,
+            "note": "scherenschalen"
+          },
+          {
+            "part": "orb",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "perle"
+          },
+          {
+            "part": "lance",
+            "anim": "pitch",
+            "count": 2,
+            "note": "tiefenlanze"
+          },
+          {
+            "part": "lance",
+            "count": 2,
+            "note": "scherenlanzen"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 2,
+        "trisEstimate": 1036,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "legs": 10,
+        "techMarker": "Klammerbögen: zwei Tiefjade-Winkel am hinteren Schalenrand statt Tech-Streifen (entspricht der Icon-Klammer)",
+        "monopoly": "Scherenschild: breitester Rückenschild der Armee (6,4 × 5,2 WU, breiter als lang) mit zwei vorgestreckten Scherenschalen, in jeder eine kurze Lanze; obenauf die Perle mit waagerechter Doppellanze.",
+        "description": "Flach gewölbter, teamfarbener Rückenschild mit Goldrand auf 10 spitzen Beinen (5 Paare, Knie über dem Schildrand); vorn zwei geschlossene Scherenschalen (teamfarben, Innenseite Perlmutt) auf kurzen Armen, aus jeder ragt eine kurze Lanze; auf dem Schildscheitel die teamfarbene Perle (Ø 1,5 WU) mit zwei parallelen Lanzen (3,6 WU, ragen 1,2 WU über den Schildrand). Unterseite Tiefjade-Bauchschale. Ab K10 liegt die Schildhülle als flaches Ellipsoid über dem Rückenschild."
+      },
+      "balance": {
+        "dps": 2640.0,
+        "dpsAir": null,
+        "hpBasis": "HP+Schild",
+        "hpPerMass": 3.7091,
+        "fa": {
+          "bp": "UAL0401",
+          "mass": 27500,
+          "energy": 343750,
+          "buildTime": 51500,
+          "hp": 99999,
+          "shieldHp": null,
+          "regen": 10,
+          "dpsGround": 2500.04,
+          "dpsAir": null,
+          "hpPerMass": 3.6363,
+          "speed": 2.4
+        },
+        "devHpPerMassPct": 2.0,
+        "dpsPerMass": 0.096,
+        "devDpsPerMassPct": 5.6,
+        "devProductPct": 7.7,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "rangeAtLeastFa": true,
+          "shieldShare": 0.25,
+          "shieldShareOk": true
+        },
+        "crossInfo": {
+          "bp": "UEL0401",
+          "note": "Gegenprobe: T4 der Varkan-Vorbild-Fraktion, nur Info (Varkan hat noch keine T4)",
+          "dpsGround": 4000.0,
+          "mass": 28000,
+          "hpPerMass": 1.1607
+        }
+      }
+    },
+    {
+      "id": "f3:exp_lnd_fortress",
+      "name": {
+        "de": "Ammonit",
+        "en": "Ammonite"
+      },
+      "role": {
+        "de": "Schwebende Festung",
+        "en": "Hover Fortress"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "land",
+      "visual": "v_exp_ammonite",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "M13",
+        "K10",
+        "B3-Erweiterung",
+        "I3",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Battleship (tauchend, Fabrik) → als Schweber auf Land und Wasser",
+        "bp": "UAS0401",
+        "crossCheckBp": "UEL0401"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "HOVER",
+        "DIRECTFIRE",
+        "FACTORY",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 24000,
+        "energy": 380000,
+        "buildTime": 38400,
+        "buildPower": 225
+      },
+      "health": {
+        "max": 62000,
+        "hull": 44000,
+        "regenPerSec": 0
+      },
+      "shield": {
+        "hp": 18000,
+        "kind": "personal",
+        "regenPerSec": 60,
+        "regenStartS": 3,
+        "rebuildS": 60,
+        "upkeepEnergyPerSec": 100
+      },
+      "weapons": [
+        {
+          "ref": "f3:wpn_ammonite_lance",
+          "type": "Gezeitenlanze (Einzelstoß, Überlänge)",
+          "damage": 8000,
+          "salvo": 1,
+          "reloadS": 10.0,
+          "dps": 800.0,
+          "rangeMin": 10,
+          "range": 158,
+          "projectile": "linear (langsam, Flugzeit)",
+          "muzzleVelocity": 35,
+          "splash": 5,
+          "layers": [
+            "land"
+          ],
+          "firingRandomness": 0.2,
+          "notes": "Vorbild: Schiffskanone 8.000 alle 10 s, RW 150. RW +5 % (Sael-Reichweite). 1 Treffer tötet jede T3-Landeinheit."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.5,
+        "turnRateDeg": 35,
+        "accel": 0.6,
+        "sizeClass": 5,
+        "footprint": [
+          8,
+          8
+        ],
+        "gait": "hover",
+        "hoverHeightView": 0.6,
+        "dimensionsWU": {
+          "length": 11.0,
+          "width": 9.0,
+          "height": 4.6,
+          "legSpan": null
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 9.0,
+          "abreast": 8,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 60,
+        "radar": 150
+      },
+      "special": {
+        "toggles": [],
+        "builds": "Landkapitel-Liste T1–T3 (nur Schweber: Glimmer, Kauri, Triton, Dünung, Brecher, Seeigel, Seestern, Muschel, Woge, Konus, Diadem, Novize bis Kustos), Build Power 225, Ausstoß durch das Kapiteltor am Heck; Queue/Repeat/Rally wie ein Kapitel (B3).",
+        "deathWeapon": {
+          "ref": "f3:wpn_ammonite_crack",
+          "damage": 6000,
+          "radius": 8,
+          "note": "Spiralbruch: die Windungen reißen von außen nach innen (P14)."
+        },
+        "notes": "Schwimmendes Kapitel: trägt eine Schweberarmee über Wasser in die Flanke (mit M13) und schichtet vor Ort nach. Ersetzt das Tauchen des Vorbilds durch Schweben und Personal-Schild. Tiefenwaffen gegen Marine fehlen (U18); an Land gegen die Kanonen-DPS ±0 %.",
+        "postMvp": [
+          {
+            "feature": "M13",
+            "what": "Schwebt über Wasser (Layer Hover); einzige Sael-T4 für Wasserkarten",
+            "fallback": "Layer land, Wasser unpassierbar"
+          },
+          {
+            "feature": "K10",
+            "what": "Personal-Schild 18.000 (Regen 60/s ab 3 s, Neuaufbau 60 s, 100 E/s), Rumpf 44.000 HP",
+            "fallback": "vor K10: health.max = 62.000"
+          },
+          {
+            "feature": "B3-Erweiterung",
+            "what": "Produktion aus einer mobilen Einheit (Queue läuft auch in Bewegung, Ausstoß am Kapiteltor)",
+            "fallback": "keine Produktion"
+          },
+          {
+            "feature": "U18",
+            "what": "Tiefenstachel gegen Schiffe und U-Boote (Vorbild 6 × 350 alle 5 s, RW 80), nur mit U17/U18",
+            "fallback": "entfällt"
+          },
+          {
+            "feature": "I3",
+            "what": "Radar 150 WU",
+            "fallback": "nur Sicht 60 WU"
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "E"
+      },
+      "icon": "land_sniper_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hoverpad"
+          },
+          {
+            "part": "shell",
+            "mat": "team",
+            "count": 3,
+            "note": "windungen"
+          },
+          {
+            "part": "shell",
+            "mat": "jade",
+            "note": "bauchschale"
+          },
+          {
+            "part": "orb",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "muendungsperle"
+          },
+          {
+            "part": "lance",
+            "anim": "pitch",
+            "note": "gezeitenlanze"
+          },
+          {
+            "part": "ring",
+            "anim": "yaw",
+            "note": "schildring"
+          },
+          {
+            "part": "arch",
+            "mat": "glow",
+            "note": "kapiteltor"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 3,
+        "trisEstimate": 944,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "legs": null,
+        "techMarker": "Klammerbögen: zwei Tiefjade-Winkel am hinteren Schalenrand statt Tech-Streifen (entspricht der Icon-Klammer)",
+        "monopoly": "Liegende Spiralschale: drei ineinanderlaufende, teamfarbene Windungen (Ø 9 → 5 → 2,5 WU) als flache Spirale auf dem größten Schwebeteller, aus der Mündung eine Perle mit Überlänge-Lanze (≥ 1,2 × Rumpflänge), am Heck das goldene Kapiteltor.",
+        "description": "Dunkler Schwebeteller (Schattensaum 10 %), darauf drei liegende Schalenwindungen, die sich zur Mündung hin öffnen (teamfarbene Emaille, Goldkanten an den Windungsnähten); in der Mündung die Perle (Ø 1,8 WU) mit der Gezeitenlanze (13,5 WU, ragt 4 WU über den Bug); über der innersten Windung ein waagerechter Schildring (Personal-Schild, ab K10); am Heck ein niedriges, goldenes Kapiteltor mit Goldkern (Produktion). Schwebehöhe 0,6 WU."
+      },
+      "balance": {
+        "dps": 800.0,
+        "dpsAir": null,
+        "hpBasis": "HP+Schild",
+        "hpPerMass": 2.5833,
+        "fa": {
+          "bp": "UAS0401",
+          "mass": 24000,
+          "energy": 380000,
+          "buildTime": 38400,
+          "hp": 60000,
+          "shieldHp": null,
+          "regen": 0,
+          "dpsGround": 800.0,
+          "dpsAir": null,
+          "hpPerMass": 2.5,
+          "speed": 2.5
+        },
+        "devHpPerMassPct": 3.3,
+        "dpsPerMass": 0.03333,
+        "devDpsPerMassPct": 0.0,
+        "devProductPct": 3.3,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "rangeAtLeastFa": true,
+          "shieldShare": 0.29,
+          "shieldShareOk": true
+        },
+        "crossInfo": {
+          "bp": "UEL0401",
+          "note": "Gegenprobe: T4 der Varkan-Vorbild-Fraktion, nur Info (Varkan hat noch keine T4)",
+          "dpsGround": 4000.0,
+          "mass": 28000,
+          "hpPerMass": 1.1607
+        }
+      }
+    },
+    {
+      "id": "f3:exp_air_carrier",
+      "name": {
+        "de": "Pelikan",
+        "en": "Pelican"
+      },
+      "role": {
+        "de": "Schwebeträger",
+        "en": "Hover Carrier"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "air",
+      "visual": "v_exp_pelican",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "U12",
+        "K10",
+        "B3-Erweiterung",
+        "U13",
+        "U20",
+        "K12",
+        "I3",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Aircraft Carrier (fliegend, Senkstrahl, Blasen-Schild, Fabrik)",
+        "bp": "UAA0310",
+        "crossCheckBp": "UES0401"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "FACTORY",
+        "SHIELD",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 45000,
+        "energy": 1530000,
+        "buildTime": 50625,
+        "buildPower": 180
+      },
+      "health": {
+        "max": 70000,
+        "hull": 36000,
+        "regenPerSec": 15
+      },
+      "shield": {
+        "hp": 34000,
+        "kind": "bubble",
+        "radius": 22,
+        "regenPerSec": 180,
+        "regenStartS": 2,
+        "rebuildS": 120,
+        "upkeepEnergyPerSec": 500
+      },
+      "weapons": [
+        {
+          "ref": "f3:wpn_pelican_plunge",
+          "type": "Senkstoß (aus dem Kehlsack, nur unter sich)",
+          "damage": 1650,
+          "salvo": 1,
+          "reloadS": 0.5,
+          "dps": 3300.0,
+          "range": 30,
+          "projectile": "senkrecht (Hitscan-Puls)",
+          "splash": 4,
+          "layers": [
+            "land"
+          ],
+          "notes": "Vorbild: Dauerstrahl 333 alle 0,1 s nach unten. Sael: großer Einzelstoß alle 0,5 s, gleicher DPS (−1 %); trifft nur Ziele im Kegel ±30° unter dem Rumpf (Schweben über dem Ziel)."
+        },
+        {
+          "ref": "f3:wpn_pelican_skyspine",
+          "type": "Himmelsstachel (4 × Lenkrakete, Luft)",
+          "damage": 300,
+          "salvo": 4,
+          "reloadS": 1.3,
+          "dps": 923.08,
+          "range": 120,
+          "projectile": "Lenkflugkörper",
+          "muzzleVelocity": 100,
+          "splash": 2,
+          "layers": [
+            "air"
+          ]
+        },
+        {
+          "ref": "f3:wpn_pelican_burstspine",
+          "type": "Sprengstachel (2 Werfer × 2, Nahbereich, Luft)",
+          "damage": 240,
+          "salvo": 4,
+          "reloadS": 0.5,
+          "dps": 1920.0,
+          "range": 44,
+          "projectile": "linear (Flak)",
+          "muzzleVelocity": 20,
+          "splash": 3,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 8,
+        "turnRateDeg": 20,
+        "accel": 0.5,
+        "sizeClass": 0,
+        "footprint": [
+          16,
+          16
+        ],
+        "gait": "air",
+        "dimensionsWU": {
+          "length": 14.0,
+          "width": 20.0,
+          "height": 4.0,
+          "legSpan": null
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 20.0,
+          "abreast": 3,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 70,
+        "radar": 200
+      },
+      "special": {
+        "toggles": [],
+        "builds": "Luftkapitel-Liste T1–T2 (Seeschwalbe, Sturmvogel, Tölpel, Albatros, Raubmöwe), Build Power 180; Kehlsack-Hangar für 40 Flieger T1–T2 (lagert, repariert, startet in Wellen).",
+        "deathWeapon": {
+          "ref": "f3:wpn_pelican_crash",
+          "damage": 7000,
+          "radius": 15,
+          "note": "Absturz: Kuppel zerschellt, Kehlsack reißt auf (K12, P14); FA-Relation 1:1."
+        },
+        "notes": "Langsamster, zähester Flieger des Ordens: schwebt über eine Basis und schlägt senkrecht nach unten, schützt darunter mit dem Blasen-Schild (+13 % Schild, −15 % Radius gegenüber dem Vorbild, A5). Konter: Jäger in Masse unter dem Schildrand, Hochlilien.",
+        "postMvp": [
+          {
+            "feature": "U12",
+            "what": "Flugmodell der schweren Luft (Schweben über dem Ziel, Wendekreis, Bau durch T3-Engineers)",
+            "fallback": "kein Blueprint"
+          },
+          {
+            "feature": "K10",
+            "what": "Blasen-Schild 34.000, Radius 22, Regen 180/s ab 2 s, Neuaufbau 120 s, 500 E/s",
+            "fallback": "vor K10: health.max = 70.000, kein Schutz für andere"
+          },
+          {
+            "feature": "B3-Erweiterung",
+            "what": "Produktion aus einer fliegenden Einheit (Luftkapitel-Liste T1–T2)",
+            "fallback": "keine Produktion"
+          },
+          {
+            "feature": "U13",
+            "what": "Kehlsack-Hangar: lagert bis 40 Flieger T1–T2 und startet sie in Wellen",
+            "fallback": "kein Hangar"
+          },
+          {
+            "feature": "U20",
+            "what": "Air Staging im Hangar: Reparatur und Treibstoff",
+            "fallback": "entfällt"
+          },
+          {
+            "feature": "K12",
+            "what": "Absturzschaden 7.000 im Radius 15",
+            "fallback": "Standard-Todeseffekt"
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "R"
+      },
+      "icon": "air_direct_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "wing",
+            "mat": "team",
+            "count": 2,
+            "note": "ovalschwinge"
+          },
+          {
+            "part": "shell",
+            "note": "rueckenkuppel"
+          },
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "kehlsack"
+          },
+          {
+            "part": "ring",
+            "anim": "yaw",
+            "note": "schildring"
+          },
+          {
+            "part": "arch",
+            "mat": "glow",
+            "note": "hangartor"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 1,
+        "trisEstimate": 520,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "legs": null,
+        "techMarker": "Klammerbögen: zwei Tiefjade-Winkel am hinteren Schalenrand statt Tech-Streifen (entspricht der Icon-Klammer)",
+        "monopoly": "Kehlsack-Schwinge: die breiteste Ovalschwinge (20 WU Spannweite) mit hängendem, teamfarbenem Kehlsack (≥ 0,6 × Rumpflänge), darüber eine Kuppel mit waagerechtem Schildring; keine Lanze, keine Perle.",
+        "description": "Zwei teamfarbene Ovalschwingen-Hälften mit Goldkante (Spannweite 20 WU, Tiefe 9 WU, keine Pfeilung), mittig eine hochgewölbte Rückenkuppel aus Perlmutt, um sie ein waagerechter Schildring (Ø 7 WU, dreht langsam); darunter hängt der Kehlsack (teamfarben, 9 WU lang, ragt vorn 1 WU über die Schwinge), an seinem Heck das goldene Hangartor mit Goldkern. Beim Senkstoß leuchtet die Kehlsack-Unterseite 0,5 s vorher jadefarben auf (Lichtnaht, kein Goldkern)."
+      },
+      "balance": {
+        "dps": 3300.0,
+        "dpsAir": 2843.08,
+        "hpBasis": "HP+Schild",
+        "hpPerMass": 1.5556,
+        "fa": {
+          "bp": "UAA0310",
+          "mass": 45000,
+          "energy": 1530000,
+          "buildTime": 50625,
+          "hp": 40000,
+          "shieldHp": 30000,
+          "regen": 15,
+          "dpsGround": 3330.0,
+          "dpsAir": 2843.08,
+          "hpPerMass": 1.5556,
+          "speed": 8
+        },
+        "devHpPerMassPct": 0.0,
+        "dpsPerMass": 0.07333,
+        "devDpsPerMassPct": -0.9,
+        "devProductPct": -0.9,
+        "devAirDpsPerMassPct": 0.0,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "rangeAtLeastFa": true,
+          "shieldShare": 0.49,
+          "shieldShareOk": true
+        },
+        "crossInfo": {
+          "bp": "UES0401",
+          "note": "Gegenprobe: T4 der Varkan-Vorbild-Fraktion, nur Info (Varkan hat noch keine T4)",
+          "dpsGround": 0,
+          "mass": 12000,
+          "hpPerMass": 3.3333
+        }
+      }
+    },
+    {
+      "id": "f3:exp_str_arty",
+      "name": {
+        "de": "Kreuzsee",
+        "en": "Cross Sea"
+      },
+      "role": {
+        "de": "Fernartillerie",
+        "en": "Strategic Artillery"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "structure",
+      "visual": "v_exp_crosssea",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "K13",
+        "K2",
+        "K4",
+        "K1-Erweiterung",
+        "E3",
+        "I3",
+        "K14",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Rapid-Fire Artillery Installation (Game-Ender)",
+        "bp": "XAB2307",
+        "crossCheckBp": "UEB2401"
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "STRATEGIC",
+        "EXPERIMENTAL",
+        "SIZE20"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 202500,
+        "energy": 5400000,
+        "buildTime": 100000,
+        "energyPerShot": 15000
+      },
+      "health": {
+        "max": 8100,
+        "hull": 8100,
+        "regenPerSec": 0
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f3:wpn_crosssea_horn",
+          "type": "Kreuzseegranate (6 Splitter)",
+          "damage": 220,
+          "salvo": 6,
+          "reloadS": 3.1,
+          "dps": 425.81,
+          "rangeMin": 150,
+          "range": 1500,
+          "projectile": "ballistisch (teilt sich über dem Ziel)",
+          "muzzleVelocity": 150,
+          "splash": 2,
+          "layers": [
+            "land"
+          ],
+          "firingRandomness": 0.2,
+          "notes": "Vorbild: 6 Splitter à 220 alle 3,1 s, RW 4.000. RW 1.500 = kartenweit bis 1.024 WU (Setons-Diagonale 1.448). Splitter fallen auf zwei gekreuzte Bögen (Streukreis 7 WU). 15.000 E pro Schuss (Dauerfeuer ≈ 4.840 E/s, Stall = Feuerpause, E3). Streuung 0,20 statt 0,25 (Sael-Präzision)."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          10,
+          10
+        ],
+        "structure": true,
+        "dimensionsWU": {
+          "length": 10.0,
+          "width": 10.0,
+          "height": 9.0,
+          "legSpan": null
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 10.0,
+          "abreast": 7,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f3:wpn_crosssea_crack",
+          "damage": 4000,
+          "radius": 10,
+          "note": "Hornbruch: Energievorrat der Kammer entlädt sich (K14, P14)."
+        },
+        "notes": "Game-Ender des Ordens: kartenweites Schnellfeuer mit Splittern statt eines großen Einschlags; bricht Perlmutt-Schilde durch Dauerlast statt Burst. Zerbrechlich (−10 % HP/Mass, A6), frisst Energie pro Schuss. Die Hornmündung leuchtet 0,5 s vor jedem Schuss.",
+        "postMvp": [
+          {
+            "feature": "U21",
+            "what": "Game-Ender: Bau durch Kustos/Prior, kartenweite Reichweite",
+            "fallback": "kein Blueprint"
+          },
+          {
+            "feature": "K1-Erweiterung",
+            "what": "Splittergeschoss: teilt sich über dem Ziel in 6 Splitter (je eigener Einschlag, Streukreis 7 WU)",
+            "fallback": "Salve aus 6 Einzelgranaten à 220 mit Streukreis 7 WU (vorhandene K1-Streuung), gleiche Pulk-Rechnung"
+          },
+          {
+            "feature": "K13",
+            "what": "Stationäre Artillerie; eigenes T4-Reichweiten-Gate: RW 1.500 ≥ Diagonale jeder Karte bis 1.024 WU, Mindest-RW 150",
+            "fallback": "Karten > 1.024 WU (M14): RW-Deckel prüfen"
+          },
+          {
+            "feature": "E3",
+            "what": "Energie pro Schuss (15.000) als Stall-Verbraucher: bei Energy-Stall Feuerpause",
+            "fallback": "Dauerverbrauch 4.840 E/s"
+          },
+          {
+            "feature": "K14",
+            "what": "Todeswaffe 4.000 im Radius 10",
+            "fallback": "Standard-Todeseffekt"
+          },
+          {
+            "feature": "P14",
+            "what": "Großereignis: Einschlag-Kreuzmuster auf der Minimap, Alert „Fernbeschuss“",
+            "fallback": "Standard-Alert"
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "W"
+      },
+      "icon": "struct_arty_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "kissen"
+          },
+          {
+            "part": "shell",
+            "note": "gegenschale"
+          },
+          {
+            "part": "mast",
+            "anim": "yaw",
+            "note": "lafette"
+          },
+          {
+            "part": "horn",
+            "anim": "pitch",
+            "count": 3,
+            "note": "hornkranz"
+          },
+          {
+            "part": "shell",
+            "mat": "jade",
+            "note": "kammerschale"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 600,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "legs": null,
+        "techMarker": "Klammerbögen: zwei Tiefjade-Winkel am hinteren Schalenrand statt Tech-Streifen (entspricht der Icon-Klammer)",
+        "monopoly": "Hornkranz: drei große Hörner als Trommel um eine gemeinsame schräge Achse (50°), größte Horn-Mündung der Armee (Ø 2,4 WU), dahinter eine hohe Gegenschale.",
+        "description": "Teamfarbener Kissen-Sockel über den ganzen 10 × 10-Footprint, darauf eine niedrige Lafette (dreht), die den Hornkranz trägt: drei Hörner (je 6 WU, Mündung Ø 2,4 WU, Goldkante an der Mündung) um eine Achse, die sich zwischen den Schüssen um 120° weiterdreht; hinten eine hohe Gegenschale (8 WU) und unter der Lafette die Tiefjade-Kammerschale. Keine Perle, keine Lanze, keine Laterne."
+      },
+      "balance": {
+        "dps": 425.81,
+        "dpsAir": null,
+        "hpBasis": "HP",
+        "hpPerMass": 0.04,
+        "fa": {
+          "bp": "XAB2307",
+          "mass": 202500,
+          "energy": 5400000,
+          "buildTime": 100000,
+          "hp": 9000,
+          "shieldHp": null,
+          "regen": 0,
+          "dpsGround": 425.81,
+          "dpsAir": null,
+          "hpPerMass": 0.0444,
+          "speed": null
+        },
+        "devHpPerMassPct": -10.0,
+        "dpsPerMass": 0.0021,
+        "devDpsPerMassPct": 0.0,
+        "devProductPct": -10.0,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "pulk": {
+          "devPct": 0.0,
+          "faSalvo": 6,
+          "faReloadS": 3.1,
+          "faSplash": 2
+        },
+        "identity": {
+          "frailer": true
+        },
+        "crossInfo": {
+          "bp": "UEB2401",
+          "note": "Gegenprobe: T4 der Varkan-Vorbild-Fraktion, nur Info (Varkan hat noch keine T4)",
+          "dpsGround": 2000.0,
+          "mass": 224775,
+          "hpPerMass": 0.0356
+        }
+      }
+    },
+    {
+      "id": "f3:exp_str_eco",
+      "name": {
+        "de": "Perle",
+        "en": "Pearl"
+      },
+      "role": {
+        "de": "Ressourcenperle",
+        "en": "Resource Pearl"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "structure",
+      "visual": "v_exp_pearl",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "E17",
+        "E4",
+        "K14",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Resource Generator",
+        "bp": "XAB1401",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "EXPERIMENTAL",
+        "STRATEGIC",
+        "SIZE16"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 250200,
+        "energy": 7506000,
+        "buildTime": 325000,
+        "massPerSec": 20,
+        "energyPerSec": 1000,
+        "demandCapMassPerSec": 10000,
+        "demandCapEnergyPerSec": 1000000,
+        "storageEnergy": 100000
+      },
+      "health": {
+        "max": 4500,
+        "hull": 4500,
+        "regenPerSec": 0
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true,
+        "dimensionsWU": {
+          "length": 8.0,
+          "width": 8.0,
+          "height": 6.5,
+          "legSpan": null
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 8.0,
+          "abreast": 9,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 14
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f3:wpn_pearl_crack",
+          "damage": 35000,
+          "radius": 25,
+          "note": "Perlsprung der Perle: wie das Vorbild (35.000 im Radius 25), K14/P14. Nie neben die eigene Basis setzen."
+        },
+        "notes": "„Die Perle gibt, was das Kapitel verlangt, nicht mehr.“ Grundertrag 20 M/s + 1.000 E/s; darüber deckt sie jeden Mehrbedarf des Kapitels bis 10.000 M/s bzw. 1.000.000 E/s (Vorbild-Relation). Teuerstes Bauwerk des Ordens, zerbrechlich (−10 % HP/Mass, A6).",
+        "postMvp": [
+          {
+            "feature": "E17",
+            "what": "Endgame-Eco: Grundertrag plus Bedarfsdeckung (Mehrbedarf pro Tick bis zu den Deckeln)",
+            "fallback": "kein Blueprint"
+          },
+          {
+            "feature": "E4",
+            "what": "Energiespeicher 100.000",
+            "fallback": "–"
+          },
+          {
+            "feature": "K14",
+            "what": "Todeswaffe 35.000 im Radius 25 (Perlsprung)",
+            "fallback": "Standard-Todeseffekt"
+          },
+          {
+            "feature": "P14",
+            "what": "Großereignis: Perlsprung mit Klangschalen-Schlag und Druckring",
+            "fallback": "Standard-Todeseffekt"
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "T"
+      },
+      "icon": "struct_mass_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (Varkan faction.md §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "shell",
+            "mat": "team",
+            "note": "kissen"
+          },
+          {
+            "part": "shell",
+            "note": "untere_schale"
+          },
+          {
+            "part": "shell",
+            "anim": "pitch",
+            "note": "obere_schale"
+          },
+          {
+            "part": "orb",
+            "mat": "glow",
+            "note": "riesenperle"
+          },
+          {
+            "part": "ring",
+            "mat": "gold",
+            "anim": "spin",
+            "note": "goldring"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 664,
+        "trisBudget": {
+          "L0": 1500,
+          "L1": 800,
+          "L2": 320
+        },
+        "legs": null,
+        "techMarker": "Klammerbögen: zwei Tiefjade-Winkel am hinteren Schalenrand statt Tech-Streifen (entspricht der Icon-Klammer)",
+        "monopoly": "Offene Muschel: größte Perle der Armee (Ø 3,2 WU, Goldkern) in einer aufgeklappten Doppelschale, darüber ein kreisender Goldring.",
+        "description": "Teamfarbener Kissen-Sockel (8 × 8), darauf die untere Muschelschale (Perlmutt innen, Schalenrinde außen), die obere Schale 40° aufgeklappt (öffnet sich beim Bau schichtweise, nur View); dazwischen schwebt die Riesenperle mit Goldkern (umschlossen, Flow-Ausnahme faction.md §5.3 Nr. 6), über ihr kreist ein flacher Goldring. Beim Energy-Stall verblasst der Goldkern zu Perlgrau."
+      },
+      "balance": {
+        "dps": 0,
+        "dpsAir": null,
+        "hpBasis": "HP",
+        "hpPerMass": 0.018,
+        "fa": {
+          "bp": "XAB1401",
+          "mass": 250200,
+          "energy": 7506000,
+          "buildTime": 325000,
+          "hp": 5000,
+          "shieldHp": null,
+          "regen": 0,
+          "dpsGround": 0,
+          "dpsAir": null,
+          "hpPerMass": 0.02,
+          "speed": null
+        },
+        "devHpPerMassPct": -10.0,
+        "dpsPerMass": null,
+        "devDpsPerMassPct": null,
+        "devProductPct": null,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "payback": {
+          "baseReplacementMass": 7320,
+          "baseShareOfCostPct": 2.9,
+          "breakEvenDemandMassPerSec10min": 417,
+          "note": "Grundertrag ersetzt nur wenige Brunnen-Ketten und Laternen; der Wert liegt in der Bedarfsdeckung (Vorbild-Relation). Amortisation in 10 min ab ≈ breakEvenDemandMassPerSec10min gedecktem Mehrbedarf."
+        },
+        "ecoMatchesFa": true,
+        "identity": {
+          "frailer": true
+        }
+      }
+    }
+  ],
   "checks": {
     "hitsToKill": [
       {

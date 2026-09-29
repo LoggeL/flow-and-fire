@@ -1,8 +1,8 @@
 # Roster: Orden von Sael (Fraktion f3, MVP)
 
 > **Status:** Startwerte für alle MVP-Blueprints der dritten Fraktion auf Basis von `docs/design/factions/f3/faction.md`, überarbeitet nach dem Review vom 2026-09-29 (§21). Maschinenlesbar in `docs/design/factions/f3/roster.json` (Schema `faf-roster/1`, dasselbe wie Varkan). **`roster.json` ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts**; dieses Dokument ist daraus generiert (`tools/roster/f3/md.py`). Später Grundlage der Blueprints (`content/blueprints/f3/…`).
-> **Umfang:** **50 Blueprints** (23 mobil, 27 Gebäude, jede Upgrade-Stufe einzeln), davon **26 im MS9-Kern (●)**, Rest bis MS14 (○). Rollen, Rollen-Tokens, Icon-IDs, Hotbuild-Slots, Visual-IDs und ●/○-Status sind **identisch zu Varkan** (`docs/design/roster.md`); der Generator erzwingt das. 28 Visuals, 19 Icon-Glyphen. Waffen-, Projektil- und Basis-BPs sind nicht mitgezählt.
-> **Ausgeschlossen (Post-MVP laut features.json):** wie Varkan (TML/TMD, Nukes/SMD, Transporter U13, T3-Luft U12, Marine U17/U18, Experimentals, E15, SACU U15, ACU-Enhancements U14, Stealth/Omni I4/I5). Reservenamen: *Nautilus* (T3-Schwebepanzer), *Perle* (Experimental).
+> **Umfang:** **50 Blueprints** (23 mobil, 27 Gebäude, jede Upgrade-Stufe einzeln), davon **26 im MS9-Kern (●)**, Rest bis MS14 (○). Rollen, Rollen-Tokens, Icon-IDs, Hotbuild-Slots, Visual-IDs und ●/○-Status sind **identisch zu Varkan** (`docs/design/roster.md`); der Generator erzwingt das. 28 Visuals, 19 Icon-Glyphen. Waffen-, Projektil- und Basis-BPs sind nicht mitgezählt. Dazu 5 Experimentals (T4, Post-MVP, §22), nicht mitgezählt.
+> **Ausgeschlossen (Post-MVP laut features.json):** wie Varkan (TML/TMD, Nukes/SMD, Transporter U13, T3-Luft U12, Marine U17/U18, Experimentals, E15, SACU U15, ACU-Enhancements U14, Stealth/Omni I4/I5). Reservename: *Nautilus* (T3-Schwebepanzer). Experimentals als Post-MVP-Daten in §22 (*Perle* ist jetzt das Eco-Experimental).
 > **Balancing:** Hartes Gate PLAN U3: DPS/Mass und HP/Mass je ±25 % der FA-Referenz **der Vorbild-Fraktion**. Der Generator erzwingt strenger: Einzelachsen, Produkt und Pulk-DPS/Mass der Artillerie je ±15 %, eine Treffer-bis-Tod-Matrix exakt nach Vorbild und **Kreuz-Breakpoints gegen Varkan** (`faction.md` §9.4). Asymmetrien mit Post-MVP-Mechanik sind je Blueprint in `special.postMvp` markiert; die Kern-Balance gilt mit dem MVP-Fallback.
 
 ---
@@ -70,7 +70,7 @@ Geprüft gegen [FAForever/fa](https://github.com/FAForever/fa) `develop`, `units
 
 ## 3. Hotbuild-Raster (identische Slots wie Varkan)
 
-Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen.
+Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen. T4 im eigenen Tab des Bau-Menüs (Q Land-Sturm, W Game-Ender, E Land-Festung, R Luft, T Eco), Tastenbelegung fraktionsübergreifend.
 
 **Landkapitel (Fabrik-Menü)**
 
@@ -762,4 +762,68 @@ Kritisches Review vom 2026-09-29 in vier Richtungen: **Balance** (nachgerechnet,
 | Nr | Punkt | | Entscheidung und Begründung |
 |---|---|---|---|
 | V1 | Rollenabdeckung | ✓ | 50 Blueprints, dieselben Rollen-IDs, ●/○, MS, Hotbuild-Slots und Visuals wie Varkan (Generator-Gate). Post-MVP-Asymmetrien tragen ihre Feature-ID: M13 (15 Blueprints), K10 (Triton, Einsiedler), K18 (Tölpel), U14 (Prior); I5 wird nicht gebraucht. |
+
+---
+
+## 22. Experimentals (T4, Post-MVP)
+
+5 T4-Rollen, **nicht** in der Zählung oben (`experimentals[]`, gespiegelt in `reservedPostMvp[]` für den Namensabgleich in `cross.py`) und ohne Sim-Wirkung vor ihren Features. Design, Lore, Kitbash und Icons: `experimentals.md`. Daten und Gates: `tools/roster/f3/exp.py` (von `gen.py` eingebunden, von `validate.py` unabhängig nachgerechnet), Referenzen `fa_ref_t4.json` (Vorbild-T4, spooky 3810, dev-only). Gates: Boden-DPS/Mass, Luft-DPS/Mass, HP(+Schild)/Mass und Produkt je ±15 % gegen die Vorbild-T4, Pulk ±15 % bei Artillerie; Sael-Identität (Hauptwaffen-RW ≥ Vorbild, Schild-Anteil mobiler T4 ≥ 25 %, Strukturen zerbrechlicher, A6); Setons-Brücke (≥ 6 nebeneinander auf 72 WU); T4-Budget (≤ 1.500 / 800 / 320 Tris wie `@faf/modelkit` `T4_BUDGET`, ≤ 10 Part-Einträge, ≤ 3 animiert), `sizeClass = ceil(Außenmaß / 2)` und Monopol-Lints (§5.3 Nr. 6).
+
+| ID | Name DE / EN | Rolle DE / EN | Mass / Energy / BT | HP (Rumpf + Schild) | DPS Boden · Luft | Tempo | Footprint · s | Icon | T4-Tab |
+|---|---|---|---|---|---|---|---|---|---|
+| `f3:exp_lnd_assault` | **Karkinos** / Karkinos | Riesen-Sturmläufer / Colossal Assault Walker | 27.500 / 343.750 / 51.500 | 102.000 (76.000 + 26.000) | 2.640 · – | 2,4 | 4×4 · 5 | `land_direct_t4` | Q |
+| `f3:exp_lnd_fortress` | **Ammonit** / Ammonite | Schwebende Festung / Hover Fortress | 24.000 / 380.000 / 38.400 | 62.000 (44.000 + 18.000) | 800 · – | 2,5 | 8×8 · 5 | `land_sniper_t4` | E |
+| `f3:exp_air_carrier` | **Pelikan** / Pelican | Schwebeträger / Hover Carrier | 45.000 / 1.530.000 / 50.625 | 70.000 (36.000 + 34.000) | 3.300 · 2.843 | 8 | 16×16 · 0 | `air_direct_t4` | R |
+| `f3:exp_str_arty` | **Kreuzsee** / Cross Sea | Fernartillerie / Strategic Artillery | 202.500 / 5.400.000 / 100.000 | 8.100 | 426 · – | – | 10×10 | `struct_arty_t4` | W |
+| `f3:exp_str_eco` | **Perle** / Pearl | Ressourcenperle / Resource Pearl | 250.200 / 7.506.000 / 325.000 | 4.500 | 0 · – | – | 8×8 | `struct_mass_t4` | T |
+
+**Waffen und Todeswaffen:**
+
+| Einheit | Waffen | Todeswaffe |
+|---|---|---|
+| Karkinos | `wpn_karkinos_lance` Tiefenlanze (Doppellanze, Einzelstoß): 1.200 / 0,5 s = **2.400 DPS**, RW 2–42, linear, Splash 0,5<br>`wpn_karkinos_claw` Scherenlanzen (2 × kurz): 2×60 / 0,5 s = **240 DPS**, RW 30, linear | 8.000 im Radius 7 (Schalenbruch: Rückenschild birst in Perlmutt-Splittern (P14); FA-Relation 1:1.) |
+| Ammonit | `wpn_ammonite_lance` Gezeitenlanze (Einzelstoß, Überlänge): 8.000 / 10 s = **800 DPS**, RW 10–158, linear (langsam, Flugzeit), Splash 5 | 6.000 im Radius 8 (Spiralbruch: die Windungen reißen von außen nach innen (P14).) |
+| Pelikan | `wpn_pelican_plunge` Senkstoß (aus dem Kehlsack, nur unter sich): 1.650 / 0,5 s = **3.300 DPS**, RW 30, senkrecht (Hitscan-Puls), Splash 4<br>`wpn_pelican_skyspine` Himmelsstachel (4 × Lenkrakete, Luft): 4×300 / 1,3 s = **923,1 DPS**, RW 120, Lenkflugkörper, Splash 2 [Luft]<br>`wpn_pelican_burstspine` Sprengstachel (2 Werfer × 2, Nahbereich, Luft): 4×240 / 0,5 s = **1.920 DPS**, RW 44, linear (Flak), Splash 3 [Luft] | 7.000 im Radius 15 (Absturz: Kuppel zerschellt, Kehlsack reißt auf (K12, P14); FA-Relation 1:1.) |
+| Kreuzsee | `wpn_crosssea_horn` Kreuzseegranate (6 Splitter): 6×220 / 3,1 s = **425,8 DPS**, RW 150–1.500, ballistisch (teilt sich über dem Ziel), Splash 2 | 4.000 im Radius 10 (Hornbruch: Energievorrat der Kammer entlädt sich (K14, P14).) |
+| Perle | – | 35.000 im Radius 25 (Perlsprung der Perle: wie das Vorbild (35.000 im Radius 25), K14/P14. Nie neben die eigene Basis setzen.) |
+
+**Balance gegen die Vorbild-T4** (Referenz dev-only über Blueprint-ID; Gegenprobe = T4 der Varkan-Vorbild-Fraktion, nur Info):
+
+| Einheit | Referenz | ΔDPS/Mass Boden | ΔDPS/Mass Luft | ΔHP/Mass | ΔProdukt | Pulk | Sael-Identität |
+|---|---|---|---|---|---|---|---|
+| Karkinos | `UAL0401` (Gegenprobe `UEL0401`) | +5,6 % | – | +2 % | +7,7 % | – | RW ≥ Vorbild ✓ · Schild-Anteil 25 % ✓ |
+| Ammonit | `UAS0401` (Gegenprobe `UEL0401`) | ±0 % | – | +3,3 % | +3,3 % | – | RW ≥ Vorbild ✓ · Schild-Anteil 29 % ✓ |
+| Pelikan | `UAA0310` (Gegenprobe `UES0401`) | −0,9 % | ±0 % | ±0 % | −0,9 % | – | RW ≥ Vorbild ✓ · Schild-Anteil 49 % ✓ |
+| Kreuzsee | `XAB2307` (Gegenprobe `UEB2401`) | ±0 % | – | −10 % | −10 % | ±0 % | zerbrechlicher ✓ |
+| Perle | `XAB1401` | – | – | −10 % | – | – | zerbrechlicher ✓ |
+
+**Kitbash (T4-Budget):**
+
+| Einheit | Monopol-Merkmal | Parts | Außenmaß L × B × H (Beinspanne) | Brücke 72 WU |
+|---|---|---|---|---|
+| Karkinos | Scherenschild: breitester Rückenschild der Armee (6,4 × 5,2 WU, breiter als lang) mit zwei vorgestreckten Scherenschalen, in jeder eine kurze Lanze; obenauf die Perle mit waagerechter Doppellanze. | legs×10, shell(rueckenschild) [team], shell(bauchschale) [jade], shell×2(scherenschalen) [team], orb(perle) ⟳yaw [team], lance×2(tiefenlanze) ⟳pitch, lance×2(scherenlanzen) — 7 Einträge, 2 anim., ≈ 1.036 Tris | 5,2 × 6,4 × 5 (8,4) WU | 8 nebeneinander |
+| Ammonit | Liegende Spiralschale: drei ineinanderlaufende, teamfarbene Windungen (Ø 9 → 5 → 2,5 WU) als flache Spirale auf dem größten Schwebeteller, aus der Mündung eine Perle mit Überlänge-Lanze (≥ 1,2 × Rumpflänge), am Heck das goldene Kapiteltor. | hoverpad, shell×3(windungen) [team], shell(bauchschale) [jade], orb(muendungsperle) ⟳yaw [team], lance(gezeitenlanze) ⟳pitch, ring(schildring) ⟳yaw, arch(kapiteltor) [glow] — 7 Einträge, 3 anim., ≈ 944 Tris | 11 × 9 × 4,6 WU | 8 nebeneinander |
+| Pelikan | Kehlsack-Schwinge: die breiteste Ovalschwinge (20 WU Spannweite) mit hängendem, teamfarbenem Kehlsack (≥ 0,6 × Rumpflänge), darüber eine Kuppel mit waagerechtem Schildring; keine Lanze, keine Perle. | wing×2(ovalschwinge) [team], shell(rueckenkuppel), shell(kehlsack) [team], ring(schildring) ⟳yaw, arch(hangartor) [glow] — 5 Einträge, 1 anim., ≈ 520 Tris | 14 × 20 × 4 WU | – |
+| Kreuzsee | Hornkranz: drei große Hörner als Trommel um eine gemeinsame schräge Achse (50°), größte Horn-Mündung der Armee (Ø 2,4 WU), dahinter eine hohe Gegenschale. | shell(kissen) [team], shell(gegenschale), mast(lafette) ⟳yaw, horn×3(hornkranz) ⟳pitch, shell(kammerschale) [jade] — 5 Einträge, 2 anim., ≈ 600 Tris | 10 × 10 × 9 WU | – |
+| Perle | Offene Muschel: größte Perle der Armee (Ø 3,2 WU, Goldkern) in einer aufgeklappten Doppelschale, darüber ein kreisender Goldring. | shell(kissen) [team], shell(untere schale), shell(obere schale) ⟳pitch, orb(riesenperle) [glow], ring(goldring) ⟳spin [gold] — 5 Einträge, 2 anim., ≈ 664 Tris | 8 × 8 × 6,5 WU | – |
+
+**Post-MVP-Features je Einheit:**
+
+| Einheit | braucht | Eigenheit (Feature) → MVP-Fallback |
+|---|---|---|
+| Karkinos | U16, K10, M13, K5, P14 | **K10**: Personal-Schild 26.000 (Regen 90/s ab 3 s, Neuaufbau 60 s, 150 E/s), Rumpf 76.000 HP → *vor K10: health.max = HP + Schild = 102.000*<br>**M13**: Amphibisch: schreitet über den Grund von Wasser, feuert nicht unter Wasser (Vorbild amphibisch) → *Layer land, Wasser unpassierbar*<br>**U16**: Erstes Land-Experimental des Ordens: Bau durch Kustos/Prior, großes Wrack (90 % Mass, K5) → *kein Blueprint vor U16*<br>**P14**: Großereignis-Effekt beim Schalenbruch (Klangschalen-Schlag, Splitterregen) → *Standard-Todeseffekt* |
+| Ammonit | U21, M13, K10, B3-Erweiterung, I3, P14 | **M13**: Schwebt über Wasser (Layer Hover); einzige Sael-T4 für Wasserkarten → *Layer land, Wasser unpassierbar*<br>**K10**: Personal-Schild 18.000 (Regen 60/s ab 3 s, Neuaufbau 60 s, 100 E/s), Rumpf 44.000 HP → *vor K10: health.max = 62.000*<br>**B3-Erweiterung**: Produktion aus einer mobilen Einheit (Queue läuft auch in Bewegung, Ausstoß am Kapiteltor) → *keine Produktion*<br>**U18**: Tiefenstachel gegen Schiffe und U-Boote (Vorbild 6 × 350 alle 5 s, RW 80), nur mit U17/U18 → *entfällt*<br>**I3**: Radar 150 WU → *nur Sicht 60 WU* |
+| Pelikan | U21, U12, K10, B3-Erweiterung, U13, U20, K12, I3, P14 | **U12**: Flugmodell der schweren Luft (Schweben über dem Ziel, Wendekreis, Bau durch T3-Engineers) → *kein Blueprint*<br>**K10**: Blasen-Schild 34.000, Radius 22, Regen 180/s ab 2 s, Neuaufbau 120 s, 500 E/s → *vor K10: health.max = 70.000, kein Schutz für andere*<br>**B3-Erweiterung**: Produktion aus einer fliegenden Einheit (Luftkapitel-Liste T1–T2) → *keine Produktion*<br>**U13**: Kehlsack-Hangar: lagert bis 40 Flieger T1–T2 und startet sie in Wellen → *kein Hangar*<br>**U20**: Air Staging im Hangar: Reparatur und Treibstoff → *entfällt*<br>**K12**: Absturzschaden 7.000 im Radius 15 → *Standard-Todeseffekt* |
+| Kreuzsee | U21, K13, K2, K4, K1-Erweiterung, E3, I3, K14, P14 | **U21**: Game-Ender: Bau durch Kustos/Prior, kartenweite Reichweite → *kein Blueprint*<br>**K1-Erweiterung**: Splittergeschoss: teilt sich über dem Ziel in 6 Splitter (je eigener Einschlag, Streukreis 7 WU) → *Salve aus 6 Einzelgranaten à 220 mit Streukreis 7 WU (vorhandene K1-Streuung), gleiche Pulk-Rechnung*<br>**K13**: Stationäre Artillerie; eigenes T4-Reichweiten-Gate: RW 1.500 ≥ Diagonale jeder Karte bis 1.024 WU, Mindest-RW 150 → *Karten > 1.024 WU (M14): RW-Deckel prüfen*<br>**E3**: Energie pro Schuss (15.000) als Stall-Verbraucher: bei Energy-Stall Feuerpause → *Dauerverbrauch 4.840 E/s*<br>**K14**: Todeswaffe 4.000 im Radius 10 → *Standard-Todeseffekt*<br>**P14**: Großereignis: Einschlag-Kreuzmuster auf der Minimap, Alert „Fernbeschuss“ → *Standard-Alert* |
+| Perle | U21, E17, E4, K14, P14 | **E17**: Endgame-Eco: Grundertrag plus Bedarfsdeckung (Mehrbedarf pro Tick bis zu den Deckeln) → *kein Blueprint*<br>**E4**: Energiespeicher 100.000 → *–*<br>**K14**: Todeswaffe 35.000 im Radius 25 (Perlsprung) → *Standard-Todeseffekt*<br>**P14**: Großereignis: Perlsprung mit Klangschalen-Schlag und Druckring → *Standard-Todeseffekt* |
+
+**develop-Stand der T4-Referenzen** (Roster bleibt auf spooky 3810 wie alle Kern-Einheiten):
+
+| BP | spooky 3810 | develop | Ergebnis |
+|---|---|---|---|
+| `UAA0310` | 45.000 M / 1.530.000 E / BT 50.625, Schild-Regen 180/s | 42.750 M / 1.453.500 E / BT 48.094, Schild-Regen 240/s, Luft-Tempo 8 (Air.MaxAirspeed) | nach 3810 um 5 % verbilligt; Relation DPS/Mass +5 %, HP/Mass +5 % → beim Nachziehen Pelikan-Kosten mitziehen. |
+| `UAS0401` | 24.000 M / 380.000 E / BT 38.400, Kanone 8.000 / 10 s | 25.000 M / 400.000 E / BT 40.000, Kanone 10.000 / 11 s (RackSalvoReloadTime 10,9) | nach 3810 stärker (DPS/Mass +9 %); Ammonit beim Nachziehen auf 10.000 / 11 s. |
+| `XAB2307` | 220 / 3,1 s = 70,97 DPS | 6 Splitter × 220 / 3,1 s = 425,81 DPS, 15.000 E pro Schuss | spooky-Fehler (Splitter nicht gezählt) → FA_T4_OVERRIDES. |
+| `XAB1401` | kein Ertrag (Skript) | Skript XAB1401: Grundertrag 20 M/s + 1.000 E/s, deckt Mehrbedarf bis 10.000 M/s bzw. 1.000.000 E/s; Todeswaffe 35.000 im Radius 25 | Ertragsmodell aus develop übernommen (spooky führt es nicht). |
+| `UAL0401` | identisch | Greifklauen RW 30 (spooky 41), TractorDamage 240 | ohne Einfluss (Klauen nicht übernommen). |
 

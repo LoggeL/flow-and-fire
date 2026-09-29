@@ -1,7 +1,7 @@
 # Roster: Skarn-Geflecht (f2, MVP)
 
 > **Status:** Startwerte für alle MVP-Blueprints der zweiten Fraktion auf Basis von `docs/design/factions/f2/faction.md`. Maschinenlesbar in `docs/design/factions/f2/roster.json` (Schema `faf-roster/1`, identisch zu Varkan). **`roster.json` ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts**; dieses Dokument ist daraus erzeugt (`tools/roster/f2/md.py`). Überarbeitet nach dem Review vom 2026-09-29 (§19).
-> **Umfang:** **50 Blueprints** (23 mobil, 27 Gebäude, jede Upgrade-Stufe einzeln), davon **26 im MS9-Kern (●)**, Rest bis MS14 (○). Gleiche Rollen-IDs, Feature-IDs, Icons und Hotbuild-Tasten wie Varkan. 28 Visuals, 19 Icon-Glyphen (dieselben wie Varkan). Dazu 5 reservierte Post-MVP-Rollen (§16), nicht mitgezählt.
+> **Umfang:** **50 Blueprints** (23 mobil, 27 Gebäude, jede Upgrade-Stufe einzeln), davon **26 im MS9-Kern (●)**, Rest bis MS14 (○). Gleiche Rollen-IDs, Feature-IDs, Icons und Hotbuild-Tasten wie Varkan. 28 Visuals, 19 Icon-Glyphen (dieselben wie Varkan). Dazu 5 reservierte Post-MVP-Rollen (§16) und 5 Experimentals (T4, §20), nicht mitgezählt.
 > **Ausgeschlossen:** wie Varkan (TML/TMD, Nukes, Transporter, T3-Luft, Marine, Experimentals, SACU, Enhancements, Stealth/Omni). Eigenheiten der Vorbild-Fraktion, die solche Mechaniken brauchen, sind pro Einheit als `special.postMvp` mit Feature-ID markiert (§16). Die Kern-Balance gilt ohne sie.
 > **Balancing:** gegen die **Vorbild-Fraktion** als FA-Referenz (nur über Blueprint-Präfix `UR*`/`DR*` referenziert, dev-only). Hartes Gate ±25 % DPS/Mass und HP/Mass; der Generator erzwingt Einzelachsen, Produkt und Pulk-DPS/Mass je ±15 %, eine Treffer-bis-Tod-Matrix exakt wie die Vorbild-Referenz und einen **Kreuz-Check gegen Varkan** (§14.4). Validierung: `tools/roster/f2/validate.py`.
 
@@ -683,3 +683,66 @@ Ergebnis: Beide Fraktionen brauchen für den Rush auf den gegnerischen Kommandan
 | V1 | Rollen gegen Varkan | ✓ | Geprüft: 50/50 Rollen-IDs, gleiche MS-Zuordnung, 26 im MS9-Kern, gleiche Hotbuild-Tasten. |
 | V2 | Vorbild-Fähigkeiten gegen Post-MVP-Markierungen | ◐ | Alle `Display.Abilities` der 50 Referenzen abgeglichen. Ergänzt: Schabe mit **I5** (Tarnung, die Referenz hat Cloaking). Nicht markiert, weil Varkan sie ebenso ignoriert: Omni am Kommandanten (I4), `Aquatic`-Bauplatz der Flugabwehrtürme (U17), Radar der Stechmücke. |
 | V3 | Reserve-Rollen | ✓ | Vollständig für die Vorbild-Signaturen: mobiles und stationäres Tarnfeld, amphibischer T2-Läufer, Zerstörer an Land, gepanzerter T3-Läufer (jetzt mit M13). |
+
+---
+
+## 20. Experimentals (T4, Post-MVP)
+
+5 T4-Rollen, **nicht** in der Zählung oben und ohne Sim-Wirkung vor ihren Features. Design, Lore, Kitbash und Icons: `experimentals.md`. Daten und Gates: `tools/roster/f2/exp.py` (von `gen.py` eingebunden), Referenzen `fa_ref_t4.json` (Vorbild-T4, dev-only). Gates: DPS/Mass, HP/Mass und Produkt je ±15 % gegen die Vorbild-T4, Pulk ±15 % bei Artillerie, Identität „billiger, schneller, zerbrechlicher“ (Mass ≤, Tempo ≥, HP/Mass ≤ Referenz), Setons-Brücke (≥ 6 nebeneinander auf 72 WU), T4-Budget (≤ 1.200 Tris L0, ≤ 12 Parts, ≤ 3 animiert).
+
+| ID | Name DE / EN | Rolle | Mass | Energy | BT | HP | Regen | DPS | Tempo | Footprint · s | Beine | Icon | Hotbuild |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `f2:exp_lnd_assault` | **Skolopender** / Scolopendra | Experimenteller Sturmläufer | 19.500 | 250.000 | 27.000 | 42.000 | 10 | 4.409 | 2,7 | 4×10 · 3 | 14 | `land_direct_t4` | Q |
+| `f2:exp_lnd_siege` | **Assel** / Woodlouse | Experimenteller Brutläufer | 36.000 | 420.000 | 58.000 | 104.000 | 1 | 2.430 | 2,2 | 8×8 · 3 | 14 | `land_direct_t4` | E |
+| `f2:exp_air_gunship` | **Tsetse** / Tsetse | Experimenteller Kampfschweber | 27.500 | 780.000 | 46.000 | 70.000 | 70 | 2.538 | 10 | 6×6 · 0 | – | `air_direct_t4` | R |
+| `f2:exp_lnd_arty` | **Bärenklau** / Hogweed | Experimentelle Schnellfeuer-Artillerie | 210.000 | 3.800.000 | 230.000 | 8.500 | 0 | 1.500 | 1,6 | 6×8 · 3 | 8 | `land_arty_t4` | W |
+| `f2:exp_str_eco` | **Myzel** / Mycelium | Experimenteller Geflechtknoten | 36.000 | 900.000 | 90.000 | 5.000 | 25 | 0 | – | 10×10 | – | `struct_mass_t4` | T |
+
+**Waffen:**
+
+| Einheit | Waffe | Schaden × Salve / Nachladen | DPS | RW (min) | Splash | Ziel |
+|---|---|---|---|---|---|---|
+| Skolopender | Granatstrahl (Dauerstrahl; MVP-Fallback Pulslinse 390 alle 0,1 s) | 390 × 1 / 0,1 s | 3.900 | 30 (4) | 0,5 | land |
+| Skolopender | Kieferlinsen (2 × Puls) | 150 × 2 / 0,7 s | 429 | 60 | – | land |
+| Skolopender | Dornenkamm Heck (2 × Lenkpfeil, Luft) | 40 × 4 / 2 s | 80 | 60 | – | air |
+| Skolopender | Todeswaffe | 4.000 im Radius 6 | – | – | – | – |
+| Assel | Zwillingslinsen (2 Türme × 2 Linsen) | 720 × 4 / 1,2 s | 2.400 | 60 (4) | 2 | land |
+| Assel | Flakdornen (Luft) | 18 × 1 / 0,6 s | 30 | 40 | 2 | air |
+| Assel | Todeswaffe | 8.000 im Radius 9 | – | – | – | – |
+| Tsetse | Bauchlinsen (4 × Puls) | 300 × 4 / 0,7 s | 1.714 | 30 | 3 | land |
+| Tsetse | Stachelköcher (2 × 3 Raketen) | 200 × 6 / 2 s | 600 | 30 | – | land |
+| Tsetse | Dornenkamm (4 × Lenkpfeil, Luft) | 140 × 4 / 2,5 s | 224 | 60 | – | air |
+| Tsetse | Todeswaffe | 5.000 im Radius 8 | – | – | – | – |
+| Bärenklau | Doldensalve (20 Kapseln nacheinander, 0,25 s Abstand) | 1.500 × 20 / 20 s | 1.500 | 4.000 (150) | 12 | land |
+| Bärenklau | Todeswaffe | 3.000 im Radius 8 | – | – | – | – |
+| Myzel | Todeswaffe | 3.000 im Radius 20 | – | – | – | – |
+
+**Balance gegen die Vorbild-T4** (Referenz dev-only über Blueprint-Präfix):
+
+| Einheit | Referenz | ΔDPS/Mass | ΔHP/Mass | ΔProdukt | Pulk | Identität (Mass ≤ · Tempo ≥ · HP/Mass ≤) | Amortisation |
+|---|---|---|---|---|---|---|---|
+| Skolopender | `URL0402` | −0,8 % | −4,3 % | −5,0 % | – | ✓ · ✓ · ✓ | – |
+| Assel | `XRL0403` | −4,4 % | −1,5 % | −5,8 % | – | ✓ · ✓ · ✓ | – |
+| Tsetse | `URA0401` | +0,4 % | −1,6 % | −1,2 % | – | ✓ · ✓ · ✓ | – |
+| Bärenklau | `URL0401` | −1,8 % | −1,1 % | −2,8 % | −1,8 % | ✓ · ✓ · ✓ | – |
+| Myzel | `XAB1401 (Fremdreferenz, Info)` | – | – | – | – | – | 536 s = 1,75 × Egel-Kette (306 s) |
+
+**Kitbash:**
+
+| Einheit | Monopol-Merkmal | Parts | animiert | ≈ Tris L0 (ohne Beine) | Außenmaß (L × B × H, Beinspanne) | Brücke |
+|---|---|---|---|---|---|---|
+| Skolopender | Segmentkette: sieben flache Keilglieder hintereinander (Länge ≥ 3,4 × Breite), 14 Beine als Doppelreihe; überlange Strahllinse am Kopf. | 8 | 2 | 432 | 11 × 3,2 × 2,2, 5,6 WU | 12 nebeneinander |
+| Assel | Plattenkuppel: sieben überlappende, teamfarbene Querplatten als flache Kuppel (Breite ≥ 0,7 × Länge), vorn ein glühendes Brutmaul. | 8 | 2 | 364 | 9,5 × 7 × 4,4, 10,5 WU | 6 nebeneinander |
+| Tsetse | Vierfach-Schwirrscheibe: vier opake Schwirrscheiben an X-Auslegern um einen langen Gliederrumpf, keine Flügel. | 7 | 2 | 304 | 10 × 11 × 2,4 WU | – |
+| Bärenklau | Dolde: ein doppelt gegliederter Riesenschwanz trägt eine schirmförmige Dolde aus 12 Kapseln (Ø 4 WU) schräg nach vorn (50°). | 6 | 3 | 396 | 8,5 × 5,5 × 10,5, 9 WU | 8 nebeneinander |
+| Myzel | Ringgeflecht: drei konzentrische, glühende Netzringe flach über einer 10 × 10-Kruste, fünf Drusen im Ring; niedrig und breit. | 4 | 0 | 518 | 10 × 10 × 6 WU | – |
+
+**Post-MVP-Features je Einheit:**
+
+| Einheit | braucht | Eigenheiten mit Feature-ID |
+|---|---|---|
+| Skolopender | U16, U21, K1-Erweiterung, I5, M13, U18, P14 | **K1-Erweiterung**: Granatstrahl als echter Dauerstrahl (Schaden pro Tick, trifft alles auf der Strahllinie bis zum ersten Hindernis).<br>**I5**: Tarnfeld um sich (Radar- und Sicht-Tarnung für sich und Einheiten im Radius 12 WU), Unterhalt 400 E/s wie die Vorbild-Relation.<br>**M13**: Amphibisch: läuft über den Grund von Wasser.<br>**U18**: Giftstachel unter Wasser (Torpedo, 50 Schaden alle 4 s, RW 45). |
+| Assel | U21, B3-Erweiterung, M13, U18, P14 | **M13**: Amphibisch: läuft über den Grund von Wasser; brütet auch unter Wasser.<br>**U18**: Tiefenstachel (Torpedo, 20 × 4 Schaden alle 1,3 s, RW 64) und Torpedo-Ablenker.<br>**B3-Erweiterung**: Produktion aus einer mobilen Einheit (Queue läuft auch in Bewegung, Ausstoß am Bug). |
+| Tsetse | U21, U12, I5, K12, P14 | **I5**: Radar-Tarnung (unsichtbar für Radar, Unterhalt 600 E/s wie die Vorbild-Relation).<br>**K12**: Absturzschaden 5000 im Radius 8 beim Abschuss.<br>**U12**: Flugmodell und Luftfabrik-Pfad der schweren T3/T4-Luft (Bau durch T3-Engineers, Landung, Wendekreis). |
+| Bärenklau | U21, K2, K4, C17, M13, I3, P14 | **C17**: Toggle Wurzeln/Lösen (10 s / 5 s); verwurzelt immobil, Beine als Anker gespreizt.<br>**M13**: Amphibisch: läuft über den Grund von Wasser (Vorbild-Relation), feuert nicht unter Wasser. |
+| Myzel | U21, E17, K14 | **E17**: Endgame-Eco: fester Ertrag 60 M/s + 3000 E/s ohne Spot und ohne Unterhalt.<br>**K14**: Sporenbruch 3000 Schaden im Radius 20.<br>**G6-Aura**: Wurzelnetz: eigene Strukturen im Radius 30 WU regenerieren doppelt (Modifier über die generische regen-Spalte, keine eigene Feature-ID; Vorschlag unter E17). |

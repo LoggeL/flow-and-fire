@@ -4,8 +4,9 @@
  *
  * Layout (compatible with the pipeline GLBs read by `@faf/client` assets/glb.ts):
  * - scene `extras.faf = {id, faction, lods, forward:'+z', up:'+y', unit:'WU', parts:[{name, parent, pivot, anim}], …}`
+ *   (+ `hover` in WU for hover/glide units: the height already baked into the geometry)
  * - nodes `lod0…lod2` (finest first) with `extras.faf.lod`, each with mesh `<unit>_lod<i>` and one triangle
- *   primitive: POSITION (f32 VEC3), NORMAL (f32 VEC3), COLOR_0 (f32 VEC3, linear), _PARTID (u8 SCALAR),
+ *   primitive: POSITION (f32 VEC3), NORMAL (f32 VEC3, flat or smooth per shape), COLOR_0 (f32 VEC3, linear), _PARTID (u8 SCALAR),
  *   _MASK (u8 normalized VEC4: team, glow, metal, AO), indices (u16, u32 above 65,535 vertices).
  * - one material `faf_vertex` (white base color × COLOR_0, roughness 0.85) so generic viewers show the colors.
  *
@@ -33,6 +34,7 @@ export function modelDocument(m: BuiltModel): Document {
       icon: m.icon,
       iconThreshold: m.iconThreshold,
       footprint: [...m.footprint],
+      ...(m.hover > 0 ? { hover: m.hover } : {}),
       forward: '+z',
       up: '+y',
       unit: 'WU',

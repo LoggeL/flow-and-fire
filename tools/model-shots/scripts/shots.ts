@@ -3,13 +3,17 @@
  *   <out>/<faction>/contact.png      contact sheet, all models, 3/4 view, team blue
  *   <out>/<faction>/silhouettes.png  silhouettes from the game camera (+ 48/32 px)
  *   <out>/<faction>/compare.png      size comparison on the 1-WU grid
+ *   <out>/<faction>/compare-t4.png   T4 next to commander and mobile T3 (only factions with T4)
  *   <out>/<faction>/<unit>.png       single pictures
  *   <out>/icons.png                  icon grammar overview
+ *   <out>/vergleich-fraktionen.png   faction comparison: commander, T1 tank, T3 unit, one T4 per faction, one row
+ *                                    each (only without --faction)
  * Starts its own Vite server on a free port (never 5199) and always shuts it down. Needs `pnpm models` first.
  *
  * Usage: pnpm models:shots [--faction varkan] [--out /private/tmp/claude-501/faf-models] [--team blue]
- *        [--no-singles] [--smoke (also gallery + single view near/far)]
- *        [--only exp_lnd_walker,exp_str_arty (only these single pictures, no sheets)]
+ *        [--no-singles] [--no-sheets (skip the per-faction pictures)] [--no-versus]
+ *        [--only exp_lnd_walker,exp_str_arty (only these single pictures, no sheets, no faction comparison)]
+ *        [--smoke (also gallery + single view near/far)]
  *        (heavy: run through tools/heavy)
  */
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -32,6 +36,10 @@ const { values } = parseArgs({
     out: { type: 'string', default: '/private/tmp/claude-501/faf-models' },
     team: { type: 'string', default: 'blue' },
     singles: { type: 'boolean', default: true },
+    /** Per-faction pictures (contact sheet, silhouettes, compare, singles) and the icon overview. */
+    sheets: { type: 'boolean', default: true },
+    /** Faction comparison vergleich-fraktionen.png (only when no --faction is given). */
+    versus: { type: 'boolean', default: true },
     /** Also capture the interactive viewer pages (gallery, single view near/far with icon) as a smoke test. */
     smoke: { type: 'boolean', default: false },
     /** Comma-separated unit ids (file stems): only their single pictures, no sheets (quick iteration). */
@@ -41,7 +49,27 @@ const { values } = parseArgs({
 
 interface ManifestLike {
   factions: { slug: string; name: string }[];
-  models: { faction: string; unit: string }[];
+  models: { faction: string; unit: string; tech?: number; class?: string }[];
+}
+
+/**
+ * Per faction: commander, T1 tank, a mobile T3 main-line unit and one T4 (land assault preferred: `*assault*`, Varkan
+ * `exp_lnd_walker` Stampfe), as `faction.unit`.
+ */
+function versusUnits(m: ManifestLike, slug: string): string[] {
+  const own = m.models.filter((x) => x.faction === slug);
+  const first = (...cands: (string | RegExp)[]): string | undefined => {
+    for (const c of cands) {
+      const hit = own.find((x) => (typeof c === 'string' ? x.unit === c : c.test(x.unit)));
+      if (hit !== undefined) return hit.unit;
+    }
+    return undefined;
+  };
+  const cmd = own.find((x) => x.class === 'cmd')?.unit;
+  const t1 = first('lnd_t1_tank', /^lnd_t1_/);
+  const t3 = first('lnd_t3_tank', 'lnd_t3_bot', /^lnd_t3_(?!engineer)/);
+  const t4 = own.find((x) => x.tech === 4 && /assault|walker/.test(x.unit))?.unit ?? own.find((x) => x.tech === 4 && x.class === 'land')?.unit ?? own.find((x) => x.tech === 4)?.unit;
+  return [cmd, t1, t3, t4].filter((u): u is string => u !== undefined).map((u) => `${slug}.${u}`);
 }
 
 function freePort(): Promise<number> {
@@ -107,7 +135,7 @@ try {
   };
   const t = values.team;
   const only = values.only === undefined ? null : new Set(values.only.split(',').map((s) => s.trim()));
-  for (const f of factions) {
+  for (const f of values.sheets || only !== null ? factions : []) {
     const dir = join(values.out, f.slug);
     console.log(`${f.name}:`);
     if (only !== null) {
@@ -119,13 +147,26 @@ try {
     await shoot(`/sheet/${f.slug}?chrome=0&mode=color&team=${t}`, join(dir, 'contact.png'));
     await shoot(`/sheet/${f.slug}?chrome=0&mode=silhouette`, join(dir, 'silhouettes.png'));
     await shoot(`/compare?chrome=0&f=${f.slug}&team=${t}`, join(dir, 'compare.png'), '.stage');
+    if (manifest.models.some((m) => m.faction === f.slug && m.tech === 4)) {
+      await shoot(`/compare?chrome=0&f=${f.slug}&team=${t}&sel=t4`, join(dir, 'compare-t4.png'), '.stage');
+    }
     if (values.singles) {
       for (const m of manifest.models.filter((x) => x.faction === f.slug)) {
         await shoot(`/shot/${f.slug}/${m.unit}?chrome=0&team=${t}`, join(dir, `${m.unit}.png`));
       }
     }
   }
-  if (only === null) await shoot(`/icons?chrome=0&team=${t}`, join(values.out, 'icons.png'), '#app');
+  if (values.sheets && only === null) await shoot(`/icons?chrome=0&team=${t}`, join(values.out, 'icons.png'), '#app');
+  if (values.versus && only === null && values.faction === undefined && factions.length > 1) {
+    // design order f1…f4 first, then any further factions
+    const order = ['varkan', 'skarn', 'sael', 'aurith'];
+    const slugs = factions.map((f) => f.slug).sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+    const u = slugs.flatMap((slug) => versusUnits(manifest, slug));
+    console.log(`Fraktionsvergleich: ${u.join(', ')}`);
+    await page.setViewportSize({ width: 2400, height: 1000 });
+    await shoot(`/compare?chrome=0&f=${slugs.join(',')}&team=${t}&layout=line&u=${u.join(',')}`, join(values.out, 'vergleich-fraktionen.png'), '.stage');
+    await page.setViewportSize({ width: 1600, height: 1000 });
+  }
   if (values.smoke) {
     const first = manifest.models.find((m) => factions.some((f) => f.slug === m.faction));
     await shoot('/', join(values.out, 'viewer-gallery.png'), 'body');

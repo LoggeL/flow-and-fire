@@ -17,3 +17,8 @@
 - Aufruf aus beliebigem Ordner: `python3 tools/roster/f3/gen.py && python3 tools/roster/f3/validate.py && python3 tools/roster/f3/md.py`.
 - `fa_ref.json` und `faReference` sind dev-only: FA-Namen landen nie in Anzeigefeldern, `view.json` oder i18n.
 - Design: `docs/design/factions/f3/faction.md`.
+- `exp.py` (T4, Post-MVP): Daten und Gates der fünf Experimentals (Karkinos, Ammonit, Pelikan, Kreuzsee, Perle), von `gen.py` eingebunden
+  (`experimentals[]`, gespiegelt in `reservedPostMvp[]` für den Namensabgleich in `cross.py`), von `validate.py` unabhängig nachgerechnet,
+  von `md.py` als `roster.md` §22 ausgegeben. `python3 exp.py` druckt die Gates; `python3 exp.py --extract <index.json>` schreibt
+  `fa_ref_t4.json` (Vorbild-T4 und Varkan-Gegenproben aus spooky-db 3810, dev-only; Korrekturen `FA_T4_OVERRIDES`, develop-Stand `FA_T4_DEVELOP`).
+  Design: `docs/design/factions/f3/experimentals.md`.

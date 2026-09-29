@@ -1,6 +1,5 @@
 /** Metadata sidecar (`<faction>.<unit>.json`) and manifest entry of a built model. */
-import type { BuiltModel } from './build.ts';
-import type { MaterialSlot } from './materials.ts';
+import type { BuiltModel, MatArea } from './build.ts';
 
 export interface ModelMeta {
   readonly id: string;
@@ -21,6 +20,8 @@ export interface ModelMeta {
   readonly icon: string;
   readonly iconThreshold: number;
   readonly lodDistances: readonly [number, number];
+  /** Hover height baked into the GLB (only present for hover/glide units, see HOVER_HEIGHT). */
+  readonly hover?: number;
   readonly bounds: BuiltModel['bounds'];
   readonly footprintCheck: BuiltModel['footprintCheck'];
   readonly budget: { readonly tris: readonly number[]; readonly ok: boolean };
@@ -30,7 +31,7 @@ export interface ModelMeta {
     readonly triangles: number;
     readonly vertices: number;
     readonly partTris: readonly number[];
-    readonly matArea: Readonly<Record<MaterialSlot, number>>;
+    readonly matArea: MatArea;
     readonly teamTopShare: number;
   }[];
   readonly parts: readonly {
@@ -61,6 +62,7 @@ export function modelMeta(m: BuiltModel, file: string, sha256: string, bytes: nu
     icon: m.icon,
     iconThreshold: m.iconThreshold,
     lodDistances: m.lodDistances,
+    ...(m.hover > 0 ? { hover: m.hover } : {}),
     bounds: m.bounds,
     footprintCheck: m.footprintCheck,
     budget: { tris: [...m.budget.tris], ok: m.lods.every((l, i) => l.triangles <= m.budget.tris[i]!) },
@@ -83,6 +85,8 @@ export interface ManifestFaction {
   readonly name: string;
   /** Faction palette (sRGB hex per slot) for tools. */
   readonly palette: Readonly<Record<string, string>>;
+  /** Team-color conflict swaps of the palette (view only, see Palette.teamAlt). */
+  readonly teamAlt?: readonly { readonly slot: string; readonly teams: readonly string[]; readonly color: string }[];
   readonly models: readonly string[];
 }
 

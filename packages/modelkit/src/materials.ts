@@ -8,9 +8,18 @@
 
 /** Generic slots of every faction. Factions name them (aliases) in their palette. */
 export const MATERIAL_SLOTS = ['base', 'dark', 'metal', 'team', 'glow', 'glass', 'accent'] as const;
-export type MaterialSlot = (typeof MATERIAL_SLOTS)[number];
-/** Slot index = matId (0–6). */
-export const SLOT_INDEX: Record<MaterialSlot, number> = { base: 0, dark: 1, metal: 2, team: 3, glow: 4, glass: 5, accent: 6 };
+export type CoreSlot = (typeof MATERIAL_SLOTS)[number];
+/**
+ * Optional faction accent slots (defined only by palettes that need them): `accent2` = second accent material
+ * (Skarn crust, Sael lustre, Aurith amber edge), `glow2` = second, weaker light (Skarn nerve seam, Sael jade seam,
+ * Aurith glyph bands; default glow 0.6). Palettes without them build exactly as before.
+ */
+export const EXTRA_SLOTS = ['accent2', 'glow2'] as const;
+export type ExtraSlot = (typeof EXTRA_SLOTS)[number];
+export type MaterialSlot = CoreSlot | ExtraSlot;
+/** Slot index = matId (0–6 core, 7–8 extra; tools only, not exported to glTF). */
+export const SLOT_INDEX: Record<MaterialSlot, number> = { base: 0, dark: 1, metal: 2, team: 3, glow: 4, glass: 5, accent: 6, accent2: 7, glow2: 8 };
+const ALL_SLOTS: readonly MaterialSlot[] = [...MATERIAL_SLOTS, ...EXTRA_SLOTS];
 
 export interface SlotStyle {
   /** sRGB hex `#RRGGBB` (converted to linear for COLOR_0). Team slots should be light neutral (tinted in the shader). */
@@ -26,9 +35,28 @@ export interface SlotStyle {
 export interface Palette {
   /** Faction slug (`varkan`, …). */
   readonly faction: string;
-  readonly slots: Readonly<Record<MaterialSlot, SlotStyle>>;
+  readonly slots: Readonly<Record<CoreSlot, SlotStyle>> & Readonly<Partial<Record<ExtraSlot, SlotStyle>>>;
   /** Faction words for slots, e.g. `{ copper: 'metal', ceramic: 'accent', body: 'base' }`. */
   readonly aliases?: Readonly<Record<string, MaterialSlot>>;
+  /**
+   * Team-color conflicts (faction.md §4.3 of every faction): for armies with one of `teams` the renderer swaps the
+   * slot color to `color` (Varkan white glow for red/orange, Aurith smoke quartz for orange/olive, …). View only;
+   * the GLB always carries the default color.
+   */
+  readonly teamAlt?: readonly TeamAlt[];
+}
+
+export interface TeamAlt {
+  readonly slot: MaterialSlot;
+  /** Team color keys (`TEAM_COLORS[].key`). */
+  readonly teams: readonly string[];
+  /** sRGB hex `#RRGGBB`. */
+  readonly color: string;
+}
+
+/** Slots a palette defines: the 7 core slots plus the extra slots it declares (in matId order). */
+export function paletteSlots(p: Palette): MaterialSlot[] {
+  return ALL_SLOTS.filter((s) => p.slots[s] !== undefined);
 }
 
 /** Neutral fallback palette (used when a faction has no own palette yet). */
@@ -45,23 +73,43 @@ export const DEFAULT_PALETTE: Palette = {
   },
 };
 
-export function definePalette(p: Palette): Palette {
+export function definePalette<P extends Palette>(p: P): P {
   for (const s of MATERIAL_SLOTS) {
     const style = p.slots[s];
     if (style === undefined) throw new Error(`palette ${p.faction}: slot ${s} missing`);
     parseHex(style.color);
   }
+  for (const s of EXTRA_SLOTS) {
+    const style = p.slots[s];
+    if (style !== undefined) parseHex(style.color);
+  }
+  for (const k of Object.keys(p.slots)) {
+    if (!(ALL_SLOTS as readonly string[]).includes(k)) throw new Error(`palette ${p.faction}: unknown slot ${k}`);
+  }
+  const defined = paletteSlots(p) as readonly string[];
   for (const [alias, slot] of Object.entries(p.aliases ?? {})) {
-    if (!(MATERIAL_SLOTS as readonly string[]).includes(slot)) throw new Error(`palette ${p.faction}: alias ${alias} → unknown slot ${slot}`);
+    if (!defined.includes(slot)) throw new Error(`palette ${p.faction}: alias ${alias} → unknown slot ${slot}`);
+  }
+  const teamKeys = TEAM_COLORS.map((t) => t.key) as readonly string[];
+  for (const alt of p.teamAlt ?? []) {
+    if (!defined.includes(alt.slot)) throw new Error(`palette ${p.faction}: teamAlt for undefined slot ${alt.slot}`);
+    parseHex(alt.color);
+    for (const t of alt.teams) if (!teamKeys.includes(t)) throw new Error(`palette ${p.faction}: teamAlt team ${t} unknown (${teamKeys.join(', ')})`);
   }
   return p;
 }
 
 export function resolveSlot(name: string, palette: Palette): MaterialSlot {
   if ((MATERIAL_SLOTS as readonly string[]).includes(name)) return name as MaterialSlot;
+  if ((EXTRA_SLOTS as readonly string[]).includes(name)) {
+    if (palette.slots[name as ExtraSlot] === undefined) throw new Error(`material slot "${name}" is not defined by palette ${palette.faction}`);
+    return name as MaterialSlot;
+  }
   const alias = palette.aliases?.[name];
   if (alias !== undefined) return alias;
-  throw new Error(`unknown material "${name}" (slots: ${MATERIAL_SLOTS.join(', ')}; aliases: ${Object.keys(palette.aliases ?? {}).join(', ') || '–'})`);
+  throw new Error(
+    `unknown material "${name}" (slots: ${paletteSlots(palette).join(', ')}; aliases: ${Object.keys(palette.aliases ?? {}).join(', ') || '–'})`,
+  );
 }
 
 export function parseHex(hex: string): [number, number, number] {
@@ -83,13 +131,14 @@ export interface SlotResolved {
   readonly mask: readonly [number, number, number];
 }
 
+/** Resolved styles of the slots the palette defines (extra slots it does not define are absent). */
 export function resolvePalette(p: Palette): Record<MaterialSlot, SlotResolved> {
   const out = {} as Record<MaterialSlot, SlotResolved>;
-  for (const s of MATERIAL_SLOTS) {
-    const style = p.slots[s];
+  for (const s of paletteSlots(p)) {
+    const style = p.slots[s]!;
     const rgb = parseHex(style.color);
     const team = style.team ?? (s === 'team' ? 1 : 0);
-    const glow = style.glow ?? (s === 'glow' ? 1 : 0);
+    const glow = style.glow ?? (s === 'glow' ? 1 : s === 'glow2' ? 0.6 : 0);
     const metal = style.metal ?? (s === 'metal' ? 0.8 : s === 'glass' ? 0.2 : 0);
     out[s] = {
       slot: s,
