@@ -8,7 +8,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:air_t1_fighter"
+        "core:air_t1_fighter",
+        "f2:air_t1_fighter",
+        "f3:air_t1_fighter",
+        "f4:air_t1_fighter"
       ]
     },
     {
@@ -18,7 +21,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:air_t1_bomber"
+        "core:air_t1_bomber",
+        "f2:air_t1_bomber",
+        "f3:air_t1_bomber",
+        "f4:air_t1_bomber"
       ]
     },
     {
@@ -28,7 +34,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:air_t2_gunship"
+        "core:air_t2_gunship",
+        "f2:air_t2_gunship",
+        "f3:air_t2_gunship",
+        "f4:air_t2_gunship"
       ]
     },
     {
@@ -38,7 +47,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:air_t2_fbomber"
+        "core:air_t2_fbomber",
+        "f2:air_t2_fbomber",
+        "f3:air_t2_fbomber",
+        "f4:air_t2_fbomber"
       ]
     },
     {
@@ -48,7 +60,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:air_t1_scout"
+        "core:air_t1_scout",
+        "f2:air_t1_scout",
+        "f3:air_t1_scout",
+        "f4:air_t1_scout"
       ]
     },
     {
@@ -58,7 +73,10 @@
       "tech": 0,
       "scale": 1.6,
       "units": [
-        "core:cmd_commander"
+        "core:cmd_commander",
+        "f2:cmd_commander",
+        "f3:cmd_commander",
+        "f4:cmd_commander"
       ]
     },
     {
@@ -68,7 +86,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_engineer"
+        "core:lnd_t1_engineer",
+        "f2:lnd_t1_engineer",
+        "f3:lnd_t1_engineer",
+        "f4:lnd_t1_engineer"
       ]
     },
     {
@@ -78,7 +99,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_engineer"
+        "core:lnd_t2_engineer",
+        "f2:lnd_t2_engineer",
+        "f3:lnd_t2_engineer",
+        "f4:lnd_t2_engineer"
       ]
     },
     {
@@ -88,7 +112,10 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:lnd_t3_engineer"
+        "core:lnd_t3_engineer",
+        "f2:lnd_t3_engineer",
+        "f3:lnd_t3_engineer",
+        "f4:lnd_t3_engineer"
       ]
     },
     {
@@ -98,7 +125,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_aa"
+        "core:lnd_t1_aa",
+        "f2:lnd_t1_aa",
+        "f3:lnd_t1_aa",
+        "f4:lnd_t1_aa"
       ]
     },
     {
@@ -108,7 +138,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_aa"
+        "core:lnd_t2_aa",
+        "f2:lnd_t2_aa",
+        "f3:lnd_t2_aa",
+        "f4:lnd_t2_aa"
       ]
     },
     {
@@ -118,7 +151,10 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:lnd_t3_aa"
+        "core:lnd_t3_aa",
+        "f2:lnd_t3_aa",
+        "f3:lnd_t3_aa",
+        "f4:lnd_t3_aa"
       ]
     },
     {
@@ -128,7 +164,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_arty"
+        "core:lnd_t1_arty",
+        "f2:lnd_t1_arty",
+        "f3:lnd_t1_arty",
+        "f4:lnd_t1_arty"
       ]
     },
     {
@@ -138,7 +177,10 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:lnd_t3_arty"
+        "core:lnd_t3_arty",
+        "f2:lnd_t3_arty",
+        "f3:lnd_t3_arty",
+        "f4:lnd_t3_arty"
       ]
     },
     {
@@ -148,7 +190,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_bot"
+        "core:lnd_t1_bot",
+        "f2:lnd_t1_bot",
+        "f3:lnd_t1_bot",
+        "f4:lnd_t1_scout"
       ]
     },
     {
@@ -158,7 +203,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_bot"
+        "core:lnd_t2_bot",
+        "f2:lnd_t2_bot",
+        "f3:lnd_t2_bot",
+        "f4:lnd_t2_bot"
       ]
     },
     {
@@ -168,7 +216,9 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:lnd_t3_bot"
+        "core:lnd_t3_bot",
+        "f2:lnd_t3_bot",
+        "f3:lnd_t3_bot"
       ]
     },
     {
@@ -178,7 +228,10 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_tank"
+        "core:lnd_t1_tank",
+        "f2:lnd_t1_tank",
+        "f3:lnd_t1_tank",
+        "f4:lnd_t1_tank"
       ]
     },
     {
@@ -188,7 +241,20 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_tank"
+        "core:lnd_t2_tank",
+        "f2:lnd_t2_tank",
+        "f3:lnd_t2_tank",
+        "f4:lnd_t2_tank"
+      ]
+    },
+    {
+      "id": "land_direct_t3",
+      "form": "land",
+      "glyph": "direct",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "f4:lnd_t3_tank"
       ]
     },
     {
@@ -198,7 +264,9 @@
       "tech": 1,
       "scale": 1,
       "units": [
-        "core:lnd_t1_scout"
+        "core:lnd_t1_scout",
+        "f2:lnd_t1_scout",
+        "f3:lnd_t1_scout"
       ]
     },
     {
@@ -208,7 +276,10 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_mml"
+        "core:lnd_t2_mml",
+        "f2:lnd_t2_mml",
+        "f3:lnd_t2_mml",
+        "f4:lnd_t2_mml"
       ]
     },
     {
@@ -218,7 +289,19 @@
       "tech": 2,
       "scale": 1.15,
       "units": [
-        "core:lnd_t2_shield"
+        "core:lnd_t2_shield",
+        "f2:lnd_t2_shield",
+        "f3:lnd_t2_shield"
+      ]
+    },
+    {
+      "id": "land_shield_t3",
+      "form": "land",
+      "glyph": "shield",
+      "tech": 3,
+      "scale": 1.3,
+      "units": [
+        "f4:lnd_t3_shield"
       ]
     },
     {
@@ -228,7 +311,10 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:lnd_t3_sniper"
+        "core:lnd_t3_sniper",
+        "f2:lnd_t3_sniper",
+        "f3:lnd_t3_sniper",
+        "f4:lnd_t3_sniper"
       ]
     },
     {
@@ -238,7 +324,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_aa"
+        "core:str_t1_aa",
+        "f2:str_t1_aa",
+        "f3:str_t1_aa",
+        "f4:str_t1_aa"
       ]
     },
     {
@@ -248,7 +337,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_aa"
+        "core:str_t2_aa",
+        "f2:str_t2_aa",
+        "f3:str_t2_aa",
+        "f4:str_t2_aa"
       ]
     },
     {
@@ -258,7 +350,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_arty"
+        "core:str_t2_arty",
+        "f2:str_t2_arty",
+        "f3:str_t2_arty",
+        "f4:str_t2_arty"
       ]
     },
     {
@@ -268,7 +363,10 @@
       "tech": 3,
       "scale": 1.3,
       "units": [
-        "core:str_t3_arty"
+        "core:str_t3_arty",
+        "f2:str_t3_arty",
+        "f3:str_t3_arty",
+        "f4:str_t3_arty"
       ]
     },
     {
@@ -278,7 +376,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_pd"
+        "core:str_t1_pd",
+        "f2:str_t1_pd",
+        "f3:str_t1_pd",
+        "f4:str_t1_pd"
       ]
     },
     {
@@ -288,7 +389,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_pd"
+        "core:str_t2_pd",
+        "f2:str_t2_pd",
+        "f3:str_t2_pd",
+        "f4:str_t2_pd"
       ]
     },
     {
@@ -298,7 +402,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_pgen"
+        "core:str_t1_pgen",
+        "f2:str_t1_pgen",
+        "f3:str_t1_pgen",
+        "f4:str_t1_pgen"
       ]
     },
     {
@@ -308,7 +415,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_pgen"
+        "core:str_t2_pgen",
+        "f2:str_t2_pgen",
+        "f3:str_t2_pgen",
+        "f4:str_t2_pgen"
       ]
     },
     {
@@ -318,7 +428,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_pgen"
+        "core:str_t3_pgen",
+        "f2:str_t3_pgen",
+        "f3:str_t3_pgen",
+        "f4:str_t3_pgen"
       ]
     },
     {
@@ -328,7 +441,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_estore"
+        "core:str_t1_estore",
+        "f2:str_t1_estore",
+        "f3:str_t1_estore",
+        "f4:str_t1_estore"
       ]
     },
     {
@@ -338,7 +454,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_fac_air"
+        "core:str_t1_fac_air",
+        "f2:str_t1_fac_air",
+        "f3:str_t1_fac_air",
+        "f4:str_t1_fac_air"
       ]
     },
     {
@@ -348,7 +467,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_fac_air"
+        "core:str_t2_fac_air",
+        "f2:str_t2_fac_air",
+        "f3:str_t2_fac_air",
+        "f4:str_t2_fac_air"
       ]
     },
     {
@@ -358,7 +480,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_fac_land"
+        "core:str_t1_fac_land",
+        "f2:str_t1_fac_land",
+        "f3:str_t1_fac_land",
+        "f4:str_t1_fac_land"
       ]
     },
     {
@@ -368,7 +493,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_fac_land"
+        "core:str_t2_fac_land",
+        "f2:str_t2_fac_land",
+        "f3:str_t2_fac_land",
+        "f4:str_t2_fac_land"
       ]
     },
     {
@@ -378,7 +506,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_fac_land"
+        "core:str_t3_fac_land",
+        "f2:str_t3_fac_land",
+        "f3:str_t3_fac_land",
+        "f4:str_t3_fac_land"
       ]
     },
     {
@@ -388,7 +519,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_hydro"
+        "core:str_t1_hydro",
+        "f2:str_t1_hydro",
+        "f3:str_t1_hydro",
+        "f4:str_t1_hydro"
       ]
     },
     {
@@ -398,7 +532,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_radar"
+        "core:str_t1_radar",
+        "f2:str_t1_radar",
+        "f3:str_t1_radar",
+        "f4:str_t1_radar"
       ]
     },
     {
@@ -408,7 +545,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_radar"
+        "core:str_t2_radar",
+        "f2:str_t2_radar",
+        "f3:str_t2_radar",
+        "f4:str_t2_radar"
       ]
     },
     {
@@ -418,7 +558,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_radar"
+        "core:str_t3_radar",
+        "f2:str_t3_radar",
+        "f3:str_t3_radar",
+        "f4:str_t3_radar"
       ]
     },
     {
@@ -428,7 +571,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_mex"
+        "core:str_t1_mex",
+        "f2:str_t1_mex",
+        "f3:str_t1_mex",
+        "f4:str_t1_mex"
       ]
     },
     {
@@ -438,7 +584,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_mex"
+        "core:str_t2_mex",
+        "f2:str_t2_mex",
+        "f3:str_t2_mex",
+        "f4:str_t2_mex"
       ]
     },
     {
@@ -448,7 +597,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_mex"
+        "core:str_t3_mex",
+        "f2:str_t3_mex",
+        "f3:str_t3_mex",
+        "f4:str_t3_mex"
       ]
     },
     {
@@ -458,7 +610,10 @@
       "tech": 1,
       "scale": 1.1,
       "units": [
-        "core:str_t1_mstore"
+        "core:str_t1_mstore",
+        "f2:str_t1_mstore",
+        "f3:str_t1_mstore",
+        "f4:str_t1_mstore"
       ]
     },
     {
@@ -468,7 +623,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_sam"
+        "core:str_t3_sam",
+        "f2:str_t3_sam",
+        "f3:str_t3_sam",
+        "f4:str_t3_sam"
       ]
     },
     {
@@ -478,7 +636,10 @@
       "tech": 2,
       "scale": 1.1,
       "units": [
-        "core:str_t2_shield"
+        "core:str_t2_shield",
+        "f2:str_t2_shield",
+        "f3:str_t2_shield",
+        "f4:str_t2_shield"
       ]
     },
     {
@@ -488,7 +649,10 @@
       "tech": 3,
       "scale": 1.1,
       "units": [
-        "core:str_t3_shield"
+        "core:str_t3_shield",
+        "f2:str_t3_shield",
+        "f3:str_t3_shield",
+        "f4:str_t3_shield"
       ]
     },
     {
@@ -498,7 +662,10 @@
       "tech": 0,
       "scale": 0.6,
       "units": [
-        "core:str_t1_wall"
+        "core:str_t1_wall",
+        "f2:str_t1_wall",
+        "f3:str_t1_wall",
+        "f4:str_t1_wall"
       ]
     }
   ]

@@ -11,7 +11,8 @@
     "ms9Core": 26,
     "visuals": 28,
     "iconGlyphs": 19,
-    "reservedPostMvp": 5
+    "reservedPostMvp": 5,
+    "experimentals": 5
   },
   "conventions": {
     "units": "1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s",
@@ -34,7 +35,8 @@
     "legs": "kitbash.legs / motion.legs = Beinzahl (Instanzparameter des Bein-Renderers, nur View): 2 = leicht/schnell, 4 = Linie, 6 = T3 und Rädelsführer. legs zählt als 1 Part, Tris-Schätzung ohne Beine (Render-Pfad).",
     "regen": "health.regenPerSec bei Strukturen = „Nachwachsen“ nach Vorbild-Relation (faction.md §9.3). Offen: ob die Sim das generisch anwendet.",
     "postMvp": "special.postMvp = [{feature, effect}]: Eigenheit der Vorbild-Fraktion, die eine Post-MVP-Mechanik braucht. Ohne Sim-Wirkung; die Kern-Balance gilt ohne sie (faction.md §9.4/9.5). Fraktionsweit zusätzlich: Veteranen-Regeneration (U9) und „Nachwachsen im Feld“ für mobile Einheiten (K10-Mechanik regenStartS).",
-    "crossFaction": "checks.crossFaction: Salven bis Tod Skarn↔Varkan müssen denselben Wert liefern wie die FA-Paarung der beiden Referenzfraktionen (Pflichtpaare mandatory=true). balance.vsCore: (f2/Varkan) ÷ (Vorbild-FA/Varkan-FA) − 1 je Achse, Gate ±25 %."
+    "crossFaction": "checks.crossFaction: Salven bis Tod Skarn↔Varkan müssen denselben Wert liefern wie die FA-Paarung der beiden Referenzfraktionen (Pflichtpaare mandatory=true). balance.vsCore: (f2/Varkan) ÷ (Vorbild-FA/Varkan-FA) − 1 je Achse, Gate ±25 %.",
+    "experimentals": "experimentals[] = T4-Rollen (Post-MVP, tier T4, nicht in counts.total/units). Gates gegen die T4-Referenz der Vorbild-Fraktion (tools/roster/f2/fa_ref_t4.json): ±25 % hart, Einzelachsen + Produkt + Pulk ±15 %, Identität (Mass ≤, Tempo ≥, HP/Mass ≤ Referenz); Eco ohne Vorbild: Amortisation 1,5–3,0 × Egel-Kette. Setons-Brücke: Außenmaß ≤ 12 WU (≥ 6 nebeneinander auf 72 WU). T4-Kitbash-Budget: Tris L0/L1/L2 1200/700/350, ≤ 12 Part-Einträge, ≤ 3 animiert, Beine ≥ 8. Design: experimentals.md."
   },
   "hotbuildGrid": {
     "Landnest": {
@@ -70,6 +72,13 @@
       "X": "Schlehe/Igel",
       "C": "Hecke",
       "V": "Schierling/Bilsenkraut"
+    },
+    "Bau (T4-Tab, Post-MVP)": {
+      "Q": "Skolopender",
+      "W": "Bärenklau",
+      "E": "Assel",
+      "R": "Tsetse",
+      "T": "Myzel"
     },
     "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen. Raster identisch zu Varkan (gleiche Taste = gleiche Rolle in jeder Fraktion)."
   },
@@ -700,6 +709,1088 @@
       "faRefDevOnly": "XRL0305",
       "hotbuild": null,
       "icon": "land_direct_t3"
+    }
+  ],
+  "experimentals": [
+    {
+      "id": "f2:exp_lnd_assault",
+      "name": {
+        "de": "Skolopender",
+        "en": "Scolopendra"
+      },
+      "role": {
+        "de": "Experimenteller Sturmläufer",
+        "en": "Experimental Assault Walker"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "land",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U16",
+        "U21",
+        "K1-Erweiterung",
+        "I5",
+        "M13",
+        "U18",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Spiderbot (Strahl, Tarnfeld, amphibisch)",
+        "bp": "URL0402",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 19500,
+        "energy": 250000,
+        "buildTime": 27000
+      },
+      "health": {
+        "max": 42000,
+        "regenPerSec": 10
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f2:wpn_scolopendra_beam",
+          "type": "Granatstrahl (Dauerstrahl; MVP-Fallback Pulslinse 390 alle 0,1 s)",
+          "damage": 390,
+          "salvo": 1,
+          "reloadS": 0.1,
+          "dps": 3900.0,
+          "rangeMin": 4,
+          "range": 30,
+          "projectile": "Strahl",
+          "splash": 0.5,
+          "layers": [
+            "land"
+          ],
+          "notes": "K1-Erweiterung Beam-Waffentyp. Bis dahin Hitscan-Puls mit identischem DPS (faction.md §9.4)."
+        },
+        {
+          "ref": "f2:wpn_scolopendra_jaw",
+          "type": "Kieferlinsen (2 × Puls)",
+          "damage": 150,
+          "salvo": 2,
+          "reloadS": 0.7,
+          "dps": 428.57,
+          "range": 60,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f2:wpn_scolopendra_spines",
+          "type": "Dornenkamm Heck (2 × Lenkpfeil, Luft)",
+          "damage": 40,
+          "salvo": 4,
+          "reloadS": 2.0,
+          "dps": 80.0,
+          "range": 60,
+          "projectile": "Lenkflugkörper",
+          "muzzleVelocity": 30,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.7,
+        "turnRateDeg": 30,
+        "accel": 1.2,
+        "sizeClass": 3,
+        "footprint": [
+          4,
+          10
+        ],
+        "legs": 14,
+        "dimensionsWU": {
+          "length": 11.0,
+          "width": 3.2,
+          "height": 2.2,
+          "legSpan": 5.6
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 5.6,
+          "abreast": 12,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 32
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f2:wpn_segment_rupture",
+          "damage": 4000,
+          "radius": 6,
+          "note": "Segmentbruch: Kette reißt Glied für Glied (P14); FA-Relation 1:1."
+        },
+        "notes": "Schnellstes Land-Experimental der Skarn und das billigste des Rosters. Frisst sich mit dem Strahl durch Linien, hält aber keinen Stellungskrieg aus. Ohne Tarnfeld (I5) und Torpedo (U18) bleibt die Balance im Band (Torpedo in der FA-Summe 50 DPS = 1,1 %).",
+        "postMvp": [
+          {
+            "feature": "K1-Erweiterung",
+            "effect": "Granatstrahl als echter Dauerstrahl (Schaden pro Tick, trifft alles auf der Strahllinie bis zum ersten Hindernis)."
+          },
+          {
+            "feature": "I5",
+            "effect": "Tarnfeld um sich (Radar- und Sicht-Tarnung für sich und Einheiten im Radius 12 WU), Unterhalt 400 E/s wie die Vorbild-Relation."
+          },
+          {
+            "feature": "M13",
+            "effect": "Amphibisch: läuft über den Grund von Wasser."
+          },
+          {
+            "feature": "U18",
+            "effect": "Giftstachel unter Wasser (Torpedo, 50 Schaden alle 4 s, RW 45)."
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "Q"
+      },
+      "icon": "land_direct_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (faction.md Varkan §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs",
+            "count": 14
+          },
+          {
+            "part": "carapace",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "kopfsegment"
+          },
+          {
+            "part": "carapace",
+            "mat": "team",
+            "count": 6,
+            "note": "rumpfsegmente"
+          },
+          {
+            "part": "carapace",
+            "count": 6,
+            "note": "seitenplatten"
+          },
+          {
+            "part": "lens",
+            "mat": "sinew",
+            "anim": "pitch",
+            "note": "strahllinse"
+          },
+          {
+            "part": "lens",
+            "mat": "sinew",
+            "count": 2,
+            "note": "kieferlinsen"
+          },
+          {
+            "part": "carapace",
+            "mat": "sinew",
+            "count": 2,
+            "note": "giftklauen"
+          },
+          {
+            "part": "spike",
+            "count": 6,
+            "note": "dornenkamm_heck"
+          }
+        ],
+        "partCount": 8,
+        "animatedParts": 2,
+        "trisEstimate": 432,
+        "trisBudget": {
+          "L0": 1200,
+          "L1": 700,
+          "L2": 350
+        },
+        "legs": 14,
+        "techMarker": "Klammer-Winkel quarzweiß (2 Winkel an den vorderen Panzerecken statt Tech-Streifen)",
+        "monopoly": "Segmentkette: sieben flache Keilglieder hintereinander (Länge ≥ 3,4 × Breite), 14 Beine als Doppelreihe; überlange Strahllinse am Kopf.",
+        "description": "Kopfsegment (Keil, teamfarben, dreht als Turm) mit überlanger waagerechter Granatlinse (4,2 WU, ragt 1,5 WU über den Kopf) und zwei Kieferlinsen an den Giftklauen; dahinter sechs Rumpfglieder mit teamfarbenen Rückenplatten und dunklen Seitenplatten, 14 Beine (7 Paare, Knie über dem Rücken). Auf den letzten zwei Gliedern ein Dornenkamm aus 6 senkrechten Dornen (AA). Glieder schwingen phasenversetzt zum Beinzyklus (nur View)."
+      },
+      "balance": {
+        "dps": 4408.57,
+        "dpsPerMass": 0.22608,
+        "hpPerMass": 2.1538,
+        "fa": {
+          "bp": "URL0402",
+          "mass": 20000,
+          "energy": 260000,
+          "buildTime": 27500,
+          "hp": 45000,
+          "regen": 10,
+          "dps": 4558.57,
+          "dpsPerMass": 0.22793,
+          "hpPerMass": 2.25,
+          "speed": 2.5
+        },
+        "devDpsPerMassPct": -0.8,
+        "devHpPerMassPct": -4.3,
+        "devProductPct": -5.0,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "cheaper": true,
+          "faster": true,
+          "frailer": true
+        }
+      }
+    },
+    {
+      "id": "f2:exp_lnd_siege",
+      "name": {
+        "de": "Assel",
+        "en": "Woodlouse"
+      },
+      "role": {
+        "de": "Experimenteller Brutläufer",
+        "en": "Experimental Brood Walker"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "land",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "B3-Erweiterung",
+        "M13",
+        "U18",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Megabot (amphibisch, baut Einheiten, Flak, Torpedos)",
+        "bp": "XRL0403",
+        "crossCheckBp": "UEL0401"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "FACTORY",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 36000,
+        "energy": 420000,
+        "buildTime": 58000,
+        "buildPower": 45
+      },
+      "health": {
+        "max": 104000,
+        "regenPerSec": 1
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f2:wpn_woodlouse_twinlens",
+          "type": "Zwillingslinsen (2 Türme × 2 Linsen)",
+          "damage": 720,
+          "salvo": 4,
+          "reloadS": 1.2,
+          "dps": 2400.0,
+          "rangeMin": 4,
+          "range": 60,
+          "projectile": "linear",
+          "muzzleVelocity": 65,
+          "splash": 2,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f2:wpn_woodlouse_flak",
+          "type": "Flakdornen (Luft)",
+          "damage": 18,
+          "salvo": 1,
+          "reloadS": 0.6,
+          "dps": 30.0,
+          "range": 40,
+          "projectile": "linear (Flak)",
+          "muzzleVelocity": 20,
+          "splash": 2,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.2,
+        "turnRateDeg": 45,
+        "accel": 0.8,
+        "sizeClass": 3,
+        "footprint": [
+          8,
+          8
+        ],
+        "legs": 14,
+        "dimensionsWU": {
+          "length": 9.5,
+          "width": 7.0,
+          "height": 4.4,
+          "legSpan": 10.5
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 10.5,
+          "abreast": 6,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 32
+      },
+      "special": {
+        "toggles": [],
+        "builds": "Landnest-Liste T1–T3 der Skarn (ohne Engineers), Build Power 45, Ausstoß aus dem Brutmaul am Bug; Queue/Repeat/Rally wie ein Nest (B3).",
+        "deathWeapon": {
+          "ref": "f2:wpn_brood_burst",
+          "damage": 8000,
+          "radius": 9,
+          "note": "Brutbersten: Platten fliegen auseinander (P14); FA-Relation 1:1."
+        },
+        "notes": "Zähester Körper des Rosters und mobiles Nest: trägt eine T3-Armee über die Front und brütet vor Ort nach. Ohne Torpedo (U18) fehlen 11,6 % der FA-Summen-DPS; gegen Landziele liegt die Assel damit +8,3 % über der Vorbild-Relation (im Band, keine Kompensation nötig).",
+        "postMvp": [
+          {
+            "feature": "M13",
+            "effect": "Amphibisch: läuft über den Grund von Wasser; brütet auch unter Wasser."
+          },
+          {
+            "feature": "U18",
+            "effect": "Tiefenstachel (Torpedo, 20 × 4 Schaden alle 1,3 s, RW 64) und Torpedo-Ablenker."
+          },
+          {
+            "feature": "B3-Erweiterung",
+            "effect": "Produktion aus einer mobilen Einheit (Queue läuft auch in Bewegung, Ausstoß am Bug)."
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "E"
+      },
+      "icon": "land_direct_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (faction.md Varkan §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs",
+            "count": 14
+          },
+          {
+            "part": "carapace",
+            "mat": "team",
+            "count": 7,
+            "note": "querplatten"
+          },
+          {
+            "part": "carapace",
+            "note": "bauchschale"
+          },
+          {
+            "part": "neck",
+            "anim": "yaw",
+            "count": 2,
+            "note": "linsentraeger"
+          },
+          {
+            "part": "lens",
+            "mat": "sinew",
+            "anim": "pitch",
+            "count": 4,
+            "note": "zwillingslinsen"
+          },
+          {
+            "part": "gate",
+            "mat": "glow",
+            "note": "brutmaul"
+          },
+          {
+            "part": "spool",
+            "mat": "team",
+            "note": "brutspule"
+          },
+          {
+            "part": "spike",
+            "count": 4,
+            "note": "flakdornen"
+          }
+        ],
+        "partCount": 8,
+        "animatedParts": 2,
+        "trisEstimate": 364,
+        "trisBudget": {
+          "L0": 1200,
+          "L1": 700,
+          "L2": 350
+        },
+        "legs": 14,
+        "techMarker": "Klammer-Winkel quarzweiß (2 Winkel an den vorderen Panzerecken statt Tech-Streifen)",
+        "monopoly": "Plattenkuppel: sieben überlappende, teamfarbene Querplatten als flache Kuppel (Breite ≥ 0,7 × Länge), vorn ein glühendes Brutmaul.",
+        "description": "Ovaler, flach gewölbter Rücken aus sieben überlappenden Querplatten (teamfarben, Kanten dunkel glänzend) auf 14 kurzen Hochbeinen; vorn unter dem Kopfschild das Brutmaul (V-Portal, Herzkern) mit liegender Spule dahinter; links und rechts vorn je ein Linsenträger mit zwei waagerechten Granatlinsen; auf der dritten Platte vier kurze Flakdornen. Kein Schwanz, keine Fühler."
+      },
+      "balance": {
+        "dps": 2430.0,
+        "dpsPerMass": 0.0675,
+        "hpPerMass": 2.8889,
+        "fa": {
+          "bp": "XRL0403",
+          "mass": 37500,
+          "energy": 437500,
+          "buildTime": 60625,
+          "hp": 110000,
+          "regen": 0.5,
+          "dps": 2646.96,
+          "dpsPerMass": 0.07059,
+          "hpPerMass": 2.9333,
+          "speed": 2
+        },
+        "devDpsPerMassPct": -4.4,
+        "devHpPerMassPct": -1.5,
+        "devProductPct": -5.8,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "cheaper": true,
+          "faster": true,
+          "frailer": true
+        },
+        "crossInfo": {
+          "bp": "UEL0401",
+          "note": "Gegenprobe Varkan-Vorbild, nur Info (Varkan hat noch keine T4)",
+          "dpsPerMass": 0.14962,
+          "hpPerMass": 1.1607
+        }
+      }
+    },
+    {
+      "id": "f2:exp_air_gunship",
+      "name": {
+        "de": "Tsetse",
+        "en": "Tsetse"
+      },
+      "role": {
+        "de": "Experimenteller Kampfschweber",
+        "en": "Experimental Gunship"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "air",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "U12",
+        "I5",
+        "K12",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Gunship (Radar-Tarnung, Luftabwehr)",
+        "bp": "URA0401",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "DIRECTFIRE",
+        "ANTIAIR",
+        "EXPERIMENTAL"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 27500,
+        "energy": 780000,
+        "buildTime": 46000
+      },
+      "health": {
+        "max": 70000,
+        "regenPerSec": 70
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f2:wpn_tsetse_bellylens",
+          "type": "Bauchlinsen (4 × Puls)",
+          "damage": 300,
+          "salvo": 4,
+          "reloadS": 0.7,
+          "dps": 1714.29,
+          "range": 30,
+          "projectile": "linear",
+          "muzzleVelocity": 30,
+          "splash": 3,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f2:wpn_tsetse_quiver",
+          "type": "Stachelköcher (2 × 3 Raketen)",
+          "damage": 200,
+          "salvo": 6,
+          "reloadS": 2.0,
+          "dps": 600.0,
+          "range": 30,
+          "projectile": "Lenkflugkörper",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "f2:wpn_tsetse_spines",
+          "type": "Dornenkamm (4 × Lenkpfeil, Luft)",
+          "damage": 140,
+          "salvo": 4,
+          "reloadS": 2.5,
+          "dps": 224.0,
+          "range": 60,
+          "projectile": "Lenkflugkörper",
+          "muzzleVelocity": 30,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 10,
+        "sizeClass": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "dimensionsWU": {
+          "length": 10.0,
+          "width": 11.0,
+          "height": 2.4,
+          "legSpan": null
+        }
+      },
+      "intel": {
+        "vision": 46
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f2:wpn_tsetse_crash",
+          "damage": 5000,
+          "radius": 8,
+          "note": "Absturz (K12); FA-Relation 1:1."
+        },
+        "notes": "Schneller als die Vorbild-Referenz (10 statt 9 WU/s) und etwas zerbrechlicher; Regeneration nach Vorbild-Relation (70 HP/s). Ohne Radar-Tarnung (I5) und Absturzschaden (K12) bleibt die Balance im Band.",
+        "postMvp": [
+          {
+            "feature": "I5",
+            "effect": "Radar-Tarnung (unsichtbar für Radar, Unterhalt 600 E/s wie die Vorbild-Relation)."
+          },
+          {
+            "feature": "K12",
+            "effect": "Absturzschaden 5000 im Radius 8 beim Abschuss."
+          },
+          {
+            "feature": "U12",
+            "effect": "Flugmodell und Luftfabrik-Pfad der schweren T3/T4-Luft (Bau durch T3-Engineers, Landung, Wendekreis)."
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "R"
+      },
+      "icon": "air_direct_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (faction.md Varkan §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "carapace",
+            "mat": "team",
+            "count": 3,
+            "note": "rumpfglieder"
+          },
+          {
+            "part": "neck",
+            "mat": "team",
+            "count": 4,
+            "note": "ausleger"
+          },
+          {
+            "part": "buzzdisc",
+            "anim": "spin",
+            "count": 4,
+            "note": "schwirrscheiben"
+          },
+          {
+            "part": "lens",
+            "mat": "sinew",
+            "anim": "pitch",
+            "count": 4,
+            "note": "bauchlinsen"
+          },
+          {
+            "part": "pod",
+            "mat": "sinew",
+            "count": 2,
+            "note": "stachelkoecher"
+          },
+          {
+            "part": "spike",
+            "count": 4,
+            "note": "dornenkamm"
+          },
+          {
+            "part": "carapace",
+            "mat": "sinew",
+            "note": "kopfschild"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 2,
+        "trisEstimate": 304,
+        "trisBudget": {
+          "L0": 1200,
+          "L1": 700,
+          "L2": 350
+        },
+        "legs": null,
+        "techMarker": "Klammer-Winkel quarzweiß (2 Winkel an den vorderen Panzerecken statt Tech-Streifen)",
+        "monopoly": "Vierfach-Schwirrscheibe: vier opake Schwirrscheiben an X-Auslegern um einen langen Gliederrumpf, keine Flügel.",
+        "description": "Langer Gliederrumpf aus drei Keilgliedern (teamfarbene Rückenplatten), am Kopf ein dunkler Kopfschild; vier teamfarbene Ausleger im X, an jedem eine Schwirrscheibe (opak, gestreift, dreht); unter dem Rumpf vier Bauchlinsen in zwei Paaren, seitlich zwei Stachelköcher; auf dem mittleren Glied ein Dornenkamm aus vier senkrechten Dornen."
+      },
+      "balance": {
+        "dps": 2538.29,
+        "dpsPerMass": 0.0923,
+        "hpPerMass": 2.5455,
+        "fa": {
+          "bp": "URA0401",
+          "mass": 29000,
+          "energy": 812000,
+          "buildTime": 48000,
+          "hp": 75000,
+          "regen": 75,
+          "dps": 2667.14,
+          "dpsPerMass": 0.09197,
+          "hpPerMass": 2.5862,
+          "speed": 9
+        },
+        "devDpsPerMassPct": 0.4,
+        "devHpPerMassPct": -1.6,
+        "devProductPct": -1.2,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "identity": {
+          "cheaper": true,
+          "faster": true,
+          "frailer": true
+        }
+      }
+    },
+    {
+      "id": "f2:exp_lnd_arty",
+      "name": {
+        "de": "Bärenklau",
+        "en": "Hogweed"
+      },
+      "role": {
+        "de": "Experimentelle Schnellfeuer-Artillerie",
+        "en": "Experimental Rapid-Fire Artillery"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "land",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "K2",
+        "K4",
+        "C17",
+        "M13",
+        "I3",
+        "P14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "Experimental Mobile Rapid-Fire Artillery (Game-Ender)",
+        "bp": "URL0401",
+        "crossCheckBp": "UEB2401"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ARTILLERY",
+        "INDIRECTFIRE",
+        "EXPERIMENTAL",
+        "STRATEGIC"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 210000,
+        "energy": 3800000,
+        "buildTime": 230000
+      },
+      "health": {
+        "max": 8500,
+        "regenPerSec": 0
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "f2:wpn_hogweed_umbel",
+          "type": "Doldensalve (20 Kapseln nacheinander, 0,25 s Abstand)",
+          "damage": 1500,
+          "salvo": 20,
+          "reloadS": 20.0,
+          "dps": 1500.0,
+          "rangeMin": 150,
+          "range": 4000,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 160,
+          "splash": 12,
+          "layers": [
+            "land"
+          ],
+          "notes": "Feuert nur verwurzelt (Wurzeln 10 s, Lösen 5 s). Reichweite kartenweit auf allen MVP-Karten."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 1.6,
+        "turnRateDeg": 80,
+        "accel": 0.6,
+        "sizeClass": 3,
+        "footprint": [
+          6,
+          8
+        ],
+        "legs": 8,
+        "dimensionsWU": {
+          "length": 8.5,
+          "width": 5.5,
+          "height": 10.5,
+          "legSpan": 9.0
+        },
+        "bridge": {
+          "minBridgeWU": 72,
+          "outerWidthWU": 9.0,
+          "abreast": 8,
+          "ok": true
+        }
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [
+          "wurzeln (C17)"
+        ],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f2:wpn_umbel_collapse",
+          "damage": 3000,
+          "radius": 8,
+          "note": "Doldenkollaps: ungezündete Kapseln platzen (Death-Weapon-Pfad wie U1, Effekt P14)."
+        },
+        "notes": "Game-Ender der Skarn: kartenweite Salven, aber mit 8500 HP für 210.000 Mass das zerbrechlichste Experimental (Vorbild-Relation). Skarn-eigene Gegenspiel-Regel: feuert nur verwurzelt; Wurzeln und Lösen dauern, die Salve ist am Doldenglühen 3 s vorher sichtbar. Reichweite 4000 WU wie die Vorbild-Relation: auf Setons (1024 WU) und allen MVP-Karten kartenweit, erst auf großen Karten (M14) eine Grenze.",
+        "postMvp": [
+          {
+            "feature": "C17",
+            "effect": "Toggle Wurzeln/Lösen (10 s / 5 s); verwurzelt immobil, Beine als Anker gespreizt."
+          },
+          {
+            "feature": "M13",
+            "effect": "Amphibisch: läuft über den Grund von Wasser (Vorbild-Relation), feuert nicht unter Wasser."
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "W"
+      },
+      "icon": "land_arty_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (faction.md Varkan §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs",
+            "count": 8
+          },
+          {
+            "part": "carapace",
+            "mat": "team",
+            "note": "rumpf"
+          },
+          {
+            "part": "carapace",
+            "anim": "deploy",
+            "count": 2,
+            "note": "ankersporne"
+          },
+          {
+            "part": "neck",
+            "anim": "yaw",
+            "note": "schwanzansatz"
+          },
+          {
+            "part": "tail",
+            "mat": "team",
+            "anim": "pitch",
+            "count": 2,
+            "note": "doppelschwanz"
+          },
+          {
+            "part": "pod",
+            "mat": "sinew",
+            "count": 12,
+            "note": "dolde"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 3,
+        "trisEstimate": 396,
+        "trisBudget": {
+          "L0": 1200,
+          "L1": 700,
+          "L2": 350
+        },
+        "legs": 8,
+        "techMarker": "Klammer-Winkel quarzweiß (2 Winkel an den vorderen Panzerecken statt Tech-Streifen)",
+        "monopoly": "Dolde: ein doppelt gegliederter Riesenschwanz trägt eine schirmförmige Dolde aus 12 Kapseln (Ø 4 WU) schräg nach vorn (50°).",
+        "description": "Breiter Keilrumpf auf 8 gespreizten Beinen, hinten zwei Ankersporne (klappen beim Wurzeln in den Boden); aus dem Rücken wächst ein doppelt gegliederter Riesenschwanz (teamfarben) bis 10,5 WU Höhe, an der Spitze die Dolde: 12 Kapseln radial auf einem flachen Schirm, Spitze schräg nach vorn. Keine Linse, nichts Waagerechtes."
+      },
+      "balance": {
+        "dps": 1500.0,
+        "dpsPerMass": 0.00714,
+        "hpPerMass": 0.0405,
+        "fa": {
+          "bp": "URL0401",
+          "mass": 220000,
+          "energy": 4000000,
+          "buildTime": 240000,
+          "hp": 9000,
+          "regen": 0,
+          "dps": 1600.0,
+          "dpsPerMass": 0.00727,
+          "hpPerMass": 0.0409,
+          "speed": 1.5
+        },
+        "devDpsPerMassPct": -1.8,
+        "devHpPerMassPct": -1.1,
+        "devProductPct": -2.8,
+        "withinBand25": true,
+        "withinTarget15": true,
+        "pulk": {
+          "devPct": -1.8,
+          "faSalvo": 20,
+          "faReloadS": 20.0
+        },
+        "identity": {
+          "cheaper": true,
+          "faster": true,
+          "frailer": true
+        },
+        "crossInfo": {
+          "bp": "UEB2401",
+          "note": "Gegenprobe Varkan-Vorbild, nur Info (Varkan hat noch keine T4)",
+          "dpsPerMass": 0.0089,
+          "hpPerMass": 0.0356
+        }
+      }
+    },
+    {
+      "id": "f2:exp_str_eco",
+      "name": {
+        "de": "Myzel",
+        "en": "Mycelium"
+      },
+      "role": {
+        "de": "Experimenteller Geflechtknoten",
+        "en": "Experimental Tangle Node"
+      },
+      "tier": "T4",
+      "tech": 4,
+      "group": "structure",
+      "postMvp": true,
+      "ms9Core": false,
+      "msFirst": "post-MVP",
+      "msNote": "T4 ist Post-MVP (features.json U16/U21); keine Sim-Wirkung vor den genannten Features.",
+      "needs": [
+        "U21",
+        "E17",
+        "K14"
+      ],
+      "faReference": {
+        "devOnly": true,
+        "role": "(keine Vorbild-Rolle; Fremdreferenz Experimental Resource Generator nur als Obergrenze)",
+        "bp": null,
+        "crossCheckBp": null,
+        "infoBp": "XAB1401"
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "EXPERIMENTAL",
+        "SIZE100"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 36000,
+        "energy": 900000,
+        "buildTime": 90000,
+        "massPerSec": 60,
+        "energyPerSec": 3000
+      },
+      "health": {
+        "max": 5000,
+        "regenPerSec": 25
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          10,
+          10
+        ],
+        "structure": true,
+        "dimensionsWU": {
+          "length": 10.0,
+          "width": 10.0,
+          "height": 6.0,
+          "legSpan": null
+        }
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "builds": null,
+        "deathWeapon": {
+          "ref": "f2:wpn_spore_burst",
+          "damage": 3000,
+          "radius": 20,
+          "note": "Sporenbruch (K14): kleiner als die Fremdreferenz, trotzdem nicht neben die eigene Basis setzen."
+        },
+        "notes": "Spot-freie Endgame-Wirtschaft ohne Unterhalt: 60 M/s und 3000 E/s. Amortisation ≈ 1,8 × Egel-Kette (Gate 1,5–3,0 ×): lohnt, wenn die Spots vergeben sind, verdrängt aber nie das Egel-Netz. Zerbrechlich (5000 HP), wächst mit 25 HP/s nach.",
+        "postMvp": [
+          {
+            "feature": "E17",
+            "effect": "Endgame-Eco: fester Ertrag 60 M/s + 3000 E/s ohne Spot und ohne Unterhalt."
+          },
+          {
+            "feature": "K14",
+            "effect": "Sporenbruch 3000 Schaden im Radius 20."
+          },
+          {
+            "feature": "G6-Aura",
+            "effect": "Wurzelnetz: eigene Strukturen im Radius 30 WU regenerieren doppelt (Modifier über die generische regen-Spalte, keine eigene Feature-ID; Vorschlag unter E17)."
+          }
+        ]
+      },
+      "hotbuild": {
+        "menu": "Bau (T4-Tab)",
+        "slot": "T"
+      },
+      "icon": "struct_mass_t4",
+      "iconMarker": "eckige Klammer um die Grundform statt Tech-Kerben, Größenfaktor 1,5 (faction.md Varkan §6.4)",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "crust",
+            "mat": "team",
+            "note": "kruste"
+          },
+          {
+            "part": "webring",
+            "mat": "glow",
+            "count": 3,
+            "note": "ringgeflecht"
+          },
+          {
+            "part": "druse",
+            "mat": "glow",
+            "count": 5,
+            "note": "drusen"
+          },
+          {
+            "part": "carapace",
+            "mat": "sinew",
+            "count": 6,
+            "note": "wurzelplatten"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 0,
+        "trisEstimate": 518,
+        "trisBudget": {
+          "L0": 1200,
+          "L1": 700,
+          "L2": 350
+        },
+        "legs": null,
+        "techMarker": "Klammer-Winkel quarzweiß (2 Winkel an den vorderen Panzerecken statt Tech-Streifen)",
+        "monopoly": "Ringgeflecht: drei konzentrische, glühende Netzringe flach über einer 10 × 10-Kruste, fünf Drusen im Ring; niedrig und breit.",
+        "description": "Achteckige Kruste mit gezackter, teamfarbener Oberkante über den ganzen 10 × 10-Footprint; darauf drei konzentrische Netzringe (Herzkern, pulsieren im Herzschlag), in der Mitte eine hohe Druse, vier kleinere im inneren Ring; sechs dunkle Wurzelplatten laufen sternförmig über den Rand hinaus (nur Optik, im Footprint)."
+      },
+      "balance": {
+        "dps": 0,
+        "payback": {
+          "massEquivPerEnergyPerSec": 1.28,
+          "paybackS": 536.0,
+          "mexChainPaybackS": 306.0,
+          "ratio": 1.75,
+          "gate": "1,5 ≤ ratio ≤ 3,0"
+        },
+        "withinBand25": true,
+        "withinTarget15": true,
+        "foreignInfo": {
+          "bp": "XAB1401",
+          "mass": 250200,
+          "hp": 5000,
+          "note": "Fremdreferenz (andere FA-Fraktion), nur Obergrenze für Kosten und Sprengkraft"
+        }
+      }
     }
   ],
   "checks": {

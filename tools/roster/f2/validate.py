@@ -139,6 +139,47 @@ for vid, v in D['visuals'].items():
     mobile = E[v['members'][0]]['group'] in ('cmd', 'land', 'air')
     chk(v['supersetParts'] <= (8 if mobile else 9) and v['trisEstimate'] <= 350, 'Superset', vid)
 
+# ---------------------------------------------------------------- Experimentals (T4, Post-MVP; unabhängig neu gerechnet)
+XP = D.get('experimentals', [])
+FA4 = json.load(open(os.path.join(HERE, 'fa_ref_t4.json')))
+chk(4 <= len(XP) <= 5 and D['counts'].get('experimentals') == len(XP), 'T4-Anzahl', len(XP))
+grp = [x['group'] for x in XP]
+chk(grp.count('land') >= 1 and grp.count('air') >= 1 and any('STRATEGIC' in x['categories'] or x['group'] == 'structure' for x in XP),
+    'T4-Mix (Land, Luft, Game-Ender/Spezial)')
+for x in XP:
+    chk(x['id'].startswith('f2:exp_') and x['tier'] == 'T4' and x['postMvp'] is True and not x['ms9Core'], 'T4-Schema', x['id'])
+    chk(x['faReference']['devOnly'] is True and x['needs'], 'T4 devOnly/needs', x['id'])
+    for pm in x['special']['postMvp']:
+        chk(re.match(r'^([A-Z]\d+|K1-Erweiterung|G6-Aura)', pm['feature']) and pm['effect'], 'T4 postMvp ohne Feature-ID', x['id'], pm)
+    m = x['economy']['mass']; hp = x['health']['max']
+    for w in x['weapons']:
+        chk(abs(w['damage'] * w['salvo'] / w['reloadS'] - w['dps']) < 0.01 and abs(w['reloadS'] * 10 - round(w['reloadS'] * 10)) < 1e-9, 'T4-Waffe', w['ref'])
+    bp = x['faReference']['bp']
+    if bp:
+        r = FA4[bp]; dps = sum(w['dps'] for w in x['weapons'])
+        dd = ((dps / m) / (r['dps'] / r['mass']) - 1) * 100; dh = ((hp / m) / (r['hp'] / r['mass']) - 1) * 100
+        dp = ((1 + dd / 100) * (1 + dh / 100) - 1) * 100
+        for name, v in (('DPS/Mass', dd), ('HP/Mass', dh), ('Produkt', dp)):
+            chk(abs(v) <= 15, 'T4 Ziel ±15 %', x['id'], name, round(v, 1))
+        chk(abs(dd - x['balance']['devDpsPerMassPct']) < 0.2 and abs(dh - x['balance']['devHpPerMassPct']) < 0.2, 'T4 balance-Feld', x['id'])
+        chk(m <= r['mass'] and x['motion']['speed'] >= r['speed'] and hp / m <= r['hp'] / r['mass'] + 1e-9, 'T4 Identität', x['id'])
+    else:
+        chk(0 < x['economy'].get('massPerSec', 0) and 1.5 <= x['balance']['payback']['ratio'] <= 3.0, 'T4 Eco-Amortisation', x['id'])
+    k = x['kitbash']; cats = set(x['categories'])
+    chk(k['trisEstimate'] <= 1200 and k['partCount'] <= 12 and k['animatedParts'] <= 3, 'T4-Budget', x['id'])
+    chk(any(p.get('mat') == 'team' for p in k['parts']), 'T4 Teamfarbe', x['id'])
+    for p in k['parts']:
+        if p['part'] in ('spool', 'druse') or p.get('mat') == 'glow': chk(cats & {'ECONOMIC', 'FACTORY', 'ENGINEER'}, 'T4 Glut-Monopol', x['id'])
+        if p['part'] == 'spike': chk('ANTIAIR' in cats, 'T4 Dorn-Monopol', x['id'])
+        if p['part'] == 'tail': chk('ARTILLERY' in cats, 'T4 Schwanz-Monopol', x['id'])
+        if p['part'] == 'lens': chk('DIRECTFIRE' in cats, 'T4 Linsen-Monopol', x['id'])
+    if x['group'] == 'land':
+        chk((k['legs'] or 0) >= 8, 'T4 Beine ≥ 8', x['id'])
+        dm = x['motion']['dimensionsWU']
+        chk(72 // max(dm['width'], dm.get('legSpan') or 0, min(x['motion']['footprint'])) >= 6, 'Setons-Brücke', x['id'])
+    g = re.match(r'^(land|air|struct)_([a-z_]+)_t4$', x['icon'])
+    chk(g and g.group(2) in D['iconGlyphs'], 'T4-Icon (gemeinsame Grammatik)', x['id'], x['icon'])
+
 # ---------------------------------------------------------------- Namens-Lint (Anzeigefelder, keine FA-Begriffe)
 BANNED = ['cybran', 'aeon', 'seraphim', 'uef', 'illuminate', 'symbiont', 'quantum', 'nanite', 'loyalist', 'monkeylord',
           'overcharge', 'commander', 'acu']
@@ -147,6 +188,33 @@ for u in U:
     display += [u['name']['de'], u['name']['en']]
 for r in D.get('reservedPostMvp', []):
     display += [r['de'], r['en']]
+for x in XP:
+    display += [x['name']['de'], x['name']['en']]
+# T4-Rufnamen gegen alle anderen Roster (Abstand ≥ 2 wie cross.py, inkl. deren units/reservedPostMvp/experimentals)
+import glob
+def _lev(a, b):
+    a, b = a.lower(), b.lower(); dp = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        prev, dp[0] = dp[0], i
+        for j, cb in enumerate(b, 1):
+            prev, dp[j] = dp[j], min(dp[j] + 1, dp[j - 1] + 1, prev + (ca != cb))
+    return dp[-1]
+_other = []
+for pth in [os.path.join(ROOT, 'docs', 'design', 'roster.json')] + sorted(glob.glob(os.path.join(ROOT, 'docs', 'design', 'factions', '*', 'roster.json'))):
+    od = json.load(open(pth)); own = pth.endswith(os.path.join('f2', 'roster.json'))
+    for u in od['units']: _other += [(own, l, re.sub(r'\s+(I|II|III)$', '', u['name'][l])) for l in ('de', 'en')]
+    for r in od.get('reservedPostMvp', []): _other += [(own, 'de', r['de']), (own, 'en', r['en'])]
+    if not own:
+        for u in od.get('experimentals', []): _other += [(own, l, u['name'][l]) for l in ('de', 'en')]
+for x in XP:
+    for l in ('de', 'en'):
+        for own, lo, n in _other:
+            if lo == l: chk(_lev(x['name'][l], n) >= 2, 'T4-Rufname kollidiert', x['name'][l], n)
+_fan = json.load(open(os.path.join(HERE, '..', 'fa_names.json')))
+_faw = {w.lower() for s_ in _fan['unitNames'] + _fan['weaponNames'] for w in re.findall(r"[A-Za-zÀ-ÿ]+", s_)}
+for x in XP:
+    for l in ('de', 'en'):
+        for w_ in re.findall(r"[A-Za-zÄÖÜäöüß]+", x['name'][l]): chk(w_.lower() not in _faw, 'T4-Rufname-Wort in FA-Namen', w_)
 # Lore-Namen aus faction.md §1/§2.5 (Fraktion, Rotten, Waffen- und Spielbegriffe); stehen nicht in roster.json
 LORE = ['Skarn', 'Skarn-Geflecht', 'Skarn Tangle', 'Rädelsführer', 'Ringleader', 'Geflechtriss', 'Tangle Snap', 'Überschlag', 'Flashover',
         'Durchbruch', 'Breach', 'Tiefschacht', 'Deep Shaft', 'Sekundant', 'Second', 'Rotte', 'Pack',
@@ -180,6 +248,7 @@ print(f"max |ΔProdukt|  {mx(3, arm)[3]:+.1f} % ({mx(3, arm)[0]}), Mittel {sum(d
 print(f"Treffer-bis-Tod: {len(D['checks']['hitsToKill'])} Pflichtpaare exakt; Kreuz-Check Varkan: 4 Pflichtpaare, "
       f"{sum(1 for x in D['checks']['crossFaction'] if not x['mandatory'])} Info-Paare, "
       f"davon {sum(1 for x in D['checks']['crossFaction'] if not x['mandatory'] and not x['ok'])} abweichend (Ursache Varkan {sum(1 for x in D['checks']['crossFaction'] if not x['mandatory'] and not x['ok'] and x['cause'] == 'Varkan')}, Skarn {sum(1 for x in D['checks']['crossFaction'] if not x['mandatory'] and not x['ok'] and x['cause'] != 'Varkan')})")
+print(f"Experimentals (T4, Post-MVP): {len(XP)} ({', '.join(x['name']['de'] for x in XP)}), Gates ±15 %, Identität, Brücke, Budget, Icon geprüft")
 if fa_names: print(f"Namens-Grep gegen {len(fa_names)} FA-Einheitennamen durchgeführt")
 for w_ in warn: print('Hinweis:', w_)
 if err:

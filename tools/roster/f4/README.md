@@ -15,4 +15,9 @@ Nur Python-Standardbibliothek; Pfade sind relativ zum Skript, Aufruf aus beliebi
   direkt aus `fa_ref.json` neu (vertraut keinem `balance`-Feld), dazu Schema-Konsistenz, `count` in `fa_ref.json`,
   fraktionsübergreifend eindeutige Rufnamen (gegen alle vorhandenen `roster.json`) und gültige Kreuz-Silhouettenpaare. Exit-Code 1 bei Verstößen.
 
+- **Experimentals (T4, Post-MVP):** `ref_t4.py <spooky_index.json>` schreibt `fa_ref_t4.json` (Vorbild `XSL0401`/`XSA0402`/`XSB2401`,
+  Fremdreferenz `UEL0401`/`XAB1401`, ergänzt um FAF-`develop`-Werte). `exp.py` hält die fünf T4 und ihre Gates; `gen.py` schreibt sie in den
+  eigenen Schlüssel `experimentals` (nicht in `units`, damit Zählung, MVP-Gates und `cross.py` unberührt bleiben), `md.py` in `roster.md` §21,
+  `validate.py` prüft sie unabhängig. Design: `docs/design/factions/f4/experimentals.md`.
+
 Reihenfolge: `python3 gen.py && python3 md.py && python3 validate.py`

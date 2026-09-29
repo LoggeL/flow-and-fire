@@ -12,7 +12,8 @@ Modelle (`_faction.ts` = Fraktions-Konfiguration). **Referenz für alle Autoren:
 |---|---|
 | `pnpm models` | baut alle Modelle → `content/models/dist/<fraktion>.<unit>.glb` + `.json` + `manifest.json`, schreibt die Icon-SVGs (`content/icons/svg`); Exit 1 bei Fehlern (`--check` = nur prüfen) |
 | `pnpm models:viewer` | Model-Viewer (Vite, Port 5210 oder nächster freier): Galerie, Einzelansicht, Größenvergleich, Silhouetten, Icons |
-| `tools/heavy pnpm models:shots` | Kontaktabzug, Silhouetten, Größenvergleich und Einzelbilder je Fraktion nach `/private/tmp/claude-501/faf-models/<fraktion>/` (`--faction`, `--no-singles`, `--smoke`) |
+| `tools/heavy pnpm models:shots` | Kontaktabzug, Silhouetten, Größenvergleich (`compare.png`, bei T4 zusätzlich `compare-t4.png`: T4 neben Kommandant und mobilen T3) und Einzelbilder je Fraktion nach `/private/tmp/claude-501/faf-models/<fraktion>/`, dazu `vergleich-fraktionen.png` (Kommandant, T1-Panzer, T3-Einheit und ein T4 je Fraktion in einer Reihe) (`--faction`, `--no-singles`, `--no-sheets`, `--no-versus`, `--smoke`) |
+| Viewer `#/compare?…` | `f=varkan,skarn` Fraktionen, `u=lnd_t1_tank,skarn.exp_lnd_assault` Auswahl (optional mit Fraktion, Reihenfolge wie angegeben), `sel=t4` T4 + Kommandant + mobile T3, `layout=line` alle Fraktionen in einer Reihe, `mode=silhouette` |
 | `pnpm vitest run packages/modelkit` | DSL-Tests + Vertragstest: **jedes** Content-Modell baut fehlerfrei, im Budget, byte-deterministisch |
 
 ## Konventionen
@@ -238,8 +239,10 @@ Tris/Vertices je LOD und je Part, Materialflächen, Team-Anteil, Budget, Warnung
 5. `pnpm vitest run packages/modelkit` (Vertragstest) und `tools/heavy pnpm models:shots --faction <slug>`.
 
 Neue Fraktion: Ordner `content/models/<slug>/` mit `_faction.ts` (Palette, Aliase, Roster-Pfad; Standard
-`docs/design/factions/<slug>/roster.json`). Ohne `_faction.ts` gilt eine neutrale Palette. Für Skarn, Sael und Aurith
-existieren `_faction.ts` und je ein Referenz-Kommandant; weitere Modelle: Kommandant der Fraktion als Vorlage kopieren.
+`docs/design/factions/<slug>/roster.json`). Ohne `_faction.ts` gilt eine neutrale Palette. Skarn, Sael und Aurith
+sind vollständig (alle Kern-Einheiten des Rosters plus je 5 T4 aus `experimentals[]`); neue Modelle einer Fraktion
+starten am besten von einem Geschwistermodell derselben Rolle. Die Registry liest Roster-Vorgaben aus `units[]` **und**
+`experimentals[]`.
 
 **Rückwärtskompatibilität:** Der Vertragstest prüft, dass alle 50 Varkan-GLBs und Metadaten-JSONs bytegleich zum
 Stand vor der Kit-Erweiterung bleiben (`packages/modelkit/test/fixtures/varkan.sha256.json`, neu erzeugen nur bei

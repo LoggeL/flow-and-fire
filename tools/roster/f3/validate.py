@@ -185,6 +185,93 @@ for r_ in D['checks'].get('rush', []):
     rush_ok.append(q['match'])
 if len(rush_ok) < 3: bad('checks.rush fehlt')
 
+# ---- Experimentals (T4, Post-MVP): unabhängig aus den Rohfeldern neu gerechnet (exp.py wird nicht importiert)
+XP = D.get('experimentals', [])
+FA4 = json.load(open(HERE / 'fa_ref_t4.json'))
+for w in FA4['XAB2307']['weapons']:
+    if w['cat'] == 'Artillery': w['dps'] = 425.81  # develop: 6 Splitter à 220 / 3,1 s (spooky zählt einen), wie exp.FA_T4_OVERRIDES
+if not (4 <= len(XP) <= 5 and D['counts'].get('experimentals') == len(XP)): bad('T4-Anzahl', len(XP))
+grp = [xe['group'] for xe in XP]
+if grp.count('land') < 1 or grp.count('air') < 1 or not any('STRATEGIC' in xe['categories'] for xe in XP): bad('T4-Mix (Land, Luft, Game-Ender/Spezial)')
+if {r_['id'] for r_ in D.get('reservedPostMvp', [])} != {xe['id'] for xe in XP}: bad('reservedPostMvp spiegelt experimentals nicht')
+GEX = ('Death', 'Teleport', 'Anti Air', 'Anti Navy', 'Defense', None)
+for xe in XP:
+    i = xe['id']
+    if not (i.startswith('f3:exp_') and xe['tier'] == 'T4' and xe['tech'] == 4 and xe['postMvp'] is True and not xe['ms9Core']): bad(i, 'T4-Schema')
+    if xe['faReference']['devOnly'] is not True or not xe['needs']: bad(i, 'T4 devOnly/needs')
+    for pm in xe['special']['postMvp']:
+        if not (re.match(r'^([A-Z]\d+|K1-Erweiterung|B3-Erweiterung)$', pm['feature']) and pm['what'] and pm['fallback']): bad(i, 'T4 postMvp', pm['feature'])
+    m = xe['economy']['mass']; sh_ = (xe['shield'] or {}).get('hp', 0)
+    if xe['health']['max'] != xe['health']['hull'] + sh_: bad(i, 'health.max ≠ Rumpf + Schild (Fallback)')
+    for w in xe['weapons']:
+        if abs(w['damage'] * w['salvo'] / w['reloadS'] - w['dps']) > 0.01 or abs(w['reloadS'] * 10 - round(w['reloadS'] * 10)) > 1e-9: bad(w['ref'], 'T4-Waffe')
+        if not w['ref'].startswith('f3:wpn_'): bad(w['ref'], 'T4-Waffen-ID')
+        if w['projectile'].startswith('ballistisch') and w.get('firingRandomness') is None: bad(w['ref'], 'firingRandomness fehlt')
+    r = FA4[xe['faReference']['bp']]
+    fg = sum(w['dps'] for w in r['weapons'] if w['cat'] not in GEX and (w['dmg'] or 0) > 0 and w['rof'])
+    fa_ = sum(w['dps'] for w in r['weapons'] if w['cat'] == 'Anti Air')
+    og = sum(w['dps'] for w in xe['weapons'] if 'land' in w['layers']); oa = sum(w['dps'] for w in xe['weapons'] if 'air' in w['layers'])
+    dh = (xe['health']['max'] / m / ((r['hp'] + (r['shield'] or 0)) / r['mass']) - 1) * 100
+    axes = [('HP/Mass', dh)]
+    if og or fg:
+        dd = (og / m / (fg / r['mass']) - 1) * 100; axes += [('DPS/Mass', dd), ('Produkt', ((1 + dd / 100) * (1 + dh / 100) - 1) * 100)]
+        if abs(dd - xe['balance']['devDpsPerMassPct']) > 0.1: bad(i, 'T4 balance-Feld DPS veraltet')
+    if oa or fa_: axes.append(('Luft-DPS/Mass', (oa / m / (fa_ / r['mass']) - 1) * 100))
+    if abs(dh - xe['balance']['devHpPerMassPct']) > 0.1: bad(i, 'T4 balance-Feld HP veraltet')
+    for nm_, v in axes:
+        if abs(v) > 15: bad(i, 'T4 Ziel ±15 %', nm_, round(v, 1))
+    if 'ARTILLERY' in xe['categories']:
+        w = xe['weapons'][0]; fw = max((w_ for w_ in r['weapons'] if w_['cat'] == 'Artillery'), key=lambda w_: w_['dps'])
+        rel = fa_reload(fw['rof']); fsal = round(fw['dps'] * rel / fw['dmg'])
+        pk = (w['damage'] * w['salvo'] * pulkT(w['splash']) / w['reloadS'] / m) / (fw['dmg'] * fsal * pulkT(fw['splash'] or 0) / rel / r['mass']) - 1
+        if abs(pk) > 0.15: bad(i, 'T4 Pulk ±15 %', round(pk * 100, 1))
+    # Sael-Identität: RW ≥ Vorbild, Schild-Anteil mobiler T4 ≥ 25 %, Strukturen zerbrechlicher (A6)
+    if xe['group'] in ('land', 'air'):
+        fw = max((w_ for w_ in r['weapons'] if w_['cat'] not in GEX and (w_['dmg'] or 0) > 0 and w_['rof']), key=lambda w_: w_['dps'])
+        if xe['weapons'][0]['range'] < fw['range']: bad(i, 'Sael-Identität: Reichweite unter Vorbild')
+        if sh_ / xe['health']['max'] < 0.25: bad(i, 'Sael-Identität: Schild-Anteil < 25 %')
+    else:
+        if xe['health']['max'] / m >= (r['hp'] + (r['shield'] or 0)) / r['mass']: bad(i, 'Sael-Identität: Struktur nicht zerbrechlicher (A6)')
+    # Kitbash: T4-Budget, Monopol-Lints §5.3 Nr. 6, Gangart, Brücke, Icon
+    k = xe['kitbash']; c = set(xe['categories']); pn = [p['part'] for p in k['parts']]; flow = bool(c & FLOW)
+    T4TRIS = dict(shell=120, hoverpad=64, legs=30, orb=160, lance=24, horn=64, spine=20, sickle=96, ring=144, arch=72, mast=48, fan=32, lantern=128, wing=32)
+    tr = sum(T4TRIS[p['part']] * p.get('count', 1) for p in k['parts'])
+    if tr != k['trisEstimate'] or tr > 1500 or k['partCount'] > 10 or k['animatedParts'] > 3: bad(i, 'T4-Budget', tr, k['partCount'], k['animatedParts'])
+    if not any(p.get('mat') == 'team' for p in k['parts']): bad(i, 'T4 Teamfarbe')
+    if 'spine' in pn and not ('ANTIAIR' in c and 'AIR' not in c): bad(i, 'Stachel-Monopol')
+    if 'horn' in pn and 'ARTILLERY' not in c: bad(i, 'Horn-Monopol')
+    if 'lance' in pn and 'orb' not in pn: bad(i, 'Lanze ohne Perle')
+    if sum(p.get('count', 1) for p in k['parts'] if p['part'] == 'orb') > 1: bad(i, 'mehr als 1 Perle')
+    if 'orb' in pn and 'lance' not in pn and not flow: bad(i, 'Perle ohne Lanze außerhalb Flow')
+    if any(p['part'] in ('lantern', 'sickle') or p.get('mat') == 'glow' for p in k['parts']) and not flow: bad(i, 'Licht-Monopol')
+    gait = xe['motion'].get('gait')
+    if ('hoverpad' in pn) != (gait == 'hover') or ('legs' in pn) != (gait == 'walker'): bad(i, 'Fahrwerk/Gangart')
+    dm = xe['motion']['dimensionsWU']
+    if gait == 'walker' and not ((k['legs'] or 0) >= 8 and dm['width'] > dm['length']): bad(i, 'T4-Läufer: Beine ≥ 8, breiter als lang')
+    if xe['group'] == 'land' and 72 // max(dm['width'], dm.get('legSpan') or 0, min(xe['motion']['footprint'])) < 6: bad(i, 'Setons-Brücke')
+    if xe['group'] == 'land' and xe['motion']['sizeClass'] != math.ceil(max(dm['width'], dm.get('legSpan') or 0, min(xe['motion']['footprint'])) / 2): bad(i, 'sizeClass ≠ ceil(Außenmaß / 2)')
+    g_ = re.match(r'^(land|air|struct)_([a-z_]+)_t4$', xe['icon'])
+    if not (g_ and g_.group(2) in D['iconGlyphs']): bad(i, 'T4-Icon (gemeinsame Grammatik)', xe['icon'])
+    if (xe['group'] == 'air') != xe['icon'].startswith('air_') or (xe['group'] == 'structure') != xe['icon'].startswith('struct_'): bad(i, 'T4-Icon-Grundform')
+if len({xe['hotbuild']['slot'] for xe in XP}) != len(XP): bad('T4-Hotbuild doppelt')
+# T4-Namen: FA-Begriffe, Volltext-Grep, Abstand ≥ 2 zu allen Rufnamen (eigene und fremde units, reservedPostMvp, experimentals)
+allnames = [(l, base(u['name'][l]), 'f3') for u in U for l in ('de', 'en')]
+for path in others:
+    try: O = json.load(open(path))
+    except Exception: continue
+    allnames += [(l, base(o['name'][l]), path.parent.name) for o in O['units'] for l in ('de', 'en')]
+    allnames += [(l, r_[l], path.parent.name) for r_ in O.get('reservedPostMvp', []) for l in ('de', 'en')]
+    allnames += [(l, o['name'][l], path.parent.name) for o in O.get('experimentals', []) for l in ('de', 'en')]
+for xe in XP:
+    for s_ in [xe['name']['de'], xe['name']['en'], xe['role']['de'], xe['role']['en']] + [w['type'] for w in xe['weapons']]:
+        for t in BAN:
+            if re.search(r'\b' + re.escape(t) + r'\b', s_, re.I): bad(xe['id'], 'FA-Begriff in T4-Anzeigefeld', t, s_)
+    for l in ('de', 'en'):
+        for w_ in re.findall(r"[A-Za-zÄÖÜäöüß]+", xe['name'][l]):
+            if w_.lower() in FA_WORDS and w_.lower() not in GENERIC: bad(xe['id'], 'T4-Rufname-Wort in FA-Namen', w_)
+        for ol, on, src in allnames + [(l2, y['name'][l2], 'f3') for y in XP if y is not xe for l2 in ('de', 'en')]:
+            if ol == l and lev(xe['name'][l], on) <= 1: bad(xe['id'], 'T4-Rufname zu nah an', src, on)
+
 mx = lambda i: max(((abs(r[i]), r[0]) for r in rows if r[i] is not None))
 print(f"JSON valide, {len(U)} Einträge, {D['counts']['ms9Core']} ● (MS9), {D['counts']['visuals']} Visuals, Rollen = Varkan")
 print('max |ΔDPS/Mass| %.1f %% (%s), max |ΔHP/Mass| %.1f %% (%s), max |ΔProdukt| %.1f %% (%s)' % (*mx(1), *mx(2), *mx(3)))
@@ -194,5 +281,6 @@ print(f"Treffer-bis-Tod intern: {sum(htk_ok)}/{len(htk_ok)} exakt; Kreuz gegen V
 print(f"FA-Begriffe geprüft: {len(BAN)} Begriffe gegen Namen/Rollen/Waffenbezeichnungen")
 print(f"Namen: Volltext-Grep gegen {len(FAN['unitNames'])} FA-Einheiten- und {len(FAN['weaponNames'])} Waffennamen, Abstand ≥ 2 zu {n_other} anderen Rostern")
 print(f"T1-Rush gegen Kommandanten: {sum(rush_ok)}/{len(rush_ok)} Paarungen wie FA")
+print(f"Experimentals (T4, Post-MVP): {len(XP)} ({', '.join(xe['name']['de'] for xe in XP)}); Gates ±15 %, Pulk, Sael-Identität, Brücke, Budget, Lints, Icon, Namen geprüft")
 print('Verstöße:', err or 'keine')
 sys.exit(1 if err else 0)

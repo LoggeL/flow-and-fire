@@ -509,5 +509,43 @@ for r in [
 ]:
     A('| ' + ' | '.join(r) + ' |')
 A('')
+
+# ---------------------------------------------------------------- 21 Experimentals (T4, Post-MVP)
+XP = D.get('experimentals', [])
+if XP:
+    A('---'); A(''); A('## 21. Experimentals (T4, Post-MVP)'); A('')
+    A(f"**{len(XP)} T4-Blueprints** im eigenen Schlüssel `experimentals` von `roster.json` (`tier: T4`, `postMvp: true`). Sie zählen nicht in die "
+      f"{c['total']} Blueprints, den MS9-Kern oder die {c['visuals']} Visuals und sind für `cross.py` unsichtbar. Design, Herleitung und Kitbash im Detail: "
+      '[`experimentals.md`](experimentals.md). Referenz: `tools/roster/f4/fa_ref_t4.json` (Vorbild `XSL0401`, `XSA0402`, `XSB2401`; Fremdreferenz `UEL0401`, '
+      '`XAB1401`, weil das Vorbild keine mobile Fabrik und kein T4-Eco hat). Gates (Generator und `validate.py`): Δ DPS/Mass (Boden), Δ HP/Mass, Produkt und Pulk '
+      'je ±15 %, Δ Luft-DPS/Mass ±25 %, Δ Mass ±15 %; T4-Kitbash ≤ 10 Parts, ≤ 4 animiert, Tris L0/L1/L2 1.500/800/320 (`@faf/modelkit` `T4_BUDGET`); '
+      'Setons-Brücke (Gate 72 WU): mobile Land-T4 mit Außenmaß ≤ 12 WU, also ≥ 6 nebeneinander.')
+    A('')
+    A('| ID | DE / EN | Rolle | Hotbuild | Icon | Mass / Energy / buildTime | HP (+Schild) | Tempo | Footprint / s | Δ DPS/M · Δ HP/M · Δ Prod | Features |')
+    A('|---|---|---|---|---|---|---|---|---|---|---|')
+    for x in XP:
+        b = x['balance']; e = x['economy']; mo = x['motion']
+        hp = n(x['health']['max']) + (f" + {n(x['shield']['hp'])}" if x.get('shield') else '')
+        spd = n(mo['speed'], 1) if mo.get('speed') else '–'
+        fp = f"{mo['footprint'][0]}×{mo['footprint'][1]}" + (f" / s{mo['sizeClass']}" if 'sizeClass' in mo else '')
+        A(f"| `{x['id']}` | **{x['name']['de']}** / {x['name']['en']} | {x['role']['de']} | {x['hotbuild']['slot']} | `{x['icon']}` | "
+          f"{n(e['mass'])} / {n(e['energy'])} / {n(e['buildTime'])} | {hp} | {spd} | {fp} | "
+          f"{pct(b['devDpsPerMassPct'])} · {pct(b['devHpPerMassPct'])} · {pct(b['devProductPct'])} | {', '.join(x['needs'])} |")
+    A('')
+    A('**Waffen und Besonderheiten**')
+    A('')
+    A('| Einheit | Waffen | Tod | Kitbash |')
+    A('|---|---|---|---|')
+    for x in XP:
+        dw = x['special']['deathWeapon'] or {}
+        dtxt = (f"{n(dw['damage'])} / {n(dw['radius'])}" if 'damage' in dw else
+                f"{n(dw['inner']['damage'])} / {n(dw['inner']['radius'])} + {n(dw['outer']['damage'])} / {n(dw['outer']['radius'])}" if dw else '–')
+        if dw.get('field'):
+            fld = dw['field']; dtxt += f"; Feld {fld['durationS']} s, {n(fld['damagePerPulse'])} / {n(fld['pulseS'], 1)} s, R {fld['radius']}"
+        k = x['kitbash']
+        A(f"| **{x['name']['de']}** | {weapons(x)} | {dtxt} | {k['partCount']} Parts, {k['animatedParts']} anim., ≈ {n(k['trisEstimate'])} Tris |")
+    A('')
+    A('**Silhouetten-Pflichtpaare T4:** ' + ', '.join(f"{a.split(':')[1]} ↔ {b_.split(':')[1]}" for a, b_ in D['silhouettePairs'].get('t4', [])) + '.')
+    A('')
 (ROOT / 'docs/design/factions/f4/roster.md').write_text('\n'.join(L) + '\n')
 print(len(L), 'Zeilen')

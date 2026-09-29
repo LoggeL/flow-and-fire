@@ -87,7 +87,7 @@ export async function loadAll(root = MODELS_DIR): Promise<FactionEntry[]> {
 }
 
 export function rosterUnit(f: FactionEntry, id: string): RosterUnit | undefined {
-  return f.roster?.units.find((u) => u.id === id);
+  return f.roster?.units.find((u) => u.id === id) ?? f.roster?.experimentals?.find((u) => u.id === id);
 }
 
 /** Builds one model with the faction palette, budgets and roster defaults; adds registry-level checks. */

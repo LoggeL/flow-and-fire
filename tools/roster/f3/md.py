@@ -134,8 +134,8 @@ c = D['counts']
 A('# Roster: Orden von Sael (Fraktion f3, MVP)')
 A('')
 A('> **Status:** Startwerte für alle MVP-Blueprints der dritten Fraktion auf Basis von `docs/design/factions/f3/faction.md`, überarbeitet nach dem Review vom 2026-09-29 (§21). Maschinenlesbar in `docs/design/factions/f3/roster.json` (Schema `faf-roster/1`, dasselbe wie Varkan). **`roster.json` ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts**; dieses Dokument ist daraus generiert (`tools/roster/f3/md.py`). Später Grundlage der Blueprints (`content/blueprints/f3/…`).')
-A(f"> **Umfang:** **{c['total']} Blueprints** ({c['mobile']} mobil, {c['structures']} Gebäude, jede Upgrade-Stufe einzeln), davon **{c['ms9Core']} im MS9-Kern (●)**, Rest bis MS14 (○). Rollen, Rollen-Tokens, Icon-IDs, Hotbuild-Slots, Visual-IDs und ●/○-Status sind **identisch zu Varkan** (`docs/design/roster.md`); der Generator erzwingt das. {c['visuals']} Visuals, {c['iconGlyphs']} Icon-Glyphen. Waffen-, Projektil- und Basis-BPs sind nicht mitgezählt.")
-A('> **Ausgeschlossen (Post-MVP laut features.json):** wie Varkan (TML/TMD, Nukes/SMD, Transporter U13, T3-Luft U12, Marine U17/U18, Experimentals, E15, SACU U15, ACU-Enhancements U14, Stealth/Omni I4/I5). Reservenamen: *Nautilus* (T3-Schwebepanzer), *Perle* (Experimental).')
+A(f"> **Umfang:** **{c['total']} Blueprints** ({c['mobile']} mobil, {c['structures']} Gebäude, jede Upgrade-Stufe einzeln), davon **{c['ms9Core']} im MS9-Kern (●)**, Rest bis MS14 (○). Rollen, Rollen-Tokens, Icon-IDs, Hotbuild-Slots, Visual-IDs und ●/○-Status sind **identisch zu Varkan** (`docs/design/roster.md`); der Generator erzwingt das. {c['visuals']} Visuals, {c['iconGlyphs']} Icon-Glyphen. Waffen-, Projektil- und Basis-BPs sind nicht mitgezählt. Dazu {c.get('experimentals', 0)} Experimentals (T4, Post-MVP, §22), nicht mitgezählt.")
+A('> **Ausgeschlossen (Post-MVP laut features.json):** wie Varkan (TML/TMD, Nukes/SMD, Transporter U13, T3-Luft U12, Marine U17/U18, Experimentals, E15, SACU U15, ACU-Enhancements U14, Stealth/Omni I4/I5). Reservename: *Nautilus* (T3-Schwebepanzer). Experimentals als Post-MVP-Daten in §22 (*Perle* ist jetzt das Eco-Experimental).')
 A('> **Balancing:** Hartes Gate PLAN U3: DPS/Mass und HP/Mass je ±25 % der FA-Referenz **der Vorbild-Fraktion**. Der Generator erzwingt strenger: Einzelachsen, Produkt und Pulk-DPS/Mass der Artillerie je ±15 %, eine Treffer-bis-Tod-Matrix exakt nach Vorbild und **Kreuz-Breakpoints gegen Varkan** (`faction.md` §9.4). Asymmetrien mit Post-MVP-Mechanik sind je Blueprint in `special.postMvp` markiert; die Kern-Balance gilt mit dem MVP-Fallback.')
 A('')
 A('---')
@@ -500,6 +500,71 @@ for k, rows in REV.items():
     A('| Nr | Punkt | | Entscheidung und Begründung |')
     A('|---|---|---|---|')
     for r in rows: A('| ' + ' | '.join(r) + ' |')
+    A('')
+# ---------------------------------------------------------------- 22 Experimentals (T4, Post-MVP)
+XP = D.get('experimentals', [])
+if XP:
+    A('---'); A('')
+    A('## 22. Experimentals (T4, Post-MVP)'); A('')
+    A(f"{len(XP)} T4-Rollen, **nicht** in der Zählung oben (`experimentals[]`, gespiegelt in `reservedPostMvp[]` für den Namensabgleich in "
+      "`cross.py`) und ohne Sim-Wirkung vor ihren Features. Design, Lore, Kitbash und Icons: `experimentals.md`. Daten und Gates: "
+      "`tools/roster/f3/exp.py` (von `gen.py` eingebunden, von `validate.py` unabhängig nachgerechnet), Referenzen `fa_ref_t4.json` "
+      "(Vorbild-T4, spooky 3810, dev-only). Gates: Boden-DPS/Mass, Luft-DPS/Mass, HP(+Schild)/Mass und Produkt je ±15 % gegen die Vorbild-T4, "
+      "Pulk ±15 % bei Artillerie; Sael-Identität (Hauptwaffen-RW ≥ Vorbild, Schild-Anteil mobiler T4 ≥ 25 %, Strukturen zerbrechlicher, A6); "
+      "Setons-Brücke (≥ 6 nebeneinander auf 72 WU); T4-Budget (≤ 1.500 / 800 / 320 Tris wie `@faf/modelkit` `T4_BUDGET`, ≤ 10 Part-Einträge, ≤ 3 animiert), `sizeClass = ceil(Außenmaß / 2)` und Monopol-Lints (§5.3 Nr. 6).")
+    A('')
+    A('| ID | Name DE / EN | Rolle DE / EN | Mass / Energy / BT | HP (Rumpf + Schild) | DPS Boden · Luft | Tempo | Footprint · s | Icon | T4-Tab |')
+    A('|---|---|---|---|---|---|---|---|---|---|')
+    for xe in XP:
+        e = xe['economy']; mo = xe['motion']; sh = xe['shield']; b = xe['balance']
+        hp = f"{n(xe['health']['max'])} ({n(xe['health']['hull'])} + {n(sh['hp'])})" if sh else n(xe['health']['max'])
+        A(f"| `{xe['id']}` | **{xe['name']['de']}** / {xe['name']['en']} | {xe['role']['de']} / {xe['role']['en']} | "
+          f"{n(e['mass'])} / {n(e['energy'])} / {n(e['buildTime'])} | {hp} | {n(b['dps'], 0)} · {n(b['dpsAir'], 0) if b.get('dpsAir') else '–'} | "
+          f"{n(mo['speed'], 1) if mo['speed'] else '–'} | {mo['footprint'][0]}×{mo['footprint'][1]}{' · ' + str(mo['sizeClass']) if mo.get('sizeClass') is not None else ''} | "
+          f"`{xe['icon']}` | {xe['hotbuild']['slot']} |")
+    A('')
+    A('**Waffen und Todeswaffen:**'); A('')
+    A('| Einheit | Waffen | Todeswaffe |')
+    A('|---|---|---|')
+    for xe in XP:
+        dw = xe['special']['deathWeapon']
+        A(f"| {xe['name']['de']} | {weapons(xe)} | {n(dw['damage'])} im Radius {n(dw['radius'])} ({dw['note']}) |")
+    A('')
+    A('**Balance gegen die Vorbild-T4** (Referenz dev-only über Blueprint-ID; Gegenprobe = T4 der Varkan-Vorbild-Fraktion, nur Info):'); A('')
+    A('| Einheit | Referenz | ΔDPS/Mass Boden | ΔDPS/Mass Luft | ΔHP/Mass | ΔProdukt | Pulk | Sael-Identität |')
+    A('|---|---|---|---|---|---|---|---|')
+    for xe in XP:
+        b = xe['balance']; idt = b['identity']
+        it = []
+        if 'rangeAtLeastFa' in idt: it.append('RW ≥ Vorbild ' + ('✓' if idt['rangeAtLeastFa'] else '✗'))
+        if 'shieldShare' in idt: it.append(f"Schild-Anteil {n(idt['shieldShare'] * 100, 0)} % " + ('✓' if idt['shieldShareOk'] else '✗'))
+        if 'frailer' in idt: it.append('zerbrechlicher ' + ('✓' if idt['frailer'] else '✗'))
+        A(f"| {xe['name']['de']} | `{xe['faReference']['bp']}`{' (Gegenprobe `' + xe['faReference']['crossCheckBp'] + '`)' if xe['faReference']['crossCheckBp'] else ''} | "
+          f"{pct(b.get('devDpsPerMassPct'))} | {pct(b.get('devAirDpsPerMassPct'))} | {pct(b['devHpPerMassPct'])} | {pct(b.get('devProductPct'))} | "
+          f"{pct((b.get('pulk') or {}).get('devPct'))} | {' · '.join(it)} |")
+    A('')
+    A('**Kitbash (T4-Budget):**'); A('')
+    A('| Einheit | Monopol-Merkmal | Parts | Außenmaß L × B × H (Beinspanne) | Brücke 72 WU |')
+    A('|---|---|---|---|---|')
+    for xe in XP:
+        k = xe['kitbash']; dm = xe['motion']['dimensionsWU']; br = xe['motion']['bridge']
+        ps = ', '.join(p['part'] + (f"×{p['count']}" if p.get('count') else '') + (f"({p['note'].replace('_', ' ')})" if p.get('note') else '')
+                       + (f" ⟳{p['anim']}" if p.get('anim') else '') + (f" [{p['mat']}]" if p.get('mat') else '') for p in k['parts'])
+        A(f"| {xe['name']['de']} | {k['monopoly']} | {ps} — {k['partCount']} Einträge, {k['animatedParts']} anim., ≈ {n(k['trisEstimate'])} Tris | "
+          f"{n(dm['length'], 1)} × {n(dm['width'], 1)} × {n(dm['height'], 1)}{' (' + n(dm['legSpan'], 1) + ')' if dm.get('legSpan') else ''} WU | "
+          f"{str(br['abreast']) + ' nebeneinander' if xe['group'] == 'land' else '–'} |")
+    A('')
+    A('**Post-MVP-Features je Einheit:**'); A('')
+    A('| Einheit | braucht | Eigenheit (Feature) → MVP-Fallback |')
+    A('|---|---|---|')
+    for xe in XP:
+        A(f"| {xe['name']['de']} | {', '.join(xe['needs'])} | " + '<br>'.join(f"**{p['feature']}**: {p['what']} → *{p['fallback']}*" for p in xe['special']['postMvp']) + ' |')
+    A('')
+    A('**develop-Stand der T4-Referenzen** (Roster bleibt auf spooky 3810 wie alle Kern-Einheiten):'); A('')
+    A('| BP | spooky 3810 | develop | Ergebnis |')
+    A('|---|---|---|---|')
+    for r_ in D['conventions'].get('faT4DevelopCheck', []):
+        A(f"| `{r_['bp']}` | {r_['spooky']} | {r_['develop']} | {r_['verdict']} |")
     A('')
 out = ROOT / 'docs/design/factions/f3/roster.md'
 open(out, 'w').write('\n'.join(L) + '\n')

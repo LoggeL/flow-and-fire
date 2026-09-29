@@ -1,6 +1,6 @@
 # Einheiten-Modelle: Kitbash-Kit, Konventionen, Stand
 
-**Stand 2026-09-29, Branch `models2`.** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
+**Stand 2026-09-29, Branch `models2`: alle vier Fraktionen vollständig (214 Modelle, davon 15 T4).** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
 (`packages/render`, `packages/sim`, `packages/client`) ist noch nichts integriert, das passiert in den
 Meilensteinen (siehe Abschnitt 4). Detailbeleg: [`docs/status/MODELS-foundation.md`](../status/MODELS-foundation.md).
 Anleitung für Autoren: [`content/models/README.md`](../../content/models/README.md).
@@ -13,8 +13,8 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 | Modelle | `content/models/<fraktion>/<unit>.ts`, `_faction.ts` | ein Modell pro Blueprint, Auto-Discovery, Roster-Vorgaben (Name, Klasse, Footprint, Maßstab, Icon) aus `roster.json` |
 | Build | `pnpm models` (`--check` = nur prüfen) | `content/models/dist/<fraktion>.<unit>.glb` + `.json` + `manifest.json`, Icon-SVGs nach `content/icons/svg/` |
 | Icons | `content/icons/` (`grammar.ts`, `build.ts`) | Strategic Icons nach der Icon-Grammatik der Fraktion: 7 Grundformen, 19 Glyphen, Tech-Kerben 1–3, Varianten selected/blip/ghost |
-| Viewer | `apps/model-viewer`, `pnpm models:viewer` | Galerie, Einzelansicht (Teamfarben, Grau/Silhouette, Parts-Animation, Drahtgitter, Distanz-Slider mit LOD- und Icon-Wechsel), Größenvergleich, Icon-Übersicht |
-| Screenshots | `tools/model-shots`, `tools/heavy pnpm models:shots` | Kontaktabzug, Silhouettenblatt (32/48 px), Größenvergleich, Einzelbilder nach `/private/tmp/claude-501/faf-models/<fraktion>/` |
+| Viewer | `apps/model-viewer`, `pnpm models:viewer` | Galerie, Einzelansicht (Teamfarben, Grau/Silhouette, Parts-Animation, Drahtgitter, Distanz-Slider mit LOD- und Icon-Wechsel), Größenvergleich (Filter `u=`, `sel=t4`, `layout=line`), Icon-Übersicht |
+| Screenshots | `tools/model-shots`, `tools/heavy pnpm models:shots` | Kontaktabzug, Silhouettenblatt (32/48 px), Größenvergleich (`compare.png`, `compare-t4.png`), Einzelbilder nach `/private/tmp/claude-501/faf-models/<fraktion>/`, Fraktionsvergleich `vergleich-fraktionen.png` (Kommandant, T1-Panzer, T3, T4 je Fraktion) |
 | Tests | `packages/modelkit/test` | Primitive (geschlossen, orientiert, Volumen), LOD-Regeln, Parts, Masken, GLB-Inhalt, Determinismus; **Vertragstest**: jedes Content-Modell baut fehlerfrei, im Budget, deterministisch |
 
 ## 2. Konventionen (Vertrag für Render und Pipeline)
@@ -44,16 +44,56 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 
 ## 3. Stand je Fraktion
 
-| Fraktion | Modelle | Roster | Tris L0 (min / Ø / max) | Tris L1 Ø | Tris L2 Ø | Status |
-|---|---|---|---|---|---|---|
-| Varkan (`content/models/varkan/`, Roster `docs/design/roster.json`) | **50** (23 mobil, 27 Strukturen) | 50 / 50, davon 26 MS9-Kern | 52 / 276 / 348 | 164 | 85 | vollständig, visuell geprüft, alle im Budget, 0 Warnungen |
-| Skarn (`content/models/skarn/`, Roster `factions/f2`) | 1 (Rädelsführer, Referenz) | 1 / 50 | 346 | 198 | 102 | Kit-Referenz, 0 Warnungen |
-| Sael (`content/models/sael/`, Roster `factions/f3`) | 1 (Prior, Referenz) | 1 / 50 | 334 | 156 | 98 | Kit-Referenz, schwebt 0,25 WU, 0 Warnungen |
-| Aurith (`content/models/aurith/`, Roster `factions/f4`) | 1 (Kantor, Referenz) | 1 / 49 | 344 | 193 | 107 | Kit-Referenz, 0 Warnungen |
+Alle vier Fraktionen sind vollständig modelliert: **214 Modelle**, davon 15 T4 (Experimentals, Post-MVP, aus
+`experimentals[]` der Roster). `pnpm models` meldet 0 Warnungen, alle Modelle liegen im Budget, der Vertragstest ist grün.
 
-Skarn, Sael und Aurith haben `_faction.ts` (Kit-Paletten) und je einen Referenz-Kommandanten; die übrigen Modelle
-folgen nach `content/models/README.md` (Formen, Paletten, Stilregeln je Fraktion). Die Varkan-Ausgabe ist durch einen
-Bytegleichheits-Test gegen den Stand vor der Kit-Erweiterung abgesichert.
+| Fraktion | Modelle | davon T4 | Roster | Tris L0 Kern (min / Ø / max) | L1 Ø | L2 Ø | Tris L0 T4 (min / Ø / max, Budget) | GLB | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| Varkan (`varkan/`, Roster `docs/design/roster.json`) | **50** (23 mobil, 27 Strukturen) | – | 50 / 50 | 52 / 276 / 348 | 172 | 84 | – (Roster ohne T4) | 2,7 MB | vollständig, visuell geprüft, bytegleich abgesichert |
+| Skarn (`skarn/`, Roster `factions/f2`) | **55** (27 mobil, 28 Strukturen) | 5 | 50 / 50 + 5 / 5 | 64 / 231 / 346 | 166 | 88 | 714 / 862 / 1.058 (1.200 / 700 / 350) | 3,6 MB | vollständig, visuell geprüft (Review Skarn) |
+| Sael (`sael/`, Roster `factions/f3`) | **55** (26 mobil, 29 Strukturen) | 5 | 50 / 50 + 5 / 5 | 58 / 297 / 350 | 158 | 79 | 940 / 1.270 / 1.484 (1.500 / 800 / 320) | 2,3 MB | vollständig, visuell geprüft (Review Sael) |
+| Aurith (`aurith/`, Roster `factions/f4`) | **54** (25 mobil, 29 Strukturen) | 5 | 49 / 49 + 5 / 5 | 60 / 288 / 349 | 143 | 88 | 1.050 / 1.249 / 1.468 (1.500 / 800 / 320) | 2,9 MB | vollständig, visuell geprüft (Review Aurith) |
+
+**T4 je Fraktion:**
+
+| Fraktion | T4 (Rolle) |
+|---|---|
+| Skarn | Skolopender (Land-Angriff, Dauerstrahl, 14 Beine), Assel (schwerer Brutläufer, baut Einheiten), Tsetse (Kampfschweber, Luft), Bärenklau (mobile Game-Ender-Artillerie), Myzel (Eco) |
+| Sael | Karkinos (Sturmläufer, Scherenschild), Ammonit (schwebende Festung mit Fabrik), Pelikan (Schwebeträger, Luft), Kreuzsee (Fernartillerie, Game-Ender), Perle (Eco) |
+| Aurith | Hymne (Sturmläufer, Dreibein 9 WU), Ensemble (wandernde Halle: mobile Fabrik mit Schild und Artillerie), Heupferd (Bomber mit Flugabwehr, Luft), Tuba (Strategiewerfer, Game-Ender), Klangschale (Eco) |
+
+Fraktionsvergleich (Kommandant, T1-Panzer, T3-Einheit und Land-T4 in einer Reihe): `tools/heavy pnpm models:shots`
+→ `/private/tmp/claude-501/faf-models/vergleich-fraktionen.png`. Die vier Stile sind darin klar getrennt: Varkan
+niedrig, kastig und dunkel mit Ketten; Skarn schwarzes Chitin auf Knickbeinen; Sael helle Perlmutt-Schalen auf
+Schwebetellern; Aurith hoch, rund und bernsteinfarben mit Dreibein und blauem Kamm.
+
+**Bekannte Schwächen (Skarn):**
+
+- Kleine Gebäude (Egel, Druse, Wabe, Glimmzelle) sind aus der Spielkamera fast nur Krustenumrisse; man liest sie über Glut und Aufbau (wie bei Varkan).
+- Langbein liegt mit 30 % Teamanteil genau an der Grenze. Der Doppelschwanz des Bärenklau liest sich als ein dicker Schwanz,
+  die Assel-Beine sind etwas länger als in `f2/experimentals.md` beschrieben.
+- Die Milbe (T2-Bot) wurde gegen den Floh über größere Flankenschilde abgesetzt; der Unterschied bleibt vor allem Größe und Schilde.
+
+**Bekannte Schwächen (Sael):**
+
+- Die Horn-Artillerie (Dünung, Brecher, Woge) zielt fast auf die 50°-Kamera und wirkt in der Silhouette klumpig; in Farbe ist die Mündung lesbar.
+- Zisterne und Schrein unterscheiden sich nur in Farbe und Innenform (Höhenregel lässt keinen Umrissunterschied zu).
+- Laterne II trifft das Budget genau (350 Tris). Läufer haben mehr als 2 animierte Parts (Beine), wie bei Varkan.
+
+**Bekannte Schwächen (Aurith):**
+
+- Teamanteil der Türme (Gabel I/II, Pfeifenwerk I/II, Großhorn, Hochorgel) liegt bei 31–36 % statt 20–30 %.
+- Der Resonanzkern der Resonatoren macht 12–19 % der Fläche statt 3–6 % (Folge der Vorgabe Kristallhöhe ≥ 1,5 × Sockel).
+- Engineers T1–T3: zweite und dritte Sichel sind klein, die Stufe liest man vor allem am Maßstab.
+- Horn und Heerhorn lesen sich eher als dunkle facettierte Mündung als als Glockenrand; ein Randring sprengt beim Heerhorn (346/350) das Budget.
+
+**Fraktionsübergreifend offen:**
+
+- Varkan hat im Roster keine T4; im Fraktionsvergleich fehlt dort die vierte Einheit.
+- Die T4-Budgets sind uneinheitlich: Skarn 1.200 / 700 / 350 (eigene Vorgabe in `f2/experimentals.md`), Sael und Aurith
+  `T4_BUDGET` 1.500 / 800 / 320.
+- Für T4 fehlen im Spiel noch: Beinzahlen 8/14 im Bein-Renderer, sizeClass 3 in der Wegfindung, Strahl-Waffentyp, Produktion
+  aus mobilen Einheiten (Feature-ID fehlt in `features.json`), Icon-Token für strategische Raketen (Tuba: `struct_mml_t4`).
 
 **Varkan nach Klasse (Tris L0 min/Ø/max, Teamanteil der Draufsicht):**
 
@@ -84,7 +124,8 @@ faction.md §5.2 (9 für MS9, 7 für MS14) sind bei 32 und 48 px unterscheidbar.
 - **Noch nicht umgesetzt:** Superset-Visuals mit Tech-Bitmaske (faction.md §3.3). Bisher gibt es ein Modell pro Blueprint.
   Tech-Streifen sind Decal-Geometrie, keine Maske. `_MASK.a` ist AO aus der Normalen, kein Ruß-Gradient. Icons liegen nur als
   SVG vor, der MSDF-Atlas fehlt noch.
-- **Werkzeug:** Der Größenvergleich (`compare.png`) ist bei 8×8-Gebäuden neben kleinen Einheiten kaum lesbar.
+- **Werkzeug:** Der Größenvergleich (`compare.png`) ist bei 8×8-Gebäuden neben kleinen Einheiten kaum lesbar; für T4 gibt es
+  deshalb `compare-t4.png` und den Filter `u=` im Viewer.
 
 ## 4. Integrationsplan
 

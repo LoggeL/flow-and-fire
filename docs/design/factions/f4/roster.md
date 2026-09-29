@@ -692,3 +692,29 @@ Kritisches Review nach dem ersten Roster-Stand: Balance nachgerechnet, Lesbarkei
 | R12 | Passung zum Vorbild | Amber/Blauleuchten, geschwungene Körper, Gleiter, Hybride, wenige große Einheiten treffen die Vorbild-Designsprache. Kein Design ist kopiert: Kommandant als armloses Dreibein, Lore als Ureinwohner, echte DE/EN-Wörter. | Keine Änderung. Die Assoziation „Chor“ ↔ Engelschöre ist ein allgemeines Motiv, kein FA-Inhalt; §2.3 schließt Heiligenpathos aus. | – |
 | R13 | Vollständigkeit | Alle Varkan-Feature-IDs und Rollen sind belegt; `lnd_t1_bot`, `lnd_t2_shield`, `lnd_t3_bot` sind auf Pfiff, Stille und Grollen abgebildet (§2.1). Keine MVP-Rolle fehlt. | Keine Änderung. | 49 Blueprints, 26 ●, 28 Visuals, 19 Glyphen. |
 
+---
+
+## 21. Experimentals (T4, Post-MVP)
+
+**5 T4-Blueprints** im eigenen Schlüssel `experimentals` von `roster.json` (`tier: T4`, `postMvp: true`). Sie zählen nicht in die 49 Blueprints, den MS9-Kern oder die 28 Visuals und sind für `cross.py` unsichtbar. Design, Herleitung und Kitbash im Detail: [`experimentals.md`](experimentals.md). Referenz: `tools/roster/f4/fa_ref_t4.json` (Vorbild `XSL0401`, `XSA0402`, `XSB2401`; Fremdreferenz `UEL0401`, `XAB1401`, weil das Vorbild keine mobile Fabrik und kein T4-Eco hat). Gates (Generator und `validate.py`): Δ DPS/Mass (Boden), Δ HP/Mass, Produkt und Pulk je ±15 %, Δ Luft-DPS/Mass ±25 %, Δ Mass ±15 %; T4-Kitbash ≤ 10 Parts, ≤ 4 animiert, Tris L0/L1/L2 1.500/800/320 (`@faf/modelkit` `T4_BUDGET`); Setons-Brücke (Gate 72 WU): mobile Land-T4 mit Außenmaß ≤ 12 WU, also ≥ 6 nebeneinander.
+
+| ID | DE / EN | Rolle | Hotbuild | Icon | Mass / Energy / buildTime | HP (+Schild) | Tempo | Footprint / s | Δ DPS/M · Δ HP/M · Δ Prod | Features |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `f4:exp_assault` | **Hymne** / Hymn | Experimenteller Sturmläufer | Q | `land_bot_t4` | 26.500 / 330.000 / 46.875 | 72.000 | 2,4 | 4×4 / s3 | −9,4 % · +7,5 % · −2,6 % | A16, K1-Erweiterung, K14, M13, P14, U16 |
+| `f4:exp_mobile_fac` | **Ensemble** / Ensemble | Wandernde Halle | W | `land_arty_t4` | 28.000 / 350.000 / 47.500 | 11.000 + 24.000 | 1,7 | 6×6 / s3 | −5 % · +7,7 % · +2,3 % | B12, K10, M13, U21 |
+| `f4:exp_air_bomber` | **Heupferd** / Katydid | Experimenteller Bomber | R | `air_bomb_t4` | 48.000 / 1.920.000 / 67.500 | 50.000 | 16 | 6×6 / s0 | +9,1 % · −3,8 % · +5 % | P14, U12, U21 |
+| `f4:exp_strat_missile` | **Tuba** / Tuba | Experimenteller Strategiewerfer | V | `struct_mml_t4` | 185.000 / 10.000.000 / 250.000 | 12.500 | – | 6×6 | – · +5,7 % · – | A21, K17, P14, U21 |
+| `f4:exp_resource` | **Klangschale** / Singing Bowl | Experimenteller Resonanzgenerator | T | `struct_mass_t4` | 250.200 / 7.506.000 / 325.000 | 5.500 | – | 8×8 | – · +10 % · – | E17, P14, U21 |
+
+**Waffen und Besonderheiten**
+
+| Einheit | Waffen | Tod | Kitbash |
+|---|---|---|---|
+| **Hymne** | `wpn_hymn_beam` Große Schwebung (Strahl zwischen den Brustzinken): 10×500 / 5 s = **1000 DPS**, RW 4–46, hitscan-puls, Splash 3<br>`wpn_hymn_fork` Doppelgabelton (beide Brustzinken): 2×560 / 0,6 s = **1866,7 DPS**, RW 46, linear<br>`wpn_hymn_horn` Stoßklang (Schultertrichter): 2.000 / 3,5 s = **571,4 DPS**, RW 46, ballistisch (flach), Splash 6<br>`wpn_hymn_pipes` Pfeifenkranz (Flugabwehr, gestuft): 6×30 / 1 s = **180 DPS**, RW 46, linear, Splash 3 [Luft] | 6.000 / 6; Feld 20 s, 500 / 0,5 s, R 14 | 9 Parts, 2 anim., ≈ 864 Tris |
+| **Ensemble** | `wpn_ensemble_horn` Chorstoß (zwei Trichter im Wechsel): 2×1.400 / 1 s = **2800 DPS**, RW 10–90, ballistisch, Splash 1,5<br>`wpn_ensemble_fork` Gabelkranz (Nahabwehr): 2×150 / 0,3 s = **1000 DPS**, RW 40, linear<br>`wpn_ensemble_pipes` Pfeifenbank (Flugabwehr): 3×40 / 1 s = **120 DPS**, RW 40, linear [Luft] | 4.000 / 7 | 10 Parts, 3 anim., ≈ 960 Tris |
+| **Heupferd** | `wpn_katydid_bomb` Dröhnbombe (ein Abwurf pro Anflug): 12.000 / 14 s = **857,1 DPS**, RW 90, Bombe, Splash 17<br>`wpn_katydid_pipes` Zirpkranz (vier Pfeifengruppen): 4×400 / 1 s = **1600 DPS**, RW 64, linear [Luft] | 8.000 / 10 | 8 Parts, 2 anim., ≈ 684 Tris |
+| **Tuba** | `wpn_tuba_final` Schlussakkord (strategische Rakete): 1.000.000 / 60 s = **16666,7 DPS**, RW 20.000, Lenkrakete (strategisch), Splash 42 | 20.000 / 15 + 5.000 / 20 | 8 Parts, 2 anim., ≈ 732 Tris |
+| **Klangschale** | – | 35.000 / 24 | 9 Parts, 1 anim., ≈ 864 Tris |
+
+**Silhouetten-Pflichtpaare T4:** exp_assault ↔ cmd_commander, exp_assault ↔ lnd_t2_bot, exp_mobile_fac ↔ str_t3_fac_land, exp_mobile_fac ↔ lnd_t3_shield, exp_air_bomber ↔ air_t1_bomber, exp_air_bomber ↔ air_t2_fbomber, exp_strat_missile ↔ str_t3_arty, exp_strat_missile ↔ str_t3_sam, exp_resource ↔ str_t3_pgen, exp_resource ↔ str_t3_mex.
+

@@ -55,6 +55,8 @@ export interface RosterUnit {
 
 export interface RosterFile {
   readonly units: readonly RosterUnit[];
+  /** T4 (Post-MVP) entries of the faction rosters f2–f4; same shape as `units`. */
+  readonly experimentals?: readonly RosterUnit[];
 }
 
 function text(v: RosterUnit['name'], lang: 'de' | 'en'): string | undefined {

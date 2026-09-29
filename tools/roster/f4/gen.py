@@ -835,11 +835,17 @@ assert set(glyphs) <= set(VARKAN_GLYPHS), set(glyphs) - set(VARKAN_GLYPHS)  # ke
 n9 = sum(e['ms9Core'] for e in out)
 mob = sum(1 for e in out if e['group'] in ('cmd', 'land', 'air'))
 assert (len(out), mob, n9, len(visuals)) == (49, 22, 26, 28), (len(out), mob, n9, len(visuals))
+
+# ---------------------------------------------------------------- Experimentals (T4, Post-MVP; exp.py, experimentals.md)
+import exp as EXP  # noqa: E402
+X = EXP.entries(EXP.build(NS, P, W, PM, TRIS), TRIS)
+EXP.check(X, glyphs, set(ids))
 doc = dict(
     schema='faf-roster/1', faction='f4 (Aurith-Chor)', generated='2026-09-29', language='de',
     sourceOfTruth='roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts der Fraktion f4; '
                   'factions/f4/faction.md und roster.md verweisen darauf.',
-    counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9, visuals=len(visuals), iconGlyphs=len(glyphs)),
+    counts=dict(total=len(out), mobile=mob, structures=len(out) - mob, ms9Core=n9, visuals=len(visuals), iconGlyphs=len(glyphs),
+                experimentals=len(X), experimentalVisuals=len({e['visual'] for e in X})),
     conventions=dict(
         units='1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s',
         buildTime='Sekunden = buildTime / Build Power des Erbauers (FA-Semantik); Upgrade-Dauer = buildTime der Zielstufe / buildPower der Vorstufe',
@@ -869,6 +875,12 @@ doc = dict(
         dreipass='Dreipass-Sockel = drei lens-Parts mit mat team (Teamfarbe nur als Randmaske, 20–30 % der Draufsicht)',
         visual='Ein Visual = ein Superset-Mesh pro Rolle (Vereinigung der Parts aller Tech-Stufen nach Part+Material). Jeder Vertex trägt eine '
                'Tech-Bitmaske; v_fac trägt zusätzlich ein Rollenbit (Land/Luft). Ein Draw pro (Visual, LOD).',
+        experimentals='T4 stehen im eigenen Schlüssel `experimentals` (tier T4, postMvp true) und zählen nicht in total/ms9Core/visuals; '
+                      'cross.py und die MVP-Gates sehen sie nicht. Referenz: tools/roster/f4/fa_ref_t4.json (Vorbild XSL0401/XSA0402/XSB2401, '
+                      'Fremdreferenz UEL0401/XAB1401). Gates: Δ DPS/Mass (Boden), Δ HP/Mass, Produkt je ≤ ±15 %, Δ Luft-DPS/Mass ≤ ±25 %, Δ Mass ≤ ±15 %. '
+                      'Icon: gemeinsame Grammatik mit Stufe `t4` (eckige Klammer um die Grundform statt Kerben, wie f2). Design: experimentals.md.',
+        t4Budget=EXP.T4_BUDGET,
+        t4Bridge='Setons-Brücke (engste Stelle ≈ 74 WU, Gate 72 WU, wie f2): Außenmaß ≤ 12 WU, also ≥ 6 T4 nebeneinander; sizeClass = ceil(Außenmaß / 2) ≤ 7 (Clearance ≥ Radius, Schema 0–7).',
         faSource='FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js, extrahiert mit tools/roster/f4/ref.py; '
                  'Stichprobe und Schild-Regeneration gegen FAForever/fa develop (2026-09-29)',
     ),
@@ -895,6 +907,7 @@ doc = dict(
               [f('lnd_t3_sniper'), f('lnd_t2_bot')]],
         crossFaction=[[f('lnd_t1_tank'), 'core:lnd_t1_tank'], [f('lnd_t1_arty'), 'core:lnd_t1_arty'], [f('lnd_t1_aa'), 'core:lnd_t1_aa'],
                       [f('lnd_t1_tank'), 'f2:lnd_t1_tank'], [f('lnd_t1_tank'), 'f3:lnd_t1_tank'], [f('lnd_t1_arty'), 'f3:lnd_t1_arty']],
+        t4=[[e['id'], p] for e in X for p in e['silhouettePairs']],
         crossFactionRule='Schattenriss: dieselbe Rolle (Winkel-Code); Graustufenbild: verschiedene Fraktionen (faction.md §5.4)',
     ),
     iconGlyphs=glyphs,
@@ -902,6 +915,7 @@ doc = dict(
              for k, v in visuals.items()},
     checks=dict(hitsToKill=htk, shieldBreak=shield_break),
     units=out,
+    experimentals=X,
 )
 for pr in doc['silhouettePairs']['ms9']:
     assert all(E[i]['ms9Core'] for i in pr), pr
@@ -915,3 +929,8 @@ for e in out:
 for h in htk: print('HTK', h['attacker'], '->', h['target'], h['hits'], h['fa']['hits'])
 for s in shield_break: print('SHIELD', s['attacker'], s['target'], s['shots'], s['timeS'], s['faShots'], s['faTimeS'])
 for k, v in visuals.items(): print('VIS', k, v['supersetParts'], v['trisEstimate'])
+for e in X:
+    b = e['balance']
+    print(f"{e['id']:24s} T4 M {e['economy']['mass']} dps/m {b['dpsPerMass']} ({b['devDpsPerMassPct']}) air {b['devAirDpsPerMassPct']} "
+          f"hp/m {b['hpPerMass']} ({b['devHpPerMassPct']}) prod {b['devProductPct']} pulk {b['pulk'] and b['pulk']['devPct']} "
+          f"parts {e['kitbash']['partCount']}/{e['kitbash']['animatedParts']} tris {e['kitbash']['trisEstimate']} bridge {(e['motion'].get('bridge') or {}).get('abreast')}")

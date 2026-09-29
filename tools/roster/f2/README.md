@@ -12,6 +12,11 @@ Alle Skripte im Ordner `tools/roster/f2/` ausführen.
 - `validate.py [index.json]`: unabhängiger Validator, rechnet alle Gates aus den Rohwerten neu. Mit `index.json` zusätzlich Grep der
   Anzeigenamen und der Lore-Namen aus faction.md §1/§2.5 (Rotten, Waffen- und Spielbegriffe) gegen alle FA-Einheitennamen. Exit-Code 1 bei Verstoß.
 
+- `exp.py`: Experimentals (T4, Post-MVP) für `roster.json` → `experimentals[]`, wird von `gen.py` eingebunden. Gates gegen die
+  Vorbild-T4 (`fa_ref_t4.json`, erzeugt mit `python3 exp.py --extract index.json`): ±15 % DPS/Mass, HP/Mass, Produkt, Pulk; Identität
+  (Mass ≤, Tempo ≥, HP/Mass ≤ Referenz); Setons-Brücke; T4-Kitbash-Budget; Icon `*_t4`. `python3 exp.py` druckt die Übersicht.
+  Design: `docs/design/factions/f2/experimentals.md`. `validate.py` prüft die T4 unabhängig nach (inkl. Namen gegen alle Roster).
+
 Review-Entscheidungen (Balance, Lesbarkeit, Eigenständigkeit, Vollständigkeit): `roster.md` §19.
 
 Reihenfolge: `python3 gen.py && python3 md.py && python3 validate.py index.json`
