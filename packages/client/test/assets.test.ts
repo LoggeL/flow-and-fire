@@ -201,9 +201,9 @@ describe('asset loader (fakes)', () => {
     expect(model.t === 'model' && model.variant).toBe('meshopt');
     expect(model.t === 'model' && model.lods.length).toBe(3);
     const map = msgs.find((x) => x.t === 'asset' && x.kind === 'map')!;
-    expect(map.t === 'asset' && map.bytes.byteLength).toBe(manifest.assets['maps/hollow-ridge']!.bytes);
+    expect(map.t === 'asset' && map.bytes.byteLength).toBe(manifest.assets['maps/braidwater']!.bytes);
     // Order: content, maps, models.
-    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'maps/setons', 'units/cube_bot']);
+    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera', 'units/cube_bot']);
   });
 
   it('warm: a cache hit needs no network (no asset bytes), only the manifest', async () => {
@@ -307,7 +307,7 @@ describe('AssetManager', () => {
     const res = await mgr.load();
     expect(mgr.mode).toBe('worker');
     expect(res.mode).toBe('worker');
-    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'maps/setons']);
+    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera']);
     expect(decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids).toEqual(['core:cube']);
     expect(res.models.get('units/cube_bot')!.variant).toBe('meshopt');
     expect(progress.at(-1)!.assetsDone).toBe(N);
