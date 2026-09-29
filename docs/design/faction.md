@@ -5,6 +5,7 @@
 > **Quelle der Zahlen:** `docs/design/roster.json` ist die einzige Quelle für Werte, ●/○-Status, Kitbash-Parts und Maßstäbe; `roster.md` ist daraus generiert, §7.4 und §10.1 hier sind Auszüge. Bei Widerspruch gilt `roster.json`.
 > **Mechanik:** Die Fraktion ist ein symmetrischer Allrounder mit FA-naher Mechanik. Das Balancing hält DPS/Mass und HP/Mass innerhalb von ±25 % der FA-Relation (PLAN U3); das Roster zielt strenger auf ±15 % inklusive Produkt und Pulk-DPS/Mass und hält die FA-Treffer-Breakpoints exakt (`roster.md` §14). Die Identität steckt in Optik, Namen, Icons und Klang, nicht in Sonderregeln.
 > **Abgrenzung:** keine FA-Namen, keine FA-Lore, keine FA-Designs und keine FA-Assets (DECISIONS, Punkt „Name“). Mechanik-Begriffe der UI bleiben neutral: Mass, Energy, Build Power, Assist, Reclaim, T1–T3.
+> **Weitere Fraktionen:** Skarn (f2), Sael (f3) und Aurith (f4) teilen Welt, Icon-Grammatik, Teampalette und Eco mit Varkan; Übersicht, Kreuz-Balance und Asymmetrie-Matrix in `docs/design/factions/README.md`. Im fraktionsübergreifenden Abgleich wurden Stichel (30 Mass / 60 HP), Zapfstelle I (400 HP), Turmfalke (295 HP) und die Elster-Luftkanonen (2 × 70) auf die FA-Relation gesetzt (dort §5.4).
 
 ---
 
