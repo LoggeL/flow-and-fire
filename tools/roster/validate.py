@@ -1,5 +1,5 @@
-import json, sys, math
-p = '/Users/logge/Documents/Projects/flow-and-fire-faction/docs/design/roster.json'
+import json, sys, math, os
+p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'docs', 'design', 'roster.json')
 D = json.load(open(p))  # wirft bei invalidem JSON
 U = D['units']; ids = {u['id'] for u in U}
 err = []

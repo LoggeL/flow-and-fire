@@ -122,7 +122,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | | ID | DE / EN | Rolle | FA-Referenzrolle (dev-only) | MS | Mass / Energy / BT | HP | Tempo / Drehung | Footprint | Sicht / Radar | Hotbuild | Icon |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | ● | `core:lnd_t1_scout` | **Funke** / Spark | Späher / Scout | T1 Land Scout (`UEL0101`, Gegenprobe `URL0101`) | MS7 | 12 / 80 / 60 | 32 | 4,5 / 90° | 1×1 / s1 | 26 / R 40 | Landwerk: A | `land_intel_t1` |
-| ● | `core:lnd_t1_bot` | **Stichel** / Graver | Leichter Sturmläufer / Light Assault Bot | T1 Light Assault Bot (`UEL0106`, Gegenprobe `URL0106`) | MS6 | 32 / 130 / 130 | 70 | 4,3 / 60° | 1×1 / s1 | 18 | Landwerk: S | `land_bot_t1` |
+| ● | `core:lnd_t1_bot` | **Stichel** / Graver | Leichter Sturmläufer / Light Assault Bot | T1 Light Assault Bot (`UEL0106`, Gegenprobe `URL0106`) | MS6 | 30 / 120 / 120 | 60 | 4,3 / 60° | 1×1 / s1 | 18 | Landwerk: S | `land_bot_t1` |
 | ● | `core:lnd_t1_tank` | **Punze** / Punch | Kampfpanzer / Battle Tank | T1 Medium Tank (`UEL0201`, Gegenprobe `URL0107`) | MS5 | 56 / 280 / 300 | 300 | 3,3 / 90° | 1×1 / s1 | 20 | Landwerk: Q | `land_direct_t1` |
 | ● | `core:lnd_t1_arty` | **Kelle** / Ladle | Mobile Artillerie / Mobile Artillery | T1 Mobile Light Artillery (`UEL0103`, Gegenprobe `URL0103`) | MS7 | 36 / 180 / 200 | 210 | 2,7 / 90° | 1×1 / s1 | 18 | Landwerk: W | `land_arty_t1` |
 | ● | `core:lnd_t1_aa` | **Sieb** / Sieve | Mobile Flugabwehr / Mobile AA | T1 Mobile Anti-Air Gun (`UEL0104`, Gegenprobe `URL0104`) | MS7 | 55 / 275 / 220 | 310 | 3,3 / 80° | 1×1 / s1 | 20 | Landwerk: R | `land_aa_t1` |
@@ -132,7 +132,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | ID | Waffen | DPS/Mass (FA) | Δ DPS/Mass | HP/Mass (FA) | Δ HP/Mass | Δ Produkt |
 |---|---|---|---|---|---|---|
 | `lnd_t1_scout` | `wpn_spark_mg_t1` Rumpf-MG (fester Bugwinkel 90°): 4 / 2 s = **2 DPS**, RW 22, linear | 0,167 (0,167) | ±0 % | 2,667 (2,417) | +10,3 % | +10,3 % |
-| `lnd_t1_bot` | `wpn_mg_t1` Schnellfeuer-MG: 7 / 0,3 s = **23,3 DPS**, RW 14, linear | 0,729 (0,778) | −6,2 % | 2,188 (2) | +9,4 % | +2,5 % |
+| `lnd_t1_bot` | `wpn_mg_t1` Schnellfeuer-MG: 7 / 0,3 s = **23,3 DPS**, RW 14, linear | 0,778 (0,778) | ±0 % | 2 (2) | ±0 % | ±0 % |
 | `lnd_t1_tank` | `wpn_cannon_t1` Glockenkanone: 28 / 1,2 s = **23,3 DPS**, RW 18, linear | 0,417 (0,429) | −2,8 % | 5,357 (5,357) | ±0 % | −2,8 % |
 | `lnd_t1_arty` | `wpn_slag_mortar_t1` Schlackenmörser: 100 / 9 s = **11,1 DPS**, RW 6–30, ballistisch, Splash 1,1<br>Pulk-DPS/Mass 0,621 (FA 0,591): +4,9 % | 0,309 (0,335) | −7,8 % | 5,833 (5,694) | +2,4 % | −5,6 % |
 | `lnd_t1_aa` | `wpn_aa_repeater_t1` Zwillings-Flugabwehrkanone: 2×14 / 1 s = **28 DPS**, RW 30, linear (Vorhalt) [Luft] | 0,509 (0,473) | +7,7 % | 5,636 (5,636) | ±0 % | +7,7 % |
@@ -142,7 +142,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | ID | Kategorien / buildableBy | Besonderheiten | Kitbash (Parts) | MS-Hinweis |
 |---|---|---|---|---|
 | `lnd_t1_scout` | LAND MOBILE SCOUT INTELLIGENCE TECH1 DIRECTFIRE<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Kein Turm (Monopol-Regel); Waffe starr im Rumpf, arcDeg 90. | Kleinster Rumpf (Deck teamfarben), hoher dünner Mast ≥ 1,0 × Rumpflänge ohne Kopfteil, Glutnaht an der Spitze.<br>hull [team], tracks, mast [copper] — 3 Parts, 0 anim., ≈ 76 Tris · Maßstab 1 · 1 Streifen (keramik) | U4 T1-Armee in MS7; Radar-Feld wirkt ab MS10 (I3) |
-| `lnd_t1_bot` | LAND MOBILE DIRECTFIRE BOT TECH1<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Raider/Engineer-Jäger: höchste DPS/Mass der T1-Armee, wenig HP. | Kleine Wanne auf Beinen, Glocke mit kurzem waagerechtem Rohr.<br>legs, hull, bell ⟳yaw [team], barrel ⟳pitch — 4 Parts, 2 anim., ≈ 168 Tris · Maßstab 1 · 1 Streifen (keramik) | erste Fabrik-Einheit im Opening (MS6); U4 abgenommen MS7 |
+| `lnd_t1_bot` | LAND MOBILE DIRECTFIRE BOT TECH1<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Raider/Engineer-Jäger: höchste DPS/Mass der T1-Armee, wenig HP. Kosten und HP seit dem fraktionsübergreifenden Abgleich exakt FA-Relation (vorher 32 Mass / 70 HP; das verschob vier Kreuz-Breakpoints, factions/README.md §5.4). | Kleine Wanne auf Beinen, Glocke mit kurzem waagerechtem Rohr.<br>legs, hull, bell ⟳yaw [team], barrel ⟳pitch — 4 Parts, 2 anim., ≈ 168 Tris · Maßstab 1 · 1 Streifen (keramik) | erste Fabrik-Einheit im Opening (MS6); U4 abgenommen MS7 |
 | `lnd_t1_tank` | LAND MOBILE DIRECTFIRE TANK TECH1<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Linienhalter nach FA-Relation. HP 300 hält die Breakpoints: 3 Vogt-Treffer, 6 Riegel-I-Treffer, 5 Meißel-Salven. | Gedrungene Wanne 1,0×0,4×1,4 WU auf Ketten, mittige Glocke, Rohr ≈ 65 % der Rumpflänge über den Bug.<br>hull [team], tracks, bell ⟳yaw [team], barrel ⟳pitch, barrel(kupferleitung) [copper] — 5 Parts, 2 anim., ≈ 156 Tris · Maßstab 1 · 1 Streifen (keramik) | erste Kampfeinheit (Konsole, MS5), Fabrik ab MS6 |
 | `lnd_t1_arty` | LAND MOBILE INDIRECTFIRE ARTILLERY TECH1<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Splash 1,1 statt 1 (FA), dafür langsamer (9,0 s statt 8,3 s). Schaden 100 wie FA: 1 Treffer Stichel, 2 Lehrling, 3 Punze. Glüht nur beim Schuss (0,5 s). | Lange schmale Wanne, offene Kelle auf kurzem Schwenkarm, Gegengewicht am Heck; keine Glocke, kein waagerechtes Rohr.<br>hull [team], tracks, boom ⟳yaw, ladle ⟳pitch [team], hull(gegengewicht) — 5 Parts, 2 anim., ≈ 152 Tris · Maßstab 1 · 1 Streifen (keramik) | K2 Ballistik in MS7 |
 | `lnd_t1_aa` | LAND MOBILE ANTIAIR TECH1<br>*von:* `FACTORY & LAND & (TECH1 \| TECH2 \| TECH3)` | Nur Luftziele. | Wanne mit Rost-Platte, darauf 2 dünne senkrechte Rohre (≥ 75°) als Kamm quer zur Fahrtrichtung.<br>hull [team], tracks, grate ⟳yaw, barrel(senkrecht), barrel(senkrecht) — 5 Parts, 1 anim., ≈ 112 Tris · Maßstab 1 · 1 Streifen (keramik) | U4 in MS7, Wirkung gegen Luft MS12 |
@@ -221,7 +221,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | | ID | DE / EN | Rolle | FA-Referenzrolle (dev-only) | MS | Mass / Energy / BT | HP | Tempo / Drehung | Footprint | Sicht / Radar | Hotbuild | Icon |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | ○ | `core:air_t1_scout` | **Lerche** / Lark | Aufklärer / Air Scout | T1 Air Scout (`UEA0101`) | MS12 | 40 / 560 / 200 | 40 | 18 / 100° | 1×1 / s0 | 40 / R 60 | Luftwerk: A | `air_intel_t1` |
-| ○ | `core:air_t1_fighter` | **Turmfalke** / Kestrel | Abfangjäger / Interceptor | T1 Interceptor (`UEA0102`, Gegenprobe `URA0102`) | MS12 | 50 / 2.200 / 500 | 280 | 15 / 120° | 1×1 / s0 | 28 | Luftwerk: Q | `air_aa_t1` |
+| ○ | `core:air_t1_fighter` | **Turmfalke** / Kestrel | Abfangjäger / Interceptor | T1 Interceptor (`UEA0102`, Gegenprobe `URA0102`) | MS12 | 50 / 2.200 / 500 | 295 | 15 / 120° | 1×1 / s0 | 28 | Luftwerk: Q | `air_aa_t1` |
 | ○ | `core:air_t1_bomber` | **Dohle** / Jackdaw | Bomber / Bomber | T1 Attack Bomber (`UEA0103`, Gegenprobe `URA0103`) | MS12 | 90 / 2.000 / 500 | 230 | 10 / 80° | 1×1 / s0 | 32 / R 40 | Luftwerk: W | `air_bomb_t1` |
 | ○ | `core:air_t2_gunship` | **Krähe** / Crow | Kampfschweber / Gunship | T2 Gunship (`UEA0203`, Gegenprobe `URA0203`) | MS12 | 200 / 3.800 / 1.300 | 760 | 12 / 90° | 1×1 / s0 | 32 | Luftwerk: E | `air_direct_t2` |
 | ○ | `core:air_t2_fbomber` | **Elster** / Magpie | Jagdbomber / Fighter-Bomber | T2 Fighter/Bomber (FAF) (`DEA0202`) | MS12 | 340 / 11.000 / 2.600 | 1.150 | 15 / 110° | 1×1 / s0 | 32 / R 60 | Luftwerk: R | `air_fbomb_t2` |
@@ -231,10 +231,10 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | ID | Waffen | DPS/Mass (FA) | Δ DPS/Mass | HP/Mass (FA) | Δ HP/Mass | Δ Produkt |
 |---|---|---|---|---|---|---|
 | `air_t1_scout` | – | – (–) | – | 1 (0,875) | +14,3 % | – |
-| `air_t1_fighter` | `wpn_kestrel_gun_t1` Zwillings-Luftkanone: 2×25 / 1 s = **50 DPS**, RW 25, linear (Vorhalt) [Luft] | 1 (1) | ±0 % | 5,6 (5,9) | −5,1 % | −5,1 % |
+| `air_t1_fighter` | `wpn_kestrel_gun_t1` Zwillings-Luftkanone: 2×25 / 1 s = **50 DPS**, RW 25, linear (Vorhalt) [Luft] | 1 (1) | ±0 % | 5,9 (5,9) | ±0 % | ±0 % |
 | `air_t1_bomber` | `wpn_slag_bomb_t1` Schlackenbomben (4er-Reihe): 4×85 / 5 s = **68 DPS**, RW 40, ballistisch (Abwurf), Splash 3 | 0,756 (0,778) | −2,9 % | 2,556 (2,389) | +7 % | +3,9 % |
 | `air_t2_gunship` | `wpn_crow_gun_t2` Bauch-Glocke: 16 / 0,3 s = **53,3 DPS**, RW 22, linear | 0,267 (0,278) | −4 % | 3,8 (3,646) | +4,2 % | +0,1 % |
-| `air_t2_fbomber` | `wpn_magpie_gun_t2` Luftkanone: 70 / 1 s = **70 DPS**, RW 30, linear (Vorhalt) [Luft]<br>`wpn_magpie_bomb_t2` Schlackenbomben (2er): 2×360 / 5 s = **144 DPS**, RW 50, ballistisch (Abwurf), Splash 3 | 0,629 (0,653) | −3,6 % | 3,382 (3,333) | +1,5 % | −2,2 % |
+| `air_t2_fbomber` | `wpn_magpie_gun_t2` Luftkanonen (2 Läufe): 2×70 / 1 s = **140 DPS**, RW 30, linear (Vorhalt) [Luft]<br>`wpn_magpie_bomb_t2` Schlackenbomben (2er): 2×360 / 5 s = **144 DPS**, RW 50, ballistisch (Abwurf), Splash 3 | 0,835 (0,861) | −3 % | 3,382 (3,333) | +1,5 % | −1,6 % |
 
 **Kategorien, Besonderheiten, Kitbash**
 
@@ -244,7 +244,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 | `air_t1_fighter` | AIR MOBILE ANTIAIR TECH1<br>*von:* `FACTORY & AIR & (TECH1 \| TECH2)` | Death: `wpn_air_crash_s` 25/r1 (Absturzschaden (K12))<br>Nur Luftziele; verfolgt mit Vorhalt. | Schmales, stark gepfeiltes Delta (lang > breit), 2 Glutnähte am Heck.<br>hull, wing(delta) [team], wing(leitwerk) — 3 Parts, 0 anim., ≈ 52 Tris · Maßstab 1 · 1 Streifen (keramik) | U11 in MS12 |
 | `air_t1_bomber` | AIR MOBILE BOMBER TECH1<br>*von:* `FACTORY & AIR & (TECH1 \| TECH2)` | Death: `wpn_air_crash_m` 100/r1 (Absturzschaden (K12))<br>Bombenreihe quer zur Anflugrichtung; Snipe-Gate MS12. | Gerader Breitflügel (breit ≥ lang) mit Bauch-Kessel, T-Form von oben; Kessellänge ≥ 1,4 × Flügeltiefe, ragt vorn und hinten sichtbar über.<br>hull, wing(breitfluegel) [team], boiler(bombenbauch) — 3 Parts, 0 anim., ≈ 88 Tris · Maßstab 1 · 1 Streifen (keramik) | U11 in MS12 (Bomber-FSM) |
 | `air_t2_gunship` | AIR MOBILE GUNSHIP DIRECTFIRE TECH2<br>*von:* `FACTORY & AIR & TECH2` | Death: `wpn_air_crash_m` 100/r1 (Absturzschaden (K12))<br>Schwebt im Orbit um das Ziel. Kein Transport (U13 Post-MVP). | Keine Flügel: Ringdüse als Scheibe, darunter Glocke mit Rohr.<br>ductfan ⟳yaw [team], hull, bell ⟳yaw, barrel — 4 Parts, 2 anim., ≈ 164 Tris · Maßstab 1,3 · 2 Streifen (keramik) | U11 in MS12 (Orbit) |
-| `air_t2_fbomber` | AIR MOBILE BOMBER ANTIAIR TECH2<br>*von:* `FACTORY & AIR & TECH2` | Death: `wpn_air_crash_l` 200/r1 (Absturzschaden (K12))<br>Beide Waffen addiert im DPS-Vergleich (wie FA-Referenz). | Delta mit zwei Kessel-Gondeln an den Flügelspitzen, Spannweite +30 % gegenüber Turmfalke; keine Ringdüse.<br>hull, wing(delta) [team], boiler(gondel l), boiler(gondel r), wing(leitwerk) — 5 Parts, 0 anim., ≈ 148 Tris · Maßstab 1,3 · 2 Streifen (keramik) | U11 in MS12 |
+| `air_t2_fbomber` | AIR MOBILE BOMBER ANTIAIR TECH2<br>*von:* `FACTORY & AIR & TECH2` | Death: `wpn_air_crash_l` 200/r1 (Absturzschaden (K12))<br>Beide Waffen addiert im DPS-Vergleich (wie FA-Referenz). Luftkanonen 2 × 70 seit dem fraktionsübergreifenden Abgleich (FA-Referenz hat zwei Railguns, spooky zählte nur eine; factions/README.md §5.4). | Delta mit zwei Kessel-Gondeln an den Flügelspitzen, Spannweite +30 % gegenüber Turmfalke; keine Ringdüse.<br>hull, wing(delta) [team], boiler(gondel l), boiler(gondel r), wing(leitwerk) — 5 Parts, 0 anim., ≈ 148 Tris · Maßstab 1,3 · 2 Streifen (keramik) | U11 in MS12 |
 
 ---
 
@@ -254,7 +254,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 
 | | ID | DE / EN | Rolle | FA-Referenzrolle (dev-only) | MS | Mass / Energy / BT | HP | Tempo / Drehung | Footprint | Sicht / Radar | Hotbuild | Icon |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| ● | `core:str_t1_mex` | **Zapfstelle I** / Tap I | Massebohrung / Mass Extractor | T1 Mass Extractor (`UEB1103`) | MS4 | 36 / 360 / 60 | 420 | – | 2×2 | – | Bau: Q | `struct_mass_t1` |
+| ● | `core:str_t1_mex` | **Zapfstelle I** / Tap I | Massebohrung / Mass Extractor | T1 Mass Extractor (`UEB1103`) | MS4 | 36 / 360 / 60 | 400 | – | 2×2 | – | Bau: Q | `struct_mass_t1` |
 | ● | `core:str_t2_mex` | **Zapfstelle II** / Tap II | Massebohrung / Mass Extractor | T2 Mass Extractor (Upgrade-Kosten) (`UEB1202`) | MS8 | 900 / 5.400 / 900 | 2.100 | – | 2×2 | 20 | Bau: Q (Upgrade: Command Card) | `struct_mass_t2` |
 | ○ | `core:str_t3_mex` | **Zapfstelle III** / Tap III | Massebohrung / Mass Extractor | T3 Mass Extractor (Upgrade-Kosten) (`UEB1302`) | MS13 | 4.500 / 31.000 / 2.900 | 7.000 | – | 2×2 | 20 | Bau: Q (Upgrade: Command Card) | `struct_mass_t3` |
 | ● | `core:str_t1_pgen` | **Glutkessel I** / Ember Boiler I | Kraftwerk / Power Generator | T1 Power Generator (`UEB1101`) | MS4 | 75 / 750 / 125 | 620 | – | 2×2 | – | Bau: W | `struct_energy_t1` |
@@ -268,7 +268,7 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 
 | ID | Waffen | DPS/Mass (FA) | Δ DPS/Mass | HP/Mass (FA) | Δ HP/Mass | Δ Produkt |
 |---|---|---|---|---|---|---|
-| `str_t1_mex` | – | – (–) | – | 11,667 (11,111) | +5 % | – |
+| `str_t1_mex` | – | – (–) | – | 11,111 (11,111) | ±0 % | – |
 | `str_t2_mex` | – | – (–) | – | 2,333 (2,222) | +5 % | – |
 | `str_t3_mex` | – | – (–) | – | 1,556 (1,522) | +2,2 % | – |
 | `str_t1_pgen` | – | – (–) | – | 8,267 (8) | +3,3 % | – |
@@ -426,10 +426,10 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 
 ## 14. Balance-Übersicht und Gates
 
-- **DPS/Mass:** 25 bewaffnete Einträge, größte Abweichung −7,8 % (Kelle), Mittelwert −1 %.
-- **HP/Mass:** 50 Einträge, größte Abweichung +14,3 % (Lerche), Mittelwert +4,3 %.
-- **Produkt DPS/Mass × HP/Mass:** größte Abweichung +12,7 % (Riegel I), Mittelwert +2,3 %. Gate ±15 %.
-- **Bewusste globale Verschiebung:** HP/Mass liegt im Mittel bei +4,3 %, DPS/Mass bei −1 %. Jede Tötungszeit verlängert sich dadurch im Mittel um ≈ 5,4 %. Das ist gewollt (etwas längere Gefechte, mehr Zeit zum Mikro) und bleibt klein genug, dass die Rolle-gegen-Rolle-Relationen und Breakpoints (Tabelle unten) unverändert bleiben.
+- **DPS/Mass:** 25 bewaffnete Einträge, größte Abweichung −7,8 % (Kelle), Mittelwert −0,8 %.
+- **HP/Mass:** 50 Einträge, größte Abweichung +14,3 % (Lerche), Mittelwert +4,1 %.
+- **Produkt DPS/Mass × HP/Mass:** größte Abweichung +12,7 % (Riegel I), Mittelwert +2,5 %. Gate ±15 %.
+- **Bewusste globale Verschiebung:** HP/Mass liegt im Mittel bei +4,1 %, DPS/Mass bei −0,8 %. Jede Tötungszeit verlängert sich dadurch im Mittel um ≈ 4,9 %. Das ist gewollt (etwas längere Gefechte, mehr Zeit zum Mikro) und bleibt klein genug, dass die Rolle-gegen-Rolle-Relationen und Breakpoints (Tabelle unten) unverändert bleiben.
 - **Fraktions-Signatur (bewusst, klein):** Stellungen etwas zäher (Riegel, Mauer, Radar +8–11 % HP/Mass), T2-Panzer und -Flak leicht zäher bei gleicher Feuerkraft, Artillerie mit etwas größerem Splash bei langsamerem Takt (Kelle 1,1 statt 1 bei 9,0 statt 8,3 s; Pfanne 4,4 statt 4). Die Breakpoints der T1-Linie (Vogt, Riegel I, Meißel gegen Punze und Stichel) sind exakt FA.
 - **Maßstabs-Sonderfall Hochofen:** FA-Reichweite 825 WU ist auf 256–512-WU-Karten nicht spielbar. Reichweite 200, gleicher Einzelschuss wie FA (5.500, Splash 6) für den Schild-Burst, Feuerrate ×⅔, Kosten ≈ 67 %; DPS/Mass und HP/Mass ±0. Das Compiler-Gate (≤ 40 % der kleinsten Kartendiagonale) verlangt Karten ≥ 354 WU (§18).
 - **Relationen, die das Balancing im Blick behalten muss:** LAB-DPS/Mass ≈ 1,75× Panzer (Raider), Flak ≈ 3× T2-Panzer DPS/Mass gegen Luft, Radar extrem fragil (FA 10 HP), Mauer 183 HP/Mass.
@@ -448,18 +448,18 @@ Gleiche Taste = gleiche Rolle über alle Tech-Stufen. Mehrfaches Drücken wechse
 
 | Angreifer → Ziel | Salvenschaden / Ziel-HP | Salven (Zeit) | FA: Salvenschaden / Ziel-HP | FA: Salven (Zeit) | ✓ |
 |---|---|---|---|---|---|
-| Vogt → Stichel | 100 / 70 | 1 (0 s) | 100 / 60 | 1 (0 s) | ✓ |
+| Vogt → Stichel | 100 / 60 | 1 (0 s) | 100 / 60 | 1 (0 s) | ✓ |
 | Vogt → Punze | 100 / 300 | 3 (2 s) | 100 / 300 | 3 (2 s) | ✓ |
 | Vogt → Kelle | 100 / 210 | 3 (2 s) | 100 / 205 | 3 (2 s) | ✓ |
 | Vogt → Sieb | 100 / 310 | 4 (3 s) | 100 / 310 | 4 (3 s) | ✓ |
 | Vogt → Lehrling | 100 / 160 | 2 (1 s) | 100 / 150 | 2 (1 s) | ✓ |
 | Vogt → Funke | 100 / 32 | 1 (0 s) | 100 / 29 | 1 (0 s) | ✓ |
 | Riegel I → Punze | 50 / 300 | 6 (1,5 s) | 50 / 300 | 6 (1,5 s) | ✓ |
-| Riegel I → Stichel | 50 / 70 | 2 (0,3 s) | 50 / 60 | 2 (0,3 s) | ✓ |
-| Kelle → Stichel | 100 / 70 | 1 (0 s) | 100 / 60 | 1 (0 s) | ✓ |
+| Riegel I → Stichel | 50 / 60 | 2 (0,3 s) | 50 / 60 | 2 (0,3 s) | ✓ |
+| Kelle → Stichel | 100 / 60 | 1 (0 s) | 100 / 60 | 1 (0 s) | ✓ |
 | Kelle → Lehrling | 100 / 160 | 2 (9 s) | 100 / 150 | 2 (8,3 s) | ✓ |
 | Kelle → Punze | 100 / 300 | 3 (18 s) | 100 / 300 | 3 (16,6 s) | ✓ |
-| Meißel → Stichel | 70 / 70 | 1 (0 s) | 70 / 60 | 1 (0 s) | ✓ |
+| Meißel → Stichel | 70 / 60 | 1 (0 s) | 70 / 60 | 1 (0 s) | ✓ |
 | Meißel → Punze | 70 / 300 | 5 (5,2 s) | 70 / 300 | 5 (5,2 s) | ✓ |
 | Rinne → Riegel II | 600 / 2.400 | 4 (30 s) | 600 / 2.250 | 4 (30 s) | ✓ |
 | Tiegel → Zapfstelle II | 2.100 / 2.100 | 1 (0 s) | 2.000 / 2.000 | 1 (0 s) | ✓ |
