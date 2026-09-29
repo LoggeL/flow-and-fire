@@ -51,7 +51,20 @@ describe('session assets', () => {
   it('testplane loads no map asset (it is generated); an unknown map names the available ones', () => {
     const ids = sessionAssetIds(manifest, 'testplane');
     expect(ids.some((id) => id.startsWith('maps/'))).toBe(false);
-    expect(() => sessionAssetIds(manifest, 'nowhere')).toThrow(/nowhere.*hollow-ridge, setons, testplane/);
+    // Further maps (skirmish set) may sit between setons and testplane.
+    expect(() => sessionAssetIds(manifest, 'nowhere')).toThrow(/nowhere.*hollow-ridge, setons, (?:[a-z0-9_-]+, )*testplane/);
+  });
+
+  it('tessera (?map=tessera, skirmish map): content, the map and every model', () => {
+    const ids = sessionAssetIds(manifest, 'tessera');
+    expect(ids.slice(0, 3)).toEqual([SIM_BIN_ASSET, VIEW_JSON_ASSET, mapAssetId('tessera')]);
+    expect(manifest.assets[mapAssetId('tessera')]?.kind).toBe('map');
+  });
+
+  it('braidwater (?map=braidwater, skirmish map): content, the map and every model', () => {
+    const ids = sessionAssetIds(manifest, 'braidwater');
+    expect(ids.slice(0, 3)).toEqual([SIM_BIN_ASSET, VIEW_JSON_ASSET, mapAssetId('braidwater')]);
+    expect(manifest.assets[mapAssetId('braidwater')]?.kind).toBe('map');
   });
 });
 

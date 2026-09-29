@@ -12,6 +12,12 @@
       "kind": "viewjson",
       "url": "content/view.43811ef6.json"
     },
+    "maps/braidwater": {
+      "bytes": 1120112,
+      "hash": "sha256-Ox/MW4RxqyOHXgwYcaLJiAX2LZhyH7gN+3GfDpfXeOo=",
+      "kind": "map",
+      "url": "maps/braidwater.3b1fcc5b.rtsmap"
+    },
     "maps/hollow-ridge": {
       "bytes": 593420,
       "hash": "sha256-/Tsx14aJgX09nNgd+zMLcH7ZafXo8owfBxj8jF9lkew=",
@@ -23,6 +29,12 @@
       "hash": "sha256-EQvQ1keHIaJNubtBUMDJiGjNdC3xBAjxzDswiX3dgjw=",
       "kind": "map",
       "url": "maps/setons.110bd0d6.rtsmap"
+    },
+    "maps/tessera": {
+      "bytes": 726732,
+      "hash": "sha256-+A4u72IsUeaYIK6X/1xMpK/TZsYayhd5NXEKlHJcKGU=",
+      "kind": "map",
+      "url": "maps/tessera.f80e2eef.rtsmap"
     },
     "units/cube_bot": {
       "bytes": 8388,

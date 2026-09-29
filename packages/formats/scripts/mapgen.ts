@@ -26,7 +26,9 @@ import { pathToFileURL } from 'node:url';
 import { isqrt, rng32, sinA, type Ang16 } from '@faf/fixed';
 import { encodeHeightmapPng, decodeHeightmapPng, type HeightmapData } from './heightmap-io.ts';
 import { compileMapSource, MAPS_DIR, MAPS_SRC_DIR } from './mapc.ts';
+import { BRAIDWATER, writeBraidwaterSources } from './mapgen-braidwater.ts';
 import { SETONS, writeSetonsSources } from './mapgen-setons.ts';
+import { TESSERA, writeTesseraSources } from './mapgen-tessera.ts';
 
 export const HOLLOW_RIDGE = 'hollow-ridge';
 
@@ -310,6 +312,8 @@ export function writeHollowRidgeSources(log: (msg: string) => void = () => {}): 
 export const GENERATORS: Readonly<Record<string, (log: (msg: string) => void) => string>> = {
   [HOLLOW_RIDGE]: writeHollowRidgeSources,
   [SETONS]: writeSetonsSources,
+  [TESSERA]: writeTesseraSources,
+  [BRAIDWATER]: writeBraidwaterSources,
 };
 
 function main(): void {
