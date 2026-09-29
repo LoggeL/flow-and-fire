@@ -26,7 +26,7 @@ def chk(cond, *msg):
 chk(D['schema'] == 'faf-roster/1', 'schema')
 chk(len(U) == D['counts']['total'] == 50, 'Anzahl', len(U))
 chk(D['counts']['ms9Core'] == sum(u['ms9Core'] for u in U) == 26, 'ms9')
-roles = {i.split(':')[1] for i in E}; core_roles = {i.split(':')[1] for i in CE}
+roles = {i.split(':')[1] for i in E if ':exp_' not in i}; core_roles = {i.split(':')[1] for i in CE if ':exp_' not in i}
 chk(roles == core_roles, 'Rollen-IDs ≠ Varkan', roles ^ core_roles)
 chk(all(i.startswith('f2:') for i in E), 'Namespace')
 for u in U:

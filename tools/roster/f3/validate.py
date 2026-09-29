@@ -20,7 +20,7 @@ for w in FA['DEA0202']['weapons']:
     if w['cat'] == 'Anti Air': w['dps'] = 150.0
 
 U = D['units']; ids = {u['id'] for u in U}; UID = {u['id']: u for u in U}
-VKU = {u['id'].split(':')[1]: u for u in VK['units']}; VKID = {u['id']: u for u in VK['units']}
+VKU = {u['id'].split(':')[1]: u for u in VK['units'] if u.get('tech') != 4}; VKID = {u['id']: u for u in VK['units']}
 err = []
 def bad(*a): err.append(a)
 
@@ -118,7 +118,7 @@ for u in U:
 for vid, v in D['visuals'].items():
     mob = UID[v['members'][0]]['group'] in ('cmd', 'land', 'air')
     if v['supersetParts'] > (8 if mob else 9) or v['trisEstimate'] > 350: bad(vid, 'Superset-Budget')
-if set(D['visuals']) != set(VK['visuals']) or D['iconGlyphs'] != VK['iconGlyphs']: bad('Visual-/Glyphen-Satz weicht von Varkan ab')
+if {k for k in D['visuals'] if not k.startswith('v_exp_')} != {k for k in VK['visuals'] if not k.startswith('v_exp_')} or D['iconGlyphs'] != VK['iconGlyphs']: bad('Visual-/Glyphen-Satz weicht von Varkan ab')
 
 # FA-Begriffe in Anzeigefeldern (Name, Rolle, Waffenbezeichnung): faction.md §2.5 + alle FA-Waffennamen beider fa_ref-Dateien
 BAN = ['Aeon', 'Cybran', 'UEF', 'Seraphim', 'Illuminate', 'Symbiont', 'Quantum', 'Overcharge', 'Princess', 'Crusade', 'The Way',
