@@ -52,6 +52,7 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm assets` | Asset-Pipeline (glTF/meshopt, Karte, `sim.bin`, Manifest) → `content/generated/assets/`; nach `pnpm maps` oder Blueprint-Änderungen ausführen |
 | `pnpm bench:spk4` | SPK4-Render-Benchmark in Chromium, Firefox, WebKit (`-- --quick` = nur Chromium, 3 s) |
 | `pnpm --filter @faf/render smoke` | Render-Smoke in 3 Browsern (GPU-Höhensonde == CPU, Decals, Context-Loss) |
+| `pnpm sfx` / `pnpm sfx:audit` / `pnpm sfx:preview` | prozedurale SFX bauen (`content/audio/**/*.sfx.ts` → `content/audio/dist`), prüfen, anhören – siehe „Sounds anhören“ |
 | `pnpm ci:local` | typecheck → lint → test → test:xengine → test:e2e → bench → assets check → bench:spk4 --quick (sequenziell, lokales CI) |
 
 Einzelnes Paket testen: `pnpm vitest run packages/fixed`. Einzelnes Paket-Skript: `pnpm --filter @faf/fixed gen:luts`.
@@ -61,6 +62,26 @@ Einzelnes Paket testen: `pnpm vitest run packages/fixed`. Einzelnes Paket-Skript
 `/build.json` enthält `{ "buildHash": … }`. Der Build-Hash kommt aus `FAF_BUILD_HASH` (alter Name
 `IRONFLOW_BUILD_HASH` wird weiter gelesen) oder `git rev-parse --short=12 HEAD`, bei schmutzigem Arbeitsbaum mit
 Zusatz `-d<hash>` (Fallback `dev`). `deploy/nginx.conf` ist die Hosting-Konfiguration (COOP/COEP/CORP, Caching).
+
+## Sounds anhören
+
+Alle Sounds sind prozedural synthetisiert (`tools/sfx`, keine Samples). Die Opus/WebM-Dateien und das Manifest
+liegen eingecheckt in `content/audio/dist/`, anhören geht also sofort:
+
+```sh
+pnpm sfx:preview    # http://localhost:5190/tools/sfx/preview/ – Suche, Kategorie-Filter, Wellenform, Loops, Opus/WAV
+```
+
+Für WAVs, nach Änderungen an `content/audio/**/*.sfx.ts` oder `tools/sfx/src` und für neue Sounds (ffmpeg mit libopus nötig):
+
+```sh
+pnpm sfx            # rendert inkrementell; erster Lauf nach Checkout baut alles (auch die WAVs)
+pnpm sfx:audit      # Lautheit, True Peak, Loop-Nähte, Varianten, 3-MB-Budget, SOUNDLIST – Exit 1 bei Verstoß
+pnpm sfx:analyze content/audio/dist/varkan/wpn_cannon_t1_fire.v0.wav   # Einzelmessung + Spektrogramm
+```
+
+Liste aller Sounds: [`content/audio/SOUNDLIST.md`](content/audio/SOUNDLIST.md), Konzept und Integrationsplan:
+[`docs/design/audio.md`](docs/design/audio.md), Werkzeug: [`tools/sfx/README.md`](tools/sfx/README.md).
 
 ## Paketstruktur
 

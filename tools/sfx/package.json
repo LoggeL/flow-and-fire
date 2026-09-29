@@ -10,6 +10,7 @@
   "scripts": {
     "sfx": "node --import tsx scripts/build.ts",
     "analyze": "node --import tsx scripts/analyze.ts",
+    "audit": "node --import tsx scripts/audit.ts",
     "preview": "node --import tsx scripts/preview.ts"
   },
   "devDependencies": {

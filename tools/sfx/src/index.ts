@@ -14,4 +14,4 @@ export { Rng, hashString, variantSeed } from './rng.ts';
 export { CATEGORIES, MAX_VOICES, type CategoryInfo, type SfxCategory } from './categories.ts';
 export { defineSfx, type SfxContext, type SfxDefinition, type LoopSpec, type PostSpec } from './define.ts';
 export { analyze, loudness, truePeak, spectralCentroid, type Analysis } from './analysis.ts';
-export { renderVariant, makeLoop, normalize, type RenderedVariant } from './render.ts';
+export { renderVariant, makeLoop, normalize, padLoop, LOOP_PAD, type RenderedVariant } from './render.ts';

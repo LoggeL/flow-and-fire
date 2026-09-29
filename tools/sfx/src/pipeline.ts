@@ -10,12 +10,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
-import type { Analysis } from './analysis.ts';
+import { type Analysis, loudness, truePeak } from './analysis.ts';
 import { CATEGORIES, MAX_VOICES } from './categories.ts';
 import { ID_RE, type SfxDefinition, resolveSettings, splitId } from './define.ts';
-import { renderVariant } from './render.ts';
-import { SR } from './signal.ts';
-import { encodeWav } from './wav.ts';
+import { normalize, renderVariant } from './render.ts';
+import { type Audio, SR, dbToGain, gainToDb, scaleAudio } from './signal.ts';
+import { decodeWav, encodeWav } from './wav.ts';
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const AUDIO_ROOT = path.join(REPO_ROOT, 'content/audio');
@@ -36,6 +36,10 @@ export interface VariantEntry {
   truePeakDb: number;
   /** Peak reduction applied by the limiter (dB). */
   limitedDb: number;
+  /** True peak of the decoded Opus file (dBTP); lossy coding can raise peaks, the build keeps it ≤ ceiling. */
+  opusTruePeakDb: number | null;
+  /** Loudness of the decoded Opus file in the sound's loudnessMode. */
+  opusLufs: number | null;
   centroidHz: number;
   sha1: string;
 }
@@ -49,9 +53,16 @@ export interface ManifestSound {
   description: string;
   channels: 1 | 2;
   spatial: boolean;
-  /** Longest variant. */
+  /** Longest variant (loops: loop length without the codec padding). */
   durationS: number;
+  /**
+   * Loop points. Loop files carry LOOP_PAD samples of wrap-around padding on both sides (Opus reconstructs
+   * the first/last frame less accurately), so playback loops between startSample and endSample; starting
+   * at 0 is seamless as well because the pre-roll is the loop's own tail.
+   */
   loop: { startSample: number; endSample: number; startS: number; endS: number } | null;
+  /** Nominal Opus bitrate (kbit/s, VBR). */
+  opusKbps: number;
   priority: number;
   cooldownMs: number;
   maxVoices: number;
@@ -204,13 +215,13 @@ export async function renderAll(jobs: readonly RenderJob[], threads: number, onD
 }
 
 /** Encode a WAV file to Opus in WebM with bit-exact, metadata-free output. */
-export function encodeOpus(wavPath: string, outPath: string, channels: 1 | 2): Promise<void> {
+export function encodeOpus(wavPath: string, outPath: string, kbps: number): Promise<void> {
   const args = [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', wavPath,
     '-map_metadata', '-1',
     '-c:a', 'libopus',
-    '-b:a', channels === 1 ? '64k' : '96k',
+    '-b:a', `${kbps}k`,
     '-vbr', 'on',
     '-compression_level', '10',
     '-application', 'audio',
@@ -226,6 +237,19 @@ export function encodeOpus(wavPath: string, outPath: string, channels: 1 | 2): P
     p.stderr.on('data', (d: Buffer) => (err += d.toString()));
     p.on('error', reject);
     p.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg (${code}): ${err.trim()}`))));
+  });
+}
+
+/** Decode any audio file through ffmpeg to 48 kHz float (Opus/WebM: codec delay is trimmed by the demuxer). */
+export function decodeAudio(file: string): Promise<Audio> {
+  return new Promise((resolve, reject) => {
+    const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-i', file, '-ar', String(SR), '-c:a', 'pcm_f32le', '-f', 'wav', 'pipe:1'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const chunks: Buffer[] = [];
+    let err = '';
+    p.stdout.on('data', (d: Buffer) => chunks.push(d));
+    p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+    p.on('error', reject);
+    p.on('close', (code) => (code === 0 ? resolve(decodeWav(new Uint8Array(Buffer.concat(chunks))).audio) : reject(new Error(`ffmpeg (${code}): ${err.trim()}`))));
   });
 }
 
@@ -333,7 +357,8 @@ export async function build(o: BuildOptions = {}): Promise<BuildReport> {
     byId.get(id)!.push(r);
   }
   const warnings: BuildReport['warnings'] = [];
-  const encodes: { wav: string; opus: string; channels: 1 | 2 }[] = [];
+  const encodes: { wav: string; opus: string; kbps: number; sound: string; variant: number }[] = [];
+  const guardInfo = new Map<string, { targetLufs: number; ceilingDb: number; mode: 'integrated' | 'momentary'; limit: boolean }>();
   const fresh = new Map<string, ManifestSound>();
   for (const id of todo) {
     const d = defs.get(id)!;
@@ -351,7 +376,7 @@ export async function build(o: BuildOptions = {}): Promise<BuildReport> {
       const wavRel = `${scope}/${name}.v${r.variant}.wav`;
       const opusRel = opus ? `${scope}/${name}.v${r.variant}.webm` : null;
       await writeFile(path.join(out, wavRel), r.wav);
-      if (opusRel) encodes.push({ wav: path.join(out, wavRel), opus: path.join(out, opusRel), channels: s.channels });
+      if (opusRel) encodes.push({ wav: path.join(out, wavRel), opus: path.join(out, opusRel), kbps: CATEGORIES[d.def.category].opusKbps, sound: id, variant: r.variant });
       variants.push({
         index: r.variant,
         wav: wavRel,
@@ -363,11 +388,14 @@ export async function build(o: BuildOptions = {}): Promise<BuildReport> {
         lufsMomentaryMax: round(r.analysis.lufsMomentaryMax, 2),
         truePeakDb: round(r.analysis.truePeakDb, 2),
         limitedDb: round(r.limitedDb, 2),
+        opusTruePeakDb: null,
+        opusLufs: null,
         centroidHz: Math.round(r.analysis.centroidHz),
         sha1: createHash('sha1').update(r.wav).digest('hex'),
       });
       for (const w of r.warnings) sw.push(`v${r.variant}: ${w}`);
     }
+    guardInfo.set(id, { targetLufs: s.targetLufs, ceilingDb: d.def.post?.ceilingDb ?? -1, mode: d.def.loop ? 'integrated' : 'momentary', limit: d.def.post?.limit !== false && !d.def.loop });
     const loop = rs[0]?.loop ?? null;
     const sound: ManifestSound = {
       id,
@@ -379,6 +407,7 @@ export async function build(o: BuildOptions = {}): Promise<BuildReport> {
       channels: s.channels,
       spatial: s.spatial,
       durationS: round(Math.max(...variants.map((v) => v.durationS)), 4),
+      opusKbps: CATEGORIES[d.def.category].opusKbps,
       loop: loop ? { startSample: loop.start, endSample: loop.end, startS: loop.start / SR, endS: round(loop.end / SR, 6) } : null,
       priority: s.priority,
       cooldownMs: s.cooldownMs,
@@ -394,7 +423,47 @@ export async function build(o: BuildOptions = {}): Promise<BuildReport> {
   }
   if (encodes.length > 0) {
     log(`[sfx] Opus/WebM: ${encodes.length} Dateien (${Math.min(8, os.availableParallelism())} parallel)`);
-    await pool(encodes, Math.min(8, os.availableParallelism()), (e) => encodeOpus(e.wav, e.opus, e.channels));
+    await pool(encodes, Math.min(8, os.availableParallelism()), async (e) => {
+      const sound = fresh.get(e.sound)!;
+      const v = sound.variants.find((x) => x.index === e.variant)!;
+      const g = guardInfo.get(e.sound)!;
+      await encodeOpus(e.wav, e.opus, e.kbps);
+      // Opus true-peak guard: lossy coding can push inter-sample peaks over the ceiling. Re-normalize the
+      // WAV with the accumulated excess as extra limiter headroom (loudness target stays), re-encode, check
+      // again. If the limiter cannot get there (codec overshoot on dense transients), the last pass lowers the
+      // gain instead; the loudness then drops by at most a few tenths of a LU.
+      let headroom = 0;
+      for (let pass = 0; ; pass++) {
+        const dec = await decodeAudio(e.opus);
+        const tpDb = gainToDb(truePeak(dec));
+        const l = loudness(dec);
+        v.opusTruePeakDb = round(tpDb, 2);
+        v.opusLufs = round(g.mode === 'integrated' ? l.integrated : l.momentaryMax, 2);
+        const excess = tpDb - g.ceilingDb;
+        if (excess <= 0) break;
+        if (pass >= 5) {
+          const w = `v${v.index}: Opus True Peak ${tpDb.toFixed(2)} dBTP über ${g.ceilingDb} dBTP`;
+          sound.warnings.push(w);
+          warnings.push({ id: e.sound, warning: w });
+          break;
+        }
+        const src = decodeWav(new Uint8Array(await readFile(e.wav))).audio;
+        let fixed: Audio;
+        headroom += excess + 0.1;
+        if (g.limit && pass < 3) fixed = normalize(src, g.targetLufs, g.ceilingDb - headroom, true, g.mode).audio;
+        else fixed = scaleAudio(src, dbToGain(-excess - 0.1));
+        const wav = encodeWav(fixed, SR, 'pcm24');
+        await writeFile(e.wav, wav);
+        const lw = loudness(fixed);
+        v.lufs = round(g.mode === 'integrated' ? lw.integrated : lw.momentaryMax, 2);
+        v.lufsIntegrated = round(lw.integrated, 2);
+        v.lufsMomentaryMax = round(lw.momentaryMax, 2);
+        v.truePeakDb = round(gainToDb(truePeak(fixed)), 2);
+        v.limitedDb = round(v.limitedDb + excess, 2);
+        v.sha1 = createHash('sha1').update(wav).digest('hex');
+        await encodeOpus(e.wav, e.opus, e.kbps);
+      }
+    });
   }
   const sounds: ManifestSound[] = [];
   const entries: Record<string, CacheEntry> = {};

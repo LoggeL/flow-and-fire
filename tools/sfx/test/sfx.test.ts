@@ -16,7 +16,7 @@ import { noise } from '../src/noise.ts';
 import { AUDIO_ROOT, FFMPEG, build, findSfxFiles, idForFile, loadDefinition } from '../src/pipeline.ts';
 
 const FIXTURES = path.join(path.dirname(new URL(import.meta.url).pathname), 'fixtures/audio');
-import { makeLoop, renderVariant } from '../src/render.ts';
+import { LOOP_PAD, makeLoop, padLoop, renderVariant } from '../src/render.ts';
 import { Rng } from '../src/rng.ts';
 import { type Mono, SR, fade, gainToDb, isStereo } from '../src/signal.ts';
 import { encodePng, spectrogramPng } from '../src/spectrogram.ts';
@@ -144,6 +144,17 @@ describe('Effekte und Pipeline-Bausteine', () => {
     expect(gainToDb(truePeak(y))).toBeLessThan(-0.9);
   });
 
+  it('padLoop: Rand-Padding ist Wrap-around des Loops', () => {
+    const x = new Float32Array(5000).map((_, i) => Math.sin(i * 0.01));
+    const p = padLoop(x, 100) as Mono;
+    expect(p.length).toBe(5200);
+    for (let i = 0; i < 100; i++) {
+      expect(p[i]).toBe(x[4900 + i]);
+      expect(p[5100 + i]).toBe(x[i]);
+    }
+    expect(Array.from(p.subarray(100, 5100))).toEqual(Array.from(x));
+  });
+
   it('Loop-Crossfade ergibt eine nahtlose Naht exakter Länge', () => {
     const r = new Rng(5);
     const x = filter(noise('white', 2.4, r), { type: 'lowpass', freq: 2000 });
@@ -259,15 +270,21 @@ describe('Content und Build', () => {
     const loop = m.sounds.find((s) => s.id === 'test:loop')!;
     expect(loop.channels).toBe(2);
     expect(loop.loudnessMode).toBe('integrated');
-    expect(loop.loop).toEqual({ startSample: 0, endSample: 0.6 * 48000, startS: 0, endS: 0.6 });
-    expect(loop.variants[0]!.samples).toBe(0.6 * 48000);
+    expect(loop.loop).toEqual({ startSample: LOOP_PAD, endSample: LOOP_PAD + 0.6 * 48000, startS: LOOP_PAD / 48000, endS: LOOP_PAD / 48000 + 0.6 });
+    expect(loop.variants[0]!.samples).toBe(0.6 * 48000 + 2 * LOOP_PAD);
+    expect(loop.variants[0]!.durationS).toBe(0.6);
     for (const s of m.sounds) {
       expect(s.warnings).toEqual([]);
       for (const v of s.variants) {
         const wav = await readFile(path.join(out, v.wav));
         expect(createHash('sha1').update(wav).digest('hex')).toBe(v.sha1);
         expect(Math.abs(v.lufs - s.targetLufs)).toBeLessThanOrEqual(0.5);
-        if (opus) expect(existsSync(path.join(out, v.opus!))).toBe(true);
+        if (opus) {
+          expect(existsSync(path.join(out, v.opus!))).toBe(true);
+          // Opus-True-Peak-Wächter: dekodiertes Opus bleibt unter der Grenze, Lautheit nahe am Ziel.
+          expect(v.opusTruePeakDb!).toBeLessThanOrEqual(-1);
+          expect(Math.abs(v.opusLufs! - s.targetLufs)).toBeLessThanOrEqual(1.5);
+        }
       }
     }
     const json = JSON.parse(await readFile(path.join(out, 'manifest.json'), 'utf8')) as typeof m;

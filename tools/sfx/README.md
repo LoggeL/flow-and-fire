@@ -7,6 +7,7 @@ pnpm sfx                  # alle content/audio/**/*.sfx.ts → content/audio/dis
 pnpm sfx --only cannon    # nur passende ids neu rendern (Regex)
 pnpm sfx --force --spectro --strict   # alles neu, Spektrogramme, Warnungen = Fehler
 pnpm sfx:analyze [pfade…] [--xcheck]  # Messung + PNG nach /private/tmp/claude-501/faf-sfx/
+pnpm sfx:audit [--verbose]  # Gesamtprüfung dist: LUFS/TP (WAV + Opus), Loop-Nähte, Varianten, Alert↔Waffe, 3-MB-Budget, SOUNDLIST
 pnpm sfx:preview          # http://localhost:5190/tools/sfx/preview/
 ```
 
@@ -58,3 +59,5 @@ Die Pipeline übernimmt danach alles Weitere:
 | `render` / `pipeline` | Varianten-Rendering, Loop, Normierung; Worker-Pool, WAV/Opus, Cache, Manifest |
 
 Determinismus: Gleiche Quelle ergibt bitgleiche WAVs. Opus wird mit `-fflags +bitexact` kodiert und ist mit derselben ffmpeg-Version bitgleich. Der Cache-Schlüssel ist der Hash aus `tools/sfx/src`, den Hilfsdateien in `content/audio` und der Sound-Datei.
+
+Eingecheckt sind nur `content/audio/dist/**/*.webm`, `manifest.json` und `manifest.js` (≈ 3 MB); WAVs und `.cache.json` erzeugt `pnpm sfx` lokal. Nach Änderungen an Sounds oder `src/` also `pnpm sfx && pnpm sfx:audit` ausführen und die geänderten `.webm` + Manifest mitcommitten. Begründung und Integrationsplan: [`docs/design/audio.md`](../../docs/design/audio.md).

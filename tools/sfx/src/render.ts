@@ -20,9 +20,29 @@ export interface RenderedVariant {
   lufs: number;
   /** Peak reduction by the limiter in dB. */
   limitedDb: number;
-  /** Loop points in samples (whole file) for loops, else null. */
+  /** Loop points in samples for loops (the file carries LOOP_PAD samples of wrap-around padding on both sides), else null. */
   loop: { start: number; end: number } | null;
   warnings: string[];
+}
+
+/**
+ * Wrap-around padding (samples) on both sides of a loop file: [last LOOP_PAD of the loop | loop | first
+ * LOOP_PAD of the loop]. Lossy codecs (Opus) reconstruct the first and last frame of a stream less
+ * accurately; with the padding the loop points sit in the middle of the stream and the seam stays clean.
+ * Playback may start at 0 (the pre-roll is the loop's own tail) and loops between loop.start and loop.end.
+ */
+export const LOOP_PAD = 1920;
+
+/** Add the wrap-around padding of LOOP_PAD samples to a finished loop. */
+export function padLoop(a: Audio, pad = LOOP_PAD): Audio {
+  return perChannel(a, (ch) => {
+    const n = ch.length;
+    const out = new Float32Array(n + 2 * pad);
+    for (let i = 0; i < pad; i++) out[i] = ch[(((n - pad + i) % n) + n) % n] as number;
+    out.set(ch, pad);
+    for (let i = 0; i < pad; i++) out[pad + n + i] = ch[i % n] as number;
+    return out;
+  });
 }
 
 /** Equal-power crossfade of the render tail into its head → seamless loop of exactly lengthS. */
@@ -116,7 +136,7 @@ export function renderVariant(def: SfxDefinition, variant: number, sr = SR): Ren
   let loop: RenderedVariant['loop'] = null;
   if (def.loop) {
     a = makeLoop(a, def.loop.lengthS, xf, sr);
-    loop = { start: 0, end: samples(def.loop.lengthS, sr) };
+    loop = { start: LOOP_PAD, end: LOOP_PAD + samples(def.loop.lengthS, sr) };
   } else {
     if (post.trimTail !== false) {
       const end = Math.min((isStereo(a) ? a[0] : a).length, activeEnd(a, 1e-4) + samples(0.005, sr));
@@ -148,6 +168,8 @@ export function renderVariant(def: SfxDefinition, variant: number, sr = SR): Ren
     let typical = 0;
     for (let i = 1; i < ch.length; i++) typical = Math.max(typical, Math.abs((ch[i] as number) - (ch[i - 1] as number)));
     if (wrap > typical * 1.01 + 1e-6) warnings.push(`Loop-Naht springt (${gainToDb(wrap).toFixed(1)} dB)`);
+    // Analysis and seam check above describe the pure loop; the file gets the codec padding.
+    a = padLoop(a);
   }
   return { variant, audio: a, analysis, loudnessMode: mode, lufs: measured, limitedDb: norm.limitedDb, loop, warnings };
 }
