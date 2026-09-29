@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – Gefecht einrichten</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/menus.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/ff.js"></script>
+</head>
+<!-- Skirmish-Setup (A3 MS9; KI-Stufe A10 und AIx A11 ab MS14; Siegbedingungen A12 MS14; Unit-Cap U7) -->
+<body class="menu-page">
+<div class="menu-bg"><canvas></canvas></div>
+<div class="menu-root" data-component="SkirmishSetup">
+  <div class="menu-top">
+    <button class="ff-btn ff-btn--ghost ff-btn--icon" title="Zurück (Esc)"><span data-i="exit"></span></button>
+    <h1>Gefecht einrichten</h1><span class="crumb">Lokal · Einzelspieler</span>
+    <div class="sp"><span class="hintline">Seed</span><input class="ff-input num" value="48213" style="width:7rem"><button class="ff-btn ff-btn--sm" title="Neuer Seed"><span data-i="dice"></span></button></div>
+  </div>
+
+  <div class="lobby">
+    <!-- Karten -->
+    <section class="col">
+      <div class="ff-panel">
+        <div class="ff-ph">Karte<span class="ff-ph__end">3</span></div>
+        <div class="maplist" data-tabs="map">
+          <button class="mapitem is-selected" data-tab="setons"><canvas width="56" height="56" data-seed="41" data-wet="1"></canvas><div><b>Setons</b><small>1.024 WU · 20 km · 8 Starts · 108 Mex</small></div></button>
+          <button class="mapitem" data-tab="hollow"><canvas width="56" height="56" data-seed="7"></canvas><div><b>Hollow Ridge</b><small>512 WU · 10 km · 2 Starts · 24 Mex</small></div></button>
+          <button class="mapitem is-disabled" title="M8: drittes 1v1-Layout in Arbeit"><canvas width="56" height="56" data-seed="90"></canvas><div><b>Schlackenfeld</b><small>in Arbeit (M8)</small></div></button>
+        </div>
+      </div>
+      <div class="ff-panel">
+        <div class="ff-ph">Kartenbeschreibung</div>
+        <div class="card-m__body" style="font-size:var(--fs-cap)">
+          Zwei Seen trennen die Seiten, eine diagonale Landbrücke in der Mitte ist der einzige Landweg. Auf der Brücke liegt wertvolles Wrackgut.
+          <div class="hintline">Wasser ist im MVP Hindernis bzw. Luftraum (Marine Post-MVP).</div>
+        </div>
+      </div>
+      <div class="ff-panel">
+        <div class="ff-ph">KI-Profil · Normal<span class="ff-ph__end">AIx ×1,3</span></div>
+        <div class="card-m__body" style="font-size:var(--fs-cap)">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem">
+            <span class="ff-lo">Reaktion</span><span>≈ 1,0 s (Denktakt 2 Hz)</span>
+            <span class="ff-lo">Micro</span><span>nein (ab Schwer: Kiting, Fokusfeuer)</span>
+            <span class="ff-lo">Schummeln</span><span>nie Sicht · AIx nur Ressourcen und Build Power</span>
+            <span class="ff-lo">Erwartung</span><span>T2 nach ≈ 12 min, erste Welle ≤ 8 min</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vorschau -->
+    <section class="preview">
+      <div class="preview__map" id="pmap"><canvas id="bigmap" width="560" height="560"></canvas></div>
+      <div class="mapfacts">
+        <span><b class="num">1.024</b> WU Kantenlänge</span><span><b class="num">108</b> Mass-Spots</span><span><b class="num">8</b> Hydro</span><span><b>1v1</b> auf Start 1 ↔ 5</span>
+      </div>
+    </section>
+
+    <!-- Slots + Optionen -->
+    <section class="col">
+      <div class="ff-panel">
+        <div class="ff-ph">Häuser<span class="ff-ph__end">2 / 2 · MVP 1v1</span></div>
+        <div class="slots" style="padding:.5rem">
+          <div class="slot" style="--team:var(--team-self)">
+            <span class="slot__n">1</span>
+            <div class="slot__who"><b>Haus Ambrecht</b><small><span data-i="user"></span>Du · Start 1 (Südwest)</small></div>
+            <select class="ff-select"><option>Varkan</option></select>
+            <button class="swatch" title="Farbe wählen (Blau)"></button>
+            <select class="ff-select" title="Team"><option>T1</option></select>
+          </div>
+          <div class="slot slot--ai" style="--team:var(--team-enemy)">
+            <span class="slot__n">5</span>
+            <div class="slot__who"><b>Haus Dorne</b><small><span data-i="cpu"></span>KI · Start 5 (Nordost)</small></div>
+            <select class="ff-select"><option>Varkan</option></select>
+            <button class="swatch" title="Farbe wählen (Rot)"></button>
+            <select class="ff-select" title="Team"><option>T2</option></select>
+            <div class="slot__ai">
+              <span>Stufe</span>
+              <div class="ff-seg" data-seg><button>Leicht</button><button class="is-selected">Normal</button><button>Schwer</button></div>
+              <div class="aix" title="AIx: Multiplikator auf Ressourcen und Build Power (A11)"><span class="ff-switch is-on" role="switch" aria-checked="true"></span><span>AIx</span><input class="ff-range" type="range" min="10" max="20" value="13" style="--v:30%"><b class="num" style="color:var(--ember-100)">×1,3</b></div>
+            </div>
+          </div>
+          <button class="slot is-empty" style="grid-template-columns:1.75rem 1fr" title="Weitere Slots mit Teamspiel (A17, Post-MVP)"><span class="slot__n">+</span><span style="text-align:left">Slot hinzufügen – ab Teamspiel (A17)</span></button>
+        </div>
+      </div>
+      <div class="ff-panel">
+        <div class="ff-ph">Regeln</div>
+        <div class="opts">
+          <label class="ff-field wide"><span class="ff-label">Siegbedingung</span>
+            <div class="ff-seg" data-seg style="width:100%"><button class="is-selected" style="flex:1">Assassination</button><button style="flex:1">Supremacy</button><button style="flex:1">Annihilation</button></div>
+            <span class="hintline">Vogt fällt = Lot gebrochen, Anspruch erloschen.</span></label>
+          <label class="ff-field"><span class="ff-label">Unit-Cap</span><select class="ff-select"><option>250</option><option selected>500</option><option>750</option><option>1.000</option></select></label>
+          <label class="ff-field"><span class="ff-label">Sim-Tempo zu Beginn</span><select class="ff-select"><option>×0,5</option><option selected>×1,0</option><option>×1,5</option><option>×2,0</option></select></label>
+          <label class="ff-field"><span class="ff-label">Nebel</span><select class="ff-select"><option selected>Erkunden</option><option>Karte aufgedeckt</option></select></label>
+          <label class="ff-field"><span class="ff-label">Teamfarben</span><select class="ff-select"><option selected>Hausfarben</option><option>Eigen / Feind</option><option>Farbenblind-sicher</option></select></label>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="menu-foot">
+    <div class="startbar">
+      <span class="check"><span data-i="ok"></span>Karte und Blueprints geprüft · simId 0x7b21e04c</span>
+    </div>
+    <div class="sp"><button class="ff-btn">Zurück</button><button class="ff-btn ff-btn--primary ff-btn--lg"><span data-i="play"></span>Gefecht starten</button></div>
+  </div>
+</div>
+<script>
+  FF.applyScale(); FF.menuBg(41, [0.1, 0.3, 0.9, 0.7]);
+  document.querySelectorAll('[data-i]').forEach((el) => { el.outerHTML = FF.gi(el.dataset.i); });
+  function mapField(seed, wet) { const f = FF.heightField(seed, { mirror: true, plateau: true, freq: 2.6 }); return wet ? (x, y) => f(x, y) - 0.05 - 0.09 * Math.exp(-(((x - 0.72) ** 2 + (y - 0.72) ** 2) / 0.03)) - 0.09 * Math.exp(-(((x - 0.28) ** 2 + (y - 0.28) ** 2) / 0.03)) + 0.08 * Math.exp(-(((x + y - 1) ** 2) / 0.02)) : f; }
+  document.querySelectorAll('.mapitem canvas').forEach((c) => FF.drawTerrain(c, mapField(+c.dataset.seed, c.dataset.wet), {}));
+  function drawBig(seed, wet) {
+    const c = document.getElementById('bigmap'), f = mapField(seed, wet);
+    FF.drawTerrain(c, f, { detail: 3 });
+    const g = c.getContext('2d'), W = c.width;
+    FF.spots(seed, f, 30).forEach((p) => { g.save(); g.translate(p.x * W, p.y * W); g.rotate(Math.PI / 4); g.fillStyle = p.kind === 'hydro' ? '#8fd0e8' : '#7fd1b2'; g.strokeStyle = '#0b0a09'; g.lineWidth = 1.5; g.fillRect(-3.5, -3.5, 7, 7); g.strokeRect(-3.5, -3.5, 7, 7); g.restore(); });
+    const starts = [[0.14, 0.86], [0.1, 0.62], [0.38, 0.9], [0.24, 0.7], [0.86, 0.14], [0.9, 0.38], [0.62, 0.1], [0.76, 0.3]];
+    const map = document.getElementById('pmap');
+    map.querySelectorAll('.pmark').forEach((m) => m.remove());
+    starts.forEach(([x, y], i) => {
+      const m = document.createElement('button');
+      const used = i === 0 ? 'var(--team-self)' : i === 4 ? 'var(--team-enemy)' : '';
+      m.className = 'pmark' + (used ? '' : ' is-free');
+      m.style.cssText = `left:${x * 100}%;top:${y * 100}%;${used ? '--team:' + used : ''}`;
+      m.textContent = i + 1; m.title = used ? (i === 0 ? 'Haus Ambrecht (Du)' : 'Haus Dorne (KI)') : 'Freie Startposition – klicken zum Tauschen';
+      map.appendChild(m);
+    });
+  }
+  drawBig(41, 1);
+  document.querySelectorAll('.mapitem:not(.is-disabled)').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.mapitem').forEach((x) => x.classList.toggle('is-selected', x === b));
+    const c = b.querySelector('canvas'); drawBig(+c.dataset.seed, c.dataset.wet);
+  }));
+  document.querySelectorAll('[data-seg]').forEach((s) => s.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; s.querySelectorAll('button').forEach((x) => x.classList.toggle('is-selected', x === b)); }));
+  document.querySelectorAll('.ff-switch').forEach((s) => s.addEventListener('click', () => s.classList.toggle('is-on')));
+  document.querySelectorAll('.ff-range').forEach((r) => r.addEventListener('input', () => { r.style.setProperty('--v', ((r.value - r.min) / (r.max - r.min) * 100) + '%'); r.nextElementSibling.textContent = '×' + (r.value / 10).toFixed(1).replace('.', ','); }));
+</script>
+</body>
+</html>

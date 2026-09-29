@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – HUD</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/hud.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/roster-data.js"></script>
+<script src="assets/ff.js"></script>
+</head>
+<!--
+  In-Game-HUD (ui.md §5.1–§5.14). URL-Parameter für Zustände:
+  sel=vogt|army|factory|none · stall=1 · flow=1 · paused=1 · speed=2 · console=1 · place=1 · tip=<Taste> · teams=cvd|relation · scale=1.25 · clean=1
+  Tasten im Mockup: Raster QWERT/ASDFG/ZXCVB, Alt+Taste = Befehl, Esc, P, 1–4, Leertaste (Alert-Sprung), F1/^ (Konsole).
+-->
+<body class="hud-page">
+<div class="hud" id="hud" data-component="Hud">
+  <canvas class="world" id="world" aria-label="Spielwelt (Platzhalter)"></canvas>
+  <canvas class="world" id="fog" style="z-index:1"></canvas>
+  <div class="world-fx"></div>
+  <svg class="world-svg" id="worldSvg"></svg>
+  <div class="world-units" id="worldUnits"></div>
+
+  <div class="hud-layer" id="hudLayer">
+    <!-- Ressourcenleiste (C10, E1–E4, E13) -->
+    <section class="eco" data-component="ResourceBar" aria-label="Ressourcen" id="eco"></section>
+    <section class="flow ff-panel" data-component="FlowDetails" id="flow" hidden></section>
+
+    <!-- Pause / Sim-Tempo (A5, A6, S9) -->
+    <div class="banner ff-panel ff-panel--ember" data-component="PauseBanner" id="banner" hidden></div>
+
+    <!-- Status: Timer, Tempo, Unit-Cap, Score, Menü -->
+    <section class="status ff-panel" data-component="MatchStatus" id="status"></section>
+
+    <!-- Alerts (P8) -->
+    <section class="alerts" data-component="AlertFeed" aria-live="polite" id="alerts"></section>
+
+    <!-- Leiste über dem Dock: Filter + Idle-Engineer, Control Groups, Befehlsleiste -->
+    <div class="strip">
+      <div class="filters" data-component="SelectionFilter" id="filters"></div>
+      <div class="groups" data-component="ControlGroups" id="groups"></div>
+      <div class="orders" data-component="OrderBar" id="orders"></div>
+    </div>
+
+    <footer class="dock">
+      <section class="minimap ff-panel" data-component="Minimap">
+        <div class="ff-ph">Karte<span class="ff-ph__end minimap__tools">
+          <button class="is-on" title="Gelände"></button><button title="Ressourcenpunkte"></button><button title="Ganze Karte (Strategic Zoom)"></button>
+        </span></div>
+        <div class="minimap__wrap" id="mmWrap"><canvas id="minimap" width="400" height="400"></canvas></div>
+      </section>
+      <section class="sel ff-panel" data-component="SelectionPanel" id="sel"></section>
+      <section class="card ff-panel ff-panel--copper" data-component="CommandCard" id="card"></section>
+    </footer>
+  </div>
+
+  <div class="tipbox" id="tipbox" hidden><div class="ff-tip" id="tip" role="tooltip"></div></div>
+  <section class="console" data-component="DevConsole" id="console" hidden></section>
+  <div id="cursorLayer"></div>
+
+  <div class="mock" id="mock">
+    <b>MOCKUP</b>
+    <button data-set="sel=vogt">Vogt</button><button data-set="sel=army">Armee</button><button data-set="sel=factory">Fabrik</button><button data-set="sel=none">Nichts</button>
+    <span class="sep"></span>
+    <button data-toggle="stall">Stall</button><button data-toggle="flow">Flow</button><button data-toggle="paused">Pause</button><button data-toggle="place">Platzieren</button><button data-toggle="console">Konsole</button>
+    <span class="sep"></span>
+    <button data-set="teams=">Standard</button><button data-set="teams=cvd">CVD</button>
+  </div>
+</div>
+<script src="assets/hud.js"></script>
+</body>
+</html>

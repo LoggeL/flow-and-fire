@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – Hauptmenü</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/menus.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/ff.js"></script>
+</head>
+<!-- Hauptmenü (A3, MS9). Tastatur: ↑/↓ wählen, Enter öffnen; Fokus startet auf „Gefecht". -->
+<body class="menu-page">
+<div class="menu-bg"><canvas></canvas></div>
+<div class="emblem" id="emblem"></div>
+<div class="menu-root" data-component="MainMenu">
+  <div class="menu-top">
+    <span class="crumb">Das Varkan-Kompakt · Kessa</span>
+    <div class="sp">
+      <div class="ff-seg" aria-label="Sprache"><button class="is-selected">DE</button><button>EN</button></div>
+      <button class="ff-btn ff-btn--ghost ff-btn--icon" title="Vollbild (Alt+Enter)" id="fs"></button>
+    </div>
+  </div>
+  <div class="main">
+    <div>
+      <div class="logo">Flow<span class="amp">&amp;</span><br><span class="fire">Fire</span></div>
+      <div class="tagline">Die Charta kennt nur einen Weg. Erz wartet nicht.</div>
+      <nav class="mainnav" id="nav" aria-label="Hauptmenü">
+        <button class="navbtn is-primary is-hover" data-href="skirmish.html"><span data-i="play"></span>Gefecht<small>1v1 gegen die KI</small></button>
+        <button class="navbtn" data-href="#"><span data-i="replay"></span>Replays<span class="tag">MS11</span></button>
+        <button class="navbtn" data-href="settings.html"><span data-i="sliders"></span>Einstellungen</button>
+        <button class="navbtn is-disabled" title="Tutorial (A20) ist Post-MVP"><span data-i="book"></span>Einweisung<span class="tag">später</span></button>
+        <button class="navbtn" data-href="#"><span data-i="user"></span>Mitwirkende</button>
+      </nav>
+    </div>
+    <div></div>
+  </div>
+  <div class="menu-foot">
+    <span>Build <span class="num">3f9a1c2</span> · simId <span class="num">0x7b21e04c</span></span>
+    <span>·</span><span>WebGL2 · Worker-Transport SAB · Preset Mittel</span>
+    <div class="sp">
+      <div class="card-m ff-panel">
+        <div class="ff-ph">Letzte Partie<span class="ff-ph__end">vor 2 Std.</span></div>
+        <div class="card-m__body">
+          <div><b>Sieg</b> gegen Haus Dorne (KI Normal) · Setons · 24:18</div>
+          <div class="ff-dim">Replay gespeichert · 118 KB</div>
+          <div style="display:flex;gap:.5rem"><button class="ff-btn ff-btn--sm"><span data-i="replay"></span>Ansehen</button><button class="ff-btn ff-btn--sm"><span data-i="flag"></span>Revanche</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  FF.applyScale(); FF.menuBg(23);
+  document.getElementById('emblem').innerHTML = FF.emblem();
+  document.getElementById('fs').innerHTML = FF.gi('fullscreen');
+  document.querySelectorAll('[data-i]').forEach((el) => { el.outerHTML = FF.gi(el.dataset.i); });
+  const btns = [...document.querySelectorAll('.navbtn')];
+  btns.forEach((b) => {
+    b.addEventListener('mouseenter', () => { btns.forEach((x) => x.classList.remove('is-hover')); b.classList.add('is-hover'); });
+    b.addEventListener('click', () => { if (b.dataset.href && b.dataset.href !== '#') location.href = b.dataset.href; });
+  });
+  document.addEventListener('keydown', (e) => {
+    const i = btns.findIndex((b) => b.classList.contains('is-hover'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      let j = i; do { j = (j + (e.key === 'ArrowDown' ? 1 : btns.length - 1)) % btns.length; } while (btns[j].classList.contains('is-disabled'));
+      btns.forEach((x) => x.classList.remove('is-hover')); btns[j].classList.add('is-hover');
+    }
+    if (e.key === 'Enter' && i >= 0) btns[i].click();
+  });
+</script>
+</body>
+</html>
