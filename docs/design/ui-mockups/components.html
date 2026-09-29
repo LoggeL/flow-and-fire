@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – Tokens und Komponenten</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/hud.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/roster-data.js"></script>
+<script src="assets/ff.js"></script>
+<style>
+  body { overflow: auto; background: var(--iron-950); }
+  .page { max-width: 118rem; margin: 0 auto; padding: 2.5rem 3rem 5rem; display: grid; gap: 2.5rem; }
+  h1 { margin: 0; font-family: var(--font-display); font-size: var(--fs-h1); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-hi); }
+  h2 { margin: 0 0 1rem; font-size: var(--fs-h3); letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper-300); display: flex; align-items: center; gap: .75rem; }
+  h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--copper-800), transparent); }
+  h2 small { font-size: var(--fs-cap); color: var(--text-lo); letter-spacing: 0.02em; text-transform: none; order: 2; }
+  .lead { color: var(--text-mid); max-width: 70rem; margin: .5rem 0 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; align-items: flex-start; }
+  .demo { display: grid; gap: .5rem; justify-items: start; }
+  .demo > small { color: var(--text-lo); font-size: var(--fs-micro); letter-spacing: .06em; text-transform: uppercase; }
+  .sw { display: grid; grid-template-rows: 3.5rem auto; width: 7.25rem; font-size: var(--fs-micro); }
+  .sw > div { border: 1px solid rgba(255,255,255,0.06); }
+  .sw span { padding-top: .25rem; color: var(--text-mid); line-height: 1.3; }
+  .sw code { color: var(--text-lo); font-family: var(--font-mono); font-size: 0.625rem; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+  .typo > div { display: grid; grid-template-columns: 9rem 1fr; align-items: baseline; gap: 1rem; padding: .375rem 0; border-bottom: 1px solid var(--line); }
+  .typo code { color: var(--text-lo); font-family: var(--font-mono); font-size: var(--fs-micro); }
+  .icongrid { display: grid; grid-template-columns: repeat(auto-fill, 5.5rem); gap: 2px; }
+  .icongrid > div { display: grid; justify-items: center; gap: .25rem; padding: .5rem .25rem; background: var(--surface-1); font-size: var(--fs-micro); color: var(--text-lo); text-align: center; word-break: break-all; }
+  .icongrid .ff-si { width: 2.25rem; height: 2.5rem; }
+  .icongrid .ff-gi { width: 1.5rem; height: 1.5rem; color: var(--text); margin: .5rem 0 .25rem; }
+  .cur { width: 5.5rem; display: grid; justify-items: center; gap: .375rem; padding: .75rem .25rem; background: #3a342c; font-size: var(--fs-micro); color: var(--text); text-align: center; }
+  .cur svg { width: 2.5rem; height: 2.5rem; }
+  .spc { display: flex; align-items: flex-end; gap: 1rem; }
+  .spc div { background: var(--ember-700); }
+  .spc span { display: block; font-size: var(--fs-micro); color: var(--text-lo); margin-top: .25rem; text-align: center; }
+  .note { color: var(--text-lo); font-size: var(--fs-cap); max-width: 60rem; }
+</style>
+</head>
+<body>
+<div class="page" data-component="StyleGuide">
+  <header>
+    <h1>Tokens &amp; Komponenten</h1>
+    <p class="lead">Eisen für Flächen, Glut für Aufmerksamkeit, Kupfer für Struktur. Jede Komponente zeigt ihre Zustände; Farbe trägt nie allein Bedeutung – Form, Symbol und Text gehen immer mit. Quelle: <code>assets/tokens.css</code>, <code>assets/ff.css</code>; Beschreibung in <code>docs/design/ui.md</code>.</p>
+  </header>
+
+  <section><h2>Farben<small>tokens.css · Graphit/Keramik aus faction.md §4.1</small></h2><div id="colors" style="display:grid;gap:1rem"></div></section>
+
+  <section class="cols2">
+    <div><h2>Typografie<small>IBM Plex Sans Condensed + Plex Mono (OFL, selbst gehostet)</small></h2>
+      <div class="typo" id="typo"></div></div>
+    <div><h2>Abstände &amp; Fasen<small>4-px-Raster, Ecken 45° gefast</small></h2>
+      <div class="spc" id="spc"></div>
+      <div class="row" style="margin-top:1.5rem">
+        <div class="demo"><small>Fase S · 4</small><div class="ff-panel" style="--c:var(--chamfer-s);width:7rem;height:4rem"></div></div>
+        <div class="demo"><small>Fase M · 8 (Panel)</small><div class="ff-panel" style="width:7rem;height:4rem"></div></div>
+        <div class="demo"><small>Fase L · 14 (Karte)</small><div class="ff-panel ff-panel--copper" style="--c:var(--chamfer-l);width:7rem;height:4rem"></div></div>
+        <div class="demo"><small>Panel kritisch</small><div class="ff-panel ff-panel--crit" style="width:7rem;height:4rem"></div></div>
+      </div>
+      <p class="note">Keine Rundungen außer Badges und Punkten. Panels sind halbtransparent (0,92) ohne <code>backdrop-filter</code> – Unschärfe über dem WebGL-Canvas kostet pro Frame GPU-Zeit.</p>
+    </div>
+  </section>
+
+  <section><h2>Buttons<small>Menüs und Dialoge</small></h2><div id="buttons" style="display:grid;gap:.75rem"></div></section>
+
+  <section class="cols2">
+    <div><h2>Command-Card-Zelle<small>C8 · 58 × 58 px</small></h2><div class="row" id="cells"></div></div>
+    <div><h2>Befehlsknopf<small>Befehlsleiste · 40 × 40 px</small></h2><div class="row" id="orders"></div></div>
+  </section>
+
+  <section class="cols2">
+    <div><h2>Auswahl-Elemente<small>Tabs, Segmente, Schalter, Regler</small></h2>
+      <div class="row">
+        <div class="demo"><small>Tabs (Tech)</small><div class="ff-tabs"><button class="ff-tab is-selected">T1</button><button class="ff-tab is-hover">T2</button><button class="ff-tab is-disabled">T3</button><button class="ff-tab is-focus">Befehle</button></div></div>
+        <div class="demo"><small>Segmente</small><div class="ff-seg"><button>Leicht</button><button class="is-selected">Normal</button><button>Schwer</button></div></div>
+        <div class="demo"><small>Schalter aus / an</small><div style="display:flex;gap:.75rem"><span class="ff-switch"></span><span class="ff-switch is-on"></span></div></div>
+        <div class="demo"><small>Häkchen</small><div style="display:flex;gap:.75rem"><span class="ff-check"></span><span class="ff-check is-on"></span></div></div>
+        <div class="demo" style="width:14rem"><small>Regler</small><input class="ff-range" type="range" value="65" style="--v:65%"></div>
+        <div class="demo" style="width:14rem"><small>Auswahlliste</small><select class="ff-select" style="width:100%"><option>2 Kaskaden</option></select></div>
+        <div class="demo"><small>Tasten</small><div style="display:flex;gap:.375rem"><span class="ff-key">Q</span><span class="ff-key">Alt</span><span class="ff-key">⇧</span><span class="ff-key ff-key--ember">W</span></div></div>
+      </div></div>
+    <div><h2>Balken &amp; Badges<small>transform: scaleX, nie width</small></h2>
+      <div style="display:grid;grid-template-columns:8rem 1fr;gap:.625rem 1rem;align-items:center;max-width:36rem;font-size:var(--fs-cap);color:var(--text-mid)" id="bars"></div>
+      <div class="row" style="margin-top:1rem">
+        <span class="ff-badge">Neutral</span><span class="ff-badge ff-badge--ok">bereit</span><span class="ff-badge ff-badge--info">Info</span><span class="ff-badge ff-badge--warn">Voll · verfällt</span><span class="ff-badge ff-badge--crit" id="b1">Stall</span><span class="ff-badge ff-badge--ember">MS14</span>
+        <span class="ff-vet"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+      </div></div>
+  </section>
+
+  <section><h2>Ressourcenanzeige<small>C10 · normal / Überlauf / Stall</small></h2><div class="row" id="res"></div></section>
+
+  <section class="cols2">
+    <div><h2>Alerts<small>P8 · Stufen mit eigener Form</small></h2><div style="display:grid;gap:.375rem" id="alerts"></div></div>
+    <div><h2>Tooltip<small>C9 · Kosten, Werte, Nachbarschaft</small></h2><div class="ff-tip" id="tip"></div></div>
+  </section>
+
+  <section><h2>Mauszeiger<small>Cursor-FSM (ui.md §7.1) · 32 px, Hotspot oben links bzw. Mitte</small></h2><div class="row" id="cursors" style="gap:2px"></div></section>
+
+  <section><h2>Strategic Icons<small>content/icons · Teamfarbe per --team · Zustände</small></h2><div class="icongrid" id="icons"></div></section>
+
+  <section><h2>Linien-Icons<small>24 × 24, Strich 2 px, currentColor</small></h2><div class="icongrid" id="glyphs"></div></section>
+</div>
+<script>
+  FF.applyScale();
+  const $ = (id) => document.getElementById(id), gi = FF.gi, si = FF.si;
+  const groups = [
+    ['Eisen', ['iron-1000', 'iron-950', 'iron-900', 'iron-850', 'iron-800', 'iron-750', 'iron-700', 'iron-600', 'iron-500', 'iron-400', 'iron-300', 'iron-200', 'ceramic-100', 'ceramic-50']],
+    ['Glut · Kupfer', ['ember-900', 'ember-800', 'ember-700', 'ember-600', 'ember-500', 'ember-300', 'ember-100', 'whiteheat', 'copper-800', 'copper-700', 'copper-500', 'copper-300', 'verdigris-500', 'verdigris-300']],
+    ['Ressourcen · Semantik', ['mass', 'mass-dim', 'energy', 'energy-dim', 'ok', 'warn', 'crit', 'info', 'neutral-blip', 'text-hi', 'text', 'text-mid', 'text-lo', 'text-off']],
+    ['Teams · Hausfarben / farbenblind-sicher', ['team-rot', 'team-blau', 'team-gruen', 'team-violett', 'team-cyan', 'team-orange', 'team-pink', 'team-oliv', 'cvd-blau', 'cvd-rot', 'cvd-orange', 'cvd-himmel', 'cvd-blaugruen', 'cvd-rotviolett', 'cvd-purpur', 'cvd-rosa']],
+  ];
+  const cs = getComputedStyle(document.documentElement);
+  $('colors').innerHTML = groups.map(([t, list]) => `<div><div style="font-size:var(--fs-micro);color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem">${t}</div><div class="row" style="gap:.375rem">${list.map((n) => `<div class="sw"><div style="background:var(--${n})"></div><span>--${n}<br><code>${cs.getPropertyValue('--' + n).trim()}</code></span></div>`).join('')}</div></div>`).join('');
+  $('typo').innerHTML = [['fs-logo', 'FLOW & FIRE', 'display'], ['fs-h1', 'Gefecht einrichten', 'display'], ['fs-h2', 'Einstellungen', 'display'], ['fs-num', '2.840 / 4.900', 'num'], ['fs-label', 'Glutkessel I', ''], ['fs-body', 'Steht er an einem Werk, zieht das Werk weniger Energy.', ''], ['fs-data', 'DPS 23,3 · RW 18 WU', 'num'], ['fs-cap', 'Kampfpanzer · Ziel: Land', ''], ['fs-micro', 'TASTE Q · BEFEHLE', 'caps']]
+    .map(([t, s, k]) => `<div><code>--${t} · ${cs.getPropertyValue('--' + t).trim()}</code><span class="${k === 'num' ? 'num' : k === 'caps' ? 'ff-caps' : ''}" style="font-size:var(--${t});${k === 'display' ? 'font-family:var(--font-display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;' : ''}color:var(--text-hi);line-height:1.1">${s}</span></div>`).join('') + `<div><code>--font-mono</code><span style="font-family:var(--font-mono);color:var(--text)">› spawn core:lnd_t1_tank 5 @cursor</span></div>`;
+  $('spc').innerHTML = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `<div><div style="width:var(--sp-${i});height:var(--sp-${i})"></div><span>${[2, 4, 8, 12, 16, 24, 32, 48][i]}</span></div>`).join('');
+  const st = [['', 'Standard'], ['is-hover', 'Hover'], ['is-active', 'Gedrückt'], ['is-focus', 'Fokus'], ['is-disabled', 'Deaktiviert']];
+  $('buttons').innerHTML = [['ff-btn--primary', 'Gefecht starten'], ['', 'Zurück'], ['ff-btn--ghost', 'Standard'], ['ff-btn--danger', 'Aufgeben']].map(([v, l]) => `<div class="row">${st.map(([s, n]) => `<div class="demo"><small>${n}</small><button class="ff-btn ${v} ${s}">${l}</button></div>`).join('')}</div>`).join('');
+  const u = (id) => FF.unit('core:' + id);
+  const cell = (cls, k, id, extra = '') => `<button class="ff-cell ${cls}"><span class="ff-cell__key">${k}</span>${extra}<span class="ff-cell__icon">${si(u(id).icon)}</span><span class="ff-cell__name">${u(id).name.de.replace(/ I+$/, '')}</span></button>`;
+  $('cells').innerHTML = [
+    ['Standard', cell('', 'Q', 'lnd_t1_tank')], ['Hover', cell('is-hover', 'Q', 'lnd_t1_tank')], ['Aktiv (Platzieren)', cell('is-active', 'W', 'str_t1_pgen')], ['Fokus (Tastatur)', cell('is-focus', 'Q', 'lnd_t1_tank')],
+    ['Queue + Fortschritt', cell('', 'Q', 'lnd_t1_tank', '<span class="ff-cell__badge">5</span><span class="ff-cell__prog"><i style="--p:.64"></i></span>')],
+    ['Tech-Stufen (T1 von 3)', cell('', 'Q', 'str_t1_mex', '<span class="ff-cell__tiers"><i class="on"></i><i></i><i></i></span>')],
+    ['Gesperrt (Tech fehlt)', cell('is-locked is-disabled', 'F', 'str_t2_shield', `<span class="ff-cell__lock">${gi('lock')}</span>`)],
+    ['Deaktiviert (Cap)', cell('is-disabled', 'E', 'lnd_t1_engineer')],
+    ['Leer', '<button class="ff-cell is-empty"><span class="ff-cell__key">G</span></button>'],
+  ].map(([n, h]) => `<div class="demo"><small>${n}</small>${h}</div>`).join('');
+  const ob = (cls, ic, k, extra = '') => `<button class="ff-order ${cls}">${extra}${gi(ic)}<span class="ff-order__key">${k}</span></button>`;
+  $('orders').innerHTML = [
+    ['Standard', ob('', 'move', 'Q')], ['Hover', ob('is-hover', 'move', 'Q')], ['Scharf (wartet auf Ziel)', ob('is-armed', 'attackmove', 'A')], ['Toggle an', ob('is-on', 'shield', 'G')], ['Gemischt', ob('is-mixed', 'shield', 'G')],
+    ['Zyklus (Feuermodus)', ob('', 'fire_return', 'F', '<span class="ff-order__dots"><i class="on"></i><i></i><i></i></span>')], ['Deaktiviert', ob('is-disabled', 'reclaim', 'R')], ['Fokus', ob('is-focus', 'stop', 'S')],
+    ['Gefahr', ob('ff-order--danger', 'selfdestruct', '')], ['Countdown 4 s', ob('is-countdown', 'selfdestruct', '4')],
+  ].map(([n, h]) => `<div class="demo"><small>${n}</small>${h}</div>`).join('');
+  $('bars').innerHTML = [['HP 86 %', 'ff-bar--hp', 0.86], ['HP 42 % (Warnung)', 'ff-bar--hp is-warn', 0.42], ['HP 18 % (kritisch)', 'ff-bar--hp is-crit', 0.18], ['Schild', 'ff-bar--shield', 0.7], ['Bau', 'ff-bar--build', 0.64], ['Mass-Speicher', 'ff-bar--mass', 0.25], ['Energy-Speicher', 'ff-bar--energy', 0.58]]
+    .map(([n, c, v]) => `<span>${n}</span><div class="ff-bar ${c}" style="height:.5rem"><i style="--v:${v}"></i></div>`).join('');
+  $('b1').innerHTML = gi('crit') + 'Stall · Flow 72 %';
+  const res = (kind, cls, st, max, net, inc, out, eff) => `<div class="res res--${kind} ff-panel ${cls}"><div class="res__glyph">${gi(kind)}</div><div class="res__store num">${FF.n0(st)}<small>/ ${FF.n0(max)}</small></div><div class="res__net num ${net > 0 ? 'is-pos' : net < 0 ? 'is-neg' : 'is-zero'}">${FF.signed(net)}</div><div class="res__bar ff-bar ff-bar--${kind}"><i style="--v:${st / max}"></i></div><div class="res__flow num"><span class="in">+<b>${FF.n1(inc)}</b></span><span class="out">−<b>${FF.n1(out)}</b></span>${eff}</div></div>`;
+  $('res').innerHTML = [
+    ['Normal', res('energy', '', 2840, 4900, 44, 340, 296, '<span class="eff">Flow <b>100 %</b></span>')],
+    ['Überlauf (E4)', res('mass', 'is-full', 1230, 1230, 12.5, 44, 31.5, '<span class="eff"><span class="ff-badge ff-badge--warn">Voll · verfällt</span></span>')],
+    ['Stall (E3)', res('energy', 'is-stall', 0, 4900, -85, 220, 220, `<span class="eff"><span class="ff-badge ff-badge--crit">${gi('crit')}Stall · Flow 72 %</span></span>`)],
+  ].map(([n, h]) => `<div class="demo"><small>${n}</small>${h}</div>`).join('');
+  $('alerts').innerHTML = [['crit', 'crit', 'Vogt unter Feuer', 'Basis · vor 1 s', 'is-new'], ['warn', 'warn', 'Masse knapp', 'Flow 80 % · vor 4 s', ''], ['info', 'info', 'Feind-Vogt gesichtet', 'Nordost · vor 12 s', ''], ['ok', 'ok', 'Werk freigesprochen: Landwerk II', 'Hauptbasis · vor 30 s', 'is-stale']]
+    .map(([c, i, t, m, x]) => `<div class="ff-alert ff-alert--${c} ${x}"><span class="ff-alert__ico">${gi(i)}</span><div class="ff-alert__txt"><div class="ff-alert__title">${t}</div><div class="ff-alert__meta">${m}</div></div><button class="ff-alert__jump">${gi('jump')}Ort</button></div>`).join('') + '<p class="note">Kritisch = Achteck, Warnung = Dreieck, Info = Kreis, Erfolg = Kreis mit Haken. „is-stale" (älter als 20 s) wird gedimmt.</p>';
+  $('tip').innerHTML = FF.unitTip('core:str_t1_mstore', { key: 'R', bp: 10, desc: 'Gussbehälter für Erz. Direkt an einer Zapfstelle erhöht er deren Förderung.' });
+  // Cursor: Pfeil + Befehlsplakette (eigene Zeichnung)
+  const arrow = (fill = '#f1ebdf') => `<path d="M3 2l0 22 6-6 4 9 4-2-4-9h8z" fill="${fill}" stroke="#0e0d0c" stroke-width="1.6" stroke-linejoin="round"/>`;
+  const badge = (ic, col) => `<g transform="translate(17 17)"><circle cx="7.5" cy="7.5" r="7.5" fill="#0e0d0c"/><circle cx="7.5" cy="7.5" r="6.5" fill="${col}"/><g transform="translate(2 2) scale(.46)" fill="none" stroke="#0e0d0c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${FF.gi(ic).replace(/^<svg[^>]*>|<\/svg>$/g, '').replace(/currentColor/g, '#0e0d0c')}</g></g>`;
+  const CUR = [
+    ['Standard', arrow()], ['Über eigener Einheit', arrow('#ffd9a0')], ['Bewegen', arrow() + badge('move', '#8fd18b')], ['Angriff', arrow() + badge('attack', '#ff5a45')], ['Angriffs­bewegung', arrow() + badge('attackmove', '#ff7a5c')],
+    ['Boden angreifen', arrow() + badge('attackground', '#ff9f43')], ['Patrouille', arrow() + badge('patrol', '#8fb8e8')], ['Assist / Bewachen', arrow() + badge('assist', '#ffd9a0')], ['Reclaim', arrow() + badge('reclaim', '#7fd1b2')], ['Reparieren', arrow() + badge('repair', '#8fd18b')],
+    ['Rally setzen', arrow() + badge('rally', '#8fd18b')], ['Ungültig', arrow('#9a9a9a') + '<g transform="translate(17 17)"><circle cx="7.5" cy="7.5" r="6.5" fill="#0e0d0c" stroke="#ff5a45" stroke-width="2"/><path d="M3 12L12 3" stroke="#ff5a45" stroke-width="2"/></g>'],
+    ['Randschwenk', '<path d="M16 3l7 7h-4v9h-6v-9H9z" fill="#f1ebdf" stroke="#0e0d0c" stroke-width="1.6" stroke-linejoin="round" transform="rotate(45 16 16)"/>'],
+    ['Greifen (Mitte)', '<path d="M9 14V8a2 2 0 0 1 4 0v5V6a2 2 0 0 1 4 0v7V8a2 2 0 0 1 4 0v10c0 5-3 8-7 8s-6-2-8-6l-2-4a2 2 0 0 1 3-2z" fill="#f1ebdf" stroke="#0e0d0c" stroke-width="1.5" stroke-linejoin="round"/>'],
+    ['Drehen (Strg+Mitte)', '<circle cx="16" cy="16" r="8" fill="none" stroke="#0e0d0c" stroke-width="5"/><circle cx="16" cy="16" r="8" fill="none" stroke="#f1ebdf" stroke-width="2.5"/><path d="M22 6v6h-6" fill="none" stroke="#f1ebdf" stroke-width="2.5"/>'],
+    ['Platzieren', '<path d="M3 3l10 24 3-10 10-3z" fill="#ffd9a0" stroke="#1a0c03" stroke-width="1.5"/><path d="M20 20h9M24.5 15.5v9" stroke="#ffd9a0" stroke-width="2.5"/>'],
+    ['Warten (Sim-Lag)', arrow() + '<g transform="translate(17 17)"><circle cx="7.5" cy="7.5" r="6.5" fill="#0e0d0c" stroke="#ff8a2a" stroke-width="2" stroke-dasharray="8 4"/></g>'],
+  ];
+  $('cursors').innerHTML = CUR.map(([n, s]) => `<div class="cur"><svg viewBox="0 0 32 32">${s}</svg>${n}</div>`).join('');
+  const ids = Object.keys(window.FF_ICONS).filter((k) => !k.includes('.'));
+  $('icons').innerHTML = ids.map((id) => `<div>${si(id, id.startsWith('blip') ? '' : '')}${id}</div>`).join('') +
+    `<div>${si('land_direct_t1', 'ff-si--enemy')}Feind (Team 2)</div><div style="position:relative">${si('struct_energy_t1.ghost')}Ghost (I2)</div><div>${si('land_direct_t1', '', '--team:var(--cvd-blau)')}CVD-Blau</div><div>${si('land_direct_t1', '', '--team:var(--cvd-rot)')}CVD-Rot (Slot 2)</div>`;
+  $('glyphs').innerHTML = FF.giNames.map((n) => `<div>${gi(n)}${n}</div>`).join('');
+</script>
+</body>
+</html>

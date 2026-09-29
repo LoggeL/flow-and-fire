@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – Einstellungen</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/menus.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/ff.js"></script>
+</head>
+<!-- Einstellungen: Grafik/Audio (P9 MS14, Presets-Infrastruktur MS2), Tasten (C11 MS2, Raster C8 MS4, Rebinding C20 Post-MVP),
+     Barrierefreiheit (Teamfarben-Modi ab MS9 vorgezogen, Rest P16 Post-MVP), Spiel (P12 Sprache MS4). ?tab=graphics|audio|keys|access|game -->
+<body class="menu-page">
+<div class="menu-bg"><canvas></canvas></div>
+<div class="menu-root" data-component="Settings">
+  <div class="menu-top">
+    <button class="ff-btn ff-btn--ghost ff-btn--icon" title="Zurück (Esc)"><span data-i="exit"></span></button>
+    <h1>Einstellungen</h1><span class="crumb" id="crumb">Grafik</span>
+    <div class="sp"><span class="hintline">Änderungen gelten sofort · <span class="ff-key">Esc</span> zurück</span></div>
+  </div>
+
+  <div class="settings">
+    <nav class="vtabs" data-tabs="set" role="tablist">
+      <button class="vtab is-selected" data-tab="graphics"><span data-i="layers"></span>Grafik</button>
+      <button class="vtab" data-tab="audio"><span data-i="speaker"></span>Audio</button>
+      <button class="vtab" data-tab="keys"><span data-i="keyboard"></span>Tasten</button>
+      <button class="vtab" data-tab="access"><span data-i="eye"></span>Barrierefreiheit</button>
+      <button class="vtab" data-tab="game"><span data-i="globe"></span>Spiel &amp; Sprache</button>
+    </nav>
+
+    <!-- ===== Grafik ===== -->
+    <section class="srows" data-pane-of="set" data-pane="graphics">
+      <div class="detect"><span data-i="cpu"></span><div><b>Automatisch erkannt: Mittel</b><br>Intel Iris Xe · 3-s-Benchmark 64 FPS (Big-Battle-Szene) · WebGL2, <span class="num">EXT_color_buffer_float</span></div><button class="ff-btn ff-btn--sm">Neu messen</button></div>
+      <div class="sgroup">Qualität</div>
+      <div class="srow"><div class="srow__l"><b>Voreinstellung</b><small>Setzt alle Werte darunter; eigene Änderungen ergeben „Eigen".</small></div><div class="srow__c"><div class="ff-seg" data-seg><button>Niedrig</button><button class="is-selected">Mittel</button><button>Hoch</button><button>Ultra</button></div></div></div>
+      <div class="srow is-changed is-focus"><div class="srow__l"><b>Render-Skalierung</b><small>Innere Auflösung; HUD bleibt scharf.</small></div><div class="srow__c"><input class="ff-range" type="range" min="50" max="100" value="80" style="--v:60%"><span class="val num">80 %</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Schatten</b><small>Kaskaden (CSM), Terrain und Props statisch gecacht.</small></div><div class="srow__c"><select class="ff-select"><option>Aus</option><option selected>1 Kaskade</option><option>2 Kaskaden</option><option>3 Kaskaden</option></select></div></div>
+      <div class="srow"><div class="srow__l"><b>Terrain-Texturen</b><small>Splatmap-Layer (M9).</small></div><div class="srow__c"><div class="ff-seg" data-seg><button>2</button><button class="is-selected">4</button><button>8</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Partikel-Obergrenze</b><small>Harte Grenze pro Frame (P5).</small></div><div class="srow__c"><select class="ff-select"><option>8.000</option><option selected>16.000</option><option>32.000</option><option>64.000</option></select></div></div>
+      <div class="srow"><div class="srow__l"><b>Glühen und Nachleuchten</b><small>HDR, Bloom. Ohne Bloom bleibt Glut über Sättigung lesbar.</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+      <div class="srow"><div class="srow__l"><b>Kantenglättung</b></div><div class="srow__c"><select class="ff-select"><option>Aus</option><option selected>FXAA</option><option>MSAA 4×</option></select></div></div>
+      <div class="sgroup">Anzeige</div>
+      <div class="srow"><div class="srow__l"><b>Bildrate begrenzen</b></div><div class="srow__c"><select class="ff-select"><option>30</option><option selected>60</option><option>120</option><option>Monitor</option></select></div></div>
+      <div class="srow"><div class="srow__l"><b>Kamera-Wackeln</b><small>Lotbruch und große Explosionen.</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+    </section>
+
+    <!-- ===== Audio ===== -->
+    <section class="srows" data-pane-of="set" data-pane="audio" hidden>
+      <div class="sgroup">Mixer</div>
+      <div class="srow"><div class="srow__l"><b>Gesamt</b></div><div class="srow__c"><input class="ff-range" type="range" value="80" style="--v:80%"><span class="val num">80</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Effekte</b><small>Waffen, Einschläge, Bau (Bus sfx)</small></div><div class="srow__c"><input class="ff-range" type="range" value="70" style="--v:70%"><span class="val num">70</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Ansagen und Quittungen</b><small>Hüttenstimme, Werkstimme (Bus voice)</small></div><div class="srow__c"><input class="ff-range" type="range" value="90" style="--v:90%"><span class="val num">90</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Oberfläche</b><small>Klicks, Queue-Ticks (Bus ui)</small></div><div class="srow__c"><input class="ff-range" type="range" value="55" style="--v:55%"><span class="val num">55</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Musik</b></div><div class="srow__c"><input class="ff-range" type="range" value="40" style="--v:40%"><span class="val num">40</span></div></div>
+      <div class="srow"><div class="srow__l"><b>Umgebung</b></div><div class="srow__c"><input class="ff-range" type="range" value="50" style="--v:50%"><span class="val num">50</span></div></div>
+      <div class="sgroup">Verhalten</div>
+      <div class="srow"><div class="srow__l"><b>Warn-Ansagen</b><small>Gong + Sprachzeile; aus = nur Gong und Text (P8).</small></div><div class="srow__c"><div class="ff-seg" data-seg><button class="is-selected">Sprache</button><button>Nur Gong</button><button>Aus</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Hörbarer Stall</b><small>Flow-Grundton kippt beim Energy-Stall.</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+      <div class="srow"><div class="srow__l"><b>Ton im Hintergrund-Tab</b></div><div class="srow__c"><span class="ff-switch" role="switch"></span></div></div>
+    </section>
+
+    <!-- ===== Tasten ===== -->
+    <section class="srows" data-pane-of="set" data-pane="keys" hidden>
+      <div class="sgroup">Tastenschema</div>
+      <div class="srow is-changed"><div class="srow__l"><b>Kamera-Tasten</b><small>„Raster": Buchstaben gehören Befehlen und Hotbuild, Kamera über Pfeile, Rand und Mittelklick. „WASD": WASD schwenkt immer, Raster dann mit Alt.</small></div><div class="srow__c"><div class="ff-seg" data-seg><button class="is-selected">Raster (Standard)</button><button>WASD</button></div></div></div>
+      <div class="legend" style="padding-top:.75rem"><span><i style="background:#231a12;border-color:var(--copper-700)"></i>Raster (Command Card)</span><span><i style="background:#14202a;border-color:#2a4466"></i>Kamera</span><span><i style="background:#1f1f1f"></i>System</span><span class="ff-lo">Beschriftung nach Tastaturlayout (DE); intern zählt die physische Taste.</span></div>
+      <div class="kbd" id="kbd"></div>
+      <table class="ktable">
+        <thead><tr><th>Aktion</th><th>Taste</th><th>Hinweis</th></tr></thead>
+        <tbody>
+          <tr><td>Befehl bei Bau-Auswahl</td><td><span class="ff-key">Alt</span>+<span class="ff-key">Raster</span></td><td>ohne Alt = Hotbuild</td></tr>
+          <tr><td>Gruppe speichern / hinzufügen</td><td><span class="ff-key">Alt</span>+<span class="ff-key">1</span> · <span class="ff-key">⇧</span><span class="ff-key">Alt</span>+<span class="ff-key">1</span></td><td>oder Rechtsklick / ⇧Rechtsklick auf das Gruppenfeld; Strg+Zahl (FA) nur mit Tastatursperre im Vollbild</td></tr>
+          <tr><td>Selbstzerstörung</td><td><span class="ff-key">Strg</span>+<span class="ff-key">Entf</span></td><td>5 s Countdown, erneut = Abbruch</td></tr>
+          <tr><td>Zum letzten Alert</td><td><span class="ff-key">Leertaste</span></td><td><span class="ff-key">⇧</span>␣ ältere durchblättern</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ===== Barrierefreiheit ===== -->
+    <section class="srows" data-pane-of="set" data-pane="access" hidden>
+      <div class="sgroup">Farben</div>
+      <div class="srow is-changed is-focus"><div class="srow__l"><b>Teamfarben</b><small>Hausfarben (frei wählbar) · Eigen/Feind (fest) · Farbenblind-sicher (geprüfte 8er-Palette).</small></div><div class="srow__c"><div class="ff-seg" data-seg id="teamseg"><button data-teams="">Hausfarben</button><button data-teams="relation">Eigen/Feind</button><button class="is-selected" data-teams="cvd">Farbenblind</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Zustands-Muster</b><small>Kritische Balken und Stall-Anzeigen zusätzlich schraffiert.</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+      <div class="srow"><div class="srow__l"><b>Icon-Kontur verstärken</b><small>Strategic Icons mit 3 px statt 2 px Graphit-Kontur.</small></div><div class="srow__c"><span class="ff-switch" role="switch"></span></div></div>
+      <div class="sgroup">Oberfläche</div>
+      <div class="srow"><div class="srow__l"><b>UI-Skalierung</b><small>Auto: 1,0 bei 1080p, 1,25 bei 1440p.</small></div><div class="srow__c"><select class="ff-select"><option selected>Auto (1,25)</option><option>0,8</option><option>0,9</option><option>1,0</option><option>1,1</option><option>1,25</option><option>1,5</option></select></div></div>
+      <div class="srow"><div class="srow__l"><b>Bewegung reduzieren</b><small>Kein Pulsieren, kein Aufblitzen; Zustände bleiben über Rahmen und Symbole lesbar.</small></div><div class="srow__c"><div class="ff-seg" data-seg><button class="is-selected">System</button><button>An</button><button>Aus</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Alerts als Text einblenden</b><small>Jede Sprachansage erscheint auch im Alert-Feed (immer an im MVP).</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+    </section>
+
+    <!-- ===== Spiel ===== -->
+    <section class="srows" data-pane-of="set" data-pane="game" hidden>
+      <div class="sgroup">Allgemein</div>
+      <div class="srow"><div class="srow__l"><b>Sprache</b></div><div class="srow__c"><div class="ff-seg" data-seg><button class="is-selected">Deutsch</button><button>English</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Kamera-Randschwenk</b><small>Mit Zeigersperre im Vollbild.</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+      <div class="srow"><div class="srow__l"><b>Tooltips</b></div><div class="srow__c"><div class="ff-seg" data-seg><button>Kurz</button><button class="is-selected">Voll</button><button>Aus</button></div></div></div>
+      <div class="srow"><div class="srow__l"><b>Pause bei verstecktem Tab</b><small>Einzelspieler (S9).</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+      <div class="srow"><div class="srow__l"><b>Replays automatisch speichern</b><small>OPFS, letzte 20 Partien (N1).</small></div><div class="srow__c"><span class="ff-switch is-on" role="switch"></span></div></div>
+    </section>
+
+    <!-- ===== Seitenleiste ===== -->
+    <aside class="aside-card ff-panel" id="aside"></aside>
+  </div>
+
+  <div class="menu-foot"><span>Einstellungen liegen lokal (localStorage) und reisen nicht mit Replays.</span><div class="sp"><button class="ff-btn">Standard wiederherstellen</button><button class="ff-btn ff-btn--primary">Fertig</button></div></div>
+</div>
+<script>
+  FF.applyScale(); FF.menuBg(5);
+  document.querySelectorAll('[data-i]').forEach((el) => { el.outerHTML = FF.gi(el.dataset.i); });
+  FF.bindTabs();
+  const names = { graphics: 'Grafik', audio: 'Audio', keys: 'Tasten', access: 'Barrierefreiheit', game: 'Spiel & Sprache' };
+  // Farbsehschwäche-Simulation (Machado 2009, Schwere 1,0) – dieselbe Rechnung wie tools/cvd-check.py
+  const MX = { Deutan: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.01182, 0.04294, 0.968881]], Protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]], Tritan: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.3039]] };
+  const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4), del = (c) => { c = Math.min(1, Math.max(0, c)); return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055; };
+  function simHex(hex, m) { const v = [1, 3, 5].map((i) => lin(parseInt(hex.substr(i, 2), 16) / 255)); if (!m) return hex; return 'rgb(' + m.map((r) => Math.round(del(r[0] * v[0] + r[1] * v[1] + r[2] * v[2]) * 255)).join(',') + ')'; }
+  const STD = ['#c8372d', '#2f6fd0', '#3e9a4a', '#7a4cc2', '#27a6b5', '#e07a1f', '#d0569a', '#8a8f2e'], CVD = ['#0072b2', '#d7263d', '#e69f00', '#56b4e9', '#009e73', '#cc79a7', '#aa3377', '#ee6677'];
+  function cvdRows() { return `<div style="display:grid;grid-template-columns:4.5rem 1fr 1fr;gap:.25rem .5rem;align-items:center;font-size:var(--fs-micro);color:var(--text-lo)"><span></span><span>Hausfarben</span><span>Farbenblind-sicher</span>${['Normal', 'Deutan', 'Protan', 'Tritan'].map((k) => `<span>${k}</span>${[STD, CVD].map((p) => `<div style="display:grid;grid-template-columns:repeat(8,1fr);height:.875rem">${p.map((c) => `<i style="background:${simHex(c, MX[k])}"></i>`).join('')}</div>`).join('')}`).join('')}</div>`; }
+  const ASIDE = {
+    graphics: `<div class="ff-ph">Geschätzte Last · Mittel</div><div class="body">
+      <div class="budget">${[['GPU / Frame', 9.1, 12, 'ms'], ['Main-JS / Frame', 3.2, 4, 'ms'], ['Draw Calls', 212, 250, ''], ['Partikel', 9.4, 16, 'k']].map(([n, v, m, u]) => `<div class="row"><span>${n}</span><span class="ff-bar"><i style="--v:${v / m};--bar:${v / m > 0.85 ? 'var(--warn)' : 'var(--copper-300)'}"></i></span><span class="num">${FF.n1(v)} ${u}</span></div>`).join('')}</div>
+      <div>Budget auf dem Referenz-Laptop (Iris Xe, 1080p). „Hoch" würde CSM 2 Kaskaden und MSAA aktivieren: <b style="color:var(--warn)">≈ 13,4 ms GPU</b>.</div></div>`,
+    audio: `<div class="ff-ph">Probe</div><div class="body"><div>Spielt je Bus einen Beispielklang (Glockenschlag, Punze-Schuss, Alert-Gong).</div><div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="ff-btn ff-btn--sm">${FF.gi('play')}Signatur</button><button class="ff-btn ff-btn--sm">${FF.gi('play')}Waffe</button><button class="ff-btn ff-btn--sm">${FF.gi('play')}Alert</button></div><div class="ff-lo">32 Stimmen, Vorrang: Alert ▸ Glocke ▸ Quittung ▸ UI ▸ Explosion ▸ Waffe.</div></div>`,
+    keys: `<div class="ff-ph">Raster je Auswahl</div><div class="body">
+      <div><b>Vogt / Engineer:</b> Bau-Menü (Q Zapfstelle … V Tiegel).</div><div><b>Landwerk:</b> Q Panzer, W Artillerie, E Engineer, R Flugabwehr, A Späher, S Bots.</div><div><b>Kampfeinheiten:</b> Befehlsraster (Q Bewegen, A Angriff, S Stop …).</div>
+      <div>Mehrfach drücken wechselt nur die Tech-Stufe, nie den Typ.</div><div class="ff-lo">Frei belegbare Tasten und Profile: C20 (Post-MVP).</div></div>`,
+    access: `<div class="ff-ph">Vorschau · Farbenblind-sicher</div><div class="body">
+      <div class="palette">${['#0072b2', '#d7263d', '#e69f00', '#56b4e9', '#009e73', '#cc79a7', '#aa3377', '#ee6677'].map((c, i) => `<div style="background:${c}">${i + 1}</div>`).join('')}</div>
+      <div class="iconrow" style="--team:var(--cvd-blau)">${['land_direct_t1', 'land_arty_t1', 'eng_build_t1', 'struct_fac_land_t1'].map((i) => FF.si(i, '', '--team:var(--cvd-blau)')).join('')}<span class="ff-lo">gegen</span>${['land_direct_t1', 'land_aa_t1'].map((i) => FF.si(i, '', '--team:var(--cvd-rot)')).join('')}</div>
+      <div>Kleinster Abstand zweier Farben (ΔE2000) unter Normal-, Deuter-, Protan- und Tritan-Sicht: <b>10,0</b> (Hausfarben: <b style="color:var(--crit)">1,7</b>). Slot 1 ↔ 2 (1v1, Blau/Rot): <b>≥ 37</b>; Slot 2 bleibt ≥ 16 von Glut und Warnung entfernt (Orange erst ab Slot 3).</div>
+      ${cvdRows()}
+      <div class="ff-lo">Rolle und Tech stecken immer in Form, Glyphe und Kerben – die Farbe trennt nur Häuser.</div></div>`,
+    game: `<div class="ff-ph">Hinweis</div><div class="body">Texte und Einheitennamen stammen aus den String-Tabellen (P12). Rufname + Funktionsrolle erscheinen in beiden Sprachen gleich aufgebaut: <b>Punze</b> · Kampfpanzer / <b>Punch</b> · Battle Tank.</div>`,
+  };
+  function sel(tab) { FF.selectTab('set', tab); document.getElementById('crumb').textContent = names[tab]; document.getElementById('aside').innerHTML = ASIDE[tab]; }
+  document.querySelector('[data-tabs="set"]').addEventListener('click', (e) => { const t = e.target.closest('[data-tab]'); if (t) sel(t.dataset.tab); });
+  sel(FF.qs.get('tab') === 'keys' ? 'keys' : FF.qs.get('tab') || 'graphics');
+  // Tastatur (DE-Beschriftung, Raster = physische Positionen KeyQ…KeyB)
+  const G = { Q: 'Panzer · Zapfst. · Bewegen', W: 'Artillerie · Kessel · Patrouille', E: 'Engineer · Dampfq. · Assist', R: 'Flak · Erzsp. · Reclaim', T: 'Glutsp. · Reparieren', A: 'Späher · Landwerk · Angriff', S: 'Bots · Luftwerk · Stop', D: 'Schürze · Horcher · Pause', F: 'Reißnadel · Schirm · Feuermodus', G: 'Fähigkeit', Y: 'Riegel · Boden', X: 'Rost · Abstich', C: 'Mauer · Formation', V: 'Tiegel', B: 'Upgrade' };
+  const SYS = { '^': 'Konsole', P: 'Pause', H: 'Vogt', '.': 'untät. Eng.', ',': 'untät. Fabrik', Tab: 'Typ wechseln', Esc: 'Abbruch' };
+  const rows = [
+    [['Esc', 'sys', 'Abbruch'], ['F1', 'sys', 'Konsole'], ['F2', 'sys', 'Land'], ['F3', 'sys', 'Luft'], ['F4', 'sys', 'Fabriken'], ['F5', '', 'Browser'], ['F6', 'sys', 'Engineers']],
+    [['^', 'sys'], ...'1234567890'.split('').map((d) => [d, 'sys', 'Gruppe ' + d])],
+    [['Tab', 'sys', 'Typ wechseln', 'w15'], ...'QWERT'.split('').map((k) => [k, 'grid']), ['Z', ''], ['U', ''], ['I', ''], ['O', ''], ['P', 'sys']],
+    [['⇪', '', '', 'w15'], ...'ASDFG'.split('').map((k) => [k, 'grid']), ['H', 'sys'], ['J', ''], ['K', ''], ['L', '']],
+    [['⇧', 'sys', 'anhängen', 'w2'], ...'YXCVB'.split('').map((k) => [k, 'grid']), ['N', 'sys', 'Schritt'], ['M', ''], [',', ''], ['.', 'sys']],
+    [['Strg', 'sys', 'Typ/alle', 'w15'], ['Alt', 'sys', 'Befehle', 'w15'], ['Leertaste', 'sys', 'Zum Alert', 'w6'], ['←', 'cam', 'Kamera'], ['↑', 'cam'], ['↓', 'cam'], ['→', 'cam'], ['Entf', 'sys', 'Strg: Sprengen']],
+  ];
+  document.getElementById('kbd').innerHTML = rows.map((r, i) => `<div class="kbd__row" style="padding-left:${[0, 0, 0, 1.2, 0, 0][i]}rem">${r.map(([k, t, l, w]) => `<div class="kk ${t ? 'is-' + t : ''} ${w ? 'kk--' + w : ''}"><b>${k}</b><span>${t === 'grid' ? G[k].split(' · ').map((x, j, a) => (a.length === 3 && j < 2) || (a.length === 2 && j === 0 && k !== 'B') ? x : `<i>${x}</i>`).join('<br>') : (l ?? SYS[k] ?? '')}</span></div>`).join('')}</div>`).join('');
+  document.querySelectorAll('[data-seg]').forEach((s) => s.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; s.querySelectorAll('button').forEach((x) => x.classList.toggle('is-selected', x === b)); if (b.dataset.teams !== undefined) document.documentElement.dataset.teams = b.dataset.teams; }));
+  document.querySelectorAll('.ff-switch').forEach((s) => s.addEventListener('click', () => s.classList.toggle('is-on')));
+  document.querySelectorAll('.ff-range').forEach((r) => r.addEventListener('input', () => { r.style.setProperty('--v', ((r.value - r.min) / (r.max - r.min) * 100) + '%'); r.nextElementSibling.textContent = r.value + (r.max == 100 && r.min == 50 ? ' %' : ''); }));
+</script>
+</body>
+</html>

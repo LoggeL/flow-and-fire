@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – Laden</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<link rel="stylesheet" href="assets/menus.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/ff.js"></script>
+</head>
+<!-- Ladebildschirm (P3 MS2; Phasen wie apps/game/src/loading.ts + Worker-Start + KI ab MS9). Fehlerzustand: ?error=1 -->
+<body class="menu-page">
+<div class="menu-bg"><canvas></canvas></div>
+<div class="load" data-component="LoadingScreen">
+  <div class="load__center" style="grid-template-columns:minmax(0,1fr) auto">
+    <div>
+      <div class="crumb" style="color:var(--copper-300);letter-spacing:.12em;text-transform:uppercase;font-size:var(--fs-cap)">Lotung läuft</div>
+      <div class="logo" style="font-size:4rem;margin:.25rem 0 1rem">Setons</div>
+      <div class="ff-dim" style="max-width:40rem">1.024 WU · zwei Seen, eine Landbrücke. Wer die Brücke hält, hält das Wrackgut.</div>
+      <div class="mapfacts" style="justify-content:flex-start;margin-top:1rem"><span><b>Assassination</b></span><span>Unit-Cap <b class="num">500</b></span><span>Seed <b class="num">48213</b></span></div>
+    <div class="load__vs">
+      <div class="vsrow" style="--team:var(--team-self)"><i></i><div><b>Haus Ambrecht</b><small>Du · Varkan · Start 1 Südwest</small></div><span class="ff-badge ff-badge--ok">bereit</span></div>
+      <div class="vs">GEGEN</div>
+      <div class="vsrow" style="--team:var(--team-enemy)"><i></i><div><b>Haus Dorne</b><small>KI Normal · AIx ×1,3 · Start 5 Nordost</small></div><span class="ff-badge">KI-Worker startet</span></div>
+    </div>
+    </div>
+    <div class="preview__map" id="pmap" style="height:min(62vh,40rem);width:auto"><canvas id="bigmap" width="520" height="520"></canvas></div>
+  </div>
+  <div class="load__bar">
+    <div class="phases" id="phases"></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-cap);color:var(--text-mid)">
+      <span id="phaseText">Assets laden … <span class="ff-lo">tex/terrain_splat_rock.ktx2 (aus dem Cache)</span></span>
+      <span class="num"><b style="color:var(--text-hi);font-size:var(--fs-num)">71 %</b> · 38,2 / 52,6 MB · Cache 212 · Netz 31</span>
+    </div>
+    <div class="ff-bar bigbar ff-bar--build" role="progressbar" aria-valuenow="71"><i style="--v:.71"></i></div>
+    <div class="tip"><b>Hinweis</b><span>Mit <span class="ff-key">⇧</span> gehängte Bauaufträge bleiben als Geister stehen – jeder Engineer kann sie per Rechtsklick übernehmen.</span><span class="ff-lo" style="margin-left:auto">Build 3f9a1c2</span></div>
+  </div>
+</div>
+<script>
+  FF.applyScale(); FF.menuBg(41, [0.05, 0.25, 0.95, 0.75]);
+  { const base = FF.heightField(41, { mirror: true, plateau: true, freq: 2.6 });
+    const f = (x, y) => base(x, y) - 0.05 - 0.09 * Math.exp(-(((x - 0.72) ** 2 + (y - 0.72) ** 2) / 0.03)) - 0.09 * Math.exp(-(((x - 0.28) ** 2 + (y - 0.28) ** 2) / 0.03)) + 0.08 * Math.exp(-(((x + y - 1) ** 2) / 0.02));
+    FF.drawTerrain(document.getElementById('bigmap'), f, { detail: 3 });
+    [[0.14, 0.86, 'var(--team-self)', 1], [0.86, 0.14, 'var(--team-enemy)', 5]].forEach(([x, y, t, n]) => { const m = document.createElement('span'); m.className = 'pmark'; m.style.cssText = `left:${x * 100}%;top:${y * 100}%;--team:${t}`; m.textContent = n; document.getElementById('pmap').appendChild(m); }); }
+  const ph = [['Manifest', 1, 'done'], ['Assets', 0.71, 'now'], ['Karte → Sim', 0, ''], ['Sim-Worker', 0, ''], ['KI-Worker', 0, '']];
+  const err = FF.qs.get('error') === '1';
+  document.getElementById('phases').innerHTML = ph.map(([n, v, s]) => `<div class="phase ${s ? 'is-' + s : ''}"><span>${s === 'done' ? '✓ ' : ''}${n}</span><div class="ff-bar"><i style="--v:${v}"></i></div></div>`).join('');
+  if (err) document.getElementById('phaseText').innerHTML = `<span class="ff-badge ff-badge--crit">${FF.gi('crit')}Laden fehlgeschlagen</span> <span style="color:var(--text)">tex/terrain_splat_rock.ktx2: HTTP 404</span> <button class="ff-btn ff-btn--sm" style="margin-left:.5rem">Erneut</button> <button class="ff-btn ff-btn--sm ff-btn--ghost">Ins Menü</button>`;
+</script>
+</body>
+</html>

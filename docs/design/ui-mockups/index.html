@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow &amp; Fire – UI-Mockups</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/ff.css">
+<script src="assets/strategic-icons.js"></script>
+<script src="assets/ff.js"></script>
+<style>
+  body { overflow: auto; }
+  .page { max-width: 96rem; margin: 0 auto; padding: 3rem; display: grid; gap: 2rem; }
+  h1 { margin: 0; font-family: var(--font-display); font-size: var(--fs-h1); letter-spacing: .06em; text-transform: uppercase; color: var(--text-hi); }
+  h1 span { color: var(--ember-500); }
+  p { color: var(--text-mid); max-width: 64rem; margin: .5rem 0 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: .75rem; }
+  .card { display: grid; gap: .5rem; padding: 1rem 1.25rem; text-decoration: none; color: var(--text); }
+  div.card:hover { --panel-line: var(--copper-500); }
+  .card b a { color: inherit; text-decoration: none; }
+  .card b { color: var(--text-hi); font-size: var(--fs-label); display: flex; gap: .5rem; align-items: center; }
+  .card b .ff-gi { color: var(--ember-300); }
+  .card small { color: var(--text-lo); font-size: var(--fs-cap); }
+  .states { display: flex; flex-wrap: wrap; gap: .25rem; }
+  .states a { font-size: var(--fs-micro); color: var(--text-mid); border: 1px solid var(--line-strong); padding: .125rem .5rem; text-decoration: none; background: var(--iron-900); }
+  .states a:hover { color: var(--ember-100); border-color: var(--ember-600); }
+  .ids { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--copper-300); }
+  code { font-family: var(--font-mono); color: var(--text); font-size: var(--fs-cap); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Flow <span>&amp;</span> Fire · UI-Mockups</h1>
+    <p>Statische, klickbare Entwürfe für HUD und Menüs (Varkan: Eisen, Glut, Kupfer). Reines HTML/CSS mit wenig Script, Struktur wie spätere Preact-Komponenten (<code>data-component</code>). Beschreibung, Tokens, Regeln und Feature-Mapping: <code>docs/design/ui.md</code>. Screenshots: <code>node docs/design/ui-mockups/tools/shoot.mjs</code>.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+  FF.applyScale();
+  const P = [
+    ['hud.html', 'target', 'In-Game-HUD', 'Ressourcenleiste, Minimap, Auswahl, Command Card, Queue, Befehle, Filter, Alerts, Tooltips, Konsole', 'C8 C9 C10 C14 C16 B3 P8 S8 A5 A6',
+      [['Vogt baut', 'sel=vogt&tip=W'], ['Armee', 'sel=army'], ['Fabrik + Stall', 'sel=factory&stall=1&tip=Q'], ['Flow-Details', 'sel=factory&flow=1'], ['Platzieren', 'place=1'], ['Pause', 'paused=1&sel=army'], ['Konsole', 'console=1&sel=none'], ['Farbenblind', 'teams=cvd&sel=army&ring=1'], ['Kompakt 1,0', 'scale=1&sel=army']]],
+    ['components.html', 'layers', 'Tokens & Komponenten', 'Farben, Typo, Fasen, alle Zustände, Cursor, Icons', 'alle', []],
+    ['menu.html', 'play', 'Hauptmenü', 'Einstieg, letzte Partie, Sprache', 'A3', []],
+    ['skirmish.html', 'flag', 'Gefecht einrichten', 'Karte mit Vorschau, Häuser, KI-Stufe, AIx, Regeln', 'A3 M8 A10 A11 A12 U7', []],
+    ['settings.html', 'sliders', 'Einstellungen', 'Grafik-Presets + Autodetect, Audio-Mixer, Tasten, Barrierefreiheit', 'P9 C11 P12 P16', [['Grafik', 'tab=graphics'], ['Audio', 'tab=audio'], ['Tasten', 'tab=keys'], ['Barrierefreiheit', 'tab=access'], ['Spiel', 'tab=game']]],
+    ['loading.html', 'timer', 'Ladebildschirm', 'Phasen, Fortschritt, Gegner, Hinweise', 'P3', [['Fehler', 'error=1']]],
+    ['score.html', 'score', 'Auswertung', 'Sieg/Niederlage, Kennzahlen, Verlaufsgraphen', 'A13 A4', [['Niederlage', 'result=loss']]],
+  ];
+  document.getElementById('grid').innerHTML = P.map(([f, ic, t, d, ids, st]) => `<div class="card ff-panel"><b>${FF.gi(ic)}<a href="${f}">${t}</a></b><small>${d}</small><span class="ids">${ids}</span>${st.length ? `<span class="states">${st.map(([n, q]) => `<a href="${f}?${q}">${n}</a>`).join('')}</span>` : ''}</div>`).join('');
+</script>
+</body>
+</html>

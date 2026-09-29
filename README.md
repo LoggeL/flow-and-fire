@@ -106,6 +106,27 @@ Silhouettenblätter erzeugt `tools/heavy pnpm models:shots` (nach `/private/tmp/
 Kit, Konventionen, Stand und Integrationsplan stehen in [`docs/design/models.md`](docs/design/models.md), die Anleitung für
 Autoren in [`content/models/README.md`](content/models/README.md).
 
+## Design-Dokumente
+
+Konzepte und Vorgaben unter [`docs/design/`](docs/design/) (Plan und Meilensteine: [`docs/PLAN.md`](docs/PLAN.md),
+Feature-IDs: [`docs/features.json`](docs/features.json)):
+
+| Datei | Inhalt |
+|---|---|
+| [`faction.md`](docs/design/faction.md) | Fraktion Varkan: Stil, Farben, Namen, Rollen, Hotbuild, Icons, Klang |
+| [`roster.md`](docs/design/roster.md) + [`roster.json`](docs/design/roster.json) | alle 50 MVP-Einheiten mit Werten; `roster.json` ist die einzige Zahlenquelle (Werkzeug `tools/roster`) |
+| [`models.md`](docs/design/models.md) | Kitbash-Modellkit, Konventionen, Stand |
+| [`audio.md`](docs/design/audio.md) | Sounds, Alerts, Mischung, Integrationsplan |
+| [`ui.md`](docs/design/ui.md) | UI/HUD-Designsystem „Gießhalle": Tokens, Layout, Komponenten, Tasten, Barrierefreiheit, Performance |
+| [`ui-mockups/`](docs/design/ui-mockups/index.html) | statische, klickbare HTML-Mockups (HUD und Menüs) zu `ui.md` |
+| [`ai.md`](docs/design/ai.md) + [`ai-openings.json`](docs/design/ai-openings.json) | Skirmish-KI: Manager, Eröffnungen, Schwierigkeitsgrade, Turnier-Gates; Eco-Nachrechnung mit [`tools/ai-sim`](tools/ai-sim/README.md) |
+
+**Mockups öffnen:** `docs/design/ui-mockups/index.html` direkt im Browser öffnen (funktioniert über `file://`,
+kein Server nötig), z. B. `open docs/design/ui-mockups/index.html`. Die Übersicht verlinkt alle Zustände; das HUD
+nimmt URL-Parameter wie `hud.html?sel=factory&stall=1&flow=1` (Liste in `ui.md` §12). Screenshots mit Layout-Prüfung:
+`PLAYWRIGHT_FROM=<…>/playwright/index.js node docs/design/ui-mockups/tools/shoot.mjs <ausgabeordner>`.
+KI-Zahlen prüfen: `python3 tools/ai-sim/ecosim.py --check`.
+
 ## Paketstruktur
 
 ```

@@ -1,0 +1,1292 @@
+{
+  "schema": "faf-ai-openings/1",
+  "faction": "varkan",
+  "language": "de",
+  "sourceOfTruth": "Eröffnungen der Skirmish-KI (OpeningScript, PLAN §3.10, A1). Schema und Semantik: docs/design/ai.md §4. Zahlen der Einheiten ausschließlich aus docs/design/roster.json; die Blöcke 'expect' erzeugt tools/ai-sim/ecosim.py --write-expect, --check prüft sie.",
+  "assumptions": {
+    "startStorage": "voll (650 M / 3.900 E aus dem Vogt-Speicher); vom Sim-Blueprint in MS4 zu bestätigen",
+    "warpInS": 0,
+    "buildRangeWu": {
+      "COMMAND": 10,
+      "ENGINEER & TECH1": 6,
+      "ENGINEER & TECH2": 7,
+      "ENGINEER & TECH3": 8
+    },
+    "rollOffS": 2.0,
+    "passability": {
+      "maxSlope": 0.6,
+      "maxWaterDepthWu": 0.5,
+      "gridWu": 2
+    },
+    "straightLineDetour": 1.1,
+    "platoonSpeedFactor": 0.85,
+    "note": "Baureichweiten, Warp-in und Roll-off stehen noch nicht in roster.json (offener Punkt ai.md §11). Die Eco-Simulation ignoriert Adjacency der Fabriken (< 2 %) und Kampf."
+  },
+  "roles": {
+    "mex": "STRUCTURE & MASSEXTRACTION",
+    "pgen": "STRUCTURE & ENERGYPRODUCTION - HYDROCARBON",
+    "hydro": "STRUCTURE & ENERGYPRODUCTION & HYDROCARBON",
+    "estore": "STRUCTURE & ENERGYSTORAGE",
+    "mstore": "STRUCTURE & MASSSTORAGE",
+    "fac_land": "STRUCTURE & FACTORY & LAND",
+    "fac_air": "STRUCTURE & FACTORY & AIR",
+    "pd": "STRUCTURE & DEFENSE & DIRECTFIRE",
+    "aa_tower": "STRUCTURE & DEFENSE & ANTIAIR",
+    "radar": "STRUCTURE & RADAR",
+    "eng": "MOBILE & ENGINEER - COMMAND",
+    "scout": "LAND & MOBILE & SCOUT",
+    "tank": "LAND & MOBILE & DIRECTFIRE & TANK",
+    "bot": "LAND & MOBILE & DIRECTFIRE & BOT - SNIPER",
+    "arty": "LAND & MOBILE & INDIRECTFIRE",
+    "aa": "LAND & MOBILE & ANTIAIR",
+    "air_scout": "AIR & MOBILE & SCOUT",
+    "fighter": "AIR & MOBILE & ANTIAIR - BOMBER",
+    "bomber": "AIR & MOBILE & BOMBER - ANTIAIR",
+    "gunship": "AIR & MOBILE & GUNSHIP"
+  },
+  "sites": {
+    "slot:<name>": "Feste Stelle aus baseTemplate (f = Richtung zum Gegner-Start, s = rechtwinklig, in WU ab eigenem Start)",
+    "near:<slot>": "freie Stelle, deren Footprint an den Footprint von <slot> grenzt (Adjacency); Suche im Uhrzeigersinn ab f+",
+    "ring": "nächste freie Mass-Spot mit Pfad-Distanz ≤ 40 WU vom Start",
+    "mex:next": "freie, erreichbare Mass-Spot der eigenen Zone mit minimalem Score = d(Bauer, Spot) + 0,5 · d(Start, Spot) (+ Threat-Aufschlag, ai.md §5.3)",
+    "hydro:next": "wie mex:next, nur Hydro-Spots",
+    "kranz": "freier Kraftwerks-Platz am Glutkranz (4 Seiten um den Glutspeicher, Adjacency +25 %)"
+  },
+  "baseTemplate": {
+    "slots": {
+      "fac1": {
+        "f": 12,
+        "s": 0,
+        "footprint": 8
+      },
+      "fac2": {
+        "f": 4,
+        "s": 13,
+        "footprint": 8
+      },
+      "fac3": {
+        "f": 4,
+        "s": -13,
+        "footprint": 8
+      },
+      "fac_air": {
+        "f": -12,
+        "s": 10,
+        "footprint": 8
+      },
+      "eco": {
+        "f": -10,
+        "s": -8,
+        "footprint": 2
+      },
+      "estore": {
+        "f": -14,
+        "s": 0,
+        "footprint": 2
+      },
+      "rally": {
+        "f": 45,
+        "s": 0,
+        "footprint": 0
+      }
+    },
+    "note": "Die Engine prüft jede Stelle mit rules.canPlace und plant abgelehnte Stellen per Spiralsuche um (EngineerManager, ai.md §5.3). Die Eco-Simulation nutzt nur die Distanzen."
+  },
+  "difficultyTiming": {
+    "easy": {
+      "stepDelayS": 4.0,
+      "skipChance": 0.1,
+      "techDelayS": 150,
+      "engineerCapFactor": 0.6,
+      "note": "Denkpause 4 s zwischen Schritten, 10 % der Mex-Schritte entfallen (Fehlerrate), Tech 150 s später, 60 % der Engineer-Obergrenze, erste Welle 4 Einheiten größer",
+      "waveExtra": 4
+    },
+    "normal": {
+      "stepDelayS": 0.5,
+      "skipChance": 0.0,
+      "techDelayS": 0,
+      "engineerCapFactor": 1.0,
+      "waveExtra": 0
+    },
+    "hard": {
+      "stepDelayS": 0.0,
+      "skipChance": 0.0,
+      "techDelayS": 0,
+      "engineerCapFactor": 1.0,
+      "note": "Eco wie Normal; Hard unterscheidet sich über Micro, Reaktionszeit und Planungstiefe (ai.md §6), nicht über die Eröffnung",
+      "waveExtra": 0
+    }
+  },
+  "openings": [
+    {
+      "id": "eco_standard",
+      "name": {
+        "de": "Standard-Eco",
+        "en": "Standard Eco"
+      },
+      "fromMs": "MS9",
+      "intent": "Sichere Allround-Eröffnung: 1 Landwerk, 4 Engineers, alle Ring-Mex durch den Vogt, Expansion nach Distanz, T2 um 7:45 (Setons) bis 8:30 (512 WU); bei voller eigener Zone Mex-Upgrades ab 4:00.",
+      "weights": {
+        "maps": {
+          "setons": 1.0,
+          "size512": 1.0
+        },
+        "difficulty": {
+          "easy": 1.0,
+          "normal": 0.45,
+          "hard": 0.35
+        }
+      },
+      "acu": [
+        {
+          "do": "build",
+          "role": "fac_land",
+          "tech": 1,
+          "at": "slot:fac1"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac1",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 1
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 2
+        }
+      ],
+      "factories": {
+        "fac1": [
+          {
+            "do": "rally",
+            "at": "slot:rally"
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 2
+          },
+          {
+            "do": "produce",
+            "role": "scout",
+            "tech": 1,
+            "count": 1
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 2
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "arty",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "bot",
+                "tech": 1
+              }
+            ]
+          }
+        ]
+      },
+      "engineers": [
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "hydro",
+            "tech": 1,
+            "at": "hydro:next",
+            "fallback": {
+              "role": "pgen",
+              "tech": 1,
+              "at": "slot:eco",
+              "count": 4
+            }
+          },
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 1
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ]
+      ],
+      "followUp": {
+        "engineers": {
+          "base": 2,
+          "perFreeSpots": 3,
+          "cap": [
+            [
+              0,
+              4
+            ],
+            [
+              240,
+              6
+            ],
+            [
+              420,
+              8
+            ],
+            [
+              600,
+              10
+            ]
+          ]
+        },
+        "estore": {
+          "atS": 240
+        },
+        "energy": {
+          "horizonS": 30,
+          "reserveE": 600,
+          "maxInflight": 2
+        },
+        "extraFactory": {
+          "role": "fac_land",
+          "slots": [
+            "fac2",
+            "fac3"
+          ],
+          "massStoreFrac": 0.5,
+          "forS": 20,
+          "minS": 180
+        },
+        "techT2": {
+          "minS": 390,
+          "minMassIncome": 14,
+          "minEnergySurplus": 60,
+          "assistEngineers": 3,
+          "acuAssist": true
+        },
+        "mexUpgrade": {
+          "minS": 450,
+          "minMassIncome": 16,
+          "saturatedS": 240,
+          "maxParallel": 1,
+          "assistEngineers": 1,
+          "order": "nearestBase"
+        },
+        "waves": {
+          "first": 8,
+          "grow": 4,
+          "maxS": 420
+        }
+      },
+      "expect": {
+        "setons": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 88.8,
+          "mex4": 94.9,
+          "mex8": 136.9,
+          "firstCombat": 103.8,
+          "wave1Depart": 191.5,
+          "wave1Arrive": 373.6,
+          "techStart": 390.0,
+          "techT2": 465.6,
+          "stallE": 1.1,
+          "engIdle": 0.0,
+          "massInc": {
+            "180": 19,
+            "300": 29,
+            "480": 61,
+            "720": 131
+          },
+          "mexAt": {
+            "180": 9,
+            "300": 14,
+            "480": 30,
+            "720": 49
+          }
+        },
+        "hollow-ridge": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 88.8,
+          "mex4": 130.0,
+          "mex8": 512.4,
+          "firstCombat": 103.8,
+          "wave1Depart": 180.1,
+          "wave1Arrive": 408.6,
+          "techStart": 390.0,
+          "techT2": 510.5,
+          "stallE": 0.0,
+          "engIdle": 0.1,
+          "massInc": {
+            "180": 13,
+            "300": 13,
+            "480": 21,
+            "720": 41
+          },
+          "mexAt": {
+            "180": 6,
+            "300": 6,
+            "480": 6,
+            "720": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "land_rush",
+      "name": {
+        "de": "Land-Rush",
+        "en": "Land Rush"
+      },
+      "fromMs": "MS9",
+      "intent": "Zweites Landwerk ≈ 2:50 (Setons) bzw. 3:15 (512 WU), Stichel/Punze-Mix, erste Welle mit 6 Einheiten um 2:40–3:20; Tech spät (≈ 9:30–10 min).",
+      "weights": {
+        "maps": {
+          "setons": 0.6,
+          "size512": 1.0
+        },
+        "difficulty": {
+          "easy": 0.0,
+          "normal": 0.25,
+          "hard": 0.3
+        }
+      },
+      "acu": [
+        {
+          "do": "build",
+          "role": "fac_land",
+          "tech": 1,
+          "at": "slot:fac1"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac1",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 1
+        },
+        {
+          "do": "build",
+          "role": "fac_land",
+          "tech": 1,
+          "at": "slot:fac2"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac2",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 2
+        }
+      ],
+      "factories": {
+        "fac1": [
+          {
+            "do": "rally",
+            "at": "slot:rally"
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 2
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "bot",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "bot",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              }
+            ]
+          }
+        ],
+        "fac2": [
+          {
+            "do": "rally",
+            "at": "slot:rally"
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 1
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "bot",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "arty",
+                "tech": 1
+              }
+            ]
+          }
+        ]
+      },
+      "engineers": [
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 2
+          },
+          {
+            "do": "build",
+            "role": "pgen",
+            "tech": 1,
+            "at": "slot:eco",
+            "count": 1
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "pgen",
+            "tech": 1,
+            "at": "slot:eco",
+            "count": 2
+          },
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 2
+          }
+        ]
+      ],
+      "followUp": {
+        "engineers": {
+          "base": 1,
+          "perFreeSpots": 4,
+          "cap": [
+            [
+              0,
+              3
+            ],
+            [
+              300,
+              5
+            ],
+            [
+              540,
+              7
+            ]
+          ]
+        },
+        "estore": {
+          "atS": 300
+        },
+        "energy": {
+          "horizonS": 25,
+          "reserveE": 400,
+          "maxInflight": 2
+        },
+        "extraFactory": {
+          "role": "fac_land",
+          "slots": [
+            "fac3"
+          ],
+          "massStoreFrac": 0.6,
+          "forS": 20,
+          "minS": 240
+        },
+        "techT2": {
+          "minS": 480,
+          "minMassIncome": 16,
+          "minEnergySurplus": 60,
+          "assistEngineers": 3,
+          "acuAssist": true
+        },
+        "mexUpgrade": {
+          "minS": 600,
+          "minMassIncome": 18,
+          "saturatedS": 360,
+          "maxParallel": 1,
+          "assistEngineers": 1,
+          "order": "nearestBase"
+        },
+        "waves": {
+          "first": 6,
+          "grow": 3,
+          "maxS": 300
+        }
+      },
+      "expect": {
+        "setons": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 186.4,
+          "mex4": 98.5,
+          "mex8": 227.6,
+          "firstCombat": 79.3,
+          "wave1Depart": 160.4,
+          "wave1Arrive": 309.4,
+          "techStart": 480.0,
+          "techT2": 562.9,
+          "stallE": 0.0,
+          "engIdle": 0.0,
+          "massInc": {
+            "180": 13,
+            "300": 23,
+            "480": 35,
+            "720": 89
+          },
+          "mexAt": {
+            "180": 6,
+            "300": 11,
+            "480": 17,
+            "720": 38
+          }
+        },
+        "hollow-ridge": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 219.2,
+          "mex4": 187.1,
+          "mex8": 532.2,
+          "firstCombat": 79.3,
+          "wave1Depart": 200.4,
+          "wave1Arrive": 387.4,
+          "techStart": 480.0,
+          "techT2": 603.4,
+          "stallE": 0.0,
+          "engIdle": 0.1,
+          "massInc": {
+            "180": 7,
+            "300": 13,
+            "480": 13,
+            "720": 27
+          },
+          "mexAt": {
+            "180": 3,
+            "300": 6,
+            "480": 6,
+            "720": 9
+          }
+        }
+      }
+    },
+    {
+      "id": "tech_greed",
+      "name": {
+        "de": "Tech/Eco-Greed",
+        "en": "Tech/Eco Greed"
+      },
+      "fromMs": "MS9",
+      "intent": "Maximale Expansion mit 6 Engineers, früher Glutspeicher-Kranz, Landwerk II ab ≈ 5:30 mit Vollassist, erste Mex-Upgrades ab 6 min. Kraftwerke zwischen den Ring-Mex gegen den Energie-Engpass der 6 Engineers. Schwach gegen frühen Rush.",
+      "weights": {
+        "maps": {
+          "setons": 1.0,
+          "size512": 0.5
+        },
+        "difficulty": {
+          "easy": 0.0,
+          "normal": 0.3,
+          "hard": 0.25
+        }
+      },
+      "acu": [
+        {
+          "do": "build",
+          "role": "fac_land",
+          "tech": 1,
+          "at": "slot:fac1"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac1",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "estore",
+          "tech": 1,
+          "at": "slot:estore"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "kranz",
+          "count": 4
+        }
+      ],
+      "factories": {
+        "fac1": [
+          {
+            "do": "rally",
+            "at": "slot:rally"
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 3
+          },
+          {
+            "do": "produce",
+            "role": "scout",
+            "tech": 1,
+            "count": 1
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 3
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "arty",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              }
+            ]
+          }
+        ]
+      },
+      "engineers": [
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 4
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 4
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "hydro",
+            "tech": 1,
+            "at": "hydro:next",
+            "fallback": {
+              "role": "pgen",
+              "tech": 1,
+              "at": "slot:eco",
+              "count": 4
+            }
+          },
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 2
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 4
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ]
+      ],
+      "followUp": {
+        "engineers": {
+          "base": 2,
+          "perFreeSpots": 3,
+          "cap": [
+            [
+              0,
+              6
+            ],
+            [
+              300,
+              8
+            ],
+            [
+              480,
+              11
+            ],
+            [
+              600,
+              12
+            ]
+          ]
+        },
+        "estore": {
+          "atS": 0
+        },
+        "energy": {
+          "horizonS": 40,
+          "reserveE": 800,
+          "maxInflight": 3
+        },
+        "extraFactory": {
+          "role": "fac_land",
+          "slots": [
+            "fac2"
+          ],
+          "massStoreFrac": 0.6,
+          "forS": 30,
+          "minS": 240
+        },
+        "techT2": {
+          "minS": 330,
+          "minMassIncome": 13,
+          "minEnergySurplus": 50,
+          "assistEngineers": 4,
+          "acuAssist": true
+        },
+        "mexUpgrade": {
+          "minS": 360,
+          "minMassIncome": 15,
+          "saturatedS": 210,
+          "maxParallel": 2,
+          "assistEngineers": 1,
+          "order": "nearestBase"
+        },
+        "waves": {
+          "first": 10,
+          "grow": 5,
+          "maxS": 450
+        }
+      },
+      "expect": {
+        "setons": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 88.8,
+          "mex4": 94.9,
+          "mex8": 147.8,
+          "firstCombat": 129.8,
+          "wave1Depart": 252.0,
+          "wave1Arrive": 434.1,
+          "techStart": 330.0,
+          "techT2": 392.3,
+          "stallE": 0.0,
+          "engIdle": 0.0,
+          "massInc": {
+            "180": 19,
+            "300": 43,
+            "480": 59,
+            "720": 129
+          },
+          "mexAt": {
+            "180": 9,
+            "300": 21,
+            "480": 25,
+            "720": 44
+          }
+        },
+        "hollow-ridge": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 88.8,
+          "mex4": 162.1,
+          "mex8": 635.7,
+          "firstCombat": 169.0,
+          "wave1Depart": 310.1,
+          "wave1Arrive": 538.6,
+          "techStart": 330.0,
+          "techT2": 493.6,
+          "stallE": 0.0,
+          "engIdle": 0.2,
+          "massInc": {
+            "180": 13,
+            "300": 13,
+            "480": 21,
+            "720": 45
+          },
+          "mexAt": {
+            "180": 6,
+            "300": 6,
+            "480": 6,
+            "720": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "air_opener",
+      "name": {
+        "de": "Luft-Eröffnung",
+        "en": "Air Opener"
+      },
+      "fromMs": "MS12",
+      "intent": "Landwerk für 3 Engineers und Grundschutz, Luftwerk als zweite Fabrik ≈ 2:50–3:10; Lerche, dann Dohlen gegen Engineers und Mex; energie-lastig (≈ 270–300 E/s nach 5 min).",
+      "weights": {
+        "maps": {
+          "setons": 1.0,
+          "size512": 0.6
+        },
+        "difficulty": {
+          "easy": 0.0,
+          "normal": 0.0,
+          "hard": 0.1
+        }
+      },
+      "acu": [
+        {
+          "do": "build",
+          "role": "fac_land",
+          "tech": 1,
+          "at": "slot:fac1"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac1",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "slot:eco",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "fac_air",
+          "tech": 1,
+          "at": "slot:fac_air"
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac_air",
+          "count": 3
+        },
+        {
+          "do": "build",
+          "role": "mex",
+          "tech": 1,
+          "at": "ring",
+          "count": 2
+        },
+        {
+          "do": "build",
+          "role": "pgen",
+          "tech": 1,
+          "at": "near:fac_air",
+          "count": 2
+        }
+      ],
+      "factories": {
+        "fac1": [
+          {
+            "do": "rally",
+            "at": "slot:rally"
+          },
+          {
+            "do": "produce",
+            "role": "eng",
+            "tech": 1,
+            "count": 3
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "tank",
+                "tech": 1
+              },
+              {
+                "role": "arty",
+                "tech": 1
+              }
+            ]
+          }
+        ],
+        "fac_air": [
+          {
+            "do": "rally",
+            "at": "slot:fac_air"
+          },
+          {
+            "do": "produce",
+            "role": "air_scout",
+            "tech": 1,
+            "count": 1
+          },
+          {
+            "do": "loop",
+            "items": [
+              {
+                "role": "bomber",
+                "tech": 1
+              },
+              {
+                "role": "bomber",
+                "tech": 1
+              },
+              {
+                "role": "fighter",
+                "tech": 1
+              }
+            ]
+          }
+        ]
+      },
+      "engineers": [
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "hydro",
+            "tech": 1,
+            "at": "hydro:next",
+            "fallback": {
+              "role": "pgen",
+              "tech": 1,
+              "at": "slot:eco",
+              "count": 4
+            }
+          },
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 1
+          }
+        ],
+        [
+          {
+            "do": "build",
+            "role": "mex",
+            "tech": 1,
+            "at": "mex:next",
+            "count": 3
+          }
+        ]
+      ],
+      "followUp": {
+        "engineers": {
+          "base": 2,
+          "perFreeSpots": 3,
+          "cap": [
+            [
+              0,
+              3
+            ],
+            [
+              240,
+              5
+            ],
+            [
+              420,
+              7
+            ],
+            [
+              600,
+              9
+            ]
+          ]
+        },
+        "estore": {
+          "atS": 300
+        },
+        "energy": {
+          "horizonS": 30,
+          "reserveE": 800,
+          "maxInflight": 3
+        },
+        "extraFactory": {
+          "role": "fac_land",
+          "slots": [
+            "fac2"
+          ],
+          "massStoreFrac": 0.6,
+          "forS": 30,
+          "minS": 300
+        },
+        "techT2": {
+          "minS": 450,
+          "minMassIncome": 15,
+          "minEnergySurplus": 80,
+          "assistEngineers": 3,
+          "acuAssist": true
+        },
+        "mexUpgrade": {
+          "minS": 510,
+          "minMassIncome": 17,
+          "saturatedS": 300,
+          "maxParallel": 1,
+          "assistEngineers": 1,
+          "order": "nearestBase"
+        },
+        "waves": {
+          "first": 8,
+          "grow": 4,
+          "maxS": 450,
+          "airFirst": 3
+        }
+      },
+      "expect": {
+        "setons": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 261.6,
+          "mex4": 107.9,
+          "mex8": 256.9,
+          "firstCombat": 87.8,
+          "airFac": 167.5,
+          "firstBomber": 217.0,
+          "wave1Depart": 204.8,
+          "wave1Arrive": 386.9,
+          "techStart": 450.0,
+          "techT2": 519.1,
+          "stallE": 0.4,
+          "engIdle": 0.0,
+          "massInc": {
+            "180": 11,
+            "300": 23,
+            "480": 39,
+            "720": 109
+          },
+          "mexAt": {
+            "180": 5,
+            "300": 11,
+            "480": 19,
+            "720": 44
+          }
+        },
+        "hollow-ridge": {
+          "fac1": 31.8,
+          "eng1": 46.8,
+          "eng4": 279.9,
+          "mex4": 187.4,
+          "mex8": 528.1,
+          "firstCombat": 87.8,
+          "airFac": 187.6,
+          "firstBomber": 249.2,
+          "wave1Depart": 260.7,
+          "wave1Arrive": 489.2,
+          "techStart": 450.0,
+          "techT2": 583.1,
+          "stallE": 0.0,
+          "engIdle": 0.1,
+          "massInc": {
+            "180": 7,
+            "300": 13,
+            "480": 17,
+            "720": 33
+          },
+          "mexAt": {
+            "180": 3,
+            "300": 6,
+            "480": 6,
+            "720": 10
+          }
+        }
+      }
+    }
+  ]
+}
