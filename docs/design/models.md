@@ -1,6 +1,6 @@
 # Einheiten-Modelle: Kitbash-Kit, Konventionen, Stand
 
-**Stand 2026-09-29, Branch `models`.** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
+**Stand 2026-09-29, Branch `models2`.** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
 (`packages/render`, `packages/sim`, `packages/client`) ist noch nichts integriert, das passiert in den
 Meilensteinen (siehe Abschnitt 4). Detailbeleg: [`docs/status/MODELS-foundation.md`](../status/MODELS-foundation.md).
 Anleitung für Autoren: [`content/models/README.md`](../../content/models/README.md).
@@ -9,7 +9,7 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 
 | Teil | Ort | Zweck |
 |---|---|---|
-| Kitbash-DSL | `packages/modelkit` (`@faf/modelkit`) | 14 Primitive, Komposition (`group`, `mirrorX`, `array`, `radial`, `stripes`), Parts mit Pivot/Parent/Anim, Materialslots, Flat Shading, Auto-LODs, Budgets, Footprint- und Teamflächen-Check, GLB-Export (byte-deterministisch) |
+| Kitbash-DSL | `packages/modelkit` (`@faf/modelkit`) | 14 Primitive + 18 Formen für Skarn/Sael/Aurith (Streben, Dornen, Klauen, Doppelpyramiden, Chitin-Platten, Sweeps entlang Kurven, Ellipsoide/Linsen/Scheiben/Torus-Bögen/Kuppelschalen, Kristalle/Kristallgruppen, Glyphenbänder, Gliederketten mit Gelenk-Pivots), Fraktionspaletten mit Teamkonflikt-Tausch, weiche Normalen pro Part/Shape/Glättungsgruppe, Hover-Konvention, T4-Budget, Komposition (`group`, `mirrorX`, `array`, `radial`, `stripes`), Parts mit Pivot/Parent/Anim, Materialslots, Flat Shading, Auto-LODs, Budgets, Footprint- und Teamflächen-Check, GLB-Export (byte-deterministisch) |
 | Modelle | `content/models/<fraktion>/<unit>.ts`, `_faction.ts` | ein Modell pro Blueprint, Auto-Discovery, Roster-Vorgaben (Name, Klasse, Footprint, Maßstab, Icon) aus `roster.json` |
 | Build | `pnpm models` (`--check` = nur prüfen) | `content/models/dist/<fraktion>.<unit>.glb` + `.json` + `manifest.json`, Icon-SVGs nach `content/icons/svg/` |
 | Icons | `content/icons/` (`grammar.ts`, `build.ts`) | Strategic Icons nach der Icon-Grammatik der Fraktion: 7 Grundformen, 19 Glyphen, Tech-Kerben 1–3, Varianten selected/blip/ghost |
@@ -47,8 +47,13 @@ Anleitung für Autoren: [`content/models/README.md`](../../content/models/README
 | Fraktion | Modelle | Roster | Tris L0 (min / Ø / max) | Tris L1 Ø | Tris L2 Ø | Status |
 |---|---|---|---|---|---|---|
 | Varkan (`content/models/varkan/`, Roster `docs/design/roster.json`) | **50** (23 mobil, 27 Strukturen) | 50 / 50, davon 26 MS9-Kern | 52 / 276 / 348 | 164 | 85 | vollständig, visuell geprüft, alle im Budget, 0 Warnungen |
+| Skarn (`content/models/skarn/`, Roster `factions/f2`) | 1 (Rädelsführer, Referenz) | 1 / 50 | 346 | 198 | 102 | Kit-Referenz, 0 Warnungen |
+| Sael (`content/models/sael/`, Roster `factions/f3`) | 1 (Prior, Referenz) | 1 / 50 | 334 | 156 | 98 | Kit-Referenz, schwebt 0,25 WU, 0 Warnungen |
+| Aurith (`content/models/aurith/`, Roster `factions/f4`) | 1 (Kantor, Referenz) | 1 / 49 | 344 | 193 | 107 | Kit-Referenz, 0 Warnungen |
 
-Weitere Fraktionen (`docs/design/factions/<slug>/`) haben noch keine Modelle.
+Skarn, Sael und Aurith haben `_faction.ts` (Kit-Paletten) und je einen Referenz-Kommandanten; die übrigen Modelle
+folgen nach `content/models/README.md` (Formen, Paletten, Stilregeln je Fraktion). Die Varkan-Ausgabe ist durch einen
+Bytegleichheits-Test gegen den Stand vor der Kit-Erweiterung abgesichert.
 
 **Varkan nach Klasse (Tris L0 min/Ø/max, Teamanteil der Draufsicht):**
 

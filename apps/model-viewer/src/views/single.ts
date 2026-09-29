@@ -33,8 +33,9 @@ function infoHtml(m: ModelMeta): string {
         `<tr><td>${p.index}</td><td>${esc(p.name)}</td><td>${p.index === 0 ? '–' : esc(m.parts[p.parent]?.name ?? '?')}</td><td class="small">${p.pivot.map((v) => fmt(v)).join(', ')}</td><td>${esc(p.anim)}</td><td class="num">${l0.partTris[p.index] ?? 0}</td></tr>`,
     )
     .join('');
-  const total = Object.values(l0.matArea).reduce((a, b) => a + b, 0);
-  const matRows = Object.entries(l0.matArea)
+  const areas = Object.entries(l0.matArea).filter((e): e is [string, number] => e[1] !== undefined);
+  const total = areas.reduce((a, [, b]) => a + b, 0);
+  const matRows = areas
     .filter(([, v]) => v > 0)
     .map(([k, v]) => `<tr><td>${k}</td><td class="num">${fmt(v, 3)} WU²</td><td class="num">${fmt((100 * v) / total, 1)} %</td></tr>`)
     .join('');
@@ -47,7 +48,8 @@ function infoHtml(m: ModelMeta): string {
     <div class="small">Roster-Schätzung LOD0: ${m.trisEstimate ?? '–'} · GLB ${(m.bytes / 1024).toFixed(1)} KiB</div>
     <h3>Maße</h3>
     <table>
-      <tr><td>Bounds (WU)</td><td class="small">${m.bounds.size.map((v) => fmt(v)).join(' × ')}</td></tr>
+      <tr><td>Bounds (WU)</td><td class="small">${m.bounds.size.map((v) => fmt(v)).join(' × ')}</td></tr>${m.hover === undefined ? '' : `
+      <tr><td>Schwebehöhe</td><td class="small">${fmt(m.hover)} WU (im Mesh enthalten)</td></tr>`}
       <tr><td>Maßstab (Roster)</td><td class="small">xz ${m.scale.xz} · y ${m.scale.y}</td></tr>
       <tr><td>Footprint</td><td class="small">${fc.footprint.join('×')} · Ausdehnung ${fc.extent.map((v) => fmt(v)).join('×')} · ${fc.ok ? '✓' : '✗'} ${esc(fc.rule)}</td></tr>
       <tr><td>LOD-Distanzen</td><td class="small">${m.lodDistances.join(' / ')} WU</td></tr>

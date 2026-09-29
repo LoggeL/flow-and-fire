@@ -1,10 +1,11 @@
 /** Contract test for all model authors: every content model builds without errors and within budget. */
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { collectIcons } from '../../../content/icons/build.ts';
 import { FORMS, GLYPHS, iconSvg, parseIconId } from '../../../content/icons/grammar.ts';
 import { buildEntry, loadAll } from '../../../content/models/registry.ts';
-import { exportGlb } from '../src/index.ts';
+import { exportGlb, modelMeta, type BuiltModel } from '../src/index.ts';
 
 const factions = await loadAll();
 
@@ -47,6 +48,106 @@ describe('content/models', () => {
     expect(area.glow / total).toBeLessThanOrEqual(0.02); // Glutnaht ≤ 2 % (Kampfeinheit, kein Glutkern)
     expect(area.metal / total).toBeGreaterThanOrEqual(0.06); // Kupfer ≈ 8–12 %
     expect(area.metal / total).toBeLessThanOrEqual(0.14);
+  });
+});
+
+describe('Varkan stays byte-identical (kit extensions are backward compatible)', () => {
+  // Baseline: packages/modelkit/scripts/varkan-hashes.ts --write before the Skarn/Sael/Aurith kit extension.
+  const baseline = JSON.parse(readFileSync(new URL('./fixtures/varkan.sha256.json', import.meta.url), 'utf8')) as Record<string, { glb: string; json: string }>;
+  const varkan = factions.find((f) => f.def.slug === 'varkan')!;
+
+  it('has the same 50 models', () => {
+    expect(varkan.models.map((m) => m.unit)).toEqual(Object.keys(baseline).sort());
+  });
+
+  for (const m of varkan.models) {
+    it(`varkan/${m.unit}: GLB and metadata JSON unchanged`, async () => {
+      const built = buildEntry(varkan, m);
+      const glb = await exportGlb(built);
+      const sha = createHash('sha256').update(glb).digest('hex');
+      const meta = `${JSON.stringify(modelMeta(built, `varkan.${m.unit}.glb`, sha, glb.byteLength), null, 2)}\n`;
+      expect(sha).toBe(baseline[m.unit]?.glb);
+      expect(createHash('sha256').update(meta).digest('hex')).toBe(baseline[m.unit]?.json);
+    });
+  }
+});
+
+/** Material share of the LOD0 surface. */
+function share(b: BuiltModel, slot: keyof BuiltModel['lods'][number]['matArea']): number {
+  const a = b.lods[0]!.matArea;
+  const total = Object.values(a).reduce<number>((s, v) => s + (v ?? 0), 0);
+  return (a[slot] ?? 0) / total;
+}
+
+function commander(slug: string): BuiltModel {
+  const f = factions.find((x) => x.def.slug === slug)!;
+  return buildEntry(f, f.models.find((m) => m.unit === 'cmd_commander')!);
+}
+
+/** Vertices with a normal equal to the geometric normal of every triangle they belong to (flat shading). */
+function isFlat(b: BuiltModel): boolean {
+  const l = b.lods[0]!;
+  for (let t = 0; t < l.indices.length; t += 3) {
+    const [a, c, d] = [l.indices[t]!, l.indices[t + 1]!, l.indices[t + 2]!];
+    const P = (i: number) => [l.positions[3 * i]!, l.positions[3 * i + 1]!, l.positions[3 * i + 2]!];
+    const [pa, pb, pc] = [P(a), P(c), P(d)];
+    const u = [pb[0]! - pa[0]!, pb[1]! - pa[1]!, pb[2]! - pa[2]!];
+    const v = [pc[0]! - pa[0]!, pc[1]! - pa[1]!, pc[2]! - pa[2]!];
+    const n = [u[1]! * v[2]! - u[2]! * v[1]!, u[2]! * v[0]! - u[0]! * v[2]!, u[0]! * v[1]! - u[1]! * v[0]!];
+    const len = Math.hypot(n[0]!, n[1]!, n[2]!);
+    for (const i of [a, c, d]) {
+      const dot = (l.normals[3 * i]! * n[0]! + l.normals[3 * i + 1]! * n[1]! + l.normals[3 * i + 2]! * n[2]!) / len;
+      if (dot < 0.999) return false;
+    }
+  }
+  return true;
+}
+
+describe('reference commanders of the new factions', () => {
+  it('Skarn Rädelsführer (f2 §5.2): 6-legged, flat-shaded, legs spread, heart druse', () => {
+    const b = commander('skarn');
+    expect(b.id).toBe('f2:cmd_commander');
+    expect(b.name).toBe('Rädelsführer');
+    expect(b.warnings).toEqual([]);
+    expect(b.bounds.size[1]).toBeGreaterThanOrEqual(2.0); // Höhe ≥ 2,0 WU
+    expect(b.bounds.size[0]).toBeGreaterThanOrEqual(3.2); // Beinspanne ≥ 3,2 WU
+    expect(b.bounds.min[1]).toBe(0);
+    expect(b.lods[0]!.teamTopShare).toBeGreaterThanOrEqual(0.35);
+    expect(share(b, 'glow')).toBeGreaterThanOrEqual(0.03); // Herzkern 3–6 %
+    expect(share(b, 'glow')).toBeLessThanOrEqual(0.065);
+    expect(share(b, 'metal') + share(b, 'glass')).toBeLessThanOrEqual(0.12); // Sehne/Granatglas
+    expect(isFlat(b)).toBe(true); // streng eckig, Flat Shading
+    expect(b.parts.map((p) => p.name)).toEqual(['hull', 'legs_l', 'legs_r', 'torso', 'lens']);
+  });
+
+  it('Sael Prior (f3 §5.2): hovers at the roster height, wide skirt, smooth, gold core', () => {
+    const b = commander('sael');
+    expect(b.id).toBe('f3:cmd_commander');
+    expect(b.warnings).toEqual([]);
+    expect(b.hover).toBe(0.25);
+    expect(b.bounds.min[1]).toBeCloseTo(0.25, 6); // Schwebespalt im Mesh
+    expect(b.bounds.max[1] - b.hover).toBeGreaterThanOrEqual(2.4);
+    expect(b.bounds.size[0]).toBeGreaterThanOrEqual(2.0); // Rockbreite ≥ 2,0 WU (+ Tellersaum)
+    expect(b.lods[0]!.teamTopShare).toBeGreaterThanOrEqual(0.35);
+    expect(share(b, 'glow')).toBeGreaterThanOrEqual(0.025);
+    expect(share(b, 'glow')).toBeLessThanOrEqual(0.06);
+    expect(share(b, 'glow2')).toBeLessThanOrEqual(0.02); // Lichtnaht
+    expect(share(b, 'metal')).toBeLessThanOrEqual(0.2); // Gold (Prior ≤ 20 %)
+    expect(isFlat(b)).toBe(false);
+  });
+
+  it('Aurith Kantor (f4 §5.2): tall tripod, crown glow, glyph bands, smooth', () => {
+    const b = commander('aurith');
+    expect(b.id).toBe('f4:cmd_commander');
+    expect(b.warnings).toEqual([]);
+    expect(b.bounds.size[1]).toBeGreaterThanOrEqual(2.8); // Höhe ≥ 2,8 WU
+    expect(b.bounds.size[1]).toBeGreaterThanOrEqual(0.6 * b.bounds.size[2]); // hoch und schlank
+    expect(b.lods[0]!.teamTopShare).toBeGreaterThanOrEqual(0.35);
+    expect(share(b, 'glow')).toBeGreaterThanOrEqual(0.03);
+    expect(share(b, 'glow')).toBeLessThanOrEqual(0.06);
+    expect(share(b, 'glow2')).toBeLessThanOrEqual(0.03); // Glyphenbänder ≤ 3 %
+    expect(b.parts.filter((p) => p.anim === 'legs')).toHaveLength(3); // Dreibein
+    expect(isFlat(b)).toBe(false);
   });
 });
 

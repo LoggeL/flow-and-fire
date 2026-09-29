@@ -1,8 +1,9 @@
 /** Manifest + GLB loading (content/models/dist, served under /models/). */
 import type { Manifest, ModelMeta } from '@faf/modelkit';
+import { TEAM_COLORS } from '@faf/modelkit/materials';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createUnitMaterial, MAX_PARTS, setTeam, type UnitMaterial } from './material.ts';
+import { createUnitMaterial, MAX_PARTS, setTeam, type TeamSwap, type UnitMaterial } from './material.ts';
 
 let manifestPromise: Promise<Manifest> | null = null;
 
@@ -26,6 +27,20 @@ export interface LoadedModel {
   /** Geometry per LOD (finest first). */
   readonly lods: THREE.BufferGeometry[];
   readonly parts: readonly PartInfo[];
+  /** Team-conflict color swaps of the faction palette. */
+  readonly swaps: readonly TeamSwap[];
+}
+
+/** Palette `teamAlt` of the model's faction as shader swaps. */
+function factionSwaps(manifest: Manifest, faction: string): TeamSwap[] {
+  const f = manifest.factions.find((x) => x.slug === faction);
+  if (f === undefined) return [];
+  return (f.teamAlt ?? []).flatMap((a) => {
+    const from = f.palette[a.slot];
+    if (from === undefined) return [];
+    const teams = a.teams.map((k) => TEAM_COLORS.find((t) => t.key === k)?.hex.toUpperCase()).filter((h): h is string => h !== undefined);
+    return [{ from, to: a.color, teams }];
+  });
 }
 
 const cache = new Map<string, Promise<LoadedModel>>();
@@ -34,7 +49,7 @@ const loader = new GLTFLoader();
 export function loadModel(meta: ModelMeta): Promise<LoadedModel> {
   let p = cache.get(meta.file);
   if (p === undefined) {
-    p = loader.loadAsync(`/models/${meta.file}?v=${meta.sha256.slice(0, 12)}`).then((gltf) => {
+    p = Promise.all([loader.loadAsync(`/models/${meta.file}?v=${meta.sha256.slice(0, 12)}`), loadManifest()]).then(([gltf, manifest]) => {
       const lods: THREE.BufferGeometry[] = [];
       const extras = gltf.scene.userData as { faf?: { parts?: PartInfo[] } };
       gltf.scene.traverse((o) => {
@@ -44,7 +59,12 @@ export function loadModel(meta: ModelMeta): Promise<LoadedModel> {
           if ((c as THREE.Mesh).isMesh) lods[Number(m[1])] = (c as THREE.Mesh).geometry;
         });
       });
-      return { meta, lods, parts: extras.faf?.parts ?? meta.parts.map((q) => ({ name: q.name, parent: q.parent, pivot: q.pivot, anim: q.anim })) };
+      return {
+        meta,
+        lods,
+        parts: extras.faf?.parts ?? meta.parts.map((q) => ({ name: q.name, parent: q.parent, pivot: q.pivot, anim: q.anim })),
+        swaps: factionSwaps(manifest, meta.faction),
+      };
     });
     cache.set(meta.file, p);
   }
@@ -79,7 +99,7 @@ export class UnitView {
   }
 
   setTeam(hex: string): void {
-    setTeam(this.material, hex);
+    setTeam(this.material, hex, this.model.swaps);
   }
 
   setSilhouette(on: boolean): void {
