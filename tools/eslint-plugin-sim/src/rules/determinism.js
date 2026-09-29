@@ -4,13 +4,19 @@
  *
  * Reported constructs:
  *  - Math.* except imul/floor/trunc/min/max/abs/sign/clz32 (Math.sqrt only in `sqrtAllow` files)
- *  - Math.random, Date, performance, timers (setTimeout/setInterval/setImmediate/queueMicrotask/requestAnimationFrame)
+ *  - Math.random, crypto (getRandomValues/randomUUID), Date, performance, timers
+ *    (setTimeout/setInterval/setImmediate/queueMicrotask/requestAnimationFrame)
  *  - async functions, await, for await
  *  - for…in
  *  - `**` and `**=`
  *  - Map/Set/WeakMap/WeakSet/WeakRef/FinalizationRegistry (as values)
  *  - `.sort()` / `.toSorted()` without comparator
- *  - Float32Array; Float64Array outside `float64Allow` files
+ *  - Float32Array, Float16Array; Float64Array outside `float64Allow` files
+ *  - DataView float accessors (getFloat16/32/64, setFloat16/32/64) on any object outside
+ *    `float64Allow` files
+ *  - parseFloat / Number.parseFloat, Number(…) as a conversion function
+ *  - `/` and `/=` unless the quotient is truncated right away: direct argument of Math.floor /
+ *    Math.trunc, or operand of a bitwise operator (`| 0`, `>> 0`, `>>> 0`, `& m`, …)
  *  - non-integer numeric literals unless the direct argument of fx()/fxSmall()/deg()
  *  - localeCompare / toLocale* / Intl
  *  - imports of @faf/render, @faf/client, @faf/ai, @faf/sim-host
@@ -22,6 +28,11 @@ const COLLECTIONS = new Set(['Map', 'Set', 'WeakMap', 'WeakSet', 'WeakRef', 'Fin
 const LITERAL_HELPERS = new Set(['fx', 'fxSmall', 'deg']);
 const FORBIDDEN_IMPORTS = ['@faf/render', '@faf/client', '@faf/ai', '@faf/sim-host'];
 const GLOBAL_OBJECTS = new Set(['globalThis', 'self', 'window', 'global']);
+const FLOAT_ACCESSORS = new Set(['getFloat16', 'getFloat32', 'getFloat64', 'setFloat16', 'setFloat32', 'setFloat64']);
+/** Operators whose operands are converted with ToInt32/ToUint32 (a quotient is truncated). */
+const TRUNCATING_BINARY = new Set(['|', '&', '^', '<<', '>>', '>>>']);
+/** Wrapper nodes that do not change the value (TypeScript assertions, parentheses are not nodes). */
+const TRANSPARENT = new Set(['TSAsExpression', 'TSNonNullExpression', 'TSTypeAssertion', 'TSSatisfiesExpression']);
 
 /** Globals whose value references are forbidden (the key is the message id). */
 const FORBIDDEN_GLOBALS = /** @type {Record<string, string>} */ ({
@@ -29,6 +40,9 @@ const FORBIDDEN_GLOBALS = /** @type {Record<string, string>} */ ({
   performance: 'performance',
   Intl: 'intl',
   Float32Array: 'float32',
+  Float16Array: 'float16',
+  crypto: 'crypto',
+  parseFloat: 'parseFloat',
   ...Object.fromEntries([...TIMERS].map((t) => [t, 'timer'])),
   ...Object.fromEntries([...COLLECTIONS].map((c) => [c, 'collection'])),
 });
@@ -95,6 +109,13 @@ const rule = {
         '{{name}} is forbidden as simulation state (not in the arena, iteration order/identity); use arena tables.',
       sortNoComparator: '.{{name}}() without comparator is forbidden; pass a total comparator.',
       float32: 'Float32Array is forbidden in the simulation.',
+      float16: 'Float16Array is forbidden in the simulation.',
+      floatAccessor: '{{name}} stores/reads floats; simulation state is integer (Fx) – use getInt32/setInt32 or SafeInt.',
+      crypto: 'crypto is a non-deterministic random source; use rng32(seed, tick, entityIdx, salt).',
+      parseFloat: '{{name}} yields non-integer numbers; numbers enter the simulation as Fx integers.',
+      numberCall: 'Number(…) conversion can yield non-integer numbers; use explicit integer conversions.',
+      division:
+        'Division yields non-integers; truncate it right away (Math.floor/Math.trunc(a / b), (a / b) | 0) or use fxDiv from @faf/fixed.',
       float64: 'Float64Array is only allowed through SafeInt storage (packages/heap/src/safeint.ts).',
       floatLiteral:
         'Non-integer literal {{raw}} is forbidden; convert constants via fx(…), fxSmall(…) or deg(…).',
@@ -141,6 +162,45 @@ const rule = {
       }
       const messageId = FORBIDDEN_GLOBALS[name];
       if (messageId !== undefined) context.report({ node: identifier, messageId, data: { name } });
+    }
+
+    /**
+     * True if `identifier` resolves to the global binding (not a local/param of the same name).
+     * @param {any} identifier
+     */
+    function isGlobalRef(identifier) {
+      let scope = sourceCode.getScope(identifier);
+      while (scope) {
+        const v = scope.set.get(identifier.name);
+        if (v && v.defs.length > 0) return false;
+        scope = scope.upper;
+      }
+      return true;
+    }
+
+    /**
+     * True if the quotient `div` is truncated to an integer right away: it is (through TS
+     * assertions) the only argument of Math.floor/Math.trunc or an operand of a bitwise operator.
+     * @param {any} div
+     */
+    function isTruncated(div) {
+      /** @type {any} */
+      let child = div;
+      let parent = div.parent;
+      while (parent && TRANSPARENT.has(parent.type)) {
+        child = parent;
+        parent = parent.parent;
+      }
+      if (!parent) return false;
+      if (parent.type === 'BinaryExpression' && TRUNCATING_BINARY.has(parent.operator)) return true;
+      if (parent.type === 'CallExpression' && parent.arguments.length === 1 && parent.arguments[0] === child) {
+        const c = parent.callee;
+        if (c.type === 'MemberExpression' && c.object.type === 'Identifier' && c.object.name === 'Math') {
+          const name = propertyName(c);
+          return name === 'floor' || name === 'trunc';
+        }
+      }
+      return false;
     }
 
     /** @param {any} fn */
@@ -190,12 +250,21 @@ const rule = {
             }
           }
         }
+        if (node.object.type === 'Identifier' && node.object.name === 'Number' && prop === 'parseFloat' && isGlobalRef(node.object)) {
+          context.report({ node, messageId: 'parseFloat', data: { name: 'Number.parseFloat' } });
+        }
+        if (FLOAT_ACCESSORS.has(prop) && !float64Allowed) {
+          context.report({ node: node.property, messageId: 'floatAccessor', data: { name: prop } });
+        }
         if (prop === 'localeCompare' || prop.startsWith('toLocale')) {
           context.report({ node: node.property, messageId: 'locale', data: { name: prop } });
         }
       },
       CallExpression(node) {
         const callee = node.callee;
+        if (callee.type === 'Identifier' && callee.name === 'Number' && isGlobalRef(callee)) {
+          context.report({ node, messageId: 'numberCall' });
+        }
         if (callee.type === 'MemberExpression' && node.arguments.length === 0) {
           const prop = propertyName(callee);
           if (prop === 'sort' || prop === 'toSorted') {
@@ -217,9 +286,11 @@ const rule = {
       },
       BinaryExpression(node) {
         if (node.operator === '**') context.report({ node, messageId: 'pow' });
+        else if (node.operator === '/' && !isTruncated(node)) context.report({ node, messageId: 'division' });
       },
       AssignmentExpression(node) {
         if (node.operator === '**=') context.report({ node, messageId: 'pow' });
+        else if (node.operator === '/=') context.report({ node, messageId: 'division' });
       },
       Literal(node) {
         if (typeof node.value !== 'number' || Number.isInteger(node.value)) return;

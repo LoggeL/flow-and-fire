@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Minimal static server for apps/game/dist (no dependencies).
-// Usage: node scripts/serve.mjs [--port N] [--coi] [--host H]
+// Usage: node scripts/serve.mjs [--port N] [--coi] [--host H] [--root DIR]
 //   --coi  send COOP same-origin + COEP require-corp + CORP same-origin (crossOriginIsolated === true)
+// Caching mirrors deploy/nginx.conf: everything under /b/<buildHash>/ is immutable (the hash names the
+// build), the root redirect and /build.json are revalidated on every request.
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
@@ -80,6 +82,13 @@ function fileFor(urlPath) {
   }
 }
 
+/** Immutable caching for versioned builds; `dev` (no git hash) is not a stable version. */
+function cacheControlFor(pathname) {
+  const m = /^\/b\/([A-Za-z0-9_-]{1,64})\//.exec(pathname);
+  if (m !== null && m[1] !== 'dev') return 'public, max-age=31536000, immutable';
+  return 'no-cache';
+}
+
 const server = createServer((req, res) => {
   const headers = { 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' };
   if (opts.coi) {
@@ -101,6 +110,7 @@ const server = createServer((req, res) => {
     return;
   }
   const type = MIME[extname(file.abs).toLowerCase()] ?? 'application/octet-stream';
+  headers['Cache-Control'] = cacheControlFor(pathname);
   res.writeHead(200, { ...headers, 'Content-Type': type, 'Content-Length': String(file.size) });
   if (req.method === 'HEAD') {
     res.end();

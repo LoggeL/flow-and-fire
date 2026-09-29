@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
 import { decodePng, pixelStats } from './support/png.ts';
@@ -40,10 +42,23 @@ for (const server of SERVERS) {
     await expect(page.locator('[data-testid="hud-simid"]')).toHaveText(simIdHex);
     await expect(page.locator('[data-testid="hud-transport"]')).toHaveText(server.transport);
 
+    // Command-log recorder runs from tick 0: OPFS in the worker, in-memory fallback with a reason.
+    await page.waitForFunction(() => {
+      const st = window.__faf!.hostStatus() as { recorder?: string; recorderNote?: string | null } | null;
+      return st !== null && (st.recorder === 'opfs' || (st.recorderNote ?? null) !== null);
+    }, null, { timeout: 5000 }).catch(() => undefined);
+    const recorder = (await page.evaluate(() => window.__faf!.hostStatus())) as { recorder: string; recorderNote: string | null; logBytes: number };
+    expect(['opfs', 'memory']).toContain(recorder.recorder);
+    expect(recorder.logBytes).toBeGreaterThan(0);
+
     // Canvas is not a single color: ground grid + two army colors + shading.
     const png = decodePng(await page.locator('#game-canvas').screenshot());
     const stats = pixelStats(png);
-    await attachJson(testInfo, 'boot', { ...info, pixels: stats });
+    const report = { browser: testInfo.project.name, server: server.name, ...info, recorder, pixels: stats };
+    await attachJson(testInfo, 'boot', report);
+    const dir = resolve(import.meta.dirname, '../../test-results');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, `boot-${testInfo.project.name}-${server.transport}.json`), JSON.stringify(report, null, 2));
     expect(stats.distinctColors).toBeGreaterThanOrEqual(16);
     expect(stats.dominantShare).toBeLessThan(0.9);
     expectNoErrors(errors);

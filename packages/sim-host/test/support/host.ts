@@ -14,6 +14,11 @@ import { gameSimBinBuffer } from './fixtures.ts';
 
 export const FRAME_CAP = frameCapacityBytes(DEFAULT_FRAME_CAPS);
 
+/** HostPost must serialize synchronously (the host reuses its `stats` object): keep a copy. */
+export function keep(m: HostMessage): HostMessage {
+  return m.t === 'stats' ? structuredClone(m) : m;
+}
+
 export interface TestHost {
   host: SimHost;
   clock: FakeClock;
@@ -30,6 +35,8 @@ export interface TestHostOptions {
   readonly seed?: number;
   readonly startPaused?: boolean;
   readonly autoStart?: boolean;
+  /** Record host messages in `msgs` (default true; false: post is a no-op, e.g. allocation tests). */
+  readonly keepMessages?: boolean;
   readonly host?: Partial<Omit<SimHostOptions, 'post' | 'port' | 'wakeup'>>;
 }
 
@@ -42,12 +49,13 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
   const clock = new FakeClock();
   const wake = new FakeWakeup(clock);
   const msgs: HostMessage[] = [];
+  const record = o.keepMessages ?? true;
   let consumer: FrameConsumer;
   let channel: MessageChannel | null = null;
   let host: SimHost;
   const sab = transport === 'sab' ? createSabFrameBuffer(FRAME_CAP) : undefined;
   if (transport === 'sab') {
-    host = new SimHost({ ...(o.host ?? {}), opfs: o.host?.opfs ?? null, post: (m) => msgs.push(m), clock: o.host?.clock ?? clock, wakeup: wake, ...(o.autoStart !== undefined ? { autoStart: o.autoStart } : {}) });
+    host = new SimHost({ ...(o.host ?? {}), opfs: o.host?.opfs ?? null, post: (m) => (record ? msgs.push(keep(m)) : 0), clock: o.host?.clock ?? clock, wakeup: wake, ...(o.autoStart !== undefined ? { autoStart: o.autoStart } : {}) });
     consumer = createSabConsumer(sab!);
   } else {
     channel = new MessageChannel();
@@ -56,7 +64,7 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
       ...(o.host ?? {}),
       opfs: o.host?.opfs ?? null,
       post: (m, tr) => {
-        msgs.push(m);
+        if (record) msgs.push(keep(m));
         port1.postMessage(m, tr);
       },
       port: port1,

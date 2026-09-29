@@ -12,7 +12,20 @@ export const DEFAULT_MAP_SIZE_WU = 512;
 export const MIN_MAP_SIZE_WU = 32;
 export const MAX_MAP_SIZE_WU = 4096;
 
-/** Rule hash interval in ticks (PLAN §3.5; release: 50). */
+/**
+ * Version tag of the simulation code (part of simId, PLAN §3.1). Bump it whenever sim behaviour
+ * or the arena layout changes so that old command logs/replays would diverge. Enforced by the L2
+ * goldens: every golden stores the SIM_BUILD it was recorded with, the golden test fails when
+ * they differ, and `goldens --update` refuses to rewrite a changed hash chain without a bump.
+ * History: ms1.1 → ms1.2 (last rule hash moved to the derived region `hashlog`, Units.gen
+ * column dropped, serial-number seq order in CommandApply).
+ */
+export const SIM_BUILD = 'faf-sim/ms1.2';
+
+/**
+ * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is
+ * stored in the derived region `hashlog`, so the interval does not change the simulated state.
+ */
 export const HASH_INTERVAL_TICKS = 10;
 
 /** Spatial grids (PLAN §3.4 phase 8): fine 4 WU, coarse 32 WU cells. */

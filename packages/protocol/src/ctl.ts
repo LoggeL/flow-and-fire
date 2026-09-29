@@ -137,12 +137,14 @@ export type HostMessage = ReadyMsg | StatusMsg | StatsMsg | LogMsg | ErrorMsg;
 /** Clamps a speed multiplier to [0.25, 3] and converts it to integer permille. */
 export function speedToPermille(speed: number): number {
   if (!Number.isFinite(speed)) return 1000;
-  const p = Math.floor(speed * 1000 + 1 / 2);
+  // round half up: floor(speed·1000 + ½)
+  const p = Math.floor((speed * 2000 + 1) / 2);
   return Math.min(SPEED_MAX_PERMILLE, Math.max(SPEED_MIN_PERMILLE, p));
 }
 
-/** Permille → multiplier. */
+/** Permille → multiplier (UI/host display only; the sim and the frame carry integer permille). */
 export function permilleToSpeed(permille: number): number {
+  // eslint-disable-next-line sim/determinism -- display value for the UI, never simulation state
   return permille / 1000;
 }
 

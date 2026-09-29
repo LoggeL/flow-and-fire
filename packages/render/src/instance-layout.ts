@@ -1,30 +1,49 @@
 /**
  * Unit instance layout: the instance data of the unit pass is 1:1 the `UnitRecord` of the sim frame
- * (PLAN §3.6, 48 bytes, little endian). The render package does not import `@faf/protocol`;
- * these constants mirror the frame layout and are checked against it once both exist.
+ * (PLAN §3.6, 48 bytes, little endian). The offsets are the protocol's own constants
+ * (render → protocol is an allowed dependency, PLAN §3.2), re-exported under render names so the
+ * pass code reads as instance attributes; there is no second copy that could drift.
  *
  * World coordinates are Q20.12 raw int32 (x, y = height, z); yaw is Ang16 (65536 = 360°,
  * 0 = +x, increasing towards +z).
  */
+import {
+  UNIT_OFF_ARMY,
+  UNIT_OFF_BANK,
+  UNIT_OFF_BUILD,
+  UNIT_OFF_CUR_POS,
+  UNIT_OFF_CUR_YAW,
+  UNIT_OFF_FLAGS,
+  UNIT_OFF_HANDLE,
+  UNIT_OFF_HP,
+  UNIT_OFF_PART_BASE,
+  UNIT_OFF_PART_COUNT,
+  UNIT_OFF_PREV_POS,
+  UNIT_OFF_PREV_YAW,
+  UNIT_OFF_RESERVED,
+  UNIT_OFF_VISUAL,
+  UNIT_RECORD_BYTES,
+  UnitFlags,
+} from '@faf/protocol';
 
-export const UNIT_INSTANCE_STRIDE = 48;
-export const UNIT_INSTANCE_OFF_PREV_POS = 0; // i32 × 3
-export const UNIT_INSTANCE_OFF_CUR_POS = 12; // i32 × 3
-export const UNIT_INSTANCE_OFF_PREV_YAW = 24; // u16
-export const UNIT_INSTANCE_OFF_CUR_YAW = 26; // u16
-export const UNIT_INSTANCE_OFF_VISUAL = 28; // u16
-export const UNIT_INSTANCE_OFF_ARMY = 30; // u8
-export const UNIT_INSTANCE_OFF_HP = 31; // u8
-export const UNIT_INSTANCE_OFF_BUILD = 32; // u8
-export const UNIT_INSTANCE_OFF_BANK = 33; // i8
-export const UNIT_INSTANCE_OFF_FLAGS = 34; // u16
-export const UNIT_INSTANCE_OFF_HANDLE = 36; // u32
-export const UNIT_INSTANCE_OFF_PART_BASE = 40; // u32
-export const UNIT_INSTANCE_OFF_PART_COUNT = 44; // u8
-export const UNIT_INSTANCE_OFF_RESERVED = 45; // u8 × 3
+export const UNIT_INSTANCE_STRIDE = UNIT_RECORD_BYTES;
+export const UNIT_INSTANCE_OFF_PREV_POS = UNIT_OFF_PREV_POS; // i32 × 3
+export const UNIT_INSTANCE_OFF_CUR_POS = UNIT_OFF_CUR_POS; // i32 × 3
+export const UNIT_INSTANCE_OFF_PREV_YAW = UNIT_OFF_PREV_YAW; // u16
+export const UNIT_INSTANCE_OFF_CUR_YAW = UNIT_OFF_CUR_YAW; // u16
+export const UNIT_INSTANCE_OFF_VISUAL = UNIT_OFF_VISUAL; // u16
+export const UNIT_INSTANCE_OFF_ARMY = UNIT_OFF_ARMY; // u8
+export const UNIT_INSTANCE_OFF_HP = UNIT_OFF_HP; // u8
+export const UNIT_INSTANCE_OFF_BUILD = UNIT_OFF_BUILD; // u8
+export const UNIT_INSTANCE_OFF_BANK = UNIT_OFF_BANK; // i8
+export const UNIT_INSTANCE_OFF_FLAGS = UNIT_OFF_FLAGS; // u16
+export const UNIT_INSTANCE_OFF_HANDLE = UNIT_OFF_HANDLE; // u32
+export const UNIT_INSTANCE_OFF_PART_BASE = UNIT_OFF_PART_BASE; // u32
+export const UNIT_INSTANCE_OFF_PART_COUNT = UNIT_OFF_PART_COUNT; // u8
+export const UNIT_INSTANCE_OFF_RESERVED = UNIT_OFF_RESERVED; // u8 × 3
 
 /** `flags` bit: no interpolation this tick (spawn, roll-off, new handle in slot) → draw at cur. */
-export const UNIT_FLAG_NO_INTERP = 1 << 10;
+export const UNIT_FLAG_NO_INTERP = UnitFlags.NoInterp;
 
 /** Number of 32-bit words per record. */
 const WORDS = UNIT_INSTANCE_STRIDE >> 2;

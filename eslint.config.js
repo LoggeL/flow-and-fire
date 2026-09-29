@@ -5,14 +5,20 @@ import simPlugin from '@faf/eslint-plugin-sim';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-/** Packages whose src/ is bound by the determinism contract (PLAN §3.1, §3.12). */
-const SIM_SOURCES = [
+/**
+ * Sources bound by the determinism contract (PLAN §3.1, §3.12): every module that runs inside
+ * the sim step or builds sim state. `blueprints/src/simbin.ts` is the sim.bin decoder that
+ * createWorld runs in the sim worker (the rest of @faf/blueprints is the offline compiler).
+ * Exported for the config test (tools/eslint-plugin-sim/test/config.test.ts).
+ */
+export const SIM_SOURCES = [
   'packages/fixed/src/**/*.ts',
   'packages/heap/src/**/*.ts',
   'packages/rules/src/**/*.ts',
   'packages/sim/src/**/*.ts',
   'packages/nav/src/**/*.ts',
   'packages/protocol/src/**/*.ts',
+  'packages/blueprints/src/simbin.ts',
 ];
 
 export default defineConfig(

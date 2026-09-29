@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
@@ -15,17 +16,38 @@ const COI_HEADERS: Record<string, string> = {
   'Cross-Origin-Resource-Policy': 'same-origin',
 };
 
+function git(args: string[]): Buffer {
+  return execFileSync('git', args, { cwd: appDir, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
+}
+
+/**
+ * Build hash for `/b/<buildHash>/` (PLAN §3.1 build versioning): the short commit hash; a build from a
+ * dirty working tree gets `-d<8 hex>` over the diff against HEAD plus the untracked files, so it never
+ * overwrites (or shares an immutable URL with) the clean build of the same commit.
+ */
 function resolveBuildHash(): string {
-  const fromEnv = process.env['IRONFLOW_BUILD_HASH'];
-  if (fromEnv !== undefined && /^[A-Za-z0-9_-]{1,64}$/.test(fromEnv)) return fromEnv;
+  // FAF_BUILD_HASH wins; IRONFLOW_BUILD_HASH is the pre-rename name (still documented in README).
+  for (const name of ['FAF_BUILD_HASH', 'IRONFLOW_BUILD_HASH']) {
+    const fromEnv = process.env[name];
+    if (fromEnv !== undefined && /^[A-Za-z0-9_-]{1,64}$/.test(fromEnv)) return fromEnv;
+  }
   try {
-    const out = execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {
-      cwd: appDir,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-      .toString()
-      .trim();
-    if (/^[0-9a-f]{4,40}$/.test(out)) return out;
+    const head = git(['rev-parse', '--short=12', 'HEAD']).toString().trim();
+    if (!/^[0-9a-f]{4,40}$/.test(head)) return 'dev';
+    const root = git(['rev-parse', '--show-toplevel']).toString().trim();
+    const diff = git(['diff', 'HEAD', '--binary']);
+    const untracked = git(['ls-files', '--others', '--exclude-standard', '-z']).toString().split('\0').filter((f) => f !== '').sort();
+    if (diff.length === 0 && untracked.length === 0) return head;
+    const h = createHash('sha256').update(diff);
+    for (const f of untracked) {
+      h.update(`\0${f}\0`);
+      try {
+        h.update(readFileSync(resolve(root, f)));
+      } catch {
+        // vanished or unreadable: the name alone still distinguishes it
+      }
+    }
+    return `${head}-d${h.digest('hex').slice(0, 8)}`;
   } catch {
     // not a git checkout (or git missing): fall through
   }
@@ -66,7 +88,7 @@ export default defineConfig(({ command }) => {
     base: command === 'build' ? `/b/${buildHash}/` : '/',
     plugins: [preact(), buildManifestPlugin(buildHash)],
     define: {
-      __IRONFLOW_BUILD_HASH__: JSON.stringify(buildHash),
+      __FAF_BUILD_HASH__: JSON.stringify(buildHash),
     },
     server: {
       port: 5173,

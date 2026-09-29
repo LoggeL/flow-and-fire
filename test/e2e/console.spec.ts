@@ -80,12 +80,17 @@ for (const server of SERVERS) {
     await expect(page.locator('[data-testid="budget-tick-p95"]')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('[data-testid="budget"] tr[data-phase="Movement"]')).toBeVisible();
     const stats = (await page.evaluate(() => window.__faf!.stats())) as {
+      tickP50Us: number;
       tickP95Us: number;
       hashTickP95Us: number;
       phases: { name: string; p50Us: number; p95Us: number }[];
     };
     expect(stats.phases.map((p) => p.name)).toEqual(expect.arrayContaining(['CommandApply', 'Movement', 'SpatialRebuild']));
-    expect(stats.hashTickP95Us).toBeGreaterThan(0);
+    // The hash tick (~0.05 ms) is below the worker clock resolution without cross-origin isolation
+    // (Firefox/WebKit: 1 ms), so its p95 may legitimately read 0 there; the row must exist either way.
+    expect(stats.hashTickP95Us).toBeGreaterThanOrEqual(0);
+    expect(stats.tickP95Us).toBeGreaterThanOrEqual(stats.tickP50Us);
+    await expect(page.locator('[data-testid="budget-hash-p95"]')).toBeVisible();
     await expect(page.locator('[data-testid="hud-sim-p95"]')).not.toHaveText('–');
 
     // export: command log as download.

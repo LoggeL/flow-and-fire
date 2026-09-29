@@ -73,7 +73,9 @@ export class PhaseStats {
     const s = this.scratch;
     const base = metric * this.window;
     for (let i = 0; i < n; i++) s[i] = this.samples[base + i]!;
-    s.subarray(0, n).sort();
+    // Steady state (window full): sort the scratch in place without creating a view.
+    if (n === s.length) s.sort();
+    else s.subarray(0, n).sort();
     return n;
   }
 
@@ -93,10 +95,9 @@ export class PhaseStats {
       out.p50 = out.p95 = out.p99 = out.max = out.mean = 0;
       return out;
     }
-    const at = (q: number): number => s[Math.min(n - 1, Math.max(0, Math.ceil(q * n) - 1))]!;
-    out.p50 = at(0.5);
-    out.p95 = at(0.95);
-    out.p99 = at(0.99);
+    out.p50 = s[nearestRank(0.5, n)]!;
+    out.p95 = s[nearestRank(0.95, n)]!;
+    out.p99 = s[nearestRank(0.99, n)]!;
     out.max = s[n - 1]!;
     let sum = 0;
     for (let i = 0; i < n; i++) sum += s[i]!;
@@ -107,6 +108,11 @@ export class PhaseStats {
   reset(): void {
     this.counts.fill(0);
   }
+}
+
+/** Nearest-rank index of quantile q in n sorted samples. */
+function nearestRank(q: number, n: number): number {
+  return Math.min(n - 1, Math.max(0, Math.ceil(q * n) - 1));
 }
 
 export function emptySummary(): PercentileSummary {

@@ -6,8 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import { unitHandles } from '@faf/sim';
 import { makeTestHost } from './support/host.ts';
+import { measureAllocation } from './support/alloc.ts';
 import { bufferOf, driveBatches, spawnCmd } from './support/fixtures.ts';
-import { performanceClock } from '../src/index.ts';
+import type { Clock } from '../src/index.ts';
 
 const gc = (globalThis as { gc?: () => void }).gc;
 
@@ -22,10 +23,16 @@ function heap(): { used: number; ab: number } {
 const COLD_TOLERANCE_BYTES = 8 * 1024 * 1024;
 
 describe('allocation of the host tick path', () => {
-  it('warm: 10,000 ticks with 1,000 driving cubes grow the heap by < 1 MB; cold within tolerance', () => {
+  it('warm: 10,000 ticks with 1,000 driving cubes allocate < 1 MB; cold within tolerance', async () => {
     expect(gc).toBeTypeOf('function');
     const cold0 = heap();
-    const h = makeTestHost({ autoStart: false, seed: 3, host: { clock: performanceClock, logCapacity: 4 << 20 } });
+    // A counting clock instead of performance.now(): Node's performance.now() allocates on
+    // every call (JS wrapper), which is the engine's cost, not the host path's. The host still
+    // takes all its timing readings (phase probe, frame, host), they just return small ints.
+    let clockMs = 0;
+    const clock: Clock = { now: () => (clockMs += 1) };
+    // Messages are not recorded (a real worker serializes them in postMessage).
+    const h = makeTestHost({ autoStart: false, seed: 3, keepMessages: false, host: { clock, logCapacity: 4 << 20 } });
     try {
       h.host.submit(bufferOf([spawnCmd(0, 1000, 256, 256, 80, 1)]));
       h.host.runTicks(1);
@@ -49,18 +56,24 @@ describe('allocation of the host tick path', () => {
       const cold = heap().used - cold0.used;
       run(1000); // warm-up
       const before = heap();
-      run(10_000);
+      // Allocation, not retention: heap growth between GCs, chunk by chunk (support/alloc.ts).
+      const m = await measureAllocation(run, 10_000);
       const after = heap();
-      const grown = after.used - before.used;
+      const retained = after.used - before.used;
       const abGrown = after.ab - before.ab;
       console.log(
-        `[alloc] host tick path: warm heap growth over 10,000 ticks ${(grown / 1024).toFixed(1)} KiB, ` +
+        `[alloc] host tick path: allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks ` +
+          `(${m.chunks - m.chunksWithGc}/${m.chunks} chunks, ${m.gcEvents} GCs inside chunks), retained ${(retained / 1024).toFixed(1)} KiB, ` +
           `ArrayBuffer growth ${(abGrown / 1024).toFixed(0)} KiB (keyframes), cold (1,000 ticks) ${(cold / 1024 / 1024).toFixed(2)} MiB, ` +
           `moving ${moving}, frames ${h.host.framesWritten}, log ${h.host.core.recorder!.byteLength} B`,
       );
       expect(moving).toBeGreaterThan(300);
       expect(h.host.tick).toBe(12_000);
-      expect(grown).toBeLessThan(1024 * 1024);
+      // Keyframe snapshots (external ArrayBuffers) may let V8 collect inside a chunk; at most a
+      // few chunks may be excluded that way, the rest must be GC-free and within budget.
+      expect(m.chunksWithGc, JSON.stringify(m)).toBeLessThanOrEqual(2);
+      expect(m.bytes * (10_000 / m.ticks)).toBeLessThan(1024 * 1024);
+      expect(retained).toBeLessThan(1024 * 1024);
       expect(cold).toBeLessThan(COLD_TOLERANCE_BYTES);
       // Keyframes: every 600 ticks one snapshot, nothing else keeps ArrayBuffers alive.
       expect(h.host.core.keyframes!.count).toBe(21);

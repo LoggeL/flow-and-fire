@@ -22,6 +22,7 @@ import {
   Armies,
   gridDims,
   gridRegions,
+  HashLog,
   Movers,
   MOVERS_SCHEMA,
   Units,
@@ -74,6 +75,8 @@ export class World {
   /** Blueprint table (configuration, not state; part of simId via simHash). */
   readonly bp: SimBpTable;
   readonly header: RawRegion;
+  /** Derived: last rule hash + tick (observation, not rule state). */
+  readonly hashLog: RawRegion;
   readonly armies: Table<typeof Armies.schema>;
   readonly alliance: RawRegion;
   readonly units: Table<typeof UNITS_SCHEMA>;
@@ -126,6 +129,7 @@ export class World {
     const cc = b.addRegion(coarseDefs.cursor);
     const ci = b.addRegion(coarseDefs.items);
     const co = b.addRegion(coarseDefs.cellOf);
+    this.hashLog = b.addRegion(HashLog);
     this.arena = b.build();
     this.fine = new SpatialGrid(dims.fine, FINE_CELL_SHIFT, fs, fc, fi, fo);
     this.coarse = new SpatialGrid(dims.coarse, COARSE_CELL_SHIFT, cs, cc, ci, co);

@@ -129,10 +129,10 @@ export function commandApplyPhase(w: World): void {
   const s = w.stage;
   const n = s.count;
   if (n === 0) return;
-  s.sortByArmySeq();
+  const ack = w.armies.col.lastAckSeq;
+  s.sortByArmySeq(ack);
   const tick = w.header.i32[WH_TICK]!;
   const armyCount = w.armyCount;
-  const ack = w.armies.col.lastAckSeq;
   const order = s.order;
   for (let o = 0; o < n; o++) {
     const i = order[o]!;

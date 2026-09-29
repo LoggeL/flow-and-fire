@@ -19,11 +19,19 @@ for (const server of SERVERS) {
   test(`smoke: ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
 
-    const res = await page.goto(server.url);
-    // dist/index.html redirects to /b/<buildHash>/
+    // The root page (dist/index.html) is served with 200 and redirects via an inline
+    // location.replace to /b/<buildHash>/. Its status is checked with a plain request: the
+    // return value of goto() is not reliable here — Firefox reports null when the inline script
+    // navigates away before the first page's load event.
+    const rootRes = await page.request.get(server.url, { maxRedirects: 0 });
+    expect(rootRes.status()).toBe(200);
+    const buildDoc = page.waitForResponse(
+      (r) => /\/b\/[^/]+\/$/.test(new URL(r.url()).pathname) && r.request().resourceType() === 'document',
+    );
+    await page.goto(server.url, { waitUntil: 'commit' });
+    expect((await buildDoc).status()).toBe(200);
     await page.waitForURL(/\/b\/[^/]+\/$/);
     await expect(page).toHaveTitle('Flow & Fire');
-    expect(res?.status()).toBe(200);
 
     const coi = await page.evaluate(() => globalThis.crossOriginIsolated === true);
     expect(coi).toBe(server.coi);
@@ -45,6 +53,12 @@ for (const server of SERVERS) {
     // Immutable caching of hashed build assets vs. no-cache for the redirect (serve.mjs mirrors deploy/nginx.conf).
     const html = await page.request.get(new URL(`/b/${build.buildHash}/`, server.url).toString());
     expect(html.headers()['content-type']).toContain('text/html');
+    expect(html.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
+    const pointer = await page.request.get(new URL('/build.json', server.url).toString());
+    expect(pointer.headers()['cache-control']).toBe('no-cache');
+    const root = await page.request.get(new URL('/', server.url).toString(), { maxRedirects: 0 });
+    expect(root.headers()['cache-control']).toBe('no-cache');
+    expect(await root.text()).toContain(`/b/${build.buildHash}/`);
     if (server.coi) {
       expect(html.headers()['cross-origin-opener-policy']).toBe('same-origin');
       expect(html.headers()['cross-origin-embedder-policy']).toBe('require-corp');

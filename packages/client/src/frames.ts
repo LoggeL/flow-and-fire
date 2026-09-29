@@ -27,9 +27,10 @@
  * resume. `noInterp` records are handled by the shader (draw at cur).
  */
 import { FrameReader, UNIT_RECORD_BYTES, type FrameConsumer } from '@faf/protocol';
+import { SIM_TICK_HZ } from '@faf/rules';
 
-/** Nominal tick length at 1x speed (10 Hz). */
-export const BASE_TICK_MS = 100;
+/** Nominal tick length at 1x speed, derived from the one tick rate of the rules (10 Hz ⇒ 100 ms). */
+export const BASE_TICK_MS = 1000 / SIM_TICK_HZ;
 
 export interface FrameStreamOptions {
   /** Base render delay in ticks on top of the inherent prev→cur tick (plan: ≈ 0.5). */

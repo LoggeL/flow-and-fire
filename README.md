@@ -5,6 +5,25 @@ eigenen Namen und eigenen Assets. Deterministische Q20.12-Fixed-Point-Simulation
 eigene WebGL2-Pipeline, Preact-UI. Plan: [`docs/PLAN.md`](docs/PLAN.md), Entscheidungen:
 [`docs/DECISIONS.md`](docs/DECISIONS.md), Stand: [`docs/STATUS.md`](docs/STATUS.md).
 
+**Stand:** Meilenstein MS1 (Spikes & deterministisches Skelett) ist abgeschlossen – 1.000 instanzierte Würfel,
+Rechtsklick-Move über die binäre Command-Pipeline in den Sim-Worker, Pause/Step, Dev-Konsole, Hash-Ketten bitgleich
+in Node, Chromium, Firefox und WebKit. Details und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
+
+## Schnellstart
+
+```sh
+pnpm install
+pnpm dev            # http://localhost:5173/ – Spiel im Browser; mit Strg+C beenden
+```
+
+Steuerung: Linksklick/-ziehen wählt aus (Strg/⌘+A = alle eigenen), **Rechtsklick bewegt**, S tippen = Stop,
+WASD/Pfeile oder mittlere Maustaste = Kamera, Mausrad = Zoom, **P = Pause**, N = Einzelschritt,
+**^ / ` / F1 = Dev-Konsole** (`help`, `spawn`, `kill`, `pause`, `resume`, `step`, `speed`, `hash`, `budget`, `export`).
+URL-Parameter: `?cubes=<n>`, `?enemy=<n>`, `?seed=<u32>`, `?transport=sab|transfer`, `?autostart=0`.
+
+Testen: `pnpm typecheck && pnpm lint && pnpm test`; Cross-Engine `pnpm test:xengine`; Browser-E2E `pnpm test:e2e`;
+alles nacheinander `pnpm ci:local`.
+
 ## Voraussetzungen
 
 - Node ≥ 24, pnpm 11.10 (`corepack enable` oder globale Installation)
@@ -23,22 +42,23 @@ eigene WebGL2-Pipeline, Preact-UI. Plan: [`docs/PLAN.md`](docs/PLAN.md), Entsche
 | `pnpm test` | Vitest (Root-Config, forks, max. 4 Worker, `--expose-gc`) |
 | `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4173 (COOP/COEP) und 4174 (ohne) |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
-| `pnpm bench` | `bench`-Skripte aller Pakete (L6), Ergebnisse unter `bench-results/` |
+| `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/P6-headless.md` |
 | `pnpm ci:local` | typecheck → lint → test → test:xengine → test:e2e → bench (sequenziell, lokales CI) |
 
 Einzelnes Paket testen: `pnpm vitest run packages/fixed`. Einzelnes Paket-Skript: `pnpm --filter @faf/fixed gen:luts`.
 
 `apps/game` einzeln: `pnpm --filter @faf/game run serve --port 4173 --coi` liefert `dist/` statisch aus
 (`--coi` = COOP `same-origin` + COEP `require-corp` + CORP `same-origin`); `/` leitet auf `/b/<buildHash>/` weiter,
-`/build.json` enthält `{ "buildHash": … }`. Der Build-Hash kommt aus `IRONFLOW_BUILD_HASH` oder
-`git rev-parse --short=12 HEAD` (Fallback `dev`).
+`/build.json` enthält `{ "buildHash": … }`. Der Build-Hash kommt aus `FAF_BUILD_HASH` (alter Name
+`IRONFLOW_BUILD_HASH` wird weiter gelesen) oder `git rev-parse --short=12 HEAD`, bei schmutzigem Arbeitsbaum mit
+Zusatz `-d<hash>` (Fallback `dev`). `deploy/nginx.conf` ist die Hosting-Konfiguration (COOP/COEP/CORP, Caching).
 
 ## Paketstruktur
 
 ```
 packages/
   fixed/       Q20.12 (Fx/FxSmall), Ang16 + LUT-Trig, isqrt, fxDiv mit Korrektur, rng32, xxHash32, SafeInt
-  heap/        Arena (WebAssembly.Memory), Table-DSL/Codegen, Handles, Slabs
+  heap/        Arena (WebAssembly.Memory), Table-DSL, Handles, Slabs, Hash, Snapshot
   protocol/    Command-Codec, Frame-/Event-Layouts, Opcodes (append-only); src/transport/ = Browser-Transport
   rules/       gemeinsame Regeln (canPlace, Footprints, Formeln) für Sim, Client, KI
   blueprints/  TypeBox-Schemas, define*(), Compiler → sim.bin / view.json / bundle.json + Hashes

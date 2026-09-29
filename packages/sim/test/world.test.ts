@@ -16,7 +16,7 @@ import { gameSimBin, gameTable, spawnCmd } from './support/fixtures.ts';
 describe('world layout (PLAN §3.5)', () => {
   it('Units carries the complete §3.5 column set in order', () => {
     expect(Object.keys(UNITS_SCHEMA)).toEqual([
-      'bp', 'army', 'layer', 'state', 'flags', 'gen',
+      'bp', 'army', 'layer', 'state', 'flags',
       'x', 'y', 'z', 'px', 'py', 'pz', 'yaw', 'pyaw', 'bank',
       'vx', 'vz', 'hp', 'buildDone', 'vetMass', 'vet', 'lastHitBy',
       'orderHead', 'orderTail', 'weaponFirst', 'weaponCount', 'formation', 'groupOffset',
@@ -28,9 +28,10 @@ describe('world layout (PLAN §3.5)', () => {
       'world', 'armies', 'alliance', 'units', 'movers',
       'grid.fine.start', 'grid.fine.cursor', 'grid.fine.items', 'grid.fine.cellOf',
       'grid.coarse.start', 'grid.coarse.cursor', 'grid.coarse.items', 'grid.coarse.cellOf',
+      'hashlog',
     ]);
-    expect(w.arena.regions.filter((r) => r.derived).map((r) => r.name.split('.')[1])).toEqual([
-      'fine', 'fine', 'fine', 'fine', 'coarse', 'coarse', 'coarse', 'coarse',
+    expect(w.arena.regions.filter((r) => r.derived).map((r) => r.name.split('.')[1] ?? r.name)).toEqual([
+      'fine', 'fine', 'fine', 'fine', 'coarse', 'coarse', 'coarse', 'coarse', 'hashlog',
     ]);
   });
 
@@ -57,7 +58,7 @@ describe('world layout (PLAN §3.5)', () => {
     expect(U.lastHitBy[i]).toBe(0xffffffff);
     expect(U.mover[i]).toBe(0);
     expect(w.movers.owner[0]).toBe(i);
-    expect(U.gen[i]).toBe(w.units.gen[i]);
+    expect(w.units.handle(i) >>> 20).toBe(w.units.gen[i]);
     expect(U.layer[i]).toBe(0);
   });
 });
@@ -90,4 +91,4 @@ describe('phases (PLAN §3.4)', () => {
 });
 
 /** Pinned layout hash (update deliberately when the arena schema changes). */
-const LAYOUT_HASH_512 = 0xa15987bf;
+const LAYOUT_HASH_512 = 0xcc8737d2;

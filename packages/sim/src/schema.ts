@@ -11,9 +11,8 @@ import { CAP_UNITS } from './constants.ts';
 /** World header words (Int32, raw region `world`). */
 export const WH_TICK = 0;
 export const WH_SEED = 1;
-export const WH_LAST_HASH_TICK = 2;
-/** Stored as u32 bits (read through the u32 view). */
-export const WH_LAST_HASH = 3;
+// Words 2 and 3 are reserved (always 0). They held the last rule hash up to simBuild ms1.1; the
+// hash now lives in the derived region `hashlog` (not rule state, see HashLog below).
 export const WH_ARMY_COUNT = 4;
 export const WH_MAP_SIZE_WU = 5;
 /** Monotonic spawn counter (rng32 entity index of cheat spawns). */
@@ -22,6 +21,19 @@ export const WH_SPAWN_SERIAL = 6;
 export const WORLD_HEADER_WORDS = 16;
 
 export const WorldHeader = defineRegion('world', WORLD_HEADER_WORDS * 4);
+
+/**
+ * Last rule hash and its tick (Int32 words of the raw region `hashlog`). Derived on purpose: the
+ * hash is an observation of the state, not part of it, so neither the hash cadence
+ * (HASH_INTERVAL_TICKS; PLAN §3.5 "Release: 50") nor the hash algorithm (rolling/WASM variant)
+ * feeds back into the next rule hash. It is still part of snapshots (restore keeps the frame
+ * header consistent) and of the full hash.
+ */
+export const HL_LAST_HASH_TICK = 0;
+/** Stored as u32 bits (read through the u32 view). */
+export const HL_LAST_HASH = 1;
+export const HASH_LOG_WORDS = 4;
+export const HashLog = defineRegion('hashlog', HASH_LOG_WORDS * 4, { derived: true });
 
 /** Armies: 16 rows (G11). `lastAckSeq` = seq of the last processed command (−1 = none). */
 export const Armies = defineTable('armies', MAX_ARMIES, {
@@ -40,7 +52,8 @@ export const UNITS_SCHEMA = {
   layer: 'u8',
   state: 'u8',
   flags: 'u32',
-  gen: 'u16',
+  // The generation of §3.5 (`gen:'u16'`) is the Table-DSL's own generation column (units.gen,
+  // handle()); a second copy here would be a redundant, separately hashed truth (DECISIONS).
   x: 'i32',
   y: 'i32',
   z: 'i32',

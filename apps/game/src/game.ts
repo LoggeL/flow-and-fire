@@ -8,7 +8,6 @@
  * armies are spawned by cheat commands through the normal command pipeline (S8).
  */
 import { decodeSimBin, type SimBpTable } from '@faf/blueprints/simbin';
-import { parseViewJson } from '@faf/blueprints/view';
 import {
   createRenderer,
   GameClient,
@@ -16,7 +15,6 @@ import {
   type DragBox,
   type MetricsSnapshot,
   type Renderer,
-  type VisualTable,
 } from '@faf/client';
 import {
   DEFAULT_FRAME_CAPS,
@@ -27,6 +25,7 @@ import {
 } from '@faf/protocol';
 import type { HostInitMessage, HostReadyMsg, HostStatsMsg, HostStatusMsg } from '@faf/sim-host';
 import { signal } from '@preact/signals';
+import { spawnSpreadWU, visualsFromViewJson } from './content.ts';
 import { runConsoleCommand, type ConsoleApi, type ConsoleResult } from './console-commands.ts';
 import { FrameHasher, type FrameFingerprint } from './frame-hash.ts';
 import { chooseTransport, type GameParams } from './params.ts';
@@ -78,24 +77,6 @@ export interface GameOptions {
   readonly assets: GameAssets;
   /** Creates the sim worker. */
   readonly createWorker: () => WorkerLike;
-}
-
-/** Spread radius (WU) so that `n` cubes of radius 0.3 have room: ≈ 4.5 WU² per cube. */
-export function spawnSpreadWU(n: number): number {
-  return Math.max(3, Math.sqrt(n * 1.45));
-}
-
-export function visualsFromViewJson(text: string): VisualTable {
-  const bundle = parseViewJson(text);
-  return bundle.visuals.map((v) => ({
-    spec: {
-      hull: v.placeholder.hull,
-      size: [v.placeholder.size[0], v.placeholder.size[1], v.placeholder.size[2]] as [number, number, number],
-      ...(v.placeholder.color !== undefined
-        ? { color: [v.placeholder.color[0], v.placeholder.color[1], v.placeholder.color[2]] as [number, number, number] }
-        : {}),
-    },
-  }));
 }
 
 function hex32(v: number): string {
@@ -318,6 +299,8 @@ export class Game {
       }
       case 'error':
         this.hostErrors.push(m.message);
+        // The worker itself failed (load error / crash): no more frames will come.
+        if (m.message.startsWith('worker:')) this.fatal.value = `Sim-Worker ausgefallen – ${m.message.slice(7).trim()}`;
         this.print('err', `host: ${m.message}`);
         console.error(`[faf] sim host error: ${m.message}`);
         break;
@@ -399,20 +382,17 @@ export class Game {
   }
 
   private createConsoleApi(): ConsoleApi {
-    const game = this;
     const c = this.client;
     return {
       resolveBlueprint: (name) => {
         if (/^\d+$/.test(name)) {
           const id = Number.parseInt(name, 10);
-          return id < game.bp.ids.length ? id : null;
+          return id < this.bp.ids.length ? id : null;
         }
-        const id = game.bp.indexOf(name.includes(':') ? name : `core:${name}`);
+        const id = this.bp.indexOf(name.includes(':') ? name : `core:${name}`);
         return id < 0 ? null : id;
       },
-      get defaultBlueprint() {
-        return game.cubeBp;
-      },
+      defaultBlueprint: this.cubeBp,
       armyCount: ARMY_COUNT,
       spawn: (bp, count, army) => {
         const cam = c.camera;
@@ -428,24 +408,24 @@ export class Game {
       setSpeed: (x) => c.setSpeed(x),
       hashInfo: () => {
         const r = c.lastFrame;
-        const fp = game.lastFrameHash();
-        const lines = [`simId ${game.ready === null ? '–' : hex32(game.ready.simId)}  layout ${game.ready === null ? '–' : hex32(game.ready.layoutHash)}`];
+        const fp = this.lastFrameHash();
+        const lines = [`simId ${this.ready === null ? '–' : hex32(this.ready.simId)}  layout ${this.ready === null ? '–' : hex32(this.ready.layoutHash)}`];
         if (r === null) return [...lines, 'noch kein Frame'];
         lines.push(r.hashTick === 0 && r.hash === 0 ? `tick ${r.tick}: noch kein Regel-Hash` : `Regel-Hash @ tick ${r.hashTick}: ${hex32(r.hash)}`);
         if (fp !== null) lines.push(`Frame-Fingerprint @ tick ${fp.tick}: ${hex32(fp.hash)} (${fp.byteLength} B)`);
         return lines;
       },
       toggleBudget: () => {
-        game.budgetOpen.value = !game.budgetOpen.value;
-        return game.budgetOpen.value;
+        this.budgetOpen.value = !this.budgetOpen.value;
+        return this.budgetOpen.value;
       },
       exportLog: () => {
-        void game.exportLog(true);
+        void this.exportLog(true);
       },
       transportInfo: () => {
-        const st = game.status.value;
+        const st = this.status.value;
         const lines = [
-          `Transport: ${game.transport}${game.transportNote === null ? '' : ` (${game.transportNote})`}`,
+          `Transport: ${this.transport}${this.transportNote === null ? '' : ` (${this.transportNote})`}`,
           `crossOriginIsolated: ${String(globalThis.crossOriginIsolated === true)}`,
           `Frames empfangen: ${c.stream.frameCount}, übersprungene Ticks: ${c.stream.skippedTicks}`,
         ];

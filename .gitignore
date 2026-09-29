@@ -18,6 +18,9 @@ playwright-report/
 blob-report/
 bench-results/
 **/results/*.tmp.json
+# measurement output of bench / test:xengine (dated JSON, local evidence; docs via --update-docs)
+tools/headless/results/*.json
+packages/*/bench/results/*.json
 *.bench.tmp.*
 *.cpuprofile
 *.heapsnapshot

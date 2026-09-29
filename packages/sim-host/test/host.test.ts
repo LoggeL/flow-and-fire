@@ -72,6 +72,9 @@ describe('SimHost (fake clock, SAB transport)', () => {
     expect(stats.map((s) => s.tick)).toEqual([10, 20]);
     expect(stats[1]!.phases.map((p) => p.name)).toEqual(['CommandApply', 'Orders', 'Movement', 'SpatialRebuild', 'Cleanup', 'Output', 'HashTick', 'Frame', 'Host']);
     expect(STATS_EVERY_TICKS).toBe(10);
+    // SPK6 pipeline invariant: a cmd is applied in the next tick after its arrival.
+    expect(stats[1]!.cmdBatchesApplied).toBe(1);
+    expect(stats[1]!.cmdApplyTicksMax).toBe(1);
     expect(frame(h)!.tick).toBe(20);
     expect(frame(h)).toBeNull();
     expect(h.host.core.hashTrail().map((e) => e.tick)).toEqual([10, 20]);

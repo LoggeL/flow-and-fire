@@ -5,7 +5,7 @@
  */
 import { UnitFlags, type FrameWriter } from '@faf/protocol';
 import { MoverState, UnitBits, UnitState } from './constants.ts';
-import { WH_LAST_HASH, WH_LAST_HASH_TICK, WH_TICK } from './schema.ts';
+import { HL_LAST_HASH, HL_LAST_HASH_TICK, WH_TICK } from './schema.ts';
 import type { World } from './world.ts';
 
 /** Header fields owned by the host (sequence, timing, speed, paused bit). */
@@ -46,8 +46,8 @@ export function writeFrame(w: World, viewer: number, writer: FrameWriter, target
     viewer,
     meta.flags,
     ack >>> 0,
-    h.i32[WH_LAST_HASH_TICK]!,
-    h.u32[WH_LAST_HASH]!,
+    w.hashLog.i32[HL_LAST_HASH_TICK]!,
+    w.hashLog.u32[HL_LAST_HASH]!,
   );
   const units = w.units;
   const alive = units.alive;

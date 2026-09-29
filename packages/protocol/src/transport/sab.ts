@@ -153,6 +153,8 @@ export class SabFrameConsumer implements FrameConsumer {
   private readonly ctrl: Int32Array;
   private readonly slots: readonly Uint8Array[];
   private readonly local: Uint8Array;
+  /** Cached view of each slot's used prefix (see poll). */
+  private readonly parts: Uint8Array[];
   private front = INITIAL_FRONT;
   private lastSeq = 0;
   private receivedCount = 0;
@@ -164,6 +166,7 @@ export class SabFrameConsumer implements FrameConsumer {
     this.slots = p.slots;
     this.capacity = p.capacity;
     this.local = new Uint8Array(p.capacity);
+    this.parts = this.slots.map((s) => s);
   }
 
   get seq(): number {
@@ -189,7 +192,13 @@ export class SabFrameConsumer implements FrameConsumer {
     const seq = Atomics.load(ctrl, C_SEQ + f) >>> 0;
     if (seq === this.lastSeq) return null;
     const src = this.slots[f]!;
-    this.local.set(len === src.length ? src : src.subarray(0, len), 0);
+    // Views of the used prefix are cached per slot: steady frames (same length) allocate nothing.
+    let part = this.parts[f]!;
+    if (part.length !== len) {
+      part = len === src.length ? src : src.subarray(0, len);
+      this.parts[f] = part;
+    }
+    this.local.set(part, 0);
     this.lastSeq = seq;
     this.receivedCount++;
     const v = viewOf(this.local, len, this.view);

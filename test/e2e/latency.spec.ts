@@ -4,50 +4,70 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MetricsSnapshot } from '../../packages/client/src/metrics.ts';
 import { captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
 
-// SPK6 latency chain (PLAN §4, MS1 acceptance), per browser and transport, real right clicks:
-//   click marker ≤ 1 frame; seq confirmation ≤ 100 ms (sim side: applied in the next tick) plus at most
-//   one display frame (the client polls frames once per rAF, P4 deviation 8); click → first moved
-//   pixel ≤ 150 ms p95.
+// SPK6 latency chain (PLAN §4, MS1 acceptance), per browser and transport, real right clicks.
 // Definitions (packages/client/src/metrics.ts): the click time is the pointerdown event timestamp;
 // "first moved pixel" = first rAF in which a commanded unit that stood still at the click is drawn
 // ≥ 1 CSS px away from how it was drawn at the click (position or heading, same camera). Every click
 // commands a resting group of cubes; a random 40–140 ms pause before each click samples the tick phase
-// uniformly. Because the cubes accelerate (3 WU/s²: 0.03 WU in the first tick) the pixel criterion
-// depends on the zoom: the gate uses the closest zoom (6 WU camera distance ≈ 0.007 WU/px, i.e. the
-// pipeline latency); 10 WU and the start view (105 WU) are logged for information.
-// Environment guard: a gated phase that fails while the browser's rAF stalled (an interval ≥ 50 ms,
-// i.e. ≥ 3 missed vsyncs – the compositor, not the pipeline) is repeated, at most 3 attempts; every
-// attempt is written to the report.
-// Afterwards Main-JS p95 and FPS are measured with all 1,000 own cubes driving (FPS: headless, local
-// Apple M5 Pro, no GPU runner – logged, not gated).
+// uniformly. The cubes accelerate from standstill (3 WU/s²: 0.03 WU in the first tick), so the pixel
+// criterion depends on the zoom: 6 WU camera distance (≈ 0.007 WU/px) isolates the pipeline latency,
+// the start view (105 WU) is what a player sees.
+//
+// Measurement and gate are separate (review MS1): every run writes all values of all phases to
+// test-results/latency-<browser>-<transport>.json, but by default only machine-independent pipeline
+// invariants are gated:
+//   - click marker ≤ 1 rAF (counted in frames, not ms),
+//   - every click measured (no timeouts, enough samples),
+//   - host side: every `cmd` applied in the next tick after its arrival (cmdApplyTicksMax = 1),
+//   - Main-JS p95 ≤ 2 ms with 1,000 driving cubes (≈ 10× headroom).
+// The millisecond gates of the pipeline (6 WU: first moved pixel p95 ≤ 150 ms, seq ack p95 ≤ 100 ms
+// + one rAF) only run in an explicit measurement run: FAF_LATENCY_GATE=1 pnpm test:e2e latency.
+// There a gated phase that fails while the browser's rAF stalled (an interval ≥ 50 ms, i.e. ≥ 3
+// missed vsyncs – the compositor, not the pipeline) is repeated, at most 3 attempts.
+// The literal SPK6 criteria (start view ≤ 150 ms, ack ≤ 100 ms p95) are evaluated into the report
+// (`criteria`) without gating; docs/STATUS.md reports them as a deviation where they are not met.
 
 const GROUP = 8;
 const GROUPS = 110;
 const PHASES = [
-  { name: 'nah', distance: 6, clicks: 50, gated: true },
-  { name: 'mittel', distance: 10, clicks: 16, gated: false },
-  { name: 'start', distance: 105, clicks: 16, gated: false },
+  { name: 'nah', distance: 6, clicks: 50, pipeline: true },
+  { name: 'mittel', distance: 10, clicks: 16, pipeline: false },
+  { name: 'start', distance: 105, clicks: 40, pipeline: false },
 ] as const;
-const MAX_ATTEMPTS = 3;
+const MEASURE_GATE = process.env['FAF_LATENCY_GATE'] === '1';
+const MAX_ATTEMPTS = MEASURE_GATE ? 3 : 1;
 const STALL_MS = 50;
-const GATES = { markerFrames: 1, ackSimMs: 100, moveP95Ms: 150, mainJsP95Ms: 2 } as const;
+const MIN_SAMPLES = 0.6;
+const GATES = { markerFrames: 1, ackSimMs: 100, moveP95Ms: 150, mainJsP95Ms: 2, cmdApplyTicks: 1 } as const;
 
 interface PhaseResult {
   readonly attempt: number;
   readonly snap: MetricsSnapshot;
-  readonly failures: string[];
+  /** Always-on invariant failures. */
+  readonly invariantFailures: string[];
+  /** Millisecond pipeline gate failures (only evaluated for the pipeline phase). */
+  readonly msFailures: string[];
   readonly stalled: boolean;
 }
 
-function gateFailures(s: MetricsSnapshot, clicks: number): string[] {
+/** Machine-independent invariants of one phase. */
+function invariantFailures(s: MetricsSnapshot, clicks: number): string[] {
+  const f: string[] = [];
+  const min = Math.ceil(clicks * MIN_SAMPLES);
+  if (s.clicks !== clicks) f.push(`clicks ${s.clicks} ≠ ${clicks}`);
+  if (s.timeouts !== 0) f.push(`timeouts ${s.timeouts}`);
+  if (s.clickToMarkerFrames.count !== clicks) f.push(`marker samples ${s.clickToMarkerFrames.count} ≠ ${clicks}`);
+  if (s.clickToMarkerFrames.max > GATES.markerFrames) f.push(`marker frames max ${s.clickToMarkerFrames.max} > ${GATES.markerFrames}`);
+  if (s.clickToAckMs.count !== clicks) f.push(`ack samples ${s.clickToAckMs.count} ≠ ${clicks}`);
+  if (s.clickToMoveMs.count < min) f.push(`move samples ${s.clickToMoveMs.count} < ${min}`);
+  return f;
+}
+
+/** Millisecond gates of the pipeline phase (explicit measurement run only). */
+function msFailures(s: MetricsSnapshot): string[] {
   const f: string[] = [];
   const rafMs = s.rafIntervalMs.p50;
-  if (s.clicks !== clicks) f.push(`clicks ${s.clicks} ≠ ${clicks}`);
-  if (s.clickToMarkerFrames.count < 30) f.push(`marker samples ${s.clickToMarkerFrames.count} < 30`);
-  if (s.clickToMarkerFrames.max > GATES.markerFrames) f.push(`marker frames max ${s.clickToMarkerFrames.max} > 1`);
-  if (s.clickToAckMs.count < 30) f.push(`ack samples ${s.clickToAckMs.count} < 30`);
   if (s.clickToAckMs.p95 > GATES.ackSimMs + rafMs) f.push(`ack p95 ${s.clickToAckMs.p95.toFixed(1)} > ${(GATES.ackSimMs + rafMs).toFixed(1)}`);
-  if (s.clickToMoveMs.count < 30) f.push(`move samples ${s.clickToMoveMs.count} < 30`);
   if (s.clickToMoveMs.p95 > GATES.moveP95Ms) f.push(`first moved pixel p95 ${s.clickToMoveMs.p95.toFixed(1)} > ${GATES.moveP95Ms}`);
   return f;
 }
@@ -130,18 +150,20 @@ for (const server of SERVERS) {
     const results: Record<string, PhaseResult[]> = {};
     for (const phase of PHASES) {
       const attempts: PhaseResult[] = [];
-      for (let attempt = 1; attempt <= (phase.gated ? MAX_ATTEMPTS : 1); attempt++) {
+      for (let attempt = 1; attempt <= (phase.pipeline ? MAX_ATTEMPTS : 1); attempt++) {
         const snap = await clickPhase(page, groups, next, phase.clicks, phase.distance);
         next += phase.clicks;
-        const failures = phase.gated ? gateFailures(snap, phase.clicks) : [];
+        const inv = invariantFailures(snap, phase.clicks);
+        const ms = phase.pipeline ? msFailures(snap) : [];
         const stalled = snap.rafIntervalMs.max >= STALL_MS;
-        attempts.push({ attempt, snap, failures, stalled });
-        if (failures.length === 0 || !stalled) break;
+        attempts.push({ attempt, snap, invariantFailures: inv, msFailures: ms, stalled });
+        if (!MEASURE_GATE || (inv.length === 0 && ms.length === 0) || !stalled) break;
       }
       results[phase.name] = attempts;
     }
-    const gated = results['nah']!;
-    const final = gated[gated.length - 1]!;
+    const pipeline = results['nah']!;
+    const final = pipeline[pipeline.length - 1]!;
+    const start = results['start']![0]!;
 
     // Main-JS and FPS with all 1,000 own cubes driving.
     await page.evaluate(() => {
@@ -168,18 +190,37 @@ for (const server of SERVERS) {
       };
     });
 
+    // Host command counters (stats arrive every 10 ticks; read after the 3 s load phase).
+    const hostStats = load.stats as { cmdApplyTicksMax: number; cmdBatchesApplied: number } | null;
     const report = {
       browser: testInfo.project.name,
       transport: server.transport,
       crossOriginIsolated: server.coi,
       measuredLocally: 'lokal gemessen (Apple M5 Pro, Playwright headless), kein GPU-Runner',
       groupSize: GROUP,
+      measurementGate: MEASURE_GATE,
       gates: { ...GATES, ackGateMs: GATES.ackSimMs + final.snap.rafIntervalMs.p50 },
+      // Literal SPK6 criteria (PLAN §4), evaluated, not gated (see header comment).
+      criteria: {
+        markerMaxFrames: Math.max(...PHASES.flatMap((p) => results[p.name]!.map((a) => a.snap.clickToMarkerFrames.max))),
+        ackP95Ms: final.snap.clickToAckMs.p95,
+        ackP95Le100: final.snap.clickToAckMs.p95 <= 100,
+        firstMovedPixelP95MsPipeline: final.snap.clickToMoveMs.p95,
+        firstMovedPixelP95MsStartView: start.snap.clickToMoveMs.p95,
+        firstMovedPixelStartViewLe150: start.snap.clickToMoveMs.p95 <= 150,
+        cmdApplyTicksMax: hostStats?.cmdApplyTicksMax ?? null,
+      },
       phases: PHASES.map((p) => ({
         name: p.name,
         distanceWU: p.distance,
-        gated: p.gated,
-        attempts: results[p.name]!.map((a) => ({ attempt: a.attempt, stalled: a.stalled, failures: a.failures, ...summary(a.snap) })),
+        pipeline: p.pipeline,
+        attempts: results[p.name]!.map((a) => ({
+          attempt: a.attempt,
+          stalled: a.stalled,
+          invariantFailures: a.invariantFailures,
+          msFailures: a.msFailures,
+          ...summary(a.snap),
+        })),
       })),
       mainJsMs: load.mainJsMs,
       fps: load.fps,
@@ -195,12 +236,17 @@ for (const server of SERVERS) {
     writeFileSync(resolve(dir, `latency-${testInfo.project.name}-${server.transport}.json`), JSON.stringify(report, null, 2));
     await testInfo.attach('latency', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
 
-    expect(final.failures, `attempt ${final.attempt}: ${final.failures.join('; ')}`).toEqual([]);
+    // Always: pipeline invariants in frames/ticks.
     for (const p of PHASES) {
       for (const a of results[p.name]!) {
-        expect(a.snap.clickToMarkerFrames.max, `marker frames (${p.name}, attempt ${a.attempt})`).toBeLessThanOrEqual(GATES.markerFrames);
+        expect(a.invariantFailures, `${p.name}, attempt ${a.attempt}`).toEqual([]);
       }
     }
+    expect(hostStats, 'host stats').not.toBeNull();
+    expect(hostStats!.cmdApplyTicksMax, 'cmd → applied in the next tick').toBe(GATES.cmdApplyTicks);
+    expect(hostStats!.cmdBatchesApplied).toBeGreaterThanOrEqual(PHASES.reduce((n, p) => n + p.clicks, 0));
+    // Explicit measurement run only: millisecond gates of the pipeline phase.
+    if (MEASURE_GATE) expect(final.msFailures, `attempt ${final.attempt}: ${final.msFailures.join('; ')}`).toEqual([]);
     expect(load.units).toBe(1024);
     expect(load.mainJsMs.p95).toBeLessThanOrEqual(GATES.mainJsP95Ms);
     expectNoErrors(errors);

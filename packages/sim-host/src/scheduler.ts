@@ -8,10 +8,14 @@
  */
 
 import { SPEED_MAX_PERMILLE, SPEED_MIN_PERMILLE } from '@faf/protocol';
+import { SIM_TICK_HZ } from '@faf/rules';
 import { MessageChannelWakeup, performanceClock, type Clock, type Wakeup } from './clock.ts';
 
-/** Nominal tick period at 1x speed (10 Hz sim). */
-export const BASE_TICK_MS = 100;
+/**
+ * Nominal tick period at 1x speed, derived from the one tick rate of the rules (the blueprint
+ * compiler converts per-second values with the same SIM_TICK_HZ): 10 Hz ⇒ 100 ms.
+ */
+export const BASE_TICK_MS = 1000 / SIM_TICK_HZ;
 /** Default upper bound of ticks executed in one slice. */
 export const DEFAULT_MAX_TICKS_PER_SLICE = 3;
 /** Default backlog (in ticks) the accumulator may hold before time is dropped as sim lag. */

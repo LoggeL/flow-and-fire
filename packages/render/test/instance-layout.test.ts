@@ -1,3 +1,4 @@
+import * as protocol from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import {
   UNIT_FLAG_NO_INTERP,
@@ -155,5 +156,44 @@ describe('VisualBuckets', () => {
     const b = new VisualBuckets();
     b.ensure(2, 1);
     expect(() => b.sort(bytes, 3)).toThrow(/exceeds/);
+  });
+});
+
+describe('UnitRecord layout == protocol FrameWriter output', () => {
+  it('takes stride, offsets and the noInterp bit from @faf/protocol', () => {
+    expect(UNIT_INSTANCE_STRIDE).toBe(protocol.UNIT_RECORD_BYTES);
+    expect(UNIT_FLAG_NO_INTERP).toBe(protocol.UnitFlags.NoInterp);
+  });
+
+  it('a record written by the protocol FrameWriter reads back identically with the render writer layout', () => {
+    const w = new protocol.FrameWriter({ units: 2, parts: 0, projectiles: 0, beams: 0, events: 0, debugBytes: 0 });
+    const buf = new Uint8Array(w.capacityBytes);
+    w.beginFrame(buf, 1, 7, 0, 1000, 0, 0, 0, 0, 0);
+    w.writeUnit(-5, 6, 7, 8, -9, 10, 100, 200, 3, 4, 250, 128, -3, protocol.UnitFlags.NoInterp, 0xabcdef12, 5, 2);
+    const len = w.endFrame();
+    const r = new protocol.FrameReader();
+    expect(r.reset(buf.subarray(0, len))).toBe(true);
+    const rec = buf.subarray(r.unitOffset(0), r.unitOffset(0) + 48);
+    const expected = new UnitRecordWriter(1);
+    expected.write(0, {
+      prevX: -5,
+      prevY: 6,
+      prevZ: 7,
+      x: 8,
+      y: -9,
+      z: 10,
+      prevYaw: 100,
+      yaw: 200,
+      visual: 3,
+      army: 4,
+      hp: 250,
+      build: 128,
+      bank: -3,
+      flags: UNIT_FLAG_NO_INTERP,
+      handle: 0xabcdef12,
+      partBase: 5,
+      partCount: 2,
+    });
+    expect([...rec]).toEqual([...expected.bytes]);
   });
 });

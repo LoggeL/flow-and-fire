@@ -17,17 +17,27 @@ function pkgTarget(names) {
   return `^(packages/(${alt})/|@faf/(${alt})($|/))`;
 }
 
-/** Forbid `from` package src importing any workspace package outside `allowed` (+ itself). */
-function onlyWorkspaceDeps(name, from, allowed) {
+/**
+ * Forbid `from` package src importing any workspace package outside `allowed` (+ itself).
+ * `extraPathNot` admits single modules of otherwise forbidden packages.
+ */
+function onlyWorkspaceDeps(name, from, allowed, extraPathNot = []) {
   const allow = [from, ...allowed];
+  const extra = extraPathNot.length > 0 ? ` plus ${extraPathNot.join(', ')}` : '';
   return {
     name,
     severity: 'error',
-    comment: `packages/${from}/src may only import workspace packages: ${allowed.join(', ') || '(none)'}`,
+    comment: `packages/${from}/src may only import workspace packages: ${allowed.join(', ') || '(none)'}${extra}`,
     from: { path: `^packages/${from}/src/` },
-    to: { path: WS, pathNot: pkgTarget(allow) },
+    to: { path: WS, pathNot: [pkgTarget(allow), ...extraPathNot] },
   };
 }
+
+/**
+ * The sim may use the blueprints package only through its sim.bin contract module
+ * (PLAN §3.2 "blueprints-Typen"): never the compiler, TypeBox schemas or the view data.
+ */
+const SIM_BLUEPRINTS = ['^packages/blueprints/src/simbin\\.ts$', '^@faf/blueprints/simbin$'];
 
 module.exports = {
   forbidden: [
@@ -45,7 +55,7 @@ module.exports = {
     onlyWorkspaceDeps('formats-deps', 'formats', ['fixed', 'protocol']),
     onlyWorkspaceDeps('blueprints-deps', 'blueprints', ['fixed', 'rules']),
     onlyWorkspaceDeps('nav-deps', 'nav', ['fixed', 'heap', 'rules']),
-    onlyWorkspaceDeps('sim-deps', 'sim', ['fixed', 'heap', 'protocol', 'rules', 'blueprints', 'nav', 'formats']),
+    onlyWorkspaceDeps('sim-deps', 'sim', ['fixed', 'heap', 'protocol', 'rules', 'nav', 'formats'], SIM_BLUEPRINTS),
     onlyWorkspaceDeps('sim-host-deps', 'sim-host', [
       'sim',
       'fixed',

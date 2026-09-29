@@ -33,11 +33,11 @@ export const PROJ_CAP = 4096;
 
 /** Fine grid: 4 WU cells (raw >> 14). */
 export const FINE_SHIFT = 14;
-export const FINE_DIM = MAP_WU / 4;
+export const FINE_DIM = MAP_WU >> 2;
 export const FINE_CELLS = FINE_DIM * FINE_DIM;
 /** Coarse targeting grid: 16 WU cells (raw >> 16). */
 export const COARSE_SHIFT = 16;
-export const COARSE_DIM = MAP_WU / 16;
+export const COARSE_DIM = MAP_WU >> 4;
 export const COARSE_CELLS = COARSE_DIM * COARSE_DIM;
 /** A footprint (radius ≤ 2 WU) overlaps at most 2×2 fine cells. */
 export const FOOTPRINT_MAX_CELLS = 4;

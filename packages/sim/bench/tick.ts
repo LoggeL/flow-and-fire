@@ -10,7 +10,8 @@ import { asArmyId, asTick, fx } from '@faf/fixed';
 import { CommandBatchEncoder, encodeCheatSpawn, encodeMove, FrameWriter, Op } from '@faf/protocol';
 import { createWorld, PHASE_ID_COUNT, PHASE_NAMES, PhaseId, step, unitHandles, writeFrame, type PhaseProbe } from '../src/index.ts';
 
-const ticks = Number(process.argv[2] ?? 5000);
+// First numeric argument (pnpm forwards `--` and flags like --update-docs of the root bench).
+const ticks = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)) ?? 5000);
 const simBin = new Uint8Array(readFileSync(fileURLToPath(new URL('../../../content/generated/sim.bin', import.meta.url))));
 const w = createWorld({ simBin, seed: 7, armyCount: 2 });
 const enc = new CommandBatchEncoder();

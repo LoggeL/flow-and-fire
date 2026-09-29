@@ -5,12 +5,13 @@
 
 import { xxHash32 } from '@faf/fixed';
 import { computeSimId, utf8Encode } from '@faf/protocol';
+import { SIM_BUILD } from '@faf/sim';
 
 /**
- * Version tag of the simulation code. Bump whenever sim behaviour changes in a way that makes
- * old command logs/replays diverge (it is part of simId).
+ * Version tag of the simulation code, owned by @faf/sim next to the code it versions (bump rule
+ * and golden enforcement there).
  */
-export const SIM_BUILD = 'faf-sim/ms1.1';
+export { SIM_BUILD };
 
 /** Mods loaded (MS1: none). */
 export const MOD_LIST: readonly string[] = [];

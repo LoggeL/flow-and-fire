@@ -24,16 +24,23 @@ Harness-Einstiege unter `harness/`. Diese wurden entfernt; alles liegt jetzt unt
     (`lastAckSeq`); Stop (Tick 150/1.200) → Einheiten stehen; Army 1 komplett gekillt (Tick 1.000) und mit 260
     neu gespawnt (highWater wächst); rollierender Churn (alle 200 Ticks Kill jeder 5. Einheit beider Armies, Respawn
     einen Tick später an anderer Stelle, neue Ziele). 8 Asserts.
-- `src/goldens.ts`: Format `faf-golden` v1 (`scenario, ticks, seed, simHash, layoutHash, hashIntervalTicks,
-  finalUnitCount, commandCount, finalRuleHash, finalFullHash, trail[200]` als Hex), `compareChains` → erster
-  abweichender Tick. Goldens: `tools/headless/goldens/cubes-1000-move.json`, `cubes-churn.json`.
-- Skript **`goldens`** (`pnpm --filter @faf/headless goldens`) prüft; `goldens -- --update` schreibt neu und meldet
-  den ersten abweichenden Tick gegenüber dem alten Golden. Exit ≠ 0 bei Abweichung oder fehlgeschlagenem Assert.
+- `src/goldens.ts`: Format `faf-golden` v2 (`simBuild, scenario, ticks, seed, simHash, layoutHash, hashIntervalTicks,
+  finalUnitCount, commandCount, finalRuleHash, finalFullHash, trail[200]` als Hex; v2 = + `simBuild`, Review MS1),
+  `compareChains` → erster abweichender Tick, `goldenUpdateVerdict` → `--update` verweigert eine geänderte Kette
+  ohne neuen `SIM_BUILD`. Goldens: `tools/headless/goldens/cubes-1000-move.json`, `cubes-churn.json`.
+- Skript **`goldens`** (`pnpm --filter @faf/headless goldens`) prüft (inkl. `simBuild` == `SIM_BUILD`);
+  `goldens -- --update` schreibt neu und meldet den ersten abweichenden Tick gegenüber dem alten Golden – aber nur,
+  wenn `SIM_BUILD` (`packages/sim/src/constants.ts`) gegenüber dem Golden erhöht wurde, sonst Exit 1 mit Hinweis.
+  Exit ≠ 0 bei Abweichung oder fehlgeschlagenem Assert.
 
 | Golden | Trail | End-Regel-Hash | End-Voll-Hash | simHash | layoutHash |
 |---|---|---|---|---|---|
-| cubes-1000-move | 200 × Regel-Hash | `0x20ff4ad9` | `0xd90c05bd` | `0xd4135af1` | `0xa15987bf` |
-| cubes-churn | 200 × Regel-Hash | `0x92027d77` | `0x3c551981` | `0xd4135af1` | `0xa15987bf` |
+| cubes-1000-move | 200 × Regel-Hash | `0x0f1bcb7c` | `0xdf2c05a7` | `0xd4135af1` | `0xcc8737d2` |
+| cubes-churn | 200 × Regel-Hash | `0xc10b95e3` | `0xa3fefa9a` | `0xd4135af1` | `0xcc8737d2` |
+
+Stand `SIM_BUILD = faf-sim/ms1.2` (Review MS1: letzter Regel-Hash in der derived-Region `hashlog`, Spalte
+`Units.gen` gestrichen, seq-Serial-Ordnung). Die Goldens von `ms1.1` (`0x20ff4ad9`/`0x92027d77`, Layout `0xa15987bf`)
+sind damit ungültig und wurden einmalig mit `--update` ersetzt.
 
 ### Cross-Engine-Harness (L3) und Jobs
 
@@ -51,7 +58,7 @@ Harness-Einstiege unter `harness/`. Diese wurden entfernt; alles liegt jetzt unt
   (⇒ `crossOriginIsolated`), starten den Worker und schreiben Rohdaten nach `results/*.tmp.json` (git-ignoriert).
 - Skript **`test:xengine`** (`scripts/xengine.ts`): Harness bauen → Node-Referenz (frischer Prozess je Szenario) →
   Playwright (3 Engines nacheinander) → Vergleich jeder Kette (kalt, warm, 3 Aufwärmläufe) mit dem Golden; Exit ≠ 0
-  mit erstem abweichenden Tick; Bericht `tools/headless/results/xengine-<datum>.json`.
+  mit erstem abweichenden Tick; Bericht `tools/headless/results/xengine-<datum>.json` (lokale Messausgabe, git-ignoriert).
 
 **Ergebnis L3 (lokal gemessen, Apple M5 Pro, nicht Referenz-Laptop):** 40 Hash-Ketten (2 Szenarien × 4 Engines ×
 kalt/warm/3 Aufwärmläufe) über je 2.000 Ticks **bitgleich** zu den Goldens – Node 24.18 (V8), Chromium (V8),
@@ -94,23 +101,24 @@ tsx-Transform beim ersten Import. Gesamtlaufzeit des Skripts inkl. Build ≈ 25 
   `CompressionStream('deflate-raw')` der Sim-Arena (Zeit, Ratio, Roundtrip per `DecompressionStream`) und 20 MiB
   Zufallsdaten (Worst Case).
 - Skript **`bench`** (`scripts/bench.ts`): Tick-Bench + SPK1 + SPK5 in Node (frischer Prozess je Job) und den drei
-  Browser-Workern (nacheinander), kalt/warm; Bericht `results/bench-<datum>.json`, Tabellen unten (automatisch
-  zwischen den Markern ersetzt). Budgets reißen ⇒ Exit 0, aber Entscheidung wird dokumentiert; Exit ≠ 0 nur bei
+  Browser-Workern (nacheinander), kalt/warm; Bericht `results/bench-<datum>.json` (lokale Messausgabe,
+  git-ignoriert), Tabellen unten werden **nur mit `--update-docs`** (bzw. `FAF_BENCH_UPDATE_DOCS=1`) zwischen den
+  Markern ersetzt – ein normaler `pnpm bench` (Teil von `ci:local`) ändert keine eingecheckte Datei (Review MS1). Budgets reißen ⇒ Exit 0, aber Entscheidung wird dokumentiert; Exit ≠ 0 nur bei
   fehlenden Ergebnissen, JS≠WASM oder abweichenden SPK1-Hashes zwischen Engines.
 
 ## Messwerte
 
 <!-- bench:begin -->
-Letzter Lauf: 2026-09-28, `pnpm --filter @faf/headless bench`. **Lokal gemessen (Apple M5 Pro), nicht Referenz-Laptop.**
+Letzter Lauf: 2026-09-29, `pnpm --filter @faf/headless bench`. **Lokal gemessen (Apple M5 Pro), nicht Referenz-Laptop.**
 Node v24.18.0; Browser: Playwright-Builds (headless) von Chromium, Firefox, WebKit, Module-Worker, crossOriginIsolated.
 JIT kalt = erster Lauf im frischen Worker bzw. Node-Prozess, warm = Lauf nach 3 Aufwärmläufen im selben Worker.
 Reps > 1: Engine-Uhr zu grob (WebKit 1 ms) → jeder Tick wird per Arena-Snapshot/Restore mehrfach ausgeführt und gemittelt (Restore-Kosten abgezogen).
 
 | Kriterium | Budget | gemessen (max. über Engines, kalt/warm) | Ergebnis |
 |---|---|---|---|
-| MS1 Sim-Tick p95, 1.000 fahrende Würfel, inkl. Hash-Tick | ≤ 2 ms | 0,216 ms (node kalt) | erfüllt |
-| SPK1 Big-Battle-Prototyp p95 | ≤ 25 ms | 1,12 ms (firefox kalt) | erfüllt → TS |
-| SPK5 Hash-Tick (Live-Bereich, 1.000 Units) p95 | ≤ 2 ms | 0,395 ms | erfüllt → JS-Hash |
+| MS1 Sim-Tick p95, 1.000 fahrende Würfel, inkl. Hash-Tick | ≤ 2 ms | 0,355 ms (node kalt) | erfüllt |
+| SPK1 Big-Battle-Prototyp p95 | ≤ 25 ms | 1,25 ms (chromium kalt) | erfüllt → TS |
+| SPK5 Hash-Tick (Live-Bereich, 1.000 Units) p95 | ≤ 2 ms | 0,440 ms | erfüllt → JS-Hash |
 
 ### Tick-Bench MS1 (1.000 fahrende Würfel, 1000 gemessene Ticks)
 
@@ -118,76 +126,76 @@ Sim-Tick gesamt (`step` inkl. CommandApply und Hash-Tick) sowie Hash-Tick allein
 
 | Engine | JIT | Reps | Uhr | p50 | p95 | p99 | max | Hash-Tick p95 | fahrend am Ende |
 |---|---|---|---|---|---|---|---|---|---|
-| node | kalt | 1 | 0,0001 ms | 0,170 | **0,216** | 0,348 | 6,47 | 0,176 | 1000/1000 |
-| node | warm | 1 | 0,0001 ms | 0,169 | **0,208** | 0,222 | 0,233 | 0,043 | 1000/1000 |
-| chromium | kalt | 1 | 0,0050 ms | 0,120 | **0,145** | 0,490 | 0,885 | 0,395 | 1000/1000 |
-| chromium | warm | 1 | 0,0050 ms | 0,115 | **0,135** | 0,145 | 0,170 | 0,015 | 1000/1000 |
-| firefox | kalt | 1 | 0,0200 ms | 0,140 | **0,180** | 0,220 | 0,520 | 0,080 | 1000/1000 |
-| firefox | warm | 1 | 0,0200 ms | 0,140 | **0,180** | 0,200 | 0,220 | 0,060 | 1000/1000 |
-| webkit | kalt | 20 | 1,0000 ms | 0,032 | **0,082** | 0,132 | 0,232 | 0,050 | 1000/1000 |
-| webkit | warm | 20 | 1,0000 ms | 0,034 | **0,084** | 0,084 | 0,084 | 0,050 | 1000/1000 |
+| node | kalt | 1 | 0,0001 ms | 0,189 | **0,355** | 0,514 | 0,929 | 0,237 | 1000/1000 |
+| node | warm | 1 | 0,0001 ms | 0,175 | **0,219** | 0,244 | 0,301 | 0,054 | 1000/1000 |
+| chromium | kalt | 1 | 0,0050 ms | 0,135 | **0,310** | 0,610 | 1,59 | 0,440 | 1000/1000 |
+| chromium | warm | 1 | 0,0050 ms | 0,120 | **0,165** | 0,225 | 0,455 | 0,040 | 1000/1000 |
+| firefox | kalt | 1 | 0,0200 ms | 0,140 | **0,220** | 0,340 | 0,800 | 0,120 | 1000/1000 |
+| firefox | warm | 1 | 0,0200 ms | 0,140 | **0,180** | 0,220 | 0,240 | 0,060 | 1000/1000 |
+| webkit | kalt | 20 | 1,0000 ms | 0,082 | **0,082** | 0,132 | 0,332 | 0,050 | 1000/1000 |
+| webkit | warm | 20 | 1,0000 ms | 0,034 | **0,084** | 0,084 | 0,134 | 0,050 | 1000/1000 |
 
 p95 je Phase (ms):
 
 | Engine | JIT | CommandApply | Orders | Movement | SpatialRebuild | Cleanup | Output | HashTick |
 |---|---|---|---|---|---|---|---|---|
-| node | kalt | 0,003 | 0,014 | 0,153 | 0,029 | 0,002 | 0,040 | 0,176 |
-| node | warm | 0,001 | 0,013 | 0,149 | 0,029 | 0,002 | 0,040 | 0,043 |
-| chromium | kalt | 0,005 | 0,010 | 0,110 | 0,030 | 0,005 | 0,015 | 0,395 |
-| chromium | warm | 0,005 | 0,010 | 0,105 | 0,030 | 0,005 | 0,015 | 0,015 |
-| firefox | kalt | 0,020 | 0,020 | 0,140 | 0,020 | 0,000 | 0,040 | 0,080 |
-| firefox | warm | 0,000 | 0,020 | 0,140 | 0,020 | 0,000 | 0,040 | 0,060 |
+| node | kalt | 0,007 | 0,024 | 0,252 | 0,042 | 0,002 | 0,058 | 0,237 |
+| node | warm | 0,002 | 0,015 | 0,155 | 0,029 | 0,002 | 0,040 | 0,054 |
+| chromium | kalt | 0,005 | 0,015 | 0,210 | 0,055 | 0,005 | 0,030 | 0,440 |
+| chromium | warm | 0,005 | 0,010 | 0,115 | 0,035 | 0,005 | 0,020 | 0,040 |
+| firefox | kalt | 0,020 | 0,020 | 0,160 | 0,020 | 0,000 | 0,060 | 0,120 |
+| firefox | warm | 0,020 | 0,020 | 0,140 | 0,020 | 0,000 | 0,040 | 0,060 |
 | webkit | kalt | 0,000 | 0,000 | 0,100 | 0,050 | 0,000 | 0,000 | 0,050 |
 | webkit | warm | 0,000 | 0,000 | 0,100 | 0,050 | 0,000 | 0,000 | 0,050 |
 
-**Ziel MS1:** p95 ≤ 2 ms im langsamsten Engine-Worker inkl. Hash-Tick → gemessen max. p95 = **0,216 ms** (node kalt) ⇒ **erfüllt**.
+**Ziel MS1:** p95 ≤ 2 ms im langsamsten Engine-Worker inkl. Hash-Tick → gemessen max. p95 = **0,355 ms** (node kalt) ⇒ **erfüllt**.
 
 ### SPK1 Sim-Durchsatz (1.000 Bodeneinheiten, 300 Flugzeuge, ≈ 4.000 Projektile; 300 Ticks nach 40 Ramp-Ticks)
 
 | Engine | JIT | Reps | p50 | p95 | p99 | max | Projektile Ø (min) | Treffer/Kills gesamt |
 |---|---|---|---|---|---|---|---|---|
-| node | kalt | 1 | 0,927 | **1,04** | 1,20 | 1,54 | 3863 (3792) | 41523/437 |
-| node | warm | 1 | 0,918 | **0,997** | 1,04 | 1,05 | 3863 (3792) | 41523/437 |
-| chromium | kalt | 1 | 0,885 | **1,01** | 1,50 | 1,53 | 3863 (3792) | 41523/437 |
-| chromium | warm | 1 | 0,875 | **0,940** | 0,970 | 1,02 | 3863 (3792) | 41523/437 |
-| firefox | kalt | 1 | 1,00 | **1,12** | 1,22 | 1,60 | 3863 (3792) | 41523/437 |
-| firefox | warm | 1 | 1,00 | **1,08** | 1,14 | 1,16 | 3863 (3792) | 41523/437 |
-| webkit | kalt | 4 | 0,496 | **0,746** | 0,996 | 1,25 | 3863 (3792) | 41523/437 |
+| node | kalt | 1 | 0,953 | **1,11** | 1,27 | 1,67 | 3863 (3792) | 41523/437 |
+| node | warm | 1 | 0,936 | **1,03** | 1,07 | 1,10 | 3863 (3792) | 41523/437 |
+| chromium | kalt | 1 | 0,935 | **1,25** | 1,64 | 1,84 | 3863 (3792) | 41523/437 |
+| chromium | warm | 1 | 0,925 | **1,13** | 1,29 | 1,32 | 3863 (3792) | 41523/437 |
+| firefox | kalt | 1 | 1,04 | **1,22** | 1,36 | 2,26 | 3863 (3792) | 41523/437 |
+| firefox | warm | 1 | 1,02 | **1,20** | 1,36 | 2,48 | 3863 (3792) | 41523/437 |
+| webkit | kalt | 4 | 0,746 | **0,996** | 0,996 | 1,25 | 3863 (3792) | 41523/437 |
 | webkit | warm | 4 | 0,496 | **0,746** | 0,746 | 0,746 | 3863 (3792) | 41523/437 |
 
 p95 je Teilsystem (ms):
 
 | Engine | JIT | Movement | Air | Spatial | Vision | Targeting | Weapons | Projectiles | Cleanup | Hash |
 |---|---|---|---|---|---|---|---|---|---|---|
-| node | kalt | 0,161 | 0,015 | 0,086 | 0,034 | 0,508 | 0,049 | 0,190 | 0,006 | 0,220 |
-| node | warm | 0,155 | 0,011 | 0,088 | 0,032 | 0,501 | 0,046 | 0,174 | 0,005 | 0,051 |
-| chromium | kalt | 0,145 | 0,015 | 0,090 | 0,030 | 0,495 | 0,045 | 0,175 | 0,010 | 0,565 |
-| chromium | warm | 0,145 | 0,010 | 0,085 | 0,030 | 0,480 | 0,045 | 0,170 | 0,005 | 0,030 |
-| firefox | kalt | 0,220 | 0,020 | 0,080 | 0,080 | 0,480 | 0,020 | 0,220 | 0,020 | 0,080 |
-| firefox | warm | 0,220 | 0,020 | 0,080 | 0,080 | 0,480 | 0,020 | 0,200 | 0,020 | 0,080 |
-| webkit | kalt | 0,250 | 0,000 | 0,250 | 0,250 | 0,500 | 0,250 | 0,500 | 0,000 | 0,500 |
+| node | kalt | 0,165 | 0,016 | 0,088 | 0,037 | 0,535 | 0,051 | 0,196 | 0,011 | 0,216 |
+| node | warm | 0,159 | 0,011 | 0,087 | 0,034 | 0,518 | 0,047 | 0,177 | 0,006 | 0,059 |
+| chromium | kalt | 0,170 | 0,015 | 0,105 | 0,035 | 0,555 | 0,055 | 0,210 | 0,010 | 0,670 |
+| chromium | warm | 0,165 | 0,015 | 0,095 | 0,035 | 0,575 | 0,050 | 0,195 | 0,010 | 0,045 |
+| firefox | kalt | 0,240 | 0,020 | 0,080 | 0,080 | 0,500 | 0,040 | 0,220 | 0,020 | 0,100 |
+| firefox | warm | 0,240 | 0,020 | 0,080 | 0,100 | 0,500 | 0,040 | 0,240 | 0,020 | 0,120 |
+| webkit | kalt | 0,250 | 0,250 | 0,250 | 0,250 | 0,500 | 0,250 | 0,500 | 0,000 | 0,250 |
 | webkit | warm | 0,250 | 0,000 | 0,250 | 0,250 | 0,500 | 0,250 | 0,500 | 0,000 | 0,000 |
 
-**Exit SPK1 (§4):** p95 ≤ 25 ms in der langsamsten Engine inkl. Hash-Tick → gemessen max. p95 = **1,12 ms** (firefox kalt) ⇒ **erfüllt – alles bleibt TypeScript** (Rust/WASM-Ausweg aus DECISIONS Punkt 2 wird nicht gezogen).
+**Exit SPK1 (§4):** p95 ≤ 25 ms in der langsamsten Engine inkl. Hash-Tick → gemessen max. p95 = **1,25 ms** (chromium kalt) ⇒ **erfüllt – alles bleibt TypeScript** (Rust/WASM-Ausweg aus DECISIONS Punkt 2 wird nicht gezogen).
 End-Hash des SPK1-Laufs in allen Engines/Modi: 0xe14862d1 (identisch).
 
 ### SPK5 Hash & Snapshot (Arena 20 MiB `WebAssembly.Memory`, warm)
 
 | Engine | JS==WASM (20 MiB / Live / 400 Zufallsbereiche) | xxh32 JS 20 MiB | xxh32 WASM 20 MiB | Live-Bytes | Sim-Regel-Hash p95 (Hash-Tick) | kalt p95 | JS Live p95 | WASM Live p95 |
 |---|---|---|---|---|---|---|---|---|
-| node | ja / ja / ja | 12,1 ms (1,73 GB/s) | 1,56 ms (13,40 GB/s) | 141648 | **0,042 ms** | 0,169 ms | 0,065 ms | 0,010 ms |
-| chromium | ja / ja / ja | 1,70 ms (12,34 GB/s) | 1,58 ms (13,27 GB/s) | 141648 | **0,020 ms** | 0,300 ms | 0,015 ms | 0,015 ms |
-| firefox | ja / ja / ja | 2,90 ms (7,23 GB/s) | 1,64 ms (12,79 GB/s) | 141648 | **0,050 ms** | 0,060 ms | 0,020 ms | 0,020 ms |
-| webkit | ja / ja / ja | 1,85 ms (11,34 GB/s) | 1,70 ms (12,34 GB/s) | 141648 | **0,020 ms** | 0,020 ms | 0,020 ms | 0,020 ms |
+| node | ja / ja / ja | 13,3 ms (1,58 GB/s) | 1,61 ms (13,05 GB/s) | 139648 | **0,185 ms** | 0,205 ms | 0,070 ms | 0,012 ms |
+| chromium | ja / ja / ja | 1,71 ms (12,30 GB/s) | 1,60 ms (13,07 GB/s) | 139648 | **0,020 ms** | 0,280 ms | 0,015 ms | 0,020 ms |
+| firefox | ja / ja / ja | 2,90 ms (7,23 GB/s) | 1,62 ms (12,95 GB/s) | 139648 | **0,050 ms** | 0,050 ms | 0,020 ms | 0,020 ms |
+| webkit | ja / ja / ja | 1,65 ms (12,71 GB/s) | 1,70 ms (12,34 GB/s) | 139648 | **0,020 ms** | 0,020 ms | 0,020 ms | 0,020 ms |
 
 | Engine | Snapshot 20 MiB p50 (Arena → Puffer) | Restore 20 MiB p50 (Puffer → Arena) | Sim-Snapshot (Bytes) p95 | Sim-Restore p95 | Keyframe deflate-raw (Bytes → Bytes, Ratio) | deflate p50 | inflate p50 | 20 MiB Zufall deflate p50 (Ratio) |
 |---|---|---|---|---|---|---|---|---|
-| node | 0,292 ms | 0,285 ms | 0,018 ms (1452760) | 0,017 ms | 1452760 → 40232 (36,1:1) | 2,20 ms | 1,01 ms | 236,5 ms (1,01:1) |
-| chromium | 0,325 ms | 0,305 ms | 0,020 ms (1452760) | 0,020 ms | 1452760 → 40232 (36,1:1) | 2,06 ms | 0,440 ms | 220,0 ms (1,01:1) |
-| firefox | 0,560 ms | 0,580 ms | 0,020 ms (1452760) | 0,020 ms | 1452760 → 38527 (37,7:1) | 0,600 ms | 0,400 ms | 189,5 ms (1,01:1) |
-| webkit | 0,900 ms | 0,350 ms | 0,030 ms (1452760) | 0,030 ms | 1452760 → 35857 (40,5:1) | 3,00 ms | 1,00 ms | 294,0 ms (1,01:1) |
+| node | 0,400 ms | 0,419 ms | 0,019 ms (1436392) | 0,020 ms | 1436392 → 40190 (35,7:1) | 2,39 ms | 1,11 ms | 254,0 ms (1,01:1) |
+| chromium | 0,345 ms | 0,365 ms | 0,020 ms (1436392) | 0,020 ms | 1436392 → 40190 (35,7:1) | 2,24 ms | 0,375 ms | 230,4 ms (1,01:1) |
+| firefox | 0,340 ms | 0,340 ms | 0,020 ms (1436392) | 0,020 ms | 1436392 → 38477 (37,3:1) | 0,600 ms | 0,400 ms | 199,7 ms (1,01:1) |
+| webkit | 0,650 ms | 0,650 ms | 0,020 ms (1436392) | 0,020 ms | 1436392 → 35823 (40,1:1) | 3,00 ms | 1,00 ms | 252,0 ms (1,01:1) |
 
-**Exit SPK5 (§4):** Hash-Tick ≤ 2 ms in der langsamsten Engine → gemessen max. p95 = **0,395 ms** (SPK5-Live-Hash: 0,300 ms, chromium kalt; Tick-Bench-Hash-Tick: 0,395 ms, chromium kalt) ⇒ **erfüllt – Live-Bereich-Hash bleibt in JS** (kein Rolling-Hash, kein WASM nötig).
+**Exit SPK5 (§4):** Hash-Tick ≤ 2 ms in der langsamsten Engine → gemessen max. p95 = **0,440 ms** (SPK5-Live-Hash: 0,280 ms, chromium kalt; Tick-Bench-Hash-Tick: 0,440 ms, chromium kalt) ⇒ **erfüllt – Live-Bereich-Hash bleibt in JS** (kein Rolling-Hash, kein WASM nötig).
 
 <!-- bench:end -->
 

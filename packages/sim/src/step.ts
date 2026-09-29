@@ -12,7 +12,7 @@ import { commandApplyPhase } from './commands.ts';
 import { HASH_INTERVAL_TICKS } from './constants.ts';
 import { movementPhase, ordersPhase } from './movement.ts';
 import { PhaseId, type PhaseProbe } from './phases.ts';
-import { WH_LAST_HASH, WH_LAST_HASH_TICK, WH_TICK } from './schema.ts';
+import { HL_LAST_HASH, HL_LAST_HASH_TICK, WH_TICK } from './schema.ts';
 import { spatialRebuildPhase } from './spatial.ts';
 import { cleanupPhase } from './units.ts';
 import type { World } from './world.ts';
@@ -78,20 +78,21 @@ export function step(w: World, cmds?: StepCommands, probe: PhaseProbe = NO_PROBE
     probe.begin(PhaseId.HashTick);
     const hash = arenaRuleHash(w.arena, w.hasher);
     probe.end(PhaseId.HashTick);
-    h[WH_LAST_HASH_TICK] = tick;
-    w.header.u32[WH_LAST_HASH] = hash;
+    // Written after hashing into the derived region: the next rule hash does not see it.
+    w.hashLog.i32[HL_LAST_HASH_TICK] = tick;
+    w.hashLog.u32[HL_LAST_HASH] = hash;
   }
   probe.end(PhaseId.Output);
 }
 
-/** Tick of the last rule hash stored in the world header (0 = none yet). */
+/** Tick of the last rule hash (derived region `hashlog`; 0 = none yet). */
 export function lastHashTick(w: World): number {
-  return w.header.i32[WH_LAST_HASH_TICK]!;
+  return w.hashLog.i32[HL_LAST_HASH_TICK]!;
 }
 
-/** Last rule hash stored in the world header (valid if lastHashTick > 0). */
+/** Last rule hash (derived region `hashlog`; valid if lastHashTick > 0). */
 export function lastHash(w: World): number {
-  return w.header.u32[WH_LAST_HASH]!;
+  return w.hashLog.u32[HL_LAST_HASH]!;
 }
 
 /** Rule hash of the current state (replay/desync check; PLAN §3.5). */

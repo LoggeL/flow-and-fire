@@ -4,7 +4,8 @@
 import type { ScenarioResult } from './scenario.ts';
 
 export const GOLDEN_FORMAT = 'faf-golden';
-export const GOLDEN_VERSION = 1;
+/** v2: + simBuild (the SIM_BUILD the chain was recorded with). */
+export const GOLDEN_VERSION = 2;
 
 /** u32 → `0x1234abcd`. */
 export function hex32(v: number): string {
@@ -27,6 +28,8 @@ export interface Golden extends HashChain {
   readonly format: typeof GOLDEN_FORMAT;
   readonly version: number;
   readonly seed: string;
+  /** SIM_BUILD (simId input) the chain was recorded with; a changed chain needs a new one. */
+  readonly simBuild: string;
   /** Inputs the chain depends on: blueprint sim hash and arena layout hash. */
   readonly simHash: string;
   readonly layoutHash: string;
@@ -49,6 +52,7 @@ export function toGolden(r: ScenarioResult): Golden {
   return {
     format: GOLDEN_FORMAT,
     version: GOLDEN_VERSION,
+    simBuild: r.simBuild,
     scenario: r.scenario,
     ticks: r.ticks,
     seed: hex32(r.seed),
@@ -71,8 +75,8 @@ export function goldenJson(g: Golden): string {
 /** Parses and validates a golden file. */
 export function parseGolden(text: string): Golden {
   const g = JSON.parse(text) as Partial<Golden>;
-  if (g.format !== GOLDEN_FORMAT || g.version !== GOLDEN_VERSION) throw new Error('not a faf-golden v1 file');
-  if (typeof g.scenario !== 'string' || !Array.isArray(g.trail) || typeof g.finalFullHash !== 'string') {
+  if (g.format !== GOLDEN_FORMAT || g.version !== GOLDEN_VERSION) throw new Error(`not a faf-golden v${GOLDEN_VERSION} file`);
+  if (typeof g.scenario !== 'string' || typeof g.simBuild !== 'string' || !Array.isArray(g.trail) || typeof g.finalFullHash !== 'string') {
     throw new Error('golden: missing fields');
   }
   return g as Golden;
@@ -110,4 +114,29 @@ export function compareChains(expected: HashChain, actual: HashChain): ChainDiff
     return { equal: false, firstDivergentTick: expected.ticks, detail: `final full hash ${actual.finalFullHash} ≠ ${expected.finalFullHash}` };
   }
   return { equal: true, firstDivergentTick: null, detail: `${actual.trail.length} trail hashes + final rule/full hash equal` };
+}
+
+/** Outcome of `goldens --update` for one scenario. */
+export type GoldenUpdateVerdict =
+  | { readonly kind: 'new' }
+  | { readonly kind: 'unchanged' }
+  /** Chain changed and SIM_BUILD was bumped: rewrite. */
+  | { readonly kind: 'changed'; readonly diff: ChainDiff }
+  /** Chain changed but SIM_BUILD is still the golden's: refuse (old logs would share the simId). */
+  | { readonly kind: 'needsBump'; readonly diff: ChainDiff };
+
+/**
+ * Decides whether `goldens --update` may write `next` over `old`. A changed hash chain (trail,
+ * final hashes, simHash or layoutHash) is only accepted together with a new SIM_BUILD, so a sim
+ * change can never keep the simId of logs recorded before it (PLAN §3.1).
+ */
+export function goldenUpdateVerdict(old: Golden | null, next: Golden): GoldenUpdateVerdict {
+  if (old === null) return { kind: 'new' };
+  const chain = compareChains(old, next);
+  const inputsEqual = old.simHash === next.simHash && old.layoutHash === next.layoutHash;
+  if (chain.equal && inputsEqual) return { kind: 'unchanged' };
+  const diff: ChainDiff = chain.equal
+    ? { equal: false, firstDivergentTick: 0, detail: `simHash/layoutHash ${next.simHash}/${next.layoutHash} ≠ ${old.simHash}/${old.layoutHash}` }
+    : chain;
+  return old.simBuild === next.simBuild ? { kind: 'needsBump', diff } : { kind: 'changed', diff };
 }

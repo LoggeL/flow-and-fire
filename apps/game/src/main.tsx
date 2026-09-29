@@ -12,7 +12,7 @@ import { parseParams } from './params.ts';
 import { App, BootError } from './ui/App.tsx';
 
 const root = document.documentElement;
-root.dataset['build'] = __IRONFLOW_BUILD_HASH__;
+root.dataset['build'] = __FAF_BUILD_HASH__;
 root.dataset['coi'] = String(globalThis.crossOriginIsolated === true);
 
 async function loadSimBin(): Promise<ArrayBuffer> {
@@ -30,7 +30,7 @@ async function boot(): Promise<void> {
   const game = new Game({
     canvas,
     params,
-    buildHash: __IRONFLOW_BUILD_HASH__,
+    buildHash: __FAF_BUILD_HASH__,
     assets: { simBin, viewJson },
     createWorker: () => new SimWorker({ name: 'faf-sim' }),
   });

@@ -28,8 +28,8 @@ const ATAN_LUT = new Int32Array(ATAN_STEPS + 1);
 
 /** Literal helper: degrees → Ang16 (round half up, wrapped). Constants/compile time only. */
 export function deg(v: number): Ang16 {
-  // floor((2·v·65536/360 + 1) / 2) == round-half-up(v·65536/360)
-  const raw = Math.floor(((v * 65536 * 2) / 360 + 1) / 2);
+  // floor((2·v·65536 + 360) / 720) == round-half-up(v·65536/360), one rounding step
+  const raw = Math.floor((v * 65536 * 2 + 360) / 720);
   if (!(raw >= -2147483648 && raw <= 2147483647)) throw new RangeError(`deg: ${v} out of range`);
   return (raw & ANG_MASK) as Ang16;
 }

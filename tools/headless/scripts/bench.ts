@@ -1,8 +1,11 @@
 /**
  * L6 benchmarks (script `bench`): MS1 tick bench, SPK1 and SPK5 in Node (fresh process per job)
  * and in Chromium/Firefox/WebKit module workers (sequential), each JIT cold and warm.
- * Writes results/bench-<date>.json and the Markdown tables between the bench markers of
- * docs/status/P6-headless.md, including the spike exit decisions (PLAN §4).
+ * Writes results/bench-<date>.json (local measurement output, git-ignored) and prints the
+ * Markdown tables incl. the spike exit decisions (PLAN §4). Only with `--update-docs` (or
+ * FAF_BENCH_UPDATE_DOCS=1) are the tables between the bench markers of docs/status/P6-headless.md
+ * replaced — a plain `pnpm bench` (part of ci:local) never touches tracked files, so it neither
+ * contradicts the documented values nor dirties the tree (build hash `<commit>-d<hash>`).
  *
  * Environment: FAF_BENCH_TICKS (1000), FAF_SPK1_TICKS (300), FAF_SPK1_RAMP (40), FAF_SPK5_REPS (10).
  */
@@ -223,10 +226,14 @@ const report = {
 const file = `${RESULTS_DIR}/bench-${date}.json`;
 writeText(file, JSON.stringify(report, null, 2) + '\n');
 
-// Status fragment: replace the block between the markers (the rest of the document is prose).
+// Status fragment (only on request): replace the block between the markers (the rest is prose).
 const BEGIN = '<!-- bench:begin -->';
 const END = '<!-- bench:end -->';
-if (existsSync(STATUS_DOC)) {
+const updateDocs = process.argv.includes('--update-docs') || process.env['FAF_BENCH_UPDATE_DOCS'] === '1';
+if (!updateDocs) {
+  console.log(markdown);
+  console.log(`\n(results in ${file}; status tables unchanged — run with --update-docs to replace them)`);
+} else if (existsSync(STATUS_DOC)) {
   const doc = readFileSync(STATUS_DOC, 'utf8');
   const a = doc.indexOf(BEGIN);
   const b = doc.indexOf(END);

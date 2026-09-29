@@ -66,3 +66,37 @@ for (const server of SERVERS) {
     expectNoErrors(errors);
   });
 }
+
+// Singleplayer (PLAN §3.4, S9 preview): a hidden tab pauses the sim; becoming visible again resumes it
+// — but only if the game paused itself (a manual pause stays).
+for (const server of SERVERS) {
+  test(`pause: verborgener Tab pausiert, sichtbarer setzt fort – ${server.label}`, async ({ page }) => {
+    const errors = captureErrors(page);
+    await openGame(page, server.url, '', 1000);
+    await waitTick(page, 3);
+    const setVisibility = (state: 'hidden' | 'visible') =>
+      page.evaluate((s) => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => s });
+        Object.defineProperty(document, 'hidden', { configurable: true, get: () => s === 'hidden' });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, state);
+
+    await setVisibility('hidden');
+    await page.waitForFunction(() => window.__faf!.paused === true);
+    const t0 = await page.evaluate(() => window.__faf!.tick);
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => window.__faf!.tick)).toBe(t0);
+    await setVisibility('visible');
+    await page.waitForFunction(() => window.__faf!.paused === false);
+    await waitTick(page, t0 + 3);
+
+    // Manual pause survives hide/show.
+    await page.evaluate(() => window.__faf!.ctl({ t: 'pause' }));
+    await page.waitForFunction(() => window.__faf!.paused === true);
+    await setVisibility('hidden');
+    await setVisibility('visible');
+    await page.waitForTimeout(400);
+    expect(await page.evaluate(() => window.__faf!.paused)).toBe(true);
+    expectNoErrors(errors);
+  });
+}

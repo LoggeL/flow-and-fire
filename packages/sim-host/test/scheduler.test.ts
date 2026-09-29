@@ -210,6 +210,9 @@ describe('MessageChannel self-ping wake-up (real clock)', () => {
   it('fires no earlier than requested and close to the deadline', async () => {
     const w = new MessageChannelWakeup();
     try {
+      // Node delivers the very first message of a fresh MessageChannel up to ~40 ms late (port start-up);
+      // warm the channel once so the measurement covers the steady-state self-ping.
+      await new Promise<void>((resolve) => w.schedule(0, resolve));
       const errs: number[] = [];
       for (const d of [0, 3, 20, 40]) {
         const t0 = performance.now();

@@ -28,7 +28,6 @@ export function spawnUnit(w: World, bp: number, army: number, x: number, z: numb
   U.layer[idx] = t.layerCol[bp]!;
   U.state[idx] = UnitState.Idle;
   U.flags[idx] = UnitBits.NoInterp | UnitBits.Fresh;
-  U.gen[idx] = units.gen[idx]!;
   U.x[idx] = x;
   U.y[idx] = 0;
   U.z[idx] = z;

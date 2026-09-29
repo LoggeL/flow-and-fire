@@ -160,6 +160,27 @@ describe('CommandApply', () => {
     expect(unitInfo(w, h!)!.targetX).toBe(fx(70));
   });
 
+  it('orders a u16 seq wrap-around inside one tick in serial-number order (65535 before 1)', () => {
+    const w = world();
+    step(w, [spawnCmd(0, 1, 50, 50, 0, 0, 0, 65533)]);
+    const [h] = unitHandles(w);
+    step(w, [moveCmd(0, [h!], 20, 50, 65534)]);
+    expect(lastAckSeq(w, 0)).toBe(65534);
+    // The client skips 0 on wrap-around: 65535 is followed by 1. Both land in the same tick,
+    // the newer (1) arrives first; it must be applied last and become the ack.
+    step(w, [moveCmd(0, [h!], 90, 50, 1), moveCmd(0, [h!], 10, 50, 65535)]);
+    expect(unitInfo(w, h!)!.targetX).toBe(fx(90));
+    expect(lastAckSeq(w, 0)).toBe(1);
+    // Same with arrival in seq order and three commands across the wrap.
+    step(w, [moveCmd(0, [h!], 30, 50, 2), moveCmd(0, [h!], 40, 50, 3)]);
+    expect(unitInfo(w, h!)!.targetX).toBe(fx(40));
+    expect(lastAckSeq(w, 0)).toBe(3);
+    // Another army's order is independent (its lastAck is still none = −1 ⇒ plain seq order).
+    step(w, [moveCmd(1, [], 1, 1, 2), spawnCmd(1, 1, 80, 80, 0, 0, 1, 1)]);
+    expect(lastAckSeq(w, 1)).toBe(2);
+    expect(lastAckSeq(w, 0)).toBe(3);
+  });
+
   it('drops unknown ops and malformed payloads but acknowledges them', () => {
     const w = world();
     step(w, [spawnCmd(0, 1, 50, 50, 0, 0, 0, 1)]);

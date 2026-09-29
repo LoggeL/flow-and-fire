@@ -37,7 +37,9 @@ export function expectNoErrors(errors: readonly string[]): void {
 
 /** Opens the game (root URL → redirect to /b/<hash>/) and waits for `ready` and the first units. */
 export async function openGame(page: Page, base: string, query = '', minUnits = 1): Promise<void> {
-  await page.goto(base + (query === '' ? '' : `?${query}`));
+  // 'commit': the root page redirects with an inline location.replace before its load event
+  // (Firefox then resolves goto() with null / may report an aborted navigation).
+  await page.goto(base + (query === '' ? '' : `?${query}`), { waitUntil: 'commit' });
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
   await page.waitForFunction(() => window.__faf?.ready === true, null, { timeout: 30_000 });
   if (minUnits > 0) {

@@ -21,6 +21,7 @@ import {
   lastHashTick,
   ruleHash,
   setAlliance,
+  SIM_BUILD,
   step,
   unitCount,
   unitHandles,
@@ -201,6 +202,8 @@ export interface AssertResult {
 /** Outcome of one scenario run. Hashes are u32 numbers. */
 export interface ScenarioResult {
   readonly scenario: string;
+  /** SIM_BUILD of the sim that produced the result. */
+  readonly simBuild: string;
   readonly seed: number;
   readonly ticks: number;
   readonly simHash: number;
@@ -314,6 +317,7 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
 
   return {
     scenario: sc.name,
+    simBuild: SIM_BUILD,
     seed: sc.seed,
     ticks: sc.ticks,
     simHash: w.bp.simHash >>> 0,

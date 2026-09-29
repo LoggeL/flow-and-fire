@@ -2,7 +2,10 @@
  * Transient staging of the commands of one step (not simulation state: empty before and after
  * every step). Commands from any input form (binary batch, batch cursor, envelope objects) are
  * copied into flat typed arrays and sorted by (army, seq, arrival index) — a total order
- * (PLAN §3.4 phase 1). The buffers only grow when a step carries more commands than ever
+ * (PLAN §3.4 phase 1). `seq` is a u16 that wraps (65535 → 1, see @faf/client CommandBuilder), so
+ * inside an army it is compared in serial-number order relative to the army's last applied seq:
+ * key = (seq − lastAckSeq − 1) & 0xffff, i.e. the command right after the last applied one sorts
+ * first and a wrapped seq (1 after 65535) sorts after the pre-wrap ones. The buffers only grow when a step carries more commands than ever
  * before (cold path); steady-state steps do not allocate.
  */
 import type { CommandBatchView, CommandEnvelope } from '@faf/protocol';
@@ -17,6 +20,8 @@ export class CommandStage {
   unitCount: Int32Array = new Int32Array(64);
   payStart: Int32Array = new Int32Array(64);
   payLen: Int32Array = new Int32Array(64);
+  /** Serial-number sort key of each envelope (see `sortByArmySeq`). */
+  key: Int32Array = new Int32Array(64);
   /** Sorted envelope indices. */
   order: Int32Array = new Int32Array(64);
   private tmp: Int32Array = new Int32Array(64);
@@ -48,6 +53,7 @@ export class CommandStage {
     this.unitCount = grow(this.unitCount);
     this.payStart = grow(this.payStart);
     this.payLen = grow(this.payLen);
+    this.key = new Int32Array(n);
     this.order = new Int32Array(n);
     this.tmp = new Int32Array(n);
   }
@@ -114,12 +120,22 @@ export class CommandStage {
     }
   }
 
-  /** Sorts `order` by (army, seq, index): stable bottom-up merge sort, allocation-free. */
-  sortByArmySeq(): void {
+  /**
+   * Sorts `order` by (army, serial seq, index): stable bottom-up merge sort, allocation-free.
+   * `lastAck[army]` is the seq of the army's last applied command (−1 = none); armies outside
+   * `lastAck` use −1 (they are skipped by CommandApply anyway).
+   */
+  sortByArmySeq(lastAck: Int32Array): void {
     const n = this.count;
     let a = this.order;
     let b = this.tmp;
-    for (let i = 0; i < n; i++) a[i] = i;
+    const key = this.key;
+    for (let i = 0; i < n; i++) {
+      a[i] = i;
+      const army = this.army[i]!;
+      const base = army >= 0 && army < lastAck.length ? lastAck[army]! : -1;
+      key[i] = (this.seq[i]! - base - 1) & 0xffff;
+    }
     for (let width = 1; width < n; width *= 2) {
       for (let lo = 0; lo < n; lo += 2 * width) {
         const mid = Math.min(lo + width, n);
@@ -151,14 +167,14 @@ export class CommandStage {
     }
   }
 
-  /** Strict total order: (army, seq, index). */
+  /** Strict total order: (army, serial seq key, index). */
   private before(x: number, y: number): boolean {
     const ax = this.army[x]!;
     const ay = this.army[y]!;
     if (ax !== ay) return ax < ay;
-    const sx = this.seq[x]!;
-    const sy = this.seq[y]!;
-    if (sx !== sy) return sx < sy;
+    const kx = this.key[x]!;
+    const ky = this.key[y]!;
+    if (kx !== ky) return kx < ky;
     return x < y;
   }
 }

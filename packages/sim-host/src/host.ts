@@ -86,14 +86,27 @@ export interface HostReadyMsg extends ReadyMsg {
   readonly tick: number;
 }
 
-/** `stats` with a few extra percentiles. */
+/** `stats` with a few extra percentiles and the command pipeline counters. */
 export interface HostStatsMsg extends StatsMsg {
   readonly tick: number;
   readonly tickP99Us: number;
   readonly hashTickP50Us: number;
   readonly frameP95Us: number;
   readonly samples: number;
+  /** Local command batches applied so far (each `cmd` message is one batch). */
+  readonly cmdBatchesApplied: number;
+  /**
+   * Largest number of ticks between a `cmd` arriving at the host and the tick that applied it
+   * (pipeline invariant: 1 — applied in the next tick that runs, inputDelay 0; SPK6).
+   */
+  readonly cmdApplyTicksMax: number;
 }
+
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type MutablePhaseStat = Mutable<PhaseStat>;
+type MutableStatsMsg = Omit<Mutable<HostStatsMsg>, 'phases'> & { phases: MutablePhaseStat[] };
+
+const NO_TRANSFER: ArrayBuffer[] = [];
 
 /** InitMessage plus optional host extensions. */
 export interface HostInitMessage extends InitMessage {
@@ -101,6 +114,10 @@ export interface HostInitMessage extends InitMessage {
   readonly startPaused?: boolean;
 }
 
+/**
+ * Sends a message to the main thread. Must serialize synchronously (like postMessage): the host
+ * reuses the `stats` message object for the next report.
+ */
 export type HostPost = (msg: HostMessage, transfer: ArrayBuffer[]) => void;
 
 export interface SimHostOptions {
@@ -151,6 +168,25 @@ export class SimHost implements SchedulerTarget {
   private disposed = false;
   private lastStatusKey = '';
   private readonly summary = emptySummary();
+  private readonly statsMsg: MutableStatsMsg = {
+    t: 'stats',
+    tick: 0,
+    tickP50Us: 0,
+    tickP95Us: 0,
+    tickP99Us: 0,
+    hashTickP50Us: 0,
+    hashTickP95Us: 0,
+    frameP95Us: 0,
+    samples: 0,
+    cmdBatchesApplied: 0,
+    cmdApplyTicksMax: 0,
+    phases: [...ACTIVE_PHASES, PhaseId.HashTick, Metric.Frame, Metric.Host].map((id) => ({ id, name: METRIC_NAMES[id]!, p50Us: 0, p95Us: 0 })),
+  };
+  /** Tick at which the oldest not yet applied `cmd` batch arrived (−1 = none queued). */
+  private cmdArrivalTick = -1;
+  private cmdBatchesApplied = 0;
+  private cmdQueued = 0;
+  private cmdApplyTicksMax = 0;
 
   constructor(options: SimHostOptions) {
     this.options = options;
@@ -327,6 +363,8 @@ export class SimHost implements SchedulerTarget {
     if (core.replaying) throw new Error('commands are not accepted while re-simulating recorded ticks');
     if (!core.acceptsLocal) throw new Error('this session takes its commands from custom sources');
     core.local.push(batch instanceof Uint8Array ? batch : new Uint8Array(batch));
+    if (this.cmdArrivalTick < 0) this.cmdArrivalTick = core.tick;
+    this.cmdQueued++;
   }
 
   /** Applies a control message. */
@@ -402,6 +440,14 @@ export class SimHost implements SchedulerTarget {
     const probe = this.probe;
     probe.lastUs.fill(0);
     if (!core.runTick(probe)) return false;
+    if (this.cmdArrivalTick >= 0 && core.local.queued === 0) {
+      // Every batch that arrived since cmdArrivalTick went into this tick.
+      const d = core.tick - this.cmdArrivalTick;
+      if (d > this.cmdApplyTicksMax) this.cmdApplyTicksMax = d;
+      this.cmdBatchesApplied += this.cmdQueued;
+      this.cmdQueued = 0;
+      this.cmdArrivalTick = -1;
+    }
     const total = (c.now() - h0) * 1000;
     const stepUs = probe.lastUs[Metric.Tick]!;
     const hostUs = total - stepUs;
@@ -486,39 +532,35 @@ export class SimHost implements SchedulerTarget {
     return len + b.length;
   }
 
+  /**
+   * Sends `stats` (every STATS_EVERY_TICKS ticks). Allocation-free: the message and its phase
+   * entries are one reused object graph — `post` must serialize synchronously (postMessage does;
+   * test hosts clone), see HostPost.
+   */
   private postStats(): void {
     const st = this.stats;
     const sum = this.summary;
-    const phases: PhaseStat[] = [];
-    const ids = ACTIVE_PHASES;
-    for (let i = 0; i < ids.length; i++) phases.push(this.phaseStat(ids[i]!));
-    phases.push(this.phaseStat(PhaseId.HashTick));
-    phases.push(this.phaseStat(Metric.Frame));
-    phases.push(this.phaseStat(Metric.Host));
+    const msg = this.statsMsg;
+    const phases = msg.phases;
+    for (let i = 0; i < phases.length; i++) {
+      const p = phases[i]!;
+      st.summarize(p.id, sum);
+      p.p50Us = Math.round(sum.p50);
+      p.p95Us = Math.round(sum.p95);
+    }
     st.summarize(Metric.Tick, sum);
-    const tickP50 = Math.round(sum.p50);
-    const tickP95 = Math.round(sum.p95);
-    const tickP99 = Math.round(sum.p99);
-    const samples = sum.count;
+    msg.tick = this.coreRef!.tick;
+    msg.tickP50Us = Math.round(sum.p50);
+    msg.tickP95Us = Math.round(sum.p95);
+    msg.tickP99Us = Math.round(sum.p99);
+    msg.samples = sum.count;
     st.summarize(Metric.HashTick, sum);
-    const msg: HostStatsMsg = {
-      t: 'stats',
-      tick: this.coreRef!.tick,
-      tickP50Us: tickP50,
-      tickP95Us: tickP95,
-      tickP99Us: tickP99,
-      hashTickP50Us: Math.round(sum.p50),
-      hashTickP95Us: Math.round(sum.p95),
-      frameP95Us: Math.round(st.percentile(Metric.Frame, 0.95)),
-      samples,
-      phases,
-    };
-    this.post(msg, []);
-  }
-
-  private phaseStat(id: number): PhaseStat {
-    const sum = this.stats.summarize(id, this.summary);
-    return { id, name: METRIC_NAMES[id]!, p50Us: Math.round(sum.p50), p95Us: Math.round(sum.p95) };
+    msg.hashTickP50Us = Math.round(sum.p50);
+    msg.hashTickP95Us = Math.round(sum.p95);
+    msg.frameP95Us = Math.round(st.percentile(Metric.Frame, 0.95));
+    msg.cmdBatchesApplied = this.cmdBatchesApplied;
+    msg.cmdApplyTicksMax = this.cmdApplyTicksMax;
+    this.post(msg, NO_TRANSFER);
   }
 
   /** Current status (also sent as `status`). */
