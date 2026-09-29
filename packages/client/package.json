@@ -4,16 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./asset-worker": "./src/assets/worker.ts"
   },
   "dependencies": {
     "@faf/blueprints": "workspace:*",
     "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
     "@faf/protocol": "workspace:*",
     "@faf/render": "workspace:*",
     "@faf/rules": "workspace:*",
     "@preact/signals": "^2.11.2",
     "gl-matrix": "^3.4.4",
+    "meshoptimizer": "^1.3.0",
     "preact": "^10.29.8"
   }
 }

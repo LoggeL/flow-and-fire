@@ -1,17 +1,30 @@
 /**
- * The L2 golden scenarios of MS1 (PLAN §3.12, §5.2 "≥ 2 L2-Goldens").
+ * The L2 golden scenarios (PLAN §3.12, §5.2 "≥ 2 L2-Goldens").
  *
+ * Test plane (MS1):
  * - `cubes-1000-move`: 1,000 cubes (cheat spawn, 2 armies), group moves at 2/300/700/1,100/1,500.
  * - `cubes-churn`: spawn/kill/respawn with FIFO slot reuse, Stop, a second army, a command on
  *   foreign units that must be rejected, a full wipe + regrowth of one army.
+ * hollow-ridge (MS2, content/maps/hollow-ridge.rtsmap):
+ * - `ridge-1000-move`: 1,000 cubes drive down the plateau cliffs/ramps, up the mesas and back —
+ *   y follows the terrain (M1).
+ * - `ridge-water-block`: group A is ordered across the deep river/lake, stays on its bank (sliding)
+ *   and goes idle; group B crosses at the NE ford and reaches its target, then crosses back and
+ *   forth; cheat spawns into the lake are rejected (M2).
+ * Both map scenarios check after every tick that no land unit stands in deep water and every
+ * 10 ticks that y == rules.sampleHeightRaw for every unit.
  *
  * Tick 1 carries the cheat spawns; the first move group follows in tick 2 because handles only
  * exist after the spawn step (see docs/status/P6-headless.md, deviations).
  */
 import { FX_ONE, handleGen, handleIndex, type Handle } from '@faf/fixed';
+import { LAND_MAX_WATER_DEPTH_RAW, MotionLayer, sampleHeightRaw } from '@faf/rules';
+import { spawnRejectedCount, surfaceY } from '@faf/sim';
 import { ScenarioBuilder, type Scenario, type ScenarioContext } from './scenario.ts';
 
 const MAP = 512;
+/** Repo-relative path of the MS2 reference map (loaded by the caller, see RunOptions.maps). */
+export const HOLLOW_RIDGE_PATH = 'content/maps/hollow-ridge.rtsmap';
 
 /** Every `n`-th element starting at `offset`. */
 function every<T>(list: readonly T[], n: number, offset = 0): T[] {
@@ -63,6 +76,46 @@ function handlesVar(ctx: ScenarioContext, key: string): Handle[] {
   const v = ctx.vars[key];
   if (!Array.isArray(v)) throw new Error(`scenario var '${key}' missing`);
   return v as Handle[];
+}
+
+/** Invariant (M2): no land unit stands in water deeper than 0.5 WU. */
+function noLandInDeepWater(ctx: ScenarioContext): true | string {
+  const w = ctx.world;
+  if (!w.hasWater) return true;
+  const U = w.units.col;
+  const hw = w.units.highWater;
+  for (let i = 0; i < hw; i++) {
+    if (w.units.alive[i] !== 1 || U.layer[i] !== MotionLayer.Land) continue;
+    const depth = w.waterLevel - sampleHeightRaw(w.terrain, U.x[i]!, U.z[i]!);
+    if (depth > LAND_MAX_WATER_DEPTH_RAW) return `slot ${i} in deep water (${depth / FX_ONE} WU) at (${U.x[i]! / FX_ONE}, ${U.z[i]! / FX_ONE})`;
+  }
+  return true;
+}
+
+/** Invariant (M1/Sim): every unit stands on the terrain, y == rules.sampleHeightRaw(x, z). */
+function yOnTerrain(ctx: ScenarioContext): true | string {
+  const w = ctx.world;
+  const U = w.units.col;
+  const hw = w.units.highWater;
+  for (let i = 0; i < hw; i++) {
+    if (w.units.alive[i] !== 1) continue;
+    const expected = surfaceY(w, U.layer[i]!, sampleHeightRaw(w.terrain, U.x[i]!, U.z[i]!));
+    if (U.y[i] !== expected) return `slot ${i}: y ${U.y[i]} ≠ terrain ${expected}`;
+  }
+  return true;
+}
+
+/** Mean y (WU) of the live units of a list. */
+function meanY(ctx: ScenarioContext, units: readonly Handle[]): number {
+  let s = 0;
+  let n = 0;
+  for (const h of units) {
+    const i = ctx.world.units.resolve(h);
+    if (i < 0) continue;
+    s += ctx.world.units.col.y[i]!;
+    n++;
+  }
+  return n === 0 ? 0 : s / n / FX_ONE;
 }
 
 /** 1,000 cubes, group moves (L2 golden #1). */
@@ -211,10 +264,157 @@ export function cubesChurn(): Scenario {
   return b.build();
 }
 
+/** 1,000 cubes over the slopes of hollow-ridge; y follows the terrain (MS2 golden #1). */
+export function ridge1000Move(): Scenario {
+  return new ScenarioBuilder('ridge-1000-move')
+    .map({ path: HOLLOW_RIDGE_PATH })
+    .seed(0x5eed0003)
+    .armies(2)
+    .ticks(2000)
+    // NW plateau (24.1 WU) around army 0's start, SE plateau around army 1's.
+    .spawn({ army: 0, count: 700, x: 110, z: 110, spread: 34 })
+    .spawn({ army: 1, count: 300, x: 402, z: 402, spread: 26 })
+    .assert(1, 'spawned 700 + 300 on the plateaus', (c) =>
+      all(expectEq('army 0', c.count(0), 700), expectEq('army 1', c.count(1), 300), expectEq('rejected', spawnRejectedCount(c.world), 0)),
+    )
+    .assert(1, 'army 0 starts high up (plateau ≈ 24 WU)', (c) => (meanY(c, c.handles(0)) > 22 ? true : `mean y ${meanY(c, c.handles(0))}`))
+    .at(2, (c) => {
+      const a0 = c.handles(0);
+      const a1 = c.handles(1);
+      c.vars['q0'] = part(a0, 0, 0.25);
+      c.vars['a1'] = a1;
+      return [
+        // Down the east ramp / cliffs, down the south ramp, up the NW mesa, to the hydro lowland.
+        { kind: 'move', army: 0, units: part(a0, 0, 0.25), x: 196, z: 96 },
+        { kind: 'move', army: 0, units: part(a0, 0.25, 0.5), x: 96, z: 196 },
+        { kind: 'move', army: 0, units: part(a0, 0.5, 0.75), x: 120, z: 244 },
+        { kind: 'move', army: 0, units: part(a0, 0.75, 1), x: 200, z: 150 },
+        { kind: 'move', army: 1, units: part(a1, 0, 0.5), x: 330, z: 416 },
+        { kind: 'move', army: 1, units: part(a1, 0.5, 1), x: 392, z: 262 },
+      ];
+    })
+    .assert(400, 'quarter 0 gathered at the east-ramp foot (196, 96)', (c) => {
+      const q0 = handlesVar(c, 'q0');
+      const n = nearCount(c, q0, 196, 96, 24);
+      return n * 10 >= q0.length * 9 ? true : `only ${n}/${q0.length} within 24 WU`;
+    })
+    .assert(400, 'y followed the terrain down: quarter 0 left the 24 WU plateau', (c) => {
+      const y = meanY(c, handlesVar(c, 'q0'));
+      return y < 19 ? true : `mean y ${y.toFixed(2)} WU`;
+    })
+    .at(700, (c) => [
+      { kind: 'move', army: 0, units: every(c.handles(0), 3, 1), x: 230, z: 150 },
+      { kind: 'move', army: 1, units: c.handles(1), x: 416, z: 416 },
+    ])
+    .assert(1090, 'army 1 climbed back onto its plateau (y ≈ 24 WU)', (c) => {
+      const a1 = handlesVar(c, 'a1');
+      let up = 0;
+      for (const h of a1) {
+        const i = c.world.units.resolve(h);
+        if (i >= 0 && c.world.units.col.y[i]! > 20 * FX_ONE) up++;
+      }
+      return up * 10 >= a1.length * 8 ? true : `only ${up}/${a1.length} above 20 WU`;
+    })
+    .at(1100, (c) => [{ kind: 'move', army: 0, units: c.handles(0), x: 96, z: 96 }])
+    .at(1500, (c) => {
+      const a0 = c.handles(0);
+      return [
+        { kind: 'move', army: 0, units: every(a0, 2), x: 40, z: 250 },
+        { kind: 'move', army: 0, units: every(a0, 2, 1), x: 250, z: 40 },
+        { kind: 'move', army: 1, units: c.handles(1), x: 470, z: 300 },
+      ];
+    })
+    .invariant(1, 'no land unit in deep water', noLandInDeepWater)
+    .invariant(10, 'y == sampleHeightRaw for every unit', yOnTerrain)
+    .assert(2000, 'all 1,000 cubes alive', (c) => expectEq('units', c.total(), 1000))
+    .assert(2000, 'all cubes inside the map', allInsideMap)
+    .build();
+}
+
+/**
+ * Deep water blocks, fords do not (MS2 golden #2). Group A (army 0) at (230, 170) is ordered to
+ * (282, 342) straight across the lake; group B (army 1) at (320, 120) to (392, 192) through the
+ * NE ford (356, 156) — the proposal of docs/status/ms2-p0-formats.md.
+ */
+export function ridgeWaterBlock(): Scenario {
+  const A_TARGET = [282, 342] as const;
+  const B_FROM = [320, 120] as const;
+  const B_TO = [392, 192] as const;
+  const groupAt = (c: ScenarioContext, key: string, x: number, z: number, r: number): true | string => {
+    const g = handlesVar(c, key);
+    const n = nearCount(c, g, x, z, r);
+    return n === g.length ? true : `only ${n}/${g.length} within ${r} WU of (${x}, ${z})`;
+  };
+  const allIdle = (c: ScenarioContext, key: string): true | string => {
+    for (const h of handlesVar(c, key)) {
+      const u = c.info(h);
+      if (u !== null && u.moving) return `unit ${h} still moving at (${u.x / FX_ONE}, ${u.z / FX_ONE})`;
+    }
+    return true;
+  };
+  /** Group A stayed on the NW side (x + z < 512, the river centre line) and far from its target. */
+  const aOnBank = (c: ScenarioContext): true | string => {
+    for (const h of handlesVar(c, 'A')) {
+      const u = c.info(h)!;
+      if (u.x + u.z >= 512 * FX_ONE) return `unit ${h} crossed the river centre line (x+z = ${(u.x + u.z) / FX_ONE})`;
+    }
+    return nearCount(c, handlesVar(c, 'A'), A_TARGET[0], A_TARGET[1], 60) === 0 ? true : 'a unit of group A got near its target';
+  };
+  return new ScenarioBuilder('ridge-water-block')
+    .map({ path: HOLLOW_RIDGE_PATH })
+    .seed(0x5eed0004)
+    .armies(2)
+    .ticks(2000)
+    .spawn({ army: 0, count: 40, x: 230, z: 170, spread: 6 })
+    .spawn({ army: 1, count: 30, x: B_FROM[0], z: B_FROM[1], spread: 4 })
+    .at(2, (c) => {
+      c.vars['A'] = c.handles(0);
+      c.vars['B'] = c.handles(1);
+      return [
+        { kind: 'move', army: 0, units: c.handles(0), x: A_TARGET[0], z: A_TARGET[1] },
+        { kind: 'move', army: 1, units: c.handles(1), x: B_TO[0], z: B_TO[1] },
+      ];
+    })
+    // Cheat spawns into the lake (3.5 WU deep) and the river bed are rejected and counted.
+    .at(5, () => [
+      { kind: 'spawn', army: 0, count: 5, x: 256, z: 256, spread: 0 },
+      { kind: 'spawn', army: 1, count: 5, x: 300, z: 212, spread: 2 },
+    ])
+    .assert(5, 'spawns into deep water are rejected', (c) =>
+      all(expectEq('rejected', spawnRejectedCount(c.world), 10), expectEq('army 0', c.count(0), 40), expectEq('army 1', c.count(1), 30)),
+    )
+    .assert(600, 'group A stopped at the bank and is idle', (c) => all(allIdle(c, 'A'), aOnBank(c)))
+    .assert(600, 'group B crossed the ford and reached its target', (c) => all(groupAt(c, 'B', B_TO[0], B_TO[1], 10), allIdle(c, 'B')))
+    // Keep both groups busy: A along its bank and across again, B back and forth over the ford.
+    .at(700, (c) => [
+      { kind: 'move', army: 0, units: handlesVar(c, 'A'), x: 140, z: 290 },
+      { kind: 'move', army: 1, units: handlesVar(c, 'B'), x: B_FROM[0], z: B_FROM[1] },
+    ])
+    .assert(1290, 'group B is back on the NW side of the ford', (c) => groupAt(c, 'B', B_FROM[0], B_FROM[1], 10))
+    .at(1300, (c) => [
+      { kind: 'move', army: 0, units: handlesVar(c, 'A'), x: 300, z: 380 },
+      { kind: 'move', army: 1, units: handlesVar(c, 'B'), x: B_TO[0], z: B_TO[1] },
+    ])
+    .assert(2000, 'group A is again stuck on the NW bank', (c) => {
+      for (const h of handlesVar(c, 'A')) {
+        const u = c.info(h)!;
+        if (u.x + u.z >= 512 * FX_ONE) return `unit ${h} crossed the river centre line (x+z = ${(u.x + u.z) / FX_ONE})`;
+      }
+      return allIdle(c, 'A');
+    })
+    .assert(2000, 'group B crossed the ford again and reached its target', (c) => groupAt(c, 'B', B_TO[0], B_TO[1], 10))
+    .invariant(1, 'no land unit in deep water', noLandInDeepWater)
+    .invariant(10, 'y == sampleHeightRaw for every unit', yOnTerrain)
+    .assert(2000, 'unit counts', (c) => all(expectEq('army 0', c.count(0), 40), expectEq('army 1', c.count(1), 30)))
+    .build();
+}
+
 /** All golden scenarios by name. */
 export const SCENARIOS: Readonly<Record<string, () => Scenario>> = {
   'cubes-1000-move': cubes1000Move,
   'cubes-churn': cubesChurn,
+  'ridge-1000-move': ridge1000Move,
+  'ridge-water-block': ridgeWaterBlock,
 };
 
 export const SCENARIO_NAMES: readonly string[] = Object.keys(SCENARIOS);

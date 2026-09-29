@@ -2,7 +2,8 @@
  * SimHost (PLAN §3.4, §3.6): owns the world of one session and connects it to the main thread.
  * Engine-neutral — runs in a dedicated worker (see worker.ts) and in Node (tests, bench).
  *
- * - `init` ⇒ world from sim.bin, frame transport (SAB triple buffer or transfer ping-pong),
+ * - `init` ⇒ world from sim.bin and the map (`init.map` .rtsmap bytes, parsed here with
+ *   readRtsMap; missing = test plane), frame transport (SAB triple buffer or transfer ping-pong),
  *   command-log recorder (OPFS when available), keyframes, scheduler; replies `ready`.
  * - `cmd` ⇒ LocalSource: applied in the next tick that runs (also while paused).
  * - `ctl` ⇒ pause/resume/speed/step/viewer/watch/debug/devReload/exportLog.
@@ -34,7 +35,7 @@ import {
 import { ACTIVE_PHASES, PhaseId, writeFrame, type FrameMeta } from '@faf/sim';
 import { performanceClock, type Clock, type Wakeup } from './clock.ts';
 import { SimCore } from './core.ts';
-import { SIM_BUILD, testPlaneMapSimHash } from './identity.ts';
+import { SIM_BUILD } from './identity.ts';
 import type { KeyframeOptions } from './keyframes.ts';
 import { MarkKind } from './log-format.ts';
 import { DEFAULT_KEEP_LOGS, openOpfsLogSink, opfsRoot, type DirectoryHandleLike } from './opfs.ts';
@@ -81,7 +82,12 @@ export interface HostStatusMsg extends StatusMsg {
 export interface HostReadyMsg extends ReadyMsg {
   readonly simBuild: string;
   readonly bpSimHash: number;
+  /** u32 identity of the map (formats mapSimHash). */
   readonly mapSimHash: number;
+  /** META name of the map ('testplane' for the generated test plane). */
+  readonly mapName: string;
+  /** Map edge length in WU. */
+  readonly mapSizeWu: number;
   readonly seed: number;
   readonly tick: number;
 }
@@ -272,8 +278,11 @@ export class SimHost implements SchedulerTarget {
       throw new RangeError(`frameCapacity ${msg.frameCapacity} < required ${writer.capacityBytes} (frameCapacityBytes(DEFAULT_FRAME_CAPS))`);
     }
     if (msg.transport === 'transfer' && this.options.port === undefined) throw new Error("transport 'transfer' needs a port");
+    // A broken map (CRC, truncation, bad values) throws FormatError here and becomes an `error`
+    // message with the reader's reason; the host stays uninitialized.
     const core = new SimCore({
       simBin: new Uint8Array(msg.simBin),
+      ...(msg.map !== undefined ? { map: new Uint8Array(msg.map) } : {}),
       seed: msg.seed,
       armyCount: msg.armyCount,
       playerArmy: msg.playerArmy,
@@ -305,7 +314,6 @@ export class SimHost implements SchedulerTarget {
       ...(this.options.wakeup !== undefined ? { wakeup: this.options.wakeup } : {}),
       paused: msg.startPaused === true,
     });
-    const mapSimHash = testPlaneMapSimHash(core.world.mapSizeWu);
     const ready: HostReadyMsg = {
       t: 'ready',
       simId: core.simId,
@@ -313,7 +321,9 @@ export class SimHost implements SchedulerTarget {
       transport: msg.transport,
       simBuild: SIM_BUILD,
       bpSimHash: core.world.bp.simHash >>> 0,
-      mapSimHash,
+      mapSimHash: core.mapSimHash,
+      mapName: core.mapName,
+      mapSizeWu: core.world.mapSizeWu,
       seed: core.world.seed >>> 0,
       tick: core.tick,
     };

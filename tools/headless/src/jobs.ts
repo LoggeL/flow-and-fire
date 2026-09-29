@@ -12,7 +12,8 @@ import { runTickBench, type TickBenchResult } from './tickbench.ts';
 
 export type Job =
   | { readonly kind: 'hashChain'; readonly scenario: string }
-  | { readonly kind: 'tickBench'; readonly ticks: number }
+  /** `map`: repo-relative .rtsmap path (JobAssets.maps); missing = MS1 test plane. */
+  | { readonly kind: 'tickBench'; readonly ticks: number; readonly map?: string }
   | { readonly kind: 'spk1'; readonly ticks: number; readonly rampTicks: number }
   | { readonly kind: 'spk5'; readonly reps: number };
 
@@ -22,6 +23,17 @@ export type RunMode = 'measure' | 'warmup';
 export interface JobAssets {
   readonly simBin: Uint8Array;
   readonly xxh32Wasm: Uint8Array;
+  /** Scenario/bench maps by repo-relative path (.rtsmap bytes). */
+  readonly maps: Readonly<Record<string, Uint8Array>>;
+}
+
+/** Unique key of a job for result files and tables (`tickBench-hollow-ridge` for a map bench). */
+export function jobKey(job: Job): string {
+  if (job.kind === 'tickBench' && job.map !== undefined) {
+    const base = job.map.slice(job.map.lastIndexOf('/') + 1).replace(/\.rtsmap$/, '');
+    return `tickBench-${base}`;
+  }
+  return job.kind;
 }
 
 export interface JobEnv {
@@ -52,13 +64,18 @@ export async function runJob(job: Job, mode: RunMode, assets: JobAssets, env: Jo
   switch (job.kind) {
     case 'hashChain': {
       const t0 = clock();
-      const r = runScenario(scenarioByName(job.scenario), { simBin: assets.simBin });
+      const r = runScenario(scenarioByName(job.scenario), { simBin: assets.simBin, maps: assets.maps });
       return { kind: 'hashChain', chain: toHashChain(r), failedAsserts: failedAsserts(r), ms: round4(clock() - t0) };
     }
     case 'tickBench': {
       const reps = mode === 'warmup' ? 1 : repsFor(res, TICKBENCH_TARGET_RES_MS);
       const ticks = mode === 'warmup' ? Math.min(job.ticks, 500) : job.ticks;
-      return { kind: 'tickBench', ...runTickBench({ simBin: assets.simBin, ticks, reps, clock }) };
+      let map: Uint8Array | undefined;
+      if (job.map !== undefined) {
+        map = assets.maps[job.map];
+        if (map === undefined) throw new Error(`tickBench map '${job.map}' not provided`);
+      }
+      return { kind: 'tickBench', ...runTickBench({ simBin: assets.simBin, ticks, reps, clock, ...(map !== undefined ? { map } : {}) }) };
     }
     case 'spk1': {
       const reps = mode === 'warmup' ? 1 : repsFor(res, SPK1_TARGET_RES_MS);

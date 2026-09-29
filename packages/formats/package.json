@@ -1,0 +1,23 @@
+{
+  "name": "@faf/formats",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "mapc": "node --import tsx scripts/mapc.ts",
+    "mapgen": "node --import tsx scripts/mapgen.ts",
+    "maps": "node --import tsx scripts/maps.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@faf/rules": "workspace:*",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15"
+  }
+}

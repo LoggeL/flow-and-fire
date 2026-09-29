@@ -3,15 +3,21 @@
  * persisted block by block (OPFS) so it survives a crash. It is the raw material of replays
  * (the `.rtsreplay` chunk container of PLAN §3.11 is built from it in MS11).
  *
- * Little-endian. Header (4-byte aligned, `headerBytes` long):
+ * Little-endian. Header (4-byte aligned, `headerBytes` long), version 2 (MS2):
  *
  *   0  u32 magic 'FAFL'            20 u32 bpSimHash
- *   4  u16 version (1)             24 u16 mapSizeWu
+ *   4  u16 version (2)             24 u16 mapSizeWu
  *   6  u16 headerBytes             26 u8  armyCount
  *   8  u32 simId                   27 i8  playerArmy (−1 = none/observer)
  *  12  u32 layoutHash              28 u16 hashInterval (ticks)
  *  16  u32 seed                    30 u16 buildHash length n
- *  32  u8[n] buildHash (UTF-8), zero padded to 4 bytes
+ *  32  u32 mapSimHash (formats mapSimHash of the map the log was recorded on)
+ *  36  u8[n] buildHash (UTF-8), zero padded to 4 bytes
+ *
+ * Version 1 (MS1) had no mapSimHash (buildHash at 32) and always ran on the flat test plane;
+ * the reader still accepts it and reports the MS1 plane identity
+ * {@link legacyTestPlaneMapSimHash}(mapSizeWu) (such a log never replays under MS2: its simId
+ * carries the MS1 SIM_BUILD).
  *
  * Entries follow, each a 16-byte entry header plus `dataLength` bytes zero padded to 4:
  *
@@ -27,11 +33,27 @@
  */
 
 import { xxHash32 } from '@faf/fixed';
-import { utf8Encode } from '@faf/protocol';
+import { decodeUtf8, encodeUtf8 } from '@faf/protocol';
+
+/**
+ * mapSimHash that MS1 used for its flat test plane (no map file): xxHash32 of a canonical
+ * description string. Only for reading version-1 log headers; since MS2 the test plane is a
+ * generated map with a regular formats mapSimHash.
+ */
+export function legacyTestPlaneMapSimHash(mapSizeWu: number): number {
+  const b = encodeUtf8(`faf-map:testplane:v1:size=${mapSizeWu}`);
+  return xxHash32(b, 0, b.length, 0) >>> 0;
+}
 
 export const LOG_MAGIC = 0x4c464146; // 'FAFL' little-endian
-export const LOG_VERSION = 1;
-export const LOG_FIXED_HEADER_BYTES = 32;
+/** Version written by the recorder (2: + mapSimHash). */
+export const LOG_VERSION = 2;
+/** Oldest version the reader accepts (1: MS1, test plane only). */
+export const LOG_MIN_VERSION = 1;
+/** Fixed header size of the current version (buildHash follows). */
+export const LOG_FIXED_HEADER_BYTES = 36;
+/** Fixed header size of version 1. */
+export const LOG_V1_FIXED_HEADER_BYTES = 32;
 export const LOG_ENTRY_HEADER_BYTES = 16;
 
 export const LogEntryKind = {
@@ -75,6 +97,8 @@ export interface LogHeader {
   readonly playerArmy: number;
   readonly hashInterval: number;
   readonly buildHash: string;
+  /** formats mapSimHash of the map the log was recorded on (u32; v1 logs: legacyTestPlaneMapSimHash). */
+  readonly mapSimHash: number;
 }
 
 export function align4(n: number): number {
@@ -83,7 +107,7 @@ export function align4(n: number): number {
 
 /** Encodes the log header. */
 export function encodeLogHeader(h: LogHeader): Uint8Array {
-  const bh = utf8Encode(h.buildHash);
+  const bh = encodeUtf8(h.buildHash);
   if (bh.length > 0xffff) throw new RangeError('buildHash too long');
   const total = align4(LOG_FIXED_HEADER_BYTES + bh.length);
   const out = new Uint8Array(total);
@@ -100,6 +124,7 @@ export function encodeLogHeader(h: LogHeader): Uint8Array {
   dv.setInt8(27, h.playerArmy);
   dv.setUint16(28, h.hashInterval, true);
   dv.setUint16(30, bh.length, true);
+  dv.setUint32(32, h.mapSimHash >>> 0, true);
   out.set(bh, LOG_FIXED_HEADER_BYTES);
   return out;
 }
@@ -134,6 +159,8 @@ export interface LogHashEntry {
 
 export interface ParsedCommandLog {
   readonly header: LogHeader;
+  /** Header version of the file (1 = MS1 test-plane log, 2 = current). */
+  readonly version: number;
   readonly bytes: Uint8Array;
   readonly commands: readonly LogCmdEntry[];
   readonly marks: readonly LogMarkEntry[];
@@ -154,55 +181,46 @@ export class CommandLogError extends Error {
   override readonly name = 'CommandLogError';
 }
 
-function decodeUtf8(bytes: Uint8Array): string {
-  let s = '';
-  for (let i = 0; i < bytes.length; ) {
-    const c = bytes[i]!;
-    let cp: number;
-    let n: number;
-    if (c < 0x80) {
-      cp = c;
-      n = 1;
-    } else if (c >= 0xf0) {
-      cp = ((c & 7) << 18) | ((bytes[i + 1]! & 63) << 12) | ((bytes[i + 2]! & 63) << 6) | (bytes[i + 3]! & 63);
-      n = 4;
-    } else if (c >= 0xe0) {
-      cp = ((c & 15) << 12) | ((bytes[i + 1]! & 63) << 6) | (bytes[i + 2]! & 63);
-      n = 3;
-    } else {
-      cp = ((c & 31) << 6) | (bytes[i + 1]! & 63);
-      n = 2;
-    }
-    s += String.fromCodePoint(cp);
-    i += n;
+/** Header text field (strict UTF-8); malformed bytes mean a corrupt header. */
+function decodeHeaderText(bytes: Uint8Array, offset: number, length: number): string {
+  try {
+    return decodeUtf8(bytes, offset, length);
+  } catch {
+    throw new CommandLogError('corrupt command log header (buildHash is not UTF-8)');
   }
-  return s;
 }
 
-/** Parses only the header. Throws CommandLogError if it is not a command log. */
-export function parseLogHeader(bytes: Uint8Array): { header: LogHeader; headerBytes: number } {
-  if (bytes.length < LOG_FIXED_HEADER_BYTES) throw new CommandLogError('command log too short');
+/**
+ * Parses only the header (versions 1 and 2). Throws CommandLogError if it is not a command log.
+ * A version-1 header (MS1) gets mapSimHash = legacyTestPlaneMapSimHash(mapSizeWu): MS1 only knew
+ * the flat test plane.
+ */
+export function parseLogHeader(bytes: Uint8Array): { header: LogHeader; headerBytes: number; version: number } {
+  if (bytes.length < LOG_V1_FIXED_HEADER_BYTES) throw new CommandLogError('command log too short');
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (dv.getUint32(0, true) !== LOG_MAGIC) throw new CommandLogError('not a command log (magic)');
   const ver = dv.getUint16(4, true);
-  if (ver !== LOG_VERSION) throw new CommandLogError(`unsupported command log version ${ver}`);
+  if (ver < LOG_MIN_VERSION || ver > LOG_VERSION) throw new CommandLogError(`unsupported command log version ${ver}`);
+  const fixed = ver === 1 ? LOG_V1_FIXED_HEADER_BYTES : LOG_FIXED_HEADER_BYTES;
   const headerBytes = dv.getUint16(6, true);
   const bhLen = dv.getUint16(30, true);
-  if (headerBytes !== align4(LOG_FIXED_HEADER_BYTES + bhLen) || headerBytes > bytes.length) {
+  if (headerBytes !== align4(fixed + bhLen) || headerBytes > bytes.length) {
     throw new CommandLogError('corrupt command log header');
   }
+  const mapSizeWu = dv.getUint16(24, true);
   const header: LogHeader = {
     simId: dv.getUint32(8, true),
     layoutHash: dv.getUint32(12, true),
     seed: dv.getUint32(16, true),
     bpSimHash: dv.getUint32(20, true),
-    mapSizeWu: dv.getUint16(24, true),
+    mapSizeWu,
     armyCount: dv.getUint8(26),
     playerArmy: dv.getInt8(27),
     hashInterval: dv.getUint16(28, true),
-    buildHash: decodeUtf8(bytes.subarray(LOG_FIXED_HEADER_BYTES, LOG_FIXED_HEADER_BYTES + bhLen)),
+    buildHash: decodeHeaderText(bytes, fixed, bhLen),
+    mapSimHash: ver === 1 ? legacyTestPlaneMapSimHash(mapSizeWu) : dv.getUint32(32, true),
   };
-  return { header, headerBytes };
+  return { header, headerBytes, version: ver };
 }
 
 /**
@@ -211,7 +229,7 @@ export function parseLogHeader(bytes: Uint8Array): { header: LogHeader; headerBy
  */
 export function parseCommandLog(input: Uint8Array | ArrayBuffer): ParsedCommandLog {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-  const { header, headerBytes } = parseLogHeader(bytes);
+  const { header, headerBytes, version } = parseLogHeader(bytes);
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const commands: LogCmdEntry[] = [];
   const marks: LogMarkEntry[] = [];
@@ -273,6 +291,7 @@ export function parseCommandLog(input: Uint8Array | ArrayBuffer): ParsedCommandL
   }
   return {
     header,
+    version,
     bytes,
     commands,
     marks,

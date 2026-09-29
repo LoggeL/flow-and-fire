@@ -6,9 +6,15 @@
  * plus the final rule and full hash. Commands are produced by callbacks that only read the world
  * (handles in slot order, unit info) and a per-run scratch object, so every engine issues exactly
  * the same command bytes — the runner is part of the determinism contract of the L2/L3 checks.
+ *
+ * Maps (MS2): a scenario runs on the flat test plane (`map({ sizeWu })`), on a `.rtsmap` file
+ * (`map({ path })`, repo-relative; the bytes are handed in through `RunOptions.maps` because the
+ * runner also runs in browser workers without a file system) or on an in-memory RtsMap
+ * (`map({ rtsMap })`).
  */
 import { asArmyId, asTick, fx, MAX_ARMIES, type Handle } from '@faf/fixed';
 import type { SimBpTable } from '@faf/blueprints/simbin';
+import { createTestPlaneMap, mapSimData, mapSimHash, readRtsMap, type RtsMap } from '@faf/formats';
 import { CmdFlags, CommandBatchEncoder, encodeCheatKill, encodeCheatSpawn, encodeMove, Op } from '@faf/protocol';
 import {
   armyUnitCount,
@@ -91,9 +97,32 @@ export interface TimedAssert {
   readonly fn: AssertFn;
 }
 
+/** Check evaluated after every `every`-th tick; reported once (first failure or pass). */
+export interface Invariant {
+  readonly every: number;
+  readonly name: string;
+  readonly fn: AssertFn;
+}
+
+/** Map of a scenario: flat test plane, a .rtsmap file (repo-relative path) or an in-memory map. */
+export type ScenarioMap =
+  | { readonly kind: 'testplane'; readonly sizeWu: number }
+  | { readonly kind: 'file'; readonly path: string }
+  | { readonly kind: 'inline'; readonly map: RtsMap };
+
+/** Argument of `ScenarioBuilder.map`. */
+export type MapSpec = { readonly sizeWu: number } | { readonly path: string } | { readonly rtsMap: RtsMap };
+
+/** Stable label of a scenario map (golden field `map`). */
+export function mapLabel(m: ScenarioMap): string {
+  return m.kind === 'testplane' ? `testplane:${m.sizeWu}` : m.kind === 'file' ? m.path : `inline:${m.map.meta.name}`;
+}
+
 export interface Scenario {
   readonly name: string;
   readonly seed: number;
+  readonly map: ScenarioMap;
+  /** Map edge length in WU (test plane size, or the map's; file maps: known after loading). */
   readonly mapSizeWu: number;
   readonly armyCount: number;
   readonly ticks: number;
@@ -104,27 +133,34 @@ export interface Scenario {
   /** Command callbacks, ascending by tick (stable for equal ticks). */
   readonly commands: readonly TimedCommands[];
   readonly asserts: readonly TimedAssert[];
+  readonly invariants: readonly Invariant[];
 }
 
 /** Fluent builder of a Scenario. */
 export class ScenarioBuilder {
   private readonly name: string;
   private seedValue = 1;
-  private mapSize = DEFAULT_MAP_SIZE_WU;
+  private mapRef: ScenarioMap = { kind: 'testplane', sizeWu: DEFAULT_MAP_SIZE_WU };
   private armyCountValue = 2;
   private tickCount = 2000;
   private readonly alliancePairs: (readonly [number, number])[] = [];
   private readonly spawnList: SpawnSpec[] = [];
   private readonly commandList: TimedCommands[] = [];
   private readonly assertList: TimedAssert[] = [];
+  private readonly invariantList: Invariant[] = [];
 
   constructor(name: string) {
     if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new RangeError(`invalid scenario name '${name}'`);
     this.name = name;
   }
 
-  map(opts: { readonly sizeWu: number }): this {
-    this.mapSize = opts.sizeWu;
+  /** Test plane of `sizeWu`, a .rtsmap file (`path`, repo-relative) or an RtsMap. */
+  map(spec: MapSpec): this {
+    if ('sizeWu' in spec) this.mapRef = { kind: 'testplane', sizeWu: spec.sizeWu };
+    else if ('path' in spec) {
+      if (!/^[A-Za-z0-9_./-]+\.rtsmap$/.test(spec.path) || spec.path.includes('..')) throw new RangeError(`invalid map path '${spec.path}'`);
+      this.mapRef = { kind: 'file', path: spec.path };
+    } else this.mapRef = { kind: 'inline', map: spec.rtsMap };
     return this;
   }
 
@@ -170,6 +206,13 @@ export class ScenarioBuilder {
     return this;
   }
 
+  /** Check evaluated after every `every`-th tick (1 = every tick); reported once per run. */
+  invariant(every: number, name: string, fn: AssertFn): this {
+    if (!Number.isInteger(every) || every < 1) throw new RangeError(`invariant: every ${every}`);
+    this.invariantList.push({ every, name, fn });
+    return this;
+  }
+
   build(): Scenario {
     const byTick = <T extends { readonly tick: number }>(list: readonly T[]): T[] =>
       list
@@ -178,16 +221,19 @@ export class ScenarioBuilder {
         .map((e) => e.v);
     for (const c of this.commandList) if (c.tick > this.tickCount) throw new RangeError(`command at ${c.tick} > ticks`);
     for (const a of this.assertList) if (a.tick > this.tickCount) throw new RangeError(`assert at ${a.tick} > ticks`);
+    const m = this.mapRef;
     return {
       name: this.name,
       seed: this.seedValue,
-      mapSizeWu: this.mapSize,
+      map: m,
+      mapSizeWu: m.kind === 'testplane' ? m.sizeWu : m.kind === 'inline' ? m.map.meta.sizeWu : 0,
       armyCount: this.armyCountValue,
       ticks: this.tickCount,
       alliances: this.alliancePairs.slice(),
       spawns: this.spawnList.slice(),
       commands: byTick(this.commandList),
       asserts: byTick(this.assertList),
+      invariants: this.invariantList.slice(),
     };
   }
 }
@@ -208,6 +254,9 @@ export interface ScenarioResult {
   readonly ticks: number;
   readonly simHash: number;
   readonly layoutHash: number;
+  /** Map label (`testplane:512` or the .rtsmap path) and its mapSimHash (simId input). */
+  readonly map: string;
+  readonly mapSimHash: number;
   readonly hashIntervalTicks: number;
   /** Rule hashes at ticks HASH_INTERVAL_TICKS, 2·HASH_INTERVAL_TICKS, … */
   readonly trail: readonly number[];
@@ -222,16 +271,31 @@ export interface RunOptions {
   /** Checked-in sim.bin bytes or a decoded table. */
   readonly simBin?: Uint8Array;
   readonly bpTable?: SimBpTable;
+  /** Map files by scenario path (`.rtsmap` bytes or parsed), for scenarios with `map({ path })`. */
+  readonly maps?: Readonly<Record<string, Uint8Array | RtsMap>>;
+}
+
+/**
+ * Resolves the map of a scenario (the test plane is the generated flat map of its size, formats
+ * createTestPlaneMap). Throws if a file map was not provided.
+ */
+export function resolveScenarioMap(m: ScenarioMap, maps: RunOptions['maps']): RtsMap {
+  if (m.kind === 'testplane') return createTestPlaneMap(m.sizeWu);
+  if (m.kind === 'inline') return m.map;
+  const v = maps?.[m.path];
+  if (v === undefined) throw new Error(`scenario map '${m.path}' not provided (RunOptions.maps)`);
+  return v instanceof Uint8Array ? readRtsMap(v) : v;
 }
 
 /** Executes a scenario in a fresh world. */
 export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
+  const map = resolveScenarioMap(sc.map, opts.maps);
   const w = createWorld({
     ...(opts.simBin !== undefined ? { simBin: opts.simBin } : {}),
     ...(opts.bpTable !== undefined ? { bpTable: opts.bpTable } : {}),
     seed: sc.seed,
     armyCount: sc.armyCount,
-    mapSizeWu: sc.mapSizeWu,
+    map: mapSimData(map),
   });
   for (const [a, b] of sc.alliances) setAlliance(w, a, b, true);
 
@@ -253,6 +317,7 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
   const enc = new CommandBatchEncoder(1 << 14);
   const trail: number[] = [];
   const asserts: AssertResult[] = [];
+  const invariantFail: (AssertResult | null)[] = sc.invariants.map(() => null);
   let ci = 0;
   let ai = 0;
   let commandCount = 0;
@@ -313,6 +378,22 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
       asserts.push(r === true ? { tick, name: a.name, ok: true } : { tick, name: a.name, ok: false, detail: r });
       ai++;
     }
+    for (let k = 0; k < sc.invariants.length; k++) {
+      const inv = sc.invariants[k]!;
+      if (tick % inv.every !== 0 || invariantFail[k] !== null) continue;
+      let r: true | string;
+      try {
+        r = inv.fn(ctx);
+      } catch (e) {
+        r = `threw: ${e instanceof Error ? e.message : String(e)}`;
+      }
+      if (r !== true) invariantFail[k] = { tick, name: inv.name, ok: false, detail: r };
+    }
+  }
+  for (let k = 0; k < sc.invariants.length; k++) {
+    const inv = sc.invariants[k]!;
+    const lastTick = sc.ticks - (sc.ticks % inv.every);
+    asserts.push(invariantFail[k] ?? { tick: lastTick, name: `${inv.name} (every ${inv.every} ticks)`, ok: true });
   }
 
   return {
@@ -322,6 +403,8 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
     ticks: sc.ticks,
     simHash: w.bp.simHash >>> 0,
     layoutHash: w.layoutHash >>> 0,
+    map: mapLabel(sc.map),
+    mapSimHash: mapSimHash(map) >>> 0,
     hashIntervalTicks: HASH_INTERVAL_TICKS,
     trail,
     finalRuleHash: ruleHash(w) >>> 0,

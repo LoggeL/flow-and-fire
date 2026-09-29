@@ -10,6 +10,19 @@ export function gameSimBin(): Uint8Array {
   return new Uint8Array(readFileSync(fileURLToPath(new URL('../../../../content/generated/sim.bin', import.meta.url))));
 }
 
+/** content/maps/hollow-ridge.rtsmap bytes (fresh copy). */
+export function hollowRidgeBytes(): Uint8Array {
+  return new Uint8Array(readFileSync(fileURLToPath(new URL('../../../../content/maps/hollow-ridge.rtsmap', import.meta.url))));
+}
+
+/** hollow-ridge as a fresh ArrayBuffer (InitMessage.map). */
+export function hollowRidgeBuffer(): ArrayBuffer {
+  const b = hollowRidgeBytes();
+  const out = new ArrayBuffer(b.length);
+  new Uint8Array(out).set(b);
+  return out;
+}
+
 /** sim.bin as a fresh ArrayBuffer (InitMessage.simBin). */
 export function gameSimBinBuffer(): ArrayBuffer {
   const b = gameSimBin();
@@ -113,16 +126,17 @@ export function runScenario(sim: HeadlessSim, untilTick: number, onTick?: (tick:
 
 /**
  * Move batches for the "driving cubes" load (alloc test, bench): `groups` groups of `perGroup`
- * handles, `variants` different target sets. Reusable Uint8Arrays.
+ * handles, `variants` different target sets with targets in [minWu, minWu + spanWu)². Reusable
+ * Uint8Arrays.
  */
-export function driveBatches(handles: readonly Handle[], groups: number, variants: number, seqBase: number): Uint8Array[] {
+export function driveBatches(handles: readonly Handle[], groups: number, variants: number, seqBase: number, minWu = 64, spanWu = 384): Uint8Array[] {
   const perGroup = Math.floor(handles.length / groups);
   const out: Uint8Array[] = [];
   for (let k = 0; k < variants; k++) {
     const envs: CommandEnvelope[] = [];
     for (let g = 0; g < groups; g++) {
       const a = ((k * groups + g + 1) * 2654435761) >>> 0;
-      envs.push(moveCmd(0, handles.slice(g * perGroup, (g + 1) * perGroup), 64 + (a % 384), 64 + ((a >>> 9) % 384), (seqBase + k * groups + g) & 0xffff));
+      envs.push(moveCmd(0, handles.slice(g * perGroup, (g + 1) * perGroup), minWu + (a % spanWu), minWu + ((a >>> 9) % spanWu), (seqBase + k * groups + g) & 0xffff));
     }
     out.push(encodeBatch(envs));
   }

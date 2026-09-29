@@ -1,25 +1,29 @@
 /**
- * L6 benchmarks (script `bench`): MS1 tick bench, SPK1 and SPK5 in Node (fresh process per job)
- * and in Chromium/Firefox/WebKit module workers (sequential), each JIT cold and warm.
+ * L6 benchmarks (script `bench`): tick bench on hollow-ridge (MS2 budget) and on the MS1 test
+ * plane, SPK1 and SPK5 in Node (fresh process per job) and in Chromium/Firefox/WebKit module
+ * workers (sequential), each JIT cold and warm.
  * Writes results/bench-<date>.json (local measurement output, git-ignored) and prints the
  * Markdown tables incl. the spike exit decisions (PLAN §4). Only with `--update-docs` (or
- * FAF_BENCH_UPDATE_DOCS=1) are the tables between the bench markers of docs/status/P6-headless.md
- * replaced — a plain `pnpm bench` (part of ci:local) never touches tracked files, so it neither
- * contradicts the documented values nor dirties the tree (build hash `<commit>-d<hash>`).
+ * FAF_BENCH_UPDATE_DOCS=1) are the tables between the bench markers of docs/status/ms2-p2-sim.md
+ * replaced (MS1 tables stay in docs/status/P6-headless.md as recorded) — a plain `pnpm bench`
+ * (part of ci:local) never touches tracked files, so it neither contradicts the documented values
+ * nor dirties the tree (build hash `<commit>-d<hash>`).
  *
  * Environment: FAF_BENCH_TICKS (1000), FAF_SPK1_TICKS (300), FAF_SPK1_RAMP (40), FAF_SPK5_REPS (10).
  */
 import { existsSync, readFileSync } from 'node:fs';
-import type { Job, JobResult } from '../src/jobs.ts';
+import { jobKey, type Job, type JobResult } from '../src/jobs.ts';
 import type { SeriesResult } from '../src/series.ts';
-import { buildHarness, clearRaw, ENGINES, isoDate, machine, nodeSeries, playwright, readRaw, RESULTS_DIR, STATUS_DOC, writeText } from './lib.ts';
+import { buildHarness, clearRaw, ENGINES, isoDate, machine, MAP_PATHS, nodeSeries, playwright, readRaw, RESULTS_DIR, STATUS_DOC, writeText } from './lib.ts';
 
 const env = (name: string, fallback: number): number => {
   const v = Number(process.env[name]);
   return Number.isFinite(v) && v > 0 ? v : fallback;
 };
 
+const RIDGE = MAP_PATHS[0]!;
 const JOBS: Job[] = [
+  { kind: 'tickBench', ticks: env('FAF_BENCH_TICKS', 1000), map: RIDGE },
   { kind: 'tickBench', ticks: env('FAF_BENCH_TICKS', 1000) },
   { kind: 'spk1', ticks: env('FAF_SPK1_TICKS', 300), rampTicks: env('FAF_SPK1_RAMP', 40) },
   { kind: 'spk5', reps: env('FAF_SPK5_REPS', 10) },
@@ -31,15 +35,16 @@ const BUDGET_SPK1_P95_MS = 25;
 const BUDGET_HASH_TICK_MS = 2;
 
 type Kind = Job['kind'];
-const results = new Map<string, SeriesResult>(); // `${engine}/${kind}`
+const results = new Map<string, SeriesResult>(); // `${engine}/${jobKey(job)}`
+const RIDGE_KEY = jobKey(JOBS[0]!);
 const problems: string[] = [];
 
 console.log('» build harness');
 buildHarness();
 
 for (const job of JOBS) {
-  console.log(`» node ${job.kind}`);
-  results.set(`node/${job.kind}`, nodeSeries<SeriesResult>(job));
+  console.log(`» node ${jobKey(job)}`);
+  results.set(`node/${jobKey(job)}`, nodeSeries<SeriesResult>(job));
 }
 
 console.log('» playwright: chromium, firefox, webkit (sequential)');
@@ -53,9 +58,9 @@ const pwCode = playwright('browser/bench.spec.ts', {
 if (pwCode !== 0) problems.push(`playwright exited with ${pwCode}`);
 for (const engine of ENGINES.slice(1)) {
   for (const job of JOBS) {
-    const r = readRaw<SeriesResult>(`bench-${engine}-${job.kind}`);
-    if (r === null) problems.push(`${engine} ${job.kind}: no result`);
-    else results.set(`${engine}/${job.kind}`, r);
+    const r = readRaw<SeriesResult>(`bench-${engine}-${jobKey(job)}`);
+    if (r === null) problems.push(`${engine} ${jobKey(job)}: no result`);
+    else results.set(`${engine}/${jobKey(job)}`, r);
   }
 }
 
@@ -64,25 +69,26 @@ for (const engine of ENGINES.slice(1)) {
 const f = (v: number, d = 3): string => v.toFixed(d).replace('.', ',');
 const ms = (v: number): string => (v >= 10 ? f(v, 1) : v >= 1 ? f(v, 2) : f(v, 3));
 
-function get<K extends Kind>(engine: string, kind: K, mode: 'cold' | 'warm'): Extract<JobResult, { kind: K }> | null {
-  const s = results.get(`${engine}/${kind}`);
+/** Result of a job (`key` = jobKey, default the kind) in one engine and JIT mode. */
+function get<K extends Kind>(engine: string, kind: K, mode: 'cold' | 'warm', key: string = kind): Extract<JobResult, { kind: K }> | null {
+  const s = results.get(`${engine}/${key}`);
   if (s === undefined) return null;
   const r = s[mode];
   return r.kind === kind ? (r as Extract<JobResult, { kind: K }>) : null;
 }
 
-function info(engine: string, kind: Kind): string {
-  const s = results.get(`${engine}/${kind}`);
+function info(engine: string, key: string): string {
+  const s = results.get(`${engine}/${key}`);
   return s === undefined ? '–' : `${f(s.engine.clockResolutionMs, 4)} ms`;
 }
 
 const rowsOf = (): { engine: string; mode: 'cold' | 'warm' }[] =>
   ENGINES.flatMap((engine) => (['cold', 'warm'] as const).map((mode) => ({ engine, mode })));
 
-function maxOf(kind: Kind, pick: (r: JobResult) => number): { value: number; where: string } {
+function maxOf(kind: Kind, pick: (r: JobResult) => number, key: string = kind): { value: number; where: string } {
   let best = { value: -1, where: '–' };
   for (const { engine, mode } of rowsOf()) {
-    const r = get(engine, kind, mode);
+    const r = get(engine, kind, mode, key);
     if (r === null) continue;
     const v = pick(r);
     if (v > best.value) best = { value: v, where: `${engine} ${mode === 'cold' ? 'kalt' : 'warm'}` };
@@ -93,31 +99,38 @@ function maxOf(kind: Kind, pick: (r: JobResult) => number): { value: number; whe
 const lines: string[] = [];
 const push = (...l: string[]): void => void lines.push(...l);
 
-// Tick bench
-const tb0 = get('node', 'tickBench', 'warm');
-push(
-  `### Tick-Bench MS1 (1.000 fahrende Würfel, ${tb0?.ticks ?? '?'} gemessene Ticks)`,
-  '',
-  'Sim-Tick gesamt (`step` inkl. CommandApply und Hash-Tick) sowie Hash-Tick allein (nur Hash-Ticks, jeder 10.).',
-  '',
-  '| Engine | JIT | Reps | Uhr | p50 | p95 | p99 | max | Hash-Tick p95 | fahrend am Ende |',
-  '|---|---|---|---|---|---|---|---|---|---|',
-);
-for (const { engine, mode } of rowsOf()) {
-  const r = get(engine, 'tickBench', mode);
-  if (r === null) continue;
-  push(`| ${engine} | ${mode === 'cold' ? 'kalt' : 'warm'} | ${r.reps} | ${info(engine, 'tickBench')} | ${ms(r.total.p50)} | **${ms(r.total.p95)}** | ${ms(r.total.p99)} | ${ms(r.total.max)} | ${ms(r.hashTick.p95)} | ${r.movingAtEnd}/${r.units} |`);
+// Tick benches (hollow-ridge = MS2 budget, test plane = MS1 reference)
+function tickBenchTables(key: string, title: string): { value: number; where: string } {
+  const tb0 = get('node', 'tickBench', 'warm', key);
+  push(
+    `### ${title} (1.000 fahrende Würfel, ${tb0?.ticks ?? '?'} gemessene Ticks)`,
+    '',
+    'Sim-Tick gesamt (`step` inkl. CommandApply und Hash-Tick) sowie Hash-Tick allein (nur Hash-Ticks, jeder 10.).',
+    '',
+    '| Engine | JIT | Reps | Uhr | p50 | p95 | p99 | max | Hash-Tick p95 | fahrend am Ende |',
+    '|---|---|---|---|---|---|---|---|---|---|',
+  );
+  for (const { engine, mode } of rowsOf()) {
+    const r = get(engine, 'tickBench', mode, key);
+    if (r === null) continue;
+    push(`| ${engine} | ${mode === 'cold' ? 'kalt' : 'warm'} | ${r.reps} | ${info(engine, key)} | ${ms(r.total.p50)} | **${ms(r.total.p95)}** | ${ms(r.total.p99)} | ${ms(r.total.max)} | ${ms(r.hashTick.p95)} | ${r.movingAtEnd}/${r.units} |`);
+  }
+  const phaseNames = tb0 === null ? [] : Object.keys(tb0.phases);
+  push('', 'p95 je Phase (ms):', '', `| Engine | JIT | ${phaseNames.join(' | ')} | HashTick |`, `|---|---|${phaseNames.map(() => '---|').join('')}---|`);
+  for (const { engine, mode } of rowsOf()) {
+    const r = get(engine, 'tickBench', mode, key);
+    if (r === null) continue;
+    push(`| ${engine} | ${mode === 'cold' ? 'kalt' : 'warm'} | ${phaseNames.map((p) => ms(r.phases[p]?.p95 ?? 0)).join(' | ')} | ${ms(r.hashTick.p95)} |`);
+  }
+  const max = maxOf('tickBench', (r) => (r.kind === 'tickBench' ? r.total.p95 : 0), key);
+  push('', `**Ziel:** p95 ≤ ${BUDGET_TICK_P95_MS} ms im langsamsten Engine-Worker inkl. Hash-Tick → gemessen max. p95 = **${ms(max.value)} ms** (${max.where}) ⇒ **${max.value >= 0 && max.value <= BUDGET_TICK_P95_MS ? 'erfüllt' : 'verfehlt'}**.`, '');
+  return max;
 }
-const phaseNames = tb0 === null ? [] : Object.keys(tb0.phases);
-push('', 'p95 je Phase (ms):', '', `| Engine | JIT | ${phaseNames.join(' | ')} | HashTick |`, `|---|---|${phaseNames.map(() => '---|').join('')}---|`);
-for (const { engine, mode } of rowsOf()) {
-  const r = get(engine, 'tickBench', mode);
-  if (r === null) continue;
-  push(`| ${engine} | ${mode === 'cold' ? 'kalt' : 'warm'} | ${phaseNames.map((p) => ms(r.phases[p]?.p95 ?? 0)).join(' | ')} | ${ms(r.hashTick.p95)} |`);
-}
-const tickMax = maxOf('tickBench', (r) => (r.kind === 'tickBench' ? r.total.p95 : 0));
+const tickMax = tickBenchTables(RIDGE_KEY, 'Tick-Bench MS2 auf hollow-ridge');
 const tickOk = tickMax.value >= 0 && tickMax.value <= BUDGET_TICK_P95_MS;
-push('', `**Ziel MS1:** p95 ≤ ${BUDGET_TICK_P95_MS} ms im langsamsten Engine-Worker inkl. Hash-Tick → gemessen max. p95 = **${ms(tickMax.value)} ms** (${tickMax.where}) ⇒ **${tickOk ? 'erfüllt' : 'verfehlt'}**.`, '');
+const planeMax = tickBenchTables('tickBench', 'Tick-Bench MS1-Referenz (Testebene)');
+const planeOk = planeMax.value >= 0 && planeMax.value <= BUDGET_TICK_P95_MS;
+if (!tickOk) problems.push(`MS2 tick budget missed on hollow-ridge: p95 ${ms(tickMax.value)} ms (${tickMax.where}) > ${BUDGET_TICK_P95_MS} ms`);
 
 // SPK1
 const s10 = get('node', 'spk1', 'warm');
@@ -177,7 +190,9 @@ for (const engine of ENGINES) {
   );
 }
 const hashMax = maxOf('spk5', (r) => (r.kind === 'spk5' ? r.live.simRuleHash.p95 : 0));
-const tbHashMax = maxOf('tickBench', (r) => (r.kind === 'tickBench' ? r.hashTick.p95 : 0));
+const tbHashRidge = maxOf('tickBench', (r) => (r.kind === 'tickBench' ? r.hashTick.p95 : 0), RIDGE_KEY);
+const tbHashPlane = maxOf('tickBench', (r) => (r.kind === 'tickBench' ? r.hashTick.p95 : 0));
+const tbHashMax = tbHashRidge.value >= tbHashPlane.value ? tbHashRidge : tbHashPlane;
 const worstHash = Math.max(hashMax.value, tbHashMax.value);
 const hashOk = worstHash >= 0 && worstHash <= BUDGET_HASH_TICK_MS;
 push(
@@ -190,7 +205,8 @@ push(
 const summaryTable = [
   '| Kriterium | Budget | gemessen (max. über Engines, kalt/warm) | Ergebnis |',
   '|---|---|---|---|',
-  `| MS1 Sim-Tick p95, 1.000 fahrende Würfel, inkl. Hash-Tick | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(tickMax.value)} ms (${tickMax.where}) | ${tickOk ? 'erfüllt' : 'verfehlt'} |`,
+  `| MS2 Sim-Tick p95, 1.000 fahrende Würfel auf hollow-ridge, inkl. Hash-Tick | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(tickMax.value)} ms (${tickMax.where}) | ${tickOk ? 'erfüllt' : 'verfehlt'} |`,
+  `| MS1 Sim-Tick p95 (Testebene, Referenz) | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(planeMax.value)} ms (${planeMax.where}) | ${planeOk ? 'erfüllt' : 'verfehlt'} |`,
   `| SPK1 Big-Battle-Prototyp p95 | ≤ ${BUDGET_SPK1_P95_MS} ms | ${ms(spkMax.value)} ms (${spkMax.where}) | ${spkOk ? 'erfüllt → TS' : 'verfehlt → Rust/WASM'} |`,
   `| SPK5 Hash-Tick (Live-Bereich, 1.000 Units) p95 | ≤ ${BUDGET_HASH_TICK_MS} ms | ${ms(worstHash)} ms | ${hashOk ? 'erfüllt → JS-Hash' : 'verfehlt → Rolling/WASM'} |`,
 ];
@@ -216,7 +232,8 @@ const report = {
   jobs: JOBS,
   budgets: { tickP95Ms: BUDGET_TICK_P95_MS, spk1P95Ms: BUDGET_SPK1_P95_MS, hashTickMs: BUDGET_HASH_TICK_MS },
   decisions: {
-    ms1Tick: { maxP95Ms: tickMax.value, where: tickMax.where, ok: tickOk },
+    ms2TickRidge: { maxP95Ms: tickMax.value, where: tickMax.where, ok: tickOk },
+    ms1TickPlane: { maxP95Ms: planeMax.value, where: planeMax.where, ok: planeOk },
     spk1: { maxP95Ms: spkMax.value, where: spkMax.where, ok: spkOk, decision: spkOk ? 'typescript' : 'rust-wasm' },
     spk5: { maxHashTickMs: worstHash, ok: hashOk, decision: hashOk ? 'js-live-range-hash' : 'rolling-or-wasm-hash' },
   },

@@ -1,8 +1,13 @@
 /**
- * MS1 tick benchmark (L6): 1,000 cubes that keep driving (a rotating group of 50 gets a new
- * target every tick), p50/p95/p99 of the whole sim tick, each active phase and the hash tick.
+ * Tick benchmark (L6): 1,000 cubes that keep driving (a rotating group of 50 gets a new target
+ * every tick), p50/p95/p99 of the whole sim tick, each active phase and the hash tick.
+ * MS1: flat test plane (spawn disc r 120 around the centre, targets in [32, 480)²).
+ * MS2: with `map` (hollow-ridge): spawn disc r 70 around (150, 150) and targets in [40, 200)², all
+ * on the NW side of the river — the cubes drive over plateau cliffs, ramps and the mesa, so every
+ * position update samples the heightmap and runs the deep-water rule.
  */
 import { asArmyId, asTick, fx, rng32, type Handle } from '@faf/fixed';
+import { createTestPlaneMap, mapSimData, readRtsMap, type RtsMap, TEST_PLANE_MAP_NAME } from '@faf/formats';
 import { CommandBatchEncoder, encodeCheatSpawn, encodeMove, Op, type CommandEnvelope } from '@faf/protocol';
 import {
   ACTIVE_PHASES,
@@ -27,6 +32,8 @@ const SALT_TARGET = 0x54424e54; // 'TBNT'
 
 export interface TickBenchOptions {
   readonly simBin: Uint8Array;
+  /** Map (.rtsmap bytes or parsed); missing = MS1 test plane. */
+  readonly map?: Uint8Array | RtsMap;
   readonly ticks: number;
   readonly reps: number;
   readonly clock: Clock;
@@ -34,6 +41,8 @@ export interface TickBenchOptions {
 }
 
 export interface TickBenchResult {
+  /** META name of the bench map ('testplane' for the generated test plane). */
+  readonly map: string;
   readonly units: number;
   readonly ticks: number;
   readonly reps: number;
@@ -48,9 +57,23 @@ export interface TickBenchResult {
   readonly wallMs: number;
 }
 
+/** Spawn disc and target square (WU) of a bench world. */
+interface BenchArea {
+  readonly cx: number;
+  readonly cz: number;
+  readonly spread: number;
+  readonly min: number;
+  readonly span: number;
+}
+const PLANE_AREA: BenchArea = { cx: 256, cz: 256, spread: 120, min: 32, span: 448 };
+const RIDGE_AREA: BenchArea = { cx: 150, cz: 150, spread: 70, min: 40, span: 160 };
+
 export function runTickBench(o: TickBenchOptions): TickBenchResult {
   const seed = o.seed ?? 0x7b0000c1;
-  const w = createWorld({ simBin: o.simBin, seed, armyCount: 2 });
+  const map = o.map === undefined ? createTestPlaneMap() : o.map instanceof Uint8Array ? readRtsMap(o.map) : o.map;
+  // Spawn/target area per bench map (the open plane vs. the NW side of hollow-ridge's river).
+  const area = map.meta.name === TEST_PLANE_MAP_NAME ? PLANE_AREA : RIDGE_AREA;
+  const w = createWorld({ simBin: o.simBin, seed, armyCount: 2, map: mapSimData(map) });
   const enc = new CommandBatchEncoder(1 << 12);
   enc.add({
     tick: asTick(1),
@@ -59,7 +82,7 @@ export function runTickBench(o: TickBenchOptions): TickBenchResult {
     op: Op.Cheat,
     flags: 0,
     units: [],
-    payload: encodeCheatSpawn({ bp: w.bp.indexOf('core:cube'), army: 0, count: TICKBENCH_UNITS, x: fx(256), z: fx(256), spread: fx(120) }),
+    payload: encodeCheatSpawn({ bp: w.bp.indexOf('core:cube'), army: 0, count: TICKBENCH_UNITS, x: fx(area.cx), z: fx(area.cz), spread: fx(area.spread) }),
   });
   step(w, enc.view());
   const handles = unitHandles(w, 0);
@@ -68,7 +91,7 @@ export function runTickBench(o: TickBenchOptions): TickBenchResult {
   // Every group gets an initial target so all cubes drive from the first measured tick on.
   enc.reset();
   let seq = 1;
-  for (let g = 0; g < groups; g++) enc.add(moveEnv(2, seq++, groupUnits[g]!, seed, g));
+  for (let g = 0; g < groups; g++) enc.add(moveEnv(2, seq++, groupUnits[g]!, seed, g, area));
   step(w, enc.view());
 
   const snap = new Uint8Array(w.snapshotByteLength);
@@ -88,7 +111,7 @@ export function runTickBench(o: TickBenchOptions): TickBenchResult {
         const tick = w.tick + 1;
         const g = tick % groups;
         enc.reset();
-        enc.add(moveEnv(tick, seq, groupUnits[g]!, seed, tick));
+        enc.add(moveEnv(tick, seq, groupUnits[g]!, seed, tick, area));
         seq = (seq + 1) & 0xffff;
         batch = enc.view();
       },
@@ -99,6 +122,7 @@ export function runTickBench(o: TickBenchOptions): TickBenchResult {
   let moving = 0;
   for (const h of handles) if (unitInfo(w, h)?.moving === true) moving++;
   return {
+    map: map.meta.name,
     units: handles.length,
     ticks: o.ticks,
     reps: o.reps,
@@ -112,9 +136,9 @@ export function runTickBench(o: TickBenchOptions): TickBenchResult {
   };
 }
 
-function moveEnv(tick: number, seq: number, units: readonly Handle[], seed: number, salt: number): CommandEnvelope {
+function moveEnv(tick: number, seq: number, units: readonly Handle[], seed: number, salt: number, area: BenchArea): CommandEnvelope {
   const r = rng32(seed, tick, salt, SALT_TARGET);
-  const x = 32 + ((r & 0xffff) % 448);
-  const z = 32 + ((r >>> 16) % 448);
+  const x = area.min + ((r & 0xffff) % area.span);
+  const z = area.min + ((r >>> 16) % area.span);
   return { tick: asTick(tick), army: asArmyId(0), seq, op: Op.Move, flags: 0, units, payload: encodeMove({ x: fx(x), y: fx(0), z: fx(z) }) };
 }

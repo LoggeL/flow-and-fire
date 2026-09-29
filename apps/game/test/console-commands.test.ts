@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { RenderPresetName } from '@faf/client';
 import { CONSOLE_HELP, ConsoleHistory, runConsoleCommand, tokenize, type ConsoleApi } from '../src/console-commands.ts';
 
 /** Records every API call; the console must reach the game only through this surface. */
@@ -7,6 +8,7 @@ function fakeApi(paused = false) {
   let seq = 0;
   let isPaused = paused;
   let budget = false;
+  let preset: RenderPresetName = 'medium';
   const api: ConsoleApi = {
     resolveBlueprint: (name) => (name === 'core:cube' || name === '0' ? 0 : name === 'core:tank' || name === '1' ? 1 : null),
     defaultBlueprint: 0,
@@ -39,6 +41,18 @@ function fakeApi(paused = false) {
     toggleBudget: () => (budget = !budget),
     exportLog: () => calls.push('export'),
     transportInfo: () => ['Transport: sab'],
+    mapInfo: () => ['Karte: Test'],
+    mapSizeWu: () => 512,
+    jumpCamera: (x, z, d) => {
+      calls.push(`camera ${x} ${z} ${d ?? '-'}`);
+      return ['camera ok'];
+    },
+    setPreset: (name) => {
+      calls.push(`preset ${name}`);
+      preset = name;
+      return [`preset ${name}`];
+    },
+    presetName: () => preset,
   };
   return { api, calls };
 }
@@ -54,7 +68,7 @@ describe('dev console commands (S8)', () => {
     const r = runConsoleCommand('help', api);
     expect(r.ok).toBe(true);
     expect(r.lines).toEqual(CONSOLE_HELP);
-    for (const cmd of ['spawn', 'kill', 'pause', 'resume', 'step', 'speed', 'hash', 'budget', 'export', 'transport', 'help']) {
+    for (const cmd of ['spawn', 'kill', 'pause', 'resume', 'step', 'speed', 'hash', 'budget', 'export', 'transport', 'map', 'camera', 'preset', 'help']) {
       expect(CONSOLE_HELP.some((l) => l.includes(cmd))).toBe(true);
     }
   });
@@ -115,6 +129,32 @@ describe('dev console commands (S8)', () => {
     expect(u.ok).toBe(false);
     expect(u.lines[0]).toContain("'frobnicate'");
     expect(runConsoleCommand('   ', api)).toEqual({ ok: true, lines: [] });
+  });
+});
+
+describe('dev console commands (MS2: map, camera, preset)', () => {
+  it('map prints the map info', () => {
+    const { api } = fakeApi();
+    expect(runConsoleCommand('map', api)).toEqual({ ok: true, lines: ['Karte: Test'] });
+  });
+
+  it('camera <x> <z> [dist] within the map, decimal comma, validation', () => {
+    const { api, calls } = fakeApi();
+    for (const ok of ['camera 96 96', 'camera 256.5 10 40', 'cam 0 512', 'camera 1,5 2 3,25']) expect(runConsoleCommand(ok, api).ok, ok).toBe(true);
+    for (const bad of ['camera', 'camera 10', 'camera -1 5', 'camera 513 5', 'camera 5 5 0', 'camera 5 5 x', 'camera a b']) {
+      expect(runConsoleCommand(bad, api).ok, bad).toBe(false);
+    }
+    expect(calls).toEqual(['camera 96 96 -', 'camera 256.5 10 40', 'camera 0 512 -', 'camera 1.5 2 3.25']);
+  });
+
+  it('preset shows or switches the render preset', () => {
+    const { api, calls } = fakeApi();
+    expect(runConsoleCommand('preset', api).lines[0]).toContain('medium');
+    expect(runConsoleCommand('preset ULTRA', api).ok).toBe(true);
+    expect(runConsoleCommand('preset low', api).ok).toBe(true);
+    expect(runConsoleCommand('preset potato', api).ok).toBe(false);
+    expect(calls).toEqual(['preset ultra', 'preset low']);
+    expect(runConsoleCommand('preset', api).lines[0]).toContain('low');
   });
 });
 

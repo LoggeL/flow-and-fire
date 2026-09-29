@@ -13,6 +13,13 @@ export const SPEED_MAX_PERMILLE = 3000;
 export const MAX_WATCH = 64;
 /** Viewer value meaning "all armies" (replay / observer perspective). */
 export const VIEWER_ALL = -1;
+/**
+ * Size bounds of `InitMessage.map` (.rtsmap bytes): at least a chunk-container header (16 B), at
+ * most 256 MiB (a 4,096 WU map with 8 splat layers stays below). The content (magic, CRCs,
+ * values) is checked by the host with @faf/formats `readRtsMap`, which names the reason.
+ */
+export const INIT_MAP_MIN_BYTES = 16;
+export const INIT_MAP_MAX_BYTES = 256 * 1024 * 1024;
 
 export type TransportKind = 'sab' | 'transfer';
 
@@ -88,6 +95,11 @@ export interface InitMessage {
   /** Capacity of one frame slot in bytes. */
   readonly frameCapacity: number;
   readonly buildHash: string;
+  /**
+   * The map as `.rtsmap` bytes (transferred). Missing = the flat MS1 test plane. Parsed and
+   * validated in the sim worker; its mapSimHash enters the simId (PLAN §3.1).
+   */
+  readonly map?: ArrayBuffer;
 }
 
 export type MainToHostMessage = InitMessage | CtlMessage | CmdMessage;
@@ -198,6 +210,10 @@ export function parseInitMessage(x: unknown): InitMessage | null {
     return null;
   }
   if (!isInt(x.frameCapacity, 16, 0x10000000) || typeof x.buildHash !== 'string') return null;
+  if (x.map !== undefined) {
+    if (!(x.map instanceof ArrayBuffer)) return null;
+    if (x.map.byteLength < INIT_MAP_MIN_BYTES || x.map.byteLength > INIT_MAP_MAX_BYTES) return null;
+  }
   return x as unknown as InitMessage;
 }
 

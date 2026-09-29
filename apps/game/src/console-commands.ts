@@ -1,7 +1,9 @@
 /**
- * Dev console command interpreter (S8). Pure logic over a {@link ConsoleApi}: the game wires it to
- * the client, tests to a fake. Cheats (spawn, kill) go through the command pipeline only.
+ * Dev console command interpreter (S8, MS2: map/camera/preset). Pure logic over a
+ * {@link ConsoleApi}: the game wires it to the client, tests to a fake. Cheats (spawn, kill) go
+ * through the command pipeline only.
  */
+import { RENDER_PRESET_NAMES, parsePresetName, type RenderPresetName } from '@faf/client';
 
 export interface ConsoleApi {
   /** Resolves a blueprint name (`core:cube`) or numeric sim id; null if unknown. */
@@ -28,6 +30,16 @@ export interface ConsoleApi {
   exportLog(): void;
   /** Lines describing the transport. */
   transportInfo(): string[];
+  /** Lines describing the map (name, size, water, starts, spots, mapSimHash). */
+  mapInfo(): string[];
+  /** Map edge length in WU (camera target range). */
+  mapSizeWu(): number;
+  /** Moves the camera focus to (x, z) WU, optionally with a distance (WU); returns info lines. */
+  jumpCamera(x: number, z: number, distance?: number): string[];
+  /** Switches the render preset; returns info lines. */
+  setPreset(name: RenderPresetName): string[];
+  /** Active preset. */
+  presetName(): RenderPresetName;
 }
 
 export interface ConsoleResult {
@@ -45,6 +57,9 @@ export const CONSOLE_HELP: readonly string[] = [
   'budget                 – Phasenbudget-Overlay ein/aus',
   'export                 – Command-Log herunterladen',
   'transport              – Frame-Transport und Isolation',
+  'map                    – Karte: Name, Größe, Wasser, Starts, Spots, mapSimHash',
+  'camera <x> <z> [dist]  – Kamera auf (x, z) WU setzen, optional Abstand in WU',
+  'preset [name]          – Render-Preset low|medium|high|ultra (ohne Name: aktuelles)',
   'help                   – diese Hilfe',
 ];
 
@@ -62,6 +77,13 @@ function parseIntStrict(s: string): number | null {
   if (!/^-?\d+$/.test(s)) return null;
   const v = Number.parseInt(s, 10);
   return Number.isSafeInteger(v) ? v : null;
+}
+
+/** Decimal number with `.` or `,`; null if malformed. */
+function parseDecimal(s: string | undefined): number | null {
+  if (s === undefined || !/^-?\d+([.,]\d+)?$/.test(s)) return null;
+  const v = Number(s.replace(',', '.'));
+  return Number.isFinite(v) ? v : null;
 }
 
 /** Splits a console line into words (whitespace separated, case preserved). */
@@ -130,6 +152,28 @@ export function runConsoleCommand(line: string, api: ConsoleApi): ConsoleResult 
       return ok('export: Command-Log angefordert (Download folgt)');
     case 'transport':
       return ok(...api.transportInfo());
+    case 'map':
+      return ok(...api.mapInfo());
+    case 'camera':
+    case 'cam': {
+      const size = api.mapSizeWu();
+      const x = parseDecimal(args[0]);
+      const z = parseDecimal(args[1]);
+      if (x === null || z === null || x < 0 || z < 0 || x > size || z > size) return fail(`camera: x und z in 0–${size} WU erwartet`);
+      let d: number | undefined;
+      if (args[2] !== undefined) {
+        const v = parseDecimal(args[2]);
+        if (v === null || v <= 0) return fail('camera: Abstand > 0 WU erwartet');
+        d = v;
+      }
+      return ok(...api.jumpCamera(x, z, d));
+    }
+    case 'preset': {
+      if (args[0] === undefined) return ok(`preset ${api.presetName()} (verfügbar: ${RENDER_PRESET_NAMES.join(', ')})`);
+      const name = parsePresetName(args[0].toLowerCase());
+      if (name === undefined) return fail(`preset: ${RENDER_PRESET_NAMES.join('|')} erwartet`);
+      return ok(...api.setPreset(name));
+    }
     default:
       return fail(`unbekannter Befehl '${words[0] ?? ''}' – "help" zeigt alle Befehle`);
   }

@@ -29,7 +29,12 @@ describe('world layout (PLAN §3.5)', () => {
       'grid.fine.start', 'grid.fine.cursor', 'grid.fine.items', 'grid.fine.cellOf',
       'grid.coarse.start', 'grid.coarse.cursor', 'grid.coarse.items', 'grid.coarse.cellOf',
       'hashlog',
+      'map.terrain', 'map.heights', 'map.starts', 'map.spots',
     ]);
+    // The map lives in the static area: after the dynamic range, outside rule and full hash.
+    expect(w.arena.regions.filter((r) => r.area === 'static').map((r) => r.name)).toEqual(['map.terrain', 'map.heights', 'map.starts', 'map.spots']);
+    expect(w.arena.staticStart).toBe(w.arena.dynamicEnd);
+    for (const r of w.arena.fullRegions) expect(r.area, r.name).toBe('dynamic');
     expect(w.arena.regions.filter((r) => r.derived).map((r) => r.name.split('.')[1] ?? r.name)).toEqual([
       'fine', 'fine', 'fine', 'fine', 'coarse', 'coarse', 'coarse', 'coarse', 'hashlog',
     ]);
@@ -53,6 +58,7 @@ describe('world layout (PLAN §3.5)', () => {
     for (const c of ['orderHead', 'orderTail', 'formation', 'groupOffset', 'air', 'builder', 'factory', 'shield', 'intel', 'eco'] as const) {
       expect(U[c][i], c).toBe(-1);
     }
+    // Test plane: flat at height 0.
     for (const c of ['bank', 'vet', 'weaponFirst', 'weaponCount', 'y', 'py'] as const) expect(U[c][i], c).toBe(0);
     expect(U.buildDone.get(i)).toBe(0);
     expect(U.lastHitBy[i]).toBe(0xffffffff);
@@ -91,4 +97,4 @@ describe('phases (PLAN §3.4)', () => {
 });
 
 /** Pinned layout hash (update deliberately when the arena schema changes). */
-const LAYOUT_HASH_512 = 0xcc8737d2;
+const LAYOUT_HASH_512 = 0x9c64c907;

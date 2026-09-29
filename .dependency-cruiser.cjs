@@ -92,6 +92,13 @@ module.exports = {
       to: { path: pkgTarget(['sim', 'sim-host']) },
     },
     {
+      name: 'render-bench-never-imports-sim',
+      severity: 'error',
+      comment: 'The render benchmark (SPK4) is presentation code: it never imports sim or sim-host.',
+      from: { path: '^tools/render-bench/' },
+      to: { path: pkgTarget(['sim', 'sim-host']) },
+    },
+    {
       name: 'sim-never-imports-presentation',
       severity: 'error',
       comment: 'Simulation packages never import render/client/ai/sim-host.',

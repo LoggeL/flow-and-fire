@@ -8,7 +8,7 @@
  */
 
 import { xxHash32 } from '@faf/fixed';
-import { utf8Encode } from './bytes.ts';
+import { encodeUtf8 } from './utf8.ts';
 
 const TAG = 'FAFSIMID';
 
@@ -26,10 +26,10 @@ export function simIdBytes(
     return b;
   };
   const str = (s: string): void => {
-    const b = utf8Encode(s);
+    const b = encodeUtf8(s);
     parts.push(u32(b.length), b);
   };
-  parts.push(utf8Encode(TAG));
+  parts.push(encodeUtf8(TAG));
   str(simBuild);
   parts.push(u32(bpSimHash), u32(mapSimHash), u32(modList.length));
   for (const m of modList) str(m);

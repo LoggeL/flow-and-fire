@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  INIT_MAP_MAX_BYTES,
+  INIT_MAP_MIN_BYTES,
   MAX_WATCH,
   parseCmdMessage,
   parseCtlMessage,
@@ -75,6 +77,18 @@ describe('ctl messages', () => {
     expect(parseInitMessage({ ...init, transport: 'sab' })).toBeNull();
     expect(parseInitMessage({ ...init, transport: 'sab', frameSab: new SharedArrayBuffer(64) })).not.toBeNull();
     expect(parseInitMessage({ ...init, armyCount: 0 })).toBeNull();
+    // Optional map bytes (.rtsmap): an ArrayBuffer of container size; content is checked by the host.
+    const withMap: InitMessage = { ...init, map: new ArrayBuffer(64) };
+    expect(parseInitMessage(withMap)).toBe(withMap);
+    expect(parseInitMessage(structuredClone(withMap))?.map?.byteLength).toBe(64);
+    expect(parseInitMessage({ ...init, map: undefined })).not.toBeNull();
+    expect(parseInitMessage({ ...init, map: new Uint8Array(64) })).toBeNull();
+    expect(parseInitMessage({ ...init, map: 'hollow-ridge' })).toBeNull();
+    expect(parseInitMessage({ ...init, map: null })).toBeNull();
+    expect(parseInitMessage({ ...init, map: new ArrayBuffer(INIT_MAP_MIN_BYTES - 1) })).toBeNull();
+    expect(parseInitMessage({ ...init, map: new SharedArrayBuffer(64) })).toBeNull();
+    expect(parseMainToHostMessage({ ...init, map: new ArrayBuffer(0) })).toBeNull();
+    expect(INIT_MAP_MAX_BYTES).toBe(256 * 1024 * 1024);
     const cmd = { t: 'cmd', batch: new ArrayBuffer(3) };
     expect(parseCmdMessage(cmd)).toBe(cmd);
     expect(parseCmdMessage({ t: 'cmd', batch: new Uint8Array(3) })).toBeNull();

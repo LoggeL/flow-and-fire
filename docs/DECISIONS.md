@@ -68,3 +68,77 @@ Referenz-Laptop; Details und Rohdaten in `docs/STATUS.md` („Spike-Ergebnisse�
     nur Invarianten (Frames/Ticks), die ms-Gates laufen mit `FAF_LATENCY_GATE=1`. `pnpm bench` schreibt nur lokale,
     git-ignorierte Berichte (`results/*.json`); die Tabellen in `docs/status/P6-headless.md` ändert nur
     `pnpm bench -- --update-docs`. STATUS nennt Wertebereiche über mehrere Läufe statt Einzelwerte.
+
+## Erste Karte: „Setons“ (Nutzerwunsch, 2026-09-29)
+
+- Nachbau nach dem Vorbild von *Seton's Clutch* (FA-Klassiker, 20 × 20 km, 8 Startpositionen, Teams gegenüber, Wasser dazwischen).
+- **Eigene Heightmap, eigene Texturen, eigene Props** — Layout nach öffentlichen Kartenbildern/Beschreibungen nachmodelliert, keine Original-Dateien (.scmap) übernommen.
+- Größe 1.024 WU (≈ 20 km). Das liegt über der MVP-Spielgröße (256–512 WU); Formate und Nav sind dafür ausgelegt, Terrain-LOD (M11) kommt erst in MS14 → bis dahin muss die Karte ohne LOD flüssig laufen (auf M5 Pro gemessen).
+- 8 Startpositionen im Kartenformat; der MVP spielt 1v1 auf 2 davon (gegenüberliegend).
+- Marine/Hover sind Post-MVP: Die Landverbindungen zwischen den Seiten müssen für Land-Einheiten begehbar sein; Wasser ist bis dahin Hindernis bzw. Luftraum.
+- Wird nach MS2 (sobald Kartenformat + CLI-Import stehen) gebaut und als Standardkarte gesetzt.
+
+## Nachtrag 2026-09-29 – SPK4 (MS2)
+
+17. **SPK4 Render-Last → Merged-Part und Preset-Infrastruktur fixiert; Medium-Werte = Fallback-Medium, CSM ab High.**
+    **Lokal gemessen (Apple M5 Pro, Playwright Chromium 153 / Firefox 155 / WebKit 26.6 headless), kein Iris Xe und
+    kein echtes Safari** (Punkt 5). Benchmark `pnpm bench:spk4` (`tools/render-bench`), Szene: hollow-ridge 512 WU,
+    2.000 Merged-Part-Units (12 Visuals × 3 LODs, PartStream), 30.000 instanzierte Props, Viewport 1920×1080,
+    Backbuffer 1536×864 (Render-Scale 0,8), 10-s-Kameraflug; Wertebereiche über 2 Volläufe, GPU-Werte nur ohne
+    Fremdlast (Details und Rohtabellen: `docs/status/ms2-p5-spk4.md`).
+
+    | Szenario | Draws max (Grenze) | Main-JS p95 Chromium / Firefox / WebKit (Ø, 1-ms-Takt) | GPU p50 / p95 (nur Chromium, Timer-Query) | FPS Chromium / Firefox / WebKit |
+    |---|---|---|---|---|
+    | `full` (CSM 2×2048, 8 Layer, HDR, Bloom, ACES, FXAA) | 94 (250) | 0,62–0,72 / 1,04–1,06 / 0,37–0,38 ms | 4,8–5,4 / 7,8–8,7 ms | 60 / 120 / 60 |
+    | `fallback` (Blob, 4 Layer, Impostor-Ring 110 WU) | 44 (250) | 0,39–0,53 / 0,62–0,70 / 0,34–0,38 ms | 2,0–2,3 / 4,2–4,6 ms | 60 / 120 / 60 |
+    | `ms2` (Fassade: Terrain + Wasser + 2.000 Units) | 25 (50) | 0,25–0,35 / 0,48–0,50 / 0,25–0,29 ms | 0,8 / 2,2 ms | 60 / 120 / 60 |
+
+    Das Exit-Kriterium (≤ 250 Draws, Main-JS ≤ 5 ms, GPU ≤ 12 ms) ist **lokal in allen drei Browsern erfüllt**, mit
+    großer Reserve bei Draws und Main-JS (hardwareunabhängig bzw. auf langsameren 4-Kern-CPUs noch ≥ 4× Luft).
+    Für die GPU belegt die Messung das Iris-Xe-Ziel nicht: Nimmt man für Iris Xe (96 EU) gegenüber dem M5 Pro einen
+    Faktor 4–5 an (FP32-Leistung und Speicherbandbreite; **Annahme, nicht gemessen**), läge `full` bei ≈ 20–27 ms p50,
+    `fallback` bei ≈ 8–12 ms – `full` verfehlt 12 ms deutlich, `fallback` liegt an der Grenze. `full` kostet GPU-seitig
+    ≈ 2× `fallback` (CSM-Empfang im Terrain-/Prop-FS, 8 Layer, Schatten-Passes).
+
+    Konsequenzen:
+    - **Fixiert:** Merged-Part (ein Draw pro (Visual, LOD), PartStream als Datentextur, CPU-Culling/LOD nur bei neuem
+      Frame oder Kamerawechsel), instanzierte Props mit Chunk-Culling (ein Draw pro (Mesh, LOD)), die Preset-
+      Infrastruktur und die Pass-Struktur (Schatten statisch gecacht + Units pro Frame mit reduziertem LOD, HDR-Kette).
+    - **Preset-Tabelle (`packages/render/src/presets.ts`, umzusetzen mit MS8/MS14 vom Render-Paket):**
+      Low: keine Schatten, 4 Layer, Impostor-Ring ab ≈ 70 WU, LDR ohne Bloom; **Medium: Blob-Schatten, 4 Layer,
+      Impostor-Ring ab 110 WU, HDR + Bloom (5 Stufen) + FXAA, Render-Scale 0,8**; High: CSM 2 Kaskaden 2048², 8 Layer,
+      Props ohne Impostor-Ring, MSAA 4; Ultra wie High mit LOD-Bias 1,25. `shadows`/`shadowCascades`/`hdr`/`bloom`
+      bekommen damit ihre echten Werte (MS2 noch `'none'`/`false`).
+    - **Draw-Budget skaliert mit der Visual-Zahl:** Units 3 Draws/Visual, CSM-Caster 2 Draws/Visual/Kaskade. Mit der
+      Fraktion (≈ 45–55 Blueprints) würde High mit CSM > 250 Draws erreichen (Test: 40 Visuals ⇒ 309). MS14 bündelt
+      deshalb die Caster (nur LOD 2 im Schatten ⇒ 1 Draw/Visual/Kaskade) bzw. nutzt `WEBGL_multi_draw` (Chromium und
+      WebKit ja, Firefox nein).
+    - **MS14 (Grafik-Politur):** GPU-Messung auf echter iGPU/echtem Safari nachholen (Autodetect + 3-s-Benchmark
+      entscheiden Medium vs. High); Terrain-/Unit-Pass bekommen den Schatten-Empfang (`SHADOW_RECEIVE_GLSL` aus
+      `tools/render-bench/src/proto/shadow-glsl.ts` als Vorlage, Units empfangen im Prototyp noch keine Schatten);
+      Bloom-Kette auf iGPU prüfen (5 Stufen, auf dem M5 Pro ≈ 1,3–2,3 ms inkl. Composite/FXAA).
+
+## Nachtrag 2026-09-29 – Nachbesserung nach dem MS2-Review
+
+18. **Die Testebene ist eine generierte Karte, kein Sonderpfad.** `?map=testplane`, Szenarien mit `map({ sizeWu })`,
+    `createWorld`/`SimCore` ohne Karte und der Client ohne `setMap` laufen alle über
+    `formats.createTestPlaneMap(size)` (flach, kein Wasser, keine Spots, Name `testplane`, Starts = MS1-Layout
+    (256, 256)/(312, 214) bei 512 WU) – also durch denselben Pfad wie jede Karte: statische Arena-Region, reguläre
+    `mapSimHash`/simId, `ClientMap`, `TerrainPicker`, CDLOD-`TerrainPass`. Entfernt: `GroundPass`, `GroundPicker`,
+    `FlatTerrain`, `World.testPlane`/`MT_TEST_PLANE`, `simIdOf` und alle `map === null`-Zweige. Der alte
+    String-Hash lebt nur noch als `legacyTestPlaneMapSimHash` zum Lesen von v1-Logs (MS1). Die Goldens `cubes-*`
+    wurden mit der neuen Identität neu aufgenommen (Hash-Ketten unverändert, nur `mapSimHash`/simId neu; kein
+    `SIM_BUILD`-Bump, weil sich nur die Karte, nicht der Sim-Code ändert – Regel aus Punkt 12). Kartengrößen sind
+    überall dieselben: Zweierpotenz in 64..4096 WU (formats, sim, render).
+19. **Licht-Konvention der Karte ist die des Formats.** `META.light.azimuthDeg`: 0° = Sonne aus +z, 90° = aus +x;
+    Richtung zur Sonne `(sin az · cos el, sin el, cos az · cos el)`. `render.sunDirection` rechnete vorher
+    `(cos az, …, sin az)` (an x = z gespiegelt) und wurde an das Format angepasst; Karten werden nicht umgeschrieben.
+    Ein Client-Test nagelt Format → `ClientMap.toTerrainDesc` → `sunDirection` gemeinsam fest.
+20. **Sitzungs-Snapshots tragen ihre Identität.** `SimCore.snapshot()` = 16-B-Kopf (`'FAFS'`, simId, layoutHash,
+    Arena-Länge) + dynamische Arena; `restoreSnapshot` lehnt fremde simId (andere Karte/Blueprints/Build), anderes
+    Layout oder andere Größe mit `SnapshotError` ab, bevor etwas geschrieben wird. Die rohe Arena-Kopie
+    (`sim.snapshot/restore`) bleibt für Keyframes derselben Welt.
+21. **Ein UTF-8-Codec.** Der strikte Codec (wirft bei einzelnen Surrogaten, überlangen Formen) liegt in
+    `@faf/protocol` (`encodeUtf8`/`decodeUtf8`) und wird von simId, `.rtsmap` (über `@faf/formats`, Re-Export) und dem
+    Command-Log-Kopf benutzt; `protocol.utf8Encode` (ersetzte still durch U+FFFD) und der lose Decoder im Log-Format
+    sind entfernt.

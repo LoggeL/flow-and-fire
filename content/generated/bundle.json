@@ -30,6 +30,8 @@
           "descKey": "unit.core.cube.desc",
           "icon": "land_cube",
           "iconThreshold": 8,
+          "lod": [60, 180],
+          "mesh": "units/cube_bot",
           "nameKey": "unit.core.cube.name",
           "placeholder": {
             "color": [0.62, 0.66, 0.72],
@@ -55,5 +57,5 @@
     }
   ],
   "version": 1,
-  "viewHash": "0xB5139443"
+  "viewHash": "0xF34D65D7"
 }

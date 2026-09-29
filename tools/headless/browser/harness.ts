@@ -27,6 +27,7 @@ const TYPES: Record<string, string> = {
   '.js': 'text/javascript; charset=utf-8',
   '.wasm': 'application/wasm',
   '.bin': 'application/octet-stream',
+  '.rtsmap': 'application/octet-stream',
   '.json': 'application/json',
 };
 

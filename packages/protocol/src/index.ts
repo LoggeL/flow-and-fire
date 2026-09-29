@@ -4,5 +4,6 @@ export * from './payloads.ts';
 export * from './ctl.ts';
 export * from './frame.ts';
 export * from './simid.ts';
-export { DataViewCache, utf8Encode } from './bytes.ts';
+export { DataViewCache } from './bytes.ts';
+export { decodeUtf8, encodeUtf8 } from './utf8.ts';
 export * from './transport/index.ts';

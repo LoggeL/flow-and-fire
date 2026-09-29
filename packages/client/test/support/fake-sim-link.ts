@@ -28,7 +28,7 @@ import {
 import { asFx } from '@faf/fixed';
 import type { SimLink } from '../../src/sim-link.ts';
 
-export const FAKE_CAPS = { ...DEFAULT_FRAME_CAPS, units: 4096, parts: 0, projectiles: 0, beams: 0, events: 0, debugBytes: 0 };
+export const FAKE_CAPS = { ...DEFAULT_FRAME_CAPS, units: 4096, parts: 4096, projectiles: 0, beams: 0, events: 0, debugBytes: 0 };
 
 /** Copy-on-arrival consumer: `deliver()` copies a frame, `poll()` returns it once. */
 export class FakeFrameConsumer implements FrameConsumer {
@@ -83,6 +83,8 @@ export interface FakeSimOptions {
   /** Grid origin in WU (default 200, 200). */
   readonly originWU?: readonly [number, number];
   readonly paused?: boolean;
+  /** Write one PartStream record (turret yaw = tick · 1000) per live unit (merged-part test). */
+  readonly parts?: boolean;
 }
 
 export class FakeSimLink implements SimLink {
@@ -112,6 +114,7 @@ export class FakeSimLink implements SimLink {
   readonly gen: Uint16Array;
   readonly fresh: Uint8Array;
   readonly speedRaw: number;
+  readonly withParts: boolean;
   highWater = 0;
 
   private readonly writer = new FrameWriter(FAKE_CAPS);
@@ -143,6 +146,7 @@ export class FakeSimLink implements SimLink {
     this.playerArmy = opts.playerArmy ?? 0;
     this.paused = opts.paused ?? false;
     this.speedRaw = opts.speedRaw ?? 2048;
+    this.withParts = opts.parts ?? false;
     const spacing = (opts.spacingWU ?? 2) * 4096;
     const ox = (opts.originWU?.[0] ?? 200) * 4096;
     const oz = (opts.originWU?.[1] ?? 200) * 4096;
@@ -269,7 +273,13 @@ export class FakeSimLink implements SimLink {
       if (this.alive[i] === 0) continue;
       let flags = this.moving[i] === 0 ? UnitFlags.Idle : 0;
       if (this.fresh[i] !== 0) flags |= UnitFlags.NoInterp;
-      w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, 0, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), 0, 0);
+      if (this.withParts) {
+        const yaw = (this.tick * 1000) & 0xffff;
+        const part = w.writePart((yaw - 1000) & 0xffff, yaw, 0, 0);
+        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, 0, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), part, 1);
+      } else {
+        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, 0, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), 0, 0);
+      }
     }
     const len = w.endFrame();
     this.frames.deliver(this.target, this.frameSeq, len);

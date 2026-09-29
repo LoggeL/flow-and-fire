@@ -17,6 +17,8 @@ export const WH_ARMY_COUNT = 4;
 export const WH_MAP_SIZE_WU = 5;
 /** Monotonic spawn counter (rng32 entity index of cheat spawns). */
 export const WH_SPAWN_SERIAL = 6;
+/** Cheat-spawned units rejected because their point was deep water for their layer (M2). */
+export const WH_SPAWN_REJECTED = 7;
 /** Words reserved in the header (the rest is zero). */
 export const WORLD_HEADER_WORDS = 16;
 
@@ -98,9 +100,50 @@ export const MOVERS_SCHEMA = {
   state: 'u8',
   /** MoverBits. */
   flags: 'u8',
+  /**
+   * Stuck rule: best (smallest) distance to the target reached by the current order (Fx;
+   * NO_BEST_DIST before the first sample) and the number of water-blocked ticks since then.
+   */
+  best: 'i32',
+  stuck: 'u8',
 } as const;
 
 export const Movers = defineDense('movers', CAP_UNITS, MOVERS_SCHEMA);
+
+/**
+ * Static map area (PLAN §3.5 "Bereich statisch"): written once in createWorld, never hashed,
+ * never part of a snapshot — its identity enters the simId through mapSimHash (PLAN §3.1).
+ *
+ * `map.terrain` (Int32 words):
+ */
+export const MT_SIZE_WU = 0;
+export const MT_DIM = 1;
+export const MT_HEIGHT_SCALE_RAW = 2;
+/** 1 = the map has a water surface, 0 = none. */
+export const MT_WATER_FLAG = 3;
+/** Water surface (Fx raw), 0 without water. */
+export const MT_WATER_LEVEL_RAW = 4;
+export const MT_START_COUNT = 5;
+export const MT_SPOT_COUNT = 6;
+export const MAP_TERRAIN_WORDS = 16;
+/** Words per start (army, x, z) and per spot (kind, x, z) in `map.starts` / `map.spots`. */
+export const MAP_POINT_WORDS = 3;
+
+const STATIC = { area: 'static' } as const;
+
+export const MapTerrain = defineRegion('map.terrain', MAP_TERRAIN_WORDS * 4, STATIC);
+/** One row per possible army (unused rows zero). */
+export const MapStarts = defineRegion('map.starts', MAX_ARMIES * MAP_POINT_WORDS * 4, STATIC);
+
+/** `map.heights`: dim² u16 height steps, index z·dim + x (the rules.Heightfield samples). */
+export function mapHeightsRegion(dim: number) {
+  return defineRegion('map.heights', dim * dim * 2, STATIC);
+}
+
+/** `map.spots`: spotCount × (kind, x, z) Int32 (at least one row so the region is never empty). */
+export function mapSpotsRegion(spotCount: number) {
+  return defineRegion('map.spots', (spotCount > 0 ? spotCount : 1) * MAP_POINT_WORDS * 4, STATIC);
+}
 
 /** Grid dimensions (cells per side) of a map. */
 export function gridDims(mapSizeWu: number): { fine: number; coarse: number } {

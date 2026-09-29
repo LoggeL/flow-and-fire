@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { matchesGlob, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
@@ -35,7 +36,7 @@ function simRuntimeDeps(): string[] {
 }
 
 describe('eslint.config.js applies sim/determinism', () => {
-  const covered = ['fixed', 'heap', 'rules', 'sim', 'protocol'];
+  const covered = ['fixed', 'heap', 'rules', 'sim', 'protocol', 'formats'];
 
   for (const p of covered) {
     it(`to packages/${p}/src`, async () => {
@@ -46,6 +47,11 @@ describe('eslint.config.js applies sim/determinism', () => {
 
   it('to the sim.bin decoder that runs in the sim worker (blueprints/src/simbin.ts)', async () => {
     expect(await simHits('packages/blueprints/src/simbin.ts')).toBe(PROBE_RULE_HITS);
+  });
+
+  it('to the map format reader/writer that runs in the sim worker (formats/src, MS2)', async () => {
+    expect(await simHits('packages/formats/src/rtsmap.ts')).toBe(PROBE_RULE_HITS);
+    expect(await simHits('packages/formats/src/container.ts')).toBe(PROBE_RULE_HITS);
   });
 
   it('to packages/nav/src once it exists (glob reserved for MS4)', async () => {
@@ -71,6 +77,10 @@ describe('eslint.config.js applies sim/determinism', () => {
       'packages/blueprints/src/compiler.ts',
       'packages/protocol/src/transport/__probe.ts',
       'packages/sim/test/__probe.test.ts',
+      'packages/formats/scripts/__probe.ts',
+      'packages/formats/test/__probe.test.ts',
+      'tools/render-bench/src/__probe.ts',
+      'tools/assets-pipeline/src/__probe.ts',
       'apps/game/src/__probe.ts',
     ]) {
       expect(await simHits(f), f).toBe(0);
@@ -80,5 +90,51 @@ describe('eslint.config.js applies sim/determinism', () => {
   it('covers every existing package source directory that is bound by the contract', () => {
     const existing = readdirSync(resolve(ROOT, 'packages'));
     for (const p of covered) expect(existing, p).toContain(p);
+  });
+});
+
+/** Repo files (relative, '/'-separated) outside node_modules, build output and VCS data. */
+function repoFiles(): string[] {
+  const out: string[] = [];
+  const skip = new Set(['node_modules', 'dist', '.git', 'test-results', 'playwright-report', 'dist-harness', 'results', 'bench-results']);
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(e.name)) continue;
+      const abs = resolve(dir, e.name);
+      if (e.isDirectory()) walk(abs);
+      else out.push(relative(ROOT, abs).split('\\').join('/'));
+    }
+  };
+  walk(ROOT);
+  return out;
+}
+
+describe('eslint.config.js globals blocks', () => {
+  it('every glob of a block that sets globals (browser/worker/node) matches at least one file', async () => {
+    type Block = { files?: unknown[]; languageOptions?: { globals?: object } };
+    const repoConfig = ((await import(pathToFileURL(resolve(ROOT, 'eslint.config.js')).href)) as { default: Block[] }).default;
+    const files = repoFiles();
+    // path.matchesGlob skips dot segments; ESLint does not (e.g. .dependency-cruiser.cjs).
+    const undotted = files.map((f) => f.replace(/(^|\/)\./g, '$1'));
+    const blocks = repoConfig.filter(
+      (b) => b.languageOptions?.globals !== undefined && Array.isArray(b.files),
+    );
+    expect(blocks.length).toBeGreaterThanOrEqual(3);
+    const dead: string[] = [];
+    for (const b of blocks) {
+      for (const g of b.files as string[]) {
+        const hit = files.some((f, i) => matchesGlob(f, g) || matchesGlob(undotted[i]!, g));
+        if (!hit) dead.push(g);
+      }
+    }
+    expect(dead, 'globs without any matching file (dead config)').toEqual([]);
+  });
+
+  it('the headless harness gets browser globals (page) and worker globals (worker entry)', async () => {
+    const eslint = new ESLint({ cwd: ROOT });
+    const page = (await eslint.calculateConfigForFile(resolve(ROOT, 'tools/headless/src/harness/page/main.ts'))) as { languageOptions: { globals: Record<string, unknown> } };
+    const worker = (await eslint.calculateConfigForFile(resolve(ROOT, 'tools/headless/src/harness/worker-entry.ts'))) as { languageOptions: { globals: Record<string, unknown> } };
+    expect(page.languageOptions.globals['document']).toBeDefined();
+    expect(worker.languageOptions.globals['importScripts']).toBeDefined();
   });
 });

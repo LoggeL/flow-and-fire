@@ -4,6 +4,7 @@
     { "path": "packages/fixed" },
     { "path": "packages/heap" },
     { "path": "packages/protocol" },
+    { "path": "packages/formats" },
     { "path": "packages/rules" },
     { "path": "packages/blueprints" },
     { "path": "packages/sim" },
@@ -13,6 +14,8 @@
     { "path": "apps/game" },
     { "path": "tools/headless" },
     { "path": "tools/headless/tsconfig.harness.json" },
-    { "path": "tools/headless/tsconfig.harness-worker.json" }
+    { "path": "tools/headless/tsconfig.harness-worker.json" },
+    { "path": "tools/assets-pipeline" },
+    { "path": "tools/render-bench" }
   ]
 }

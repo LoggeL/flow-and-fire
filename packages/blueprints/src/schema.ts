@@ -8,6 +8,7 @@
  */
 import { Kind, Type, type TObject, type TSchema } from '@sinclair/typebox';
 import { MOTION_LAYER_NAMES } from '@faf/rules';
+import { ASSET_ID_PATTERN } from './asset-manifest.ts';
 
 /** Namespaced blueprint id `ns:name`. */
 export const BLUEPRINT_ID_PATTERN = '^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$';
@@ -64,6 +65,10 @@ export const UnitSimSchema = Type.Object(
 export const UnitViewSchema = Type.Object(
   {
     placeholder: PlaceholderSchema,
+    /** Model asset id (view only). */
+    mesh: Type.Optional(Type.String({ pattern: ASSET_ID_PATTERN, maxLength: 128 })),
+    /** LOD switch distances in WU (view only); the compiler checks lod[0] < lod[1]. */
+    lod: Type.Optional(Type.Tuple([Type.Number({ exclusiveMinimum: 0, maximum: 65536 }), Type.Number({ exclusiveMinimum: 0, maximum: 65536 })])),
     icon: Type.Optional(Type.String({ pattern: '^[a-z0-9_]+$', maxLength: 64 })),
     iconThreshold: Type.Optional(Type.Number({ minimum: 0, maximum: 1024 })),
     nameKey: Type.Optional(Type.String({ pattern: I18N_KEY_PATTERN, maxLength: 128 })),

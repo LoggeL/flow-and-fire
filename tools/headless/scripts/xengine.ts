@@ -1,5 +1,6 @@
 /**
- * L3 cross-engine check (script `test:xengine`): builds the harness, runs both golden scenarios in
+ * L3 cross-engine check (script `test:xengine`): builds the harness, runs every golden scenario
+ * (test plane and hollow-ridge; the map bytes reach the browser workers as Vite assets) in
  * Node (fresh process) and in Chromium/Firefox/WebKit module workers, each JIT cold and warm, and
  * compares every hash chain (2,000 ticks) with the goldens. Report: results/xengine-<date>.json.
  * Exit code ≠ 0 on any divergence (the first divergent tick is printed).
@@ -105,4 +106,4 @@ if (!ok) {
   console.error(`\n✗ cross-engine check failed:\n  ${problems.join('\n  ')}`);
   process.exit(1);
 }
-console.log(`✓ ${rows.length} hash chains (2 scenarios × 4 engines × cold/warm/3 warm-ups) equal the goldens`);
+console.log(`✓ ${rows.length} hash chains (${SCENARIO_NAMES.length} scenarios × 4 engines × cold/warm/3 warm-ups) equal the goldens`);

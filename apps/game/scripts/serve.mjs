@@ -18,6 +18,8 @@ const MIME = {
   '.map': 'application/json; charset=utf-8',
   '.wasm': 'application/wasm',
   '.bin': 'application/octet-stream',
+  '.rtsmap': 'application/octet-stream',
+  '.faflog': 'application/octet-stream',
   '.txt': 'text/plain; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',

@@ -26,7 +26,7 @@
  * Pause (header flag): alpha = 1, frozen; the clock resynchronises on the first frame after
  * resume. `noInterp` records are handled by the shader (draw at cur).
  */
-import { FrameReader, UNIT_RECORD_BYTES, type FrameConsumer } from '@faf/protocol';
+import { FrameReader, FrameSection, PART_RECORD_BYTES, UNIT_RECORD_BYTES, type FrameConsumer } from '@faf/protocol';
 import { SIM_TICK_HZ } from '@faf/rules';
 
 /** Nominal tick length at 1x speed, derived from the one tick rate of the rules (10 Hz ⇒ 100 ms). */
@@ -93,6 +93,10 @@ export class FrameStream {
   private unitsCache: Uint8Array = new Uint8Array(0);
   private unitsCacheSrc: Uint8Array | null = null;
   private unitsCacheOff = -1;
+  private partsCache: Uint8Array = new Uint8Array(0);
+  private partsCacheSrc: Uint8Array | null = null;
+  private partsCacheOff = -1;
+  private readonly emptyParts = new Uint8Array(0);
 
   constructor(consumer: FrameConsumer, opts: FrameStreamOptions = {}) {
     this.consumer = consumer;
@@ -209,6 +213,31 @@ export class FrameStream {
     this.unitsCache = v;
     this.unitsCacheSrc = b;
     this.unitsCacheOff = off;
+    return v;
+  }
+
+  /** Parts of the newest frame. */
+  get partCount(): number {
+    return this.hasFrame ? this.reader.partCount : 0;
+  }
+
+  /**
+   * PartStream section of the newest frame (view, 8 B per part: prev/cur yaw, prev/cur pitch).
+   * Cached per frame buffer (allocation-free in the steady state).
+   */
+  parts(): Uint8Array {
+    if (!this.hasFrame) return this.emptyParts;
+    const r = this.reader;
+    const len = r.partCount * PART_RECORD_BYTES;
+    if (len === 0) return this.emptyParts;
+    const off = r.offset(FrameSection.Parts);
+    const b = this.bytes;
+    const c = this.partsCache;
+    if (this.partsCacheSrc === b && this.partsCacheOff === off && c.length === len) return c;
+    const v = b.subarray(off, off + len);
+    this.partsCache = v;
+    this.partsCacheSrc = b;
+    this.partsCacheOff = off;
     return v;
   }
 

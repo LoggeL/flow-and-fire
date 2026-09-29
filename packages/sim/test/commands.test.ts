@@ -262,6 +262,9 @@ describe('armies (G11)', () => {
     expect(() => createWorld({ bpTable: gameTable(), seed: 1, armyCount: 0 })).toThrow(/armyCount/);
     expect(() => createWorld({ bpTable: gameTable(), seed: 1, armyCount: 17 })).toThrow(/armyCount/);
     expect(() => createWorld({ bpTable: gameTable(), seed: 1, armyCount: 2, mapSizeWu: 100 })).toThrow(/mapSizeWu/);
+    // Same size rule as formats and render: powers of two in 64..4096 only (96 is a multiple of the
+    // coarse cell but no valid map size; 32 is below the format minimum).
+    for (const bad of [96, 32, 8192]) expect(() => createWorld({ bpTable: gameTable(), seed: 1, armyCount: 2, mapSizeWu: bad })).toThrow(/power of two/);
     expect(() => createWorld({ seed: 1, armyCount: 2 })).toThrow(/simBin or bpTable/);
   });
 });

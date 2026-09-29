@@ -16,6 +16,7 @@
   "dependencies": {
     "@faf/blueprints": "workspace:*",
     "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
     "@faf/heap": "workspace:*",
     "@faf/protocol": "workspace:*",
     "@faf/rules": "workspace:*",

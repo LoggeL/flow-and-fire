@@ -12,13 +12,14 @@
  * timeline; from then on it is live again.
  */
 
+import { createTestPlaneMap, mapSimData, mapSimHash, readRtsMap, validateRtsMap, type RtsMap } from '@faf/formats';
 import { setBatchTick } from '@faf/protocol';
-import { createWorld, fullHash, lastHash, lastHashTick, restore, ruleHash, step, HASH_INTERVAL_TICKS, type PhaseProbe, type World } from '@faf/sim';
+import { createWorld, fullHash, lastHash, lastHashTick, restore, ruleHash, snapshot, step, HASH_INTERVAL_TICKS, type PhaseProbe, type World } from '@faf/sim';
 import type { SimBpTable } from '@faf/blueprints/simbin';
 import { KeyframeStore, type KeyframeOptions } from './keyframes.ts';
 import { MarkKind, parseCommandLog, type LogHeader } from './log-format.ts';
 import { CommandLogRecorder, type RecorderOptions } from './recorder.ts';
-import { simIdOf } from './identity.ts';
+import { simIdFor } from './identity.ts';
 import { BatchBuilder, LocalSource, ReplaySource, type TickSource } from './sources.ts';
 
 export interface SimCoreOptions {
@@ -29,6 +30,13 @@ export interface SimCoreOptions {
   readonly armyCount: number;
   /** Army of the local player (log header; −1 = observer). */
   readonly playerArmy?: number;
+  /**
+   * The map: parsed (`RtsMap`, validated again) or raw `.rtsmap` bytes (parsed with readRtsMap;
+   * a broken file throws FormatError). Missing = the generated flat test plane map
+   * (formats `createTestPlaneMap(mapSizeWu)`), which then takes the same path as any map.
+   */
+  readonly map?: RtsMap | Uint8Array;
+  /** Size of the generated test plane (default 512); with a map it may be omitted and must match otherwise. */
   readonly mapSizeWu?: number;
   readonly buildHash?: string;
   /** Record a command log (default true). */
@@ -42,6 +50,21 @@ export interface SimCoreOptions {
   readonly trail?: boolean;
 }
 
+/**
+ * Session snapshot (`SimCore.snapshot`): a 16-byte identity header in front of the dynamic arena
+ * bytes. The static map area is not in the snapshot, so the header binds the bytes to the session
+ * they came from: simId (SIM_BUILD, blueprints, mapSimHash, mods) and the arena layout hash.
+ *
+ *   0 u32 magic 'FAFS' | 4 u32 simId | 8 u32 layoutHash | 12 u32 arena byte length | arena bytes
+ */
+export const SNAPSHOT_MAGIC = 0x53464146; // 'FAFS' little-endian
+export const SNAPSHOT_HEADER_BYTES = 16;
+
+/** A snapshot that does not belong to this session (other map/blueprints/build, layout or size). */
+export class SnapshotError extends Error {
+  override readonly name = 'SnapshotError';
+}
+
 /** Called for every rule hash (tick, u32 hash). */
 export type HashListener = (tick: number, hash: number) => void;
 
@@ -52,9 +75,26 @@ export interface HashMismatch {
   readonly actual: number;
 }
 
+/**
+ * Parses/validates a map option; a missing map is the generated flat test plane of `sizeWu`
+ * (default 512). Throws FormatError on a broken map.
+ */
+export function resolveMap(map: RtsMap | Uint8Array | undefined | null, sizeWu?: number): RtsMap {
+  if (map === undefined || map === null) return createTestPlaneMap(sizeWu);
+  if (map instanceof Uint8Array) return readRtsMap(map);
+  validateRtsMap(map);
+  return map;
+}
+
 export class SimCore {
   readonly world: World;
   readonly simId: number;
+  /** The map of this session (the generated test plane when none was given). Static data; never changes. */
+  readonly map: RtsMap;
+  /** formats mapSimHash of the map; part of simId. */
+  readonly mapSimHash: number;
+  /** META name of the map ('testplane' for the generated test plane). */
+  readonly mapName: string;
   readonly recorder: CommandLogRecorder | null;
   readonly keyframes: KeyframeStore | null;
   /** Default local source (also present when custom sources are given, but then unused). */
@@ -76,15 +116,20 @@ export class SimCore {
   onHash: HashListener | null = null;
 
   constructor(options: SimCoreOptions) {
+    const map = resolveMap(options.map, options.mapSizeWu);
     const w = createWorld({
       ...(options.simBin !== undefined ? { simBin: options.simBin } : {}),
       ...(options.bpTable !== undefined ? { bpTable: options.bpTable } : {}),
       seed: options.seed >>> 0,
       armyCount: options.armyCount,
+      map: mapSimData(map),
       ...(options.mapSizeWu !== undefined ? { mapSizeWu: options.mapSizeWu } : {}),
     });
     this.world = w;
-    this.simId = simIdOf(w.bp.simHash, w.mapSizeWu);
+    this.map = map;
+    this.mapSimHash = mapSimHash(map) >>> 0;
+    this.mapName = map.meta.name;
+    this.simId = simIdFor(w.bp.simHash, this.mapSimHash);
     this.local = new LocalSource();
     this.sources = options.sources ?? [this.local];
     this.acceptsLocal = this.sources.includes(this.local);
@@ -101,6 +146,7 @@ export class SimCore {
       playerArmy: options.playerArmy ?? 0,
       hashInterval: HASH_INTERVAL_TICKS,
       buildHash: options.buildHash ?? 'dev',
+      mapSimHash: this.mapSimHash,
     };
     this.recorder = options.record === false ? null : new CommandLogRecorder(header, options.recorder);
     this.keyframes = options.keyframes === false ? null : new KeyframeStore(w.snapshotByteLength, options.keyframes ?? {});
@@ -240,12 +286,48 @@ export class SimCore {
     return fullHash(this.world) >>> 0;
   }
 
+  /** Byte length of a session snapshot (header + dynamic arena). */
+  get snapshotByteLength(): number {
+    return SNAPSHOT_HEADER_BYTES + this.world.snapshotByteLength;
+  }
+
   /**
-   * Restores a snapshot (same layout). The timeline branches here: hash trail, recorder entries
-   * and keyframes after the restored tick are dropped, and a Restore MARK is recorded.
+   * Session snapshot: identity header (simId, layout hash) + the dynamic arena. With `target`
+   * (≥ snapshotByteLength) nothing is allocated.
+   */
+  snapshot(target?: Uint8Array): Uint8Array {
+    const n = this.snapshotByteLength;
+    const out = target ?? new Uint8Array(n);
+    if (out.length < n) throw new RangeError(`snapshot target too small: ${out.length} < ${n}`);
+    const dv = new DataView(out.buffer, out.byteOffset, SNAPSHOT_HEADER_BYTES);
+    dv.setUint32(0, SNAPSHOT_MAGIC, true);
+    dv.setUint32(4, this.simId, true);
+    dv.setUint32(8, this.world.layoutHash >>> 0, true);
+    dv.setUint32(12, this.world.snapshotByteLength, true);
+    snapshot(this.world, out.subarray(SNAPSHOT_HEADER_BYTES, n));
+    return out;
+  }
+
+  /**
+   * Restores a session snapshot (only the dynamic arena area — the static map stays). The header
+   * must name this session: a snapshot of another map (or blueprints/build: simId), another arena
+   * layout or size throws SnapshotError before anything is touched. The timeline branches here:
+   * hash trail, recorder entries and keyframes after the restored tick are dropped, and a Restore
+   * MARK is recorded.
    */
   restoreSnapshot(bytes: Uint8Array): void {
-    restore(this.world, bytes);
+    if (bytes.length < SNAPSHOT_HEADER_BYTES) throw new SnapshotError('snapshot too short');
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, SNAPSHOT_HEADER_BYTES);
+    const hex = (v: number): string => `0x${(v >>> 0).toString(16).padStart(8, '0')}`;
+    if (dv.getUint32(0, true) !== SNAPSHOT_MAGIC) throw new SnapshotError('not a session snapshot (magic)');
+    const simId = dv.getUint32(4, true);
+    if (simId !== this.simId) {
+      throw new SnapshotError(`snapshot belongs to simId ${hex(simId)}, this session is ${hex(this.simId)} (map '${this.mapName}' ${hex(this.mapSimHash)})`);
+    }
+    if (dv.getUint32(8, true) !== this.world.layoutHash >>> 0) throw new SnapshotError('snapshot arena layout differs');
+    const arenaBytes = dv.getUint32(12, true);
+    if (arenaBytes !== this.world.snapshotByteLength || bytes.length < SNAPSHOT_HEADER_BYTES + arenaBytes) throw new SnapshotError('snapshot size differs');
+    restore(this.world, bytes.subarray(SNAPSHOT_HEADER_BYTES, SNAPSHOT_HEADER_BYTES + arenaBytes));
     const t = this.tick;
     this.replay = null;
     this.timelineEnd = t;

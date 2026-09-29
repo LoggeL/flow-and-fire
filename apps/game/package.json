@@ -12,13 +12,16 @@
     "@faf/blueprints": "workspace:*",
     "@faf/client": "workspace:*",
     "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
     "@faf/protocol": "workspace:*",
+    "@faf/rules": "workspace:*",
     "@faf/sim-host": "workspace:*",
     "@preact/signals": "^2.11.2",
     "preact": "^10.29.8"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@faf/assets-pipeline": "workspace:*",
     "@playwright/test": "^1.63.0",
     "@preact/preset-vite": "^2.10.6",
     "@types/node": "^24.19.0",

@@ -5,9 +5,11 @@ eigenen Namen und eigenen Assets. Deterministische Q20.12-Fixed-Point-Simulation
 eigene WebGL2-Pipeline, Preact-UI. Plan: [`docs/PLAN.md`](docs/PLAN.md), Entscheidungen:
 [`docs/DECISIONS.md`](docs/DECISIONS.md), Stand: [`docs/STATUS.md`](docs/STATUS.md).
 
-**Stand:** Meilenstein MS1 (Spikes & deterministisches Skelett) ist abgeschlossen – 1.000 instanzierte Würfel,
-Rechtsklick-Move über die binäre Command-Pipeline in den Sim-Worker, Pause/Step, Dev-Konsole, Hash-Ketten bitgleich
-in Node, Chromium, Firefox und WebKit. Details und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
+**Stand:** Meilensteine MS1 (deterministisches Skelett) und MS2 (Terrain, Karte & Kamera) sind abgeschlossen. Im
+Browser läuft die 512-WU-Karte *Hollow Ridge* (eigenes `.rtsmap`-Format, aus Quellen per CLI erzeugt) mit
+Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 + 24 Würfel fahren auf der Terrainhöhe
+der deterministischen Sim (Tiefwasser blockiert, Furten passierbar). Hash-Ketten sind bitgleich in Node, Chromium,
+Firefox und WebKit. Details, Abnahme und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
 
 ## Schnellstart
 
@@ -17,9 +19,12 @@ pnpm dev            # http://localhost:5173/ – Spiel im Browser; mit Strg+C be
 ```
 
 Steuerung: Linksklick/-ziehen wählt aus (Strg/⌘+A = alle eigenen), **Rechtsklick bewegt**, S tippen = Stop,
-WASD/Pfeile oder mittlere Maustaste = Kamera, Mausrad = Zoom, **P = Pause**, N = Einzelschritt,
-**^ / ` / F1 = Dev-Konsole** (`help`, `spawn`, `kill`, `pause`, `resume`, `step`, `speed`, `hash`, `budget`, `export`).
-URL-Parameter: `?cubes=<n>`, `?enemy=<n>`, `?seed=<u32>`, `?transport=sab|transfer`, `?autostart=0`.
+**Mausrad = Zoom zum Cursor**, Mittelklick ziehen = Karte greifen, WASD/Pfeile/Bildschirmrand = Pan,
+Strg+Mittelklick = Rotation (Pos1 = zurück), H = eigener Start, Alt+Enter = Vollbild, **P = Pause**,
+N = Einzelschritt, **^ / ` / F1 = Dev-Konsole** (`help`, `spawn`, `kill`, `pause`, `resume`, `step`, `speed`, `hash`,
+`budget`, `export`, `map`, `camera`, `preset`).
+URL-Parameter: `?map=hollow-ridge|testplane`, `?preset=low|medium|high|ultra`, `?units=<n>` (Flugtest),
+`?assets=raw`, `?cubes=<n>`, `?enemy=<n>`, `?seed=<u32>`, `?transport=sab|transfer`, `?autostart=0`.
 
 Testen: `pnpm typecheck && pnpm lint && pnpm test`; Cross-Engine `pnpm test:xengine`; Browser-E2E `pnpm test:e2e`;
 alles nacheinander `pnpm ci:local`.
@@ -40,10 +45,14 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm typecheck` | `tsc -b` (Project References) + Typcheck aller Tests/Benches/Skripte (`tsconfig.tests.json`) |
 | `pnpm lint` | ESLint (inkl. `sim/determinism`) mit `--max-warnings 0` + dependency-cruiser |
 | `pnpm test` | Vitest (Root-Config, forks, max. 4 Worker, `--expose-gc`) |
-| `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4173 (COOP/COEP) und 4174 (ohne) |
+| `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
-| `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/P6-headless.md` |
-| `pnpm ci:local` | typecheck → lint → test → test:xengine → test:e2e → bench (sequenziell, lokales CI) |
+| `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/ms2-p2-sim.md` |
+| `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen + mapc → `content/maps/*.rtsmap`, deterministisch) |
+| `pnpm assets` | Asset-Pipeline (glTF/meshopt, Karte, `sim.bin`, Manifest) → `content/generated/assets/`; nach `pnpm maps` oder Blueprint-Änderungen ausführen |
+| `pnpm bench:spk4` | SPK4-Render-Benchmark in Chromium, Firefox, WebKit (`-- --quick` = nur Chromium, 3 s) |
+| `pnpm --filter @faf/render smoke` | Render-Smoke in 3 Browsern (GPU-Höhensonde == CPU, Decals, Context-Loss) |
+| `pnpm ci:local` | typecheck → lint → test → test:xengine → test:e2e → bench → assets check → bench:spk4 --quick (sequenziell, lokales CI) |
 
 Einzelnes Paket testen: `pnpm vitest run packages/fixed`. Einzelnes Paket-Skript: `pnpm --filter @faf/fixed gen:luts`.
 
@@ -60,24 +69,30 @@ packages/
   fixed/       Q20.12 (Fx/FxSmall), Ang16 + LUT-Trig, isqrt, fxDiv mit Korrektur, rng32, xxHash32, SafeInt
   heap/        Arena (WebAssembly.Memory), Table-DSL, Handles, Slabs, Hash, Snapshot
   protocol/    Command-Codec, Frame-/Event-Layouts, Opcodes (append-only); src/transport/ = Browser-Transport
-  rules/       gemeinsame Regeln (canPlace, Footprints, Formeln) für Sim, Client, KI
+  formats/     Chunk-Container (CRC-32), .rtsmap, mapSimHash; scripts/ = mapc (CLI-Import), mapgen, maps
+  rules/       gemeinsame Regeln (Terrainhöhe, Wassertiefe, Kategorien, Formeln) für Sim, Client, KI
   blueprints/  TypeBox-Schemas, define*(), Compiler → sim.bin / view.json / bundle.json + Hashes
   sim/         World, Systeme, Hash, FrameWriter (rein deterministisch)
   sim-host/    Worker-Entry (`@faf/sim-host/worker`), Scheduler, CommandSources, Command-Log, Headless-Entry
-  render/      WebGL2-RHI, Passes, Instancing, Interpolation
-  client/      Input, Kamera, Picking, Selection, Command-Builder, Frame-Consumer, UI-Bausteine
+  render/      WebGL2-RHI, CDLOD-Terrain, Wasser, Decals, Unit-Culling/LOD/Merged-Part, Presets, Context-Loss
+  client/      Input/Actions, FA-Kamera, Heightmap-Picking, ClientMap, Asset-Worker, Selection, Command-Builder
 apps/
   game/        Vite-App (Spiel, Dev-Konsole), scripts/serve.mjs (statischer Server für E2E/Hosting-Test)
 tools/
   eslint-plugin-sim/  eigene ESLint-Regel `sim/determinism`
   headless/           Node-Runner, Browser-Harness (Playwright-Worker), Benchmarks, Replay-Verify
+  assets-pipeline/    deterministische Asset-Pipeline (glTF + meshopt + Fallback, Manifest SHA-256)
+  render-bench/       SPK4-Benchmark (Render-Last full/fallback/ms2)
+content/              Blueprints, Karten (`maps/src` → `maps/*.rtsmap`), generierte Artefakte (`generated/`)
 test/e2e/             Playwright-Specs (Root-`playwright.config.ts`)
 docs/                 Plan, Entscheidungen, Status (`docs/STATUS.md`, Fragmente in `docs/status/`)
 ```
 
 Erlaubte Abhängigkeiten (dependency-cruiser, PLAN §3.2): `fixed` ist Blatt; `heap`/`protocol`/`rules` → `fixed`;
-`blueprints` → `fixed`, `rules`; `sim` → `fixed`, `heap`, `protocol`, `rules`, `blueprints` (+ später `nav`, `formats`);
-`sim-host` → `sim` und dessen Abhängigkeiten (+ `ai`); `render` → `protocol`, `fixed`, `gl-matrix`;
+`formats` → `fixed`, `protocol`; `blueprints` → `fixed`, `rules`; `sim` → `fixed`, `heap`, `protocol`, `rules`,
+`blueprints`, `formats` (+ später `nav`);
+`sim-host` → `sim`, `formats` und deren Abhängigkeiten (+ `ai`); `render` → `protocol`, `fixed`, `gl-matrix`;
+`render-bench` importiert nie `sim`;
 `client` → `render`, `protocol`, `rules`, `formats`, `blueprints`, `fixed`; nur `apps/*` importieren `client`;
 `render`/`client`/`ai` importieren nie `sim`/`sim-host`; keine Zyklen; keine relativen Imports in fremde Pakete.
 
@@ -89,7 +104,7 @@ Erlaubte Abhängigkeiten (dependency-cruiser, PLAN §3.2): `fixed` ist Blatt; `h
   `test/support/`. Benchmarks unter `<paket>/bench/`, Offline-Skripte unter `<paket>/scripts/`.
 - **Imports** innerhalb eines Pakets relativ **mit `.ts`-Endung** (`import { fx } from './fx.ts'`), paketübergreifend
   nur über den Paketnamen (`@faf/fixed`). Typ-Importe mit `import type` (`verbatimModuleSyntax`).
-- **Determinismus** (PLAN §3.1/§3.12): In `packages/{fixed,heap,rules,sim,nav}/src` und `packages/protocol/src`
+- **Determinismus** (PLAN §3.1/§3.12): In `packages/{fixed,heap,rules,formats,sim,nav}/src` und `packages/protocol/src`
   (außer `src/transport/`) erzwingt `sim/determinism`: kein `Math.*` außer `imul/floor/trunc/min/max/abs/sign/clz32`,
   kein `Math.random`/`Date`/`performance`/Timer/`async`/`await`/`for…in`/`**`, keine `Map`/`Set`/`Weak*`-Werte,
   `sort()` nur mit Comparator, kein `Float32Array`, `Float64Array` nur in `packages/heap/src/safeint.ts`,

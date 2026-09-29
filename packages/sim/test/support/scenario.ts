@@ -1,5 +1,6 @@
 import { CommandBatchView, type CommandEnvelope } from '@faf/protocol';
 import type { SimBpTable } from '@faf/blueprints';
+import type { MapSimData } from '@faf/formats';
 import { createWorld, fullHash, lastHash, lastHashTick, ruleHash, step, unitHandles, type World } from '../../src/index.ts';
 import { batch, killCmd, moveCmd, spawnCmd, stopCmd } from './fixtures.ts';
 
@@ -58,9 +59,13 @@ export interface RunResult {
   readonly world: World;
 }
 
-/** Runs the reference scenario for `ticks` ticks from a fresh world. */
-export function runScenario(table: SimBpTable, seed: number, ticks: number, form: InputForm = 'batch'): RunResult {
-  const w = createWorld({ bpTable: table, seed, armyCount: 2 });
+/**
+ * Runs the reference scenario for `ticks` ticks from a fresh world (test plane, or `map` — on
+ * hollow-ridge several targets lie across the river, so blocking/sliding/stuck and spawn
+ * rejection in the lake are part of the run).
+ */
+export function runScenario(table: SimBpTable, seed: number, ticks: number, form: InputForm = 'batch', map?: MapSimData): RunResult {
+  const w = createWorld({ bpTable: table, seed, armyCount: 2, ...(map !== undefined ? { map } : {}) });
   return continueScenario(w, ticks, form);
 }
 

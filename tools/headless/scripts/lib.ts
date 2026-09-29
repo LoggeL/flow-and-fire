@@ -13,9 +13,20 @@ export const REPO_DIR = resolve(HEADLESS_DIR, '../..');
 export const GOLDENS_DIR = resolve(HEADLESS_DIR, 'goldens');
 export const RESULTS_DIR = resolve(HEADLESS_DIR, 'results');
 export const DIST_HARNESS_DIR = resolve(HEADLESS_DIR, 'dist-harness');
-export const STATUS_DOC = resolve(REPO_DIR, 'docs/status/P6-headless.md');
+/** Status fragment whose bench tables `bench --update-docs` replaces (MS2: this package's). */
+export const STATUS_DOC = resolve(REPO_DIR, 'docs/status/ms2-p2-sim.md');
 export const SIM_BIN_PATH = resolve(REPO_DIR, 'content/generated/sim.bin');
 export const XXH32_WASM_PATH = resolve(HEADLESS_DIR, 'src/spk5/xxh32.wasm');
+
+/** Map files the scenarios reference (repo-relative paths, see src/scenarios.ts). */
+export const MAP_PATHS: readonly string[] = ['content/maps/hollow-ridge.rtsmap'];
+
+/** Bytes of every scenario map by repo-relative path (RunOptions.maps / JobAssets.maps). */
+export function loadMaps(): Record<string, Uint8Array> {
+  const out: Record<string, Uint8Array> = {};
+  for (const p of MAP_PATHS) out[p] = new Uint8Array(readFileSync(resolve(REPO_DIR, p)));
+  return out;
+}
 
 /** The checked-in blueprint bundle (content/generated/sim.bin). */
 export function loadSimBin(): Uint8Array {

@@ -6,10 +6,14 @@ import { FX_ONE, FX_SHIFT } from '@faf/fixed';
 
 /** Unit capacity (PLAN §3.4 "Kapazitäten"). */
 export const CAP_UNITS = 8192;
-/** Default side length of the MS1 test plane in WU. */
+/** Default side length of the flat test plane map in WU (formats TEST_PLANE_SIZE_WU). */
 export const DEFAULT_MAP_SIZE_WU = 512;
-/** Smallest/largest supported map side (multiple of the coarse cell). */
-export const MIN_MAP_SIZE_WU = 32;
+/**
+ * Smallest/largest supported map side: a power of two in 64..4096 — the same rule as the .rtsmap
+ * format (formats MAP_MIN/MAX_SIZE_WU) and the renderer; every such size is a multiple of the
+ * coarse cell.
+ */
+export const MIN_MAP_SIZE_WU = 64;
 export const MAX_MAP_SIZE_WU = 4096;
 
 /**
@@ -18,9 +22,11 @@ export const MAX_MAP_SIZE_WU = 4096;
  * goldens: every golden stores the SIM_BUILD it was recorded with, the golden test fails when
  * they differ, and `goldens --update` refuses to rewrite a changed hash chain without a bump.
  * History: ms1.1 → ms1.2 (last rule hash moved to the derived region `hashlog`, Units.gen
- * column dropped, serial-number seq order in CommandApply).
+ * column dropped, serial-number seq order in CommandApply); ms1.2 → ms2.0 (map in the static
+ * arena area, y from the heightmap, deep water blocks land units with axis sliding and a stuck
+ * timeout, Movers.best/stuck columns, spawn rejection counter in the world header).
  */
-export const SIM_BUILD = 'faf-sim/ms1.2';
+export const SIM_BUILD = 'faf-sim/ms2.0';
 
 /**
  * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is
@@ -47,6 +53,18 @@ export const ARRIVE_TOLERANCE = FX_ONE >> 2;
 export const CONTAGION_MAX_DIST = 64 * FX_ONE;
 /** Separation considers at most this many overlapping neighbors per unit and tick (PLAN §3.8). */
 export const MAX_SEPARATION_NEIGHBORS = 8;
+
+/**
+ * Stuck rule (MS2 minimal form of PLAN §3.8 "Stuck (< ε über 20 Ticks) → Repath"): a moving unit
+ * that tries to move (speed > 0, or its movement was cut by deep water) but did not get at least
+ * STUCK_PROGRESS_RAW closer to its target for STUCK_TICKS such ticks ends its order (Idle). MS3
+ * replaces the "give up" with repath/avoidance on passability grids + HPA* (M5).
+ */
+export const STUCK_TICKS = 20;
+/** Minimum approach (raw Fx, 1/16 WU) that counts as progress towards the move target. */
+export const STUCK_PROGRESS_RAW = FX_ONE >> 4;
+/** Movers.best before the first distance sample of an order ("no distance yet"). */
+export const NO_BEST_DIST = 0x7fffffff;
 
 /** Salts of rng32 (one per purpose, PLAN §3.3). */
 export const SALT_SPAWN_ANGLE = 0x53504e41; // 'SPNA'
@@ -86,7 +104,19 @@ export const MoverBits = {
    * neighbor query until a neighbor overlaps it (wake-up) or it gets an order.
    */
   Asleep: 1 << 1,
+  /**
+   * Deep water cut the unit's movement (integration or separation push) in the last Movement
+   * phase; read (and cleared) by the next Orders phase for the stuck rule.
+   */
+  WaterBlocked: 1 << 2,
 } as const;
+
+/** Map spot kinds in the static map region (same numbering as mapSimHash in @faf/formats). */
+export const SpotKind = {
+  Mass: 0,
+  Hydro: 1,
+} as const;
+export type SpotKind = (typeof SpotKind)[keyof typeof SpotKind];
 
 /** Value of unused i32 reference columns (orderHead, formation, builder, …). */
 export const NO_REF = -1;

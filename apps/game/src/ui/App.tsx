@@ -10,6 +10,11 @@ function fmtMs(v: number | null, digits = 2): string {
   return v === null || !Number.isFinite(v) ? '–' : `${v.toFixed(digits)} ms`;
 }
 
+function fmtCursor(c: { x: number; y: number; z: number; hit: boolean } | null): string {
+  if (c === null) return '–';
+  return `${c.x.toFixed(1)}, ${c.y.toFixed(2)}, ${c.z.toFixed(1)}${c.hit ? '' : ' (Rand)'}`;
+}
+
 function hex32(v: number | null): string {
   return v === null ? '–' : '0x' + (v >>> 0).toString(16).padStart(8, '0');
 }
@@ -18,7 +23,7 @@ export function Hud({ game }: { game: Game }) {
   const h = game.hud.value;
   return (
     <div class="faf-hud" data-testid="hud">
-      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS1</span></div>
+      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS2</span></div>
       <table>
         <tbody>
           <tr><th>Tick</th><td data-testid="hud-tick">{h.tick}</td></tr>
@@ -31,9 +36,27 @@ export function Hud({ game }: { game: Game }) {
           <tr><th>Transport</th><td data-testid="hud-transport">{h.transport}</td></tr>
           <tr><th>simId</th><td data-testid="hud-simid">{hex32(h.simId)}</td></tr>
           <tr><th>Build</th><td data-testid="hud-build">{h.buildHash}</td></tr>
+          <tr><th>Karte</th><td data-testid="hud-map">{h.mapName}</td></tr>
+          <tr><th>mapSimHash</th><td data-testid="hud-mapsimhash">{hex32(h.mapSimHash)}</td></tr>
+          <tr><th>Cursor (WU)</th><td data-testid="hud-cursor">{fmtCursor(h.cursor)}</td></tr>
+          <tr><th>Preset</th><td data-testid="hud-preset">{h.preset}</td></tr>
         </tbody>
       </table>
-      <div class="faf-hint">Rechtsklick: bewegen · Linksziehen: auswählen · P: Pause · N: Step · ^/F1: Konsole</div>
+      <div class="faf-hint">
+        Rechtsklick: bewegen · Linksziehen: auswählen · WASD/Rand/Mitte: Kamera · Strg+Mitte: drehen · H: Start · P: Pause · N: Step · ^/F1: Konsole
+      </div>
+      {game.client.fullscreen?.supported === true ? (
+        <button
+          type="button"
+          class="faf-button"
+          data-testid="fullscreen-button"
+          onClick={() => {
+            void game.client.toggleFullscreen();
+          }}
+        >
+          {h.fullscreen ? 'Vollbild verlassen' : 'Vollbild (Alt+Enter)'}
+        </button>
+      ) : null}
     </div>
   );
 }

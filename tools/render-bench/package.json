@@ -1,0 +1,24 @@
+{
+  "name": "@faf/render-bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:bench": "vite build",
+    "spk4": "node --import tsx scripts/spk4.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "@faf/render": "workspace:*",
+    "@faf/rules": "workspace:*",
+    "gl-matrix": "^3.4.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15",
+    "vite": "^8.3.1"
+  }
+}

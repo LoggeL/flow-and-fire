@@ -4,10 +4,11 @@
  * run with the same commands produce the same hash chain and the same command log.
  */
 
+import { mapSimHash, type RtsMap } from '@faf/formats';
 import { encodeBatch, type CommandEnvelope } from '@faf/protocol';
-import { snapshot, type PhaseProbe, type World } from '@faf/sim';
+import type { PhaseProbe, World } from '@faf/sim';
 import type { SimBpTable } from '@faf/blueprints/simbin';
-import { SimCore, type HashMismatch, type SimCoreOptions } from './core.ts';
+import { resolveMap, SimCore, type HashMismatch, type SimCoreOptions } from './core.ts';
 import { CommandLogError, parseCommandLog, type ParsedCommandLog } from './log-format.ts';
 import type { CommandLogRecorder } from './recorder.ts';
 import type { KeyframeStore } from './keyframes.ts';
@@ -98,9 +99,9 @@ export class HeadlessSim {
     return this.core.fullHash();
   }
 
-  /** Copies the dynamic arena (into `target` if given). */
+  /** Session snapshot: identity header + dynamic arena (into `target` if given), see SimCore.snapshot. */
   snapshot(target?: Uint8Array): Uint8Array {
-    return snapshot(this.core.world, target);
+    return this.core.snapshot(target);
   }
 
   /** Restores a snapshot; the timeline branches here (see SimCore.restoreSnapshot). */
@@ -120,15 +121,29 @@ export class HeadlessSim {
     return new Uint8Array(r.export(this.tick));
   }
 
-  /** Replays `log` in a fresh sim with this sim's blueprint table and returns the result. */
+  /** The map of this sim (the generated test plane when none was given). */
+  get map(): RtsMap {
+    return this.core.map;
+  }
+
+  /** Replays `log` in a fresh sim with this sim's blueprint table and map and returns the result. */
   replay(log: Uint8Array | ArrayBuffer | ParsedCommandLog, untilTick?: number): ReplayResult {
-    return replayLog(log, { bpTable: this.core.world.bp, ...(untilTick !== undefined ? { untilTick } : {}) });
+    return replayLog(log, {
+      bpTable: this.core.world.bp,
+      map: this.core.map,
+      ...(untilTick !== undefined ? { untilTick } : {}),
+    });
   }
 }
 
 export interface ReplayOptions {
   readonly simBin?: Uint8Array;
   readonly bpTable?: SimBpTable;
+  /**
+   * The map the log was recorded on (parsed or .rtsmap bytes). Omitted = the generated test plane
+   * of the header's map size; a map whose mapSimHash differs from the log header's is refused.
+   */
+  readonly map?: RtsMap | Uint8Array;
   /** Stop at this tick (default: last tick of the log). */
   readonly untilTick?: number;
   /** Keyframes of the replaying sim (default enabled, for seeking). */
@@ -151,12 +166,29 @@ export interface ReplayResult {
 
 /**
  * Replays a command log from tick 0 through a ReplaySource and compares the rule hash every 10
- * ticks with the recorded ones. Throws CommandLogError if the log belongs to another sim
- * (simId or arena layout differ).
+ * ticks with the recorded ones. Throws CommandLogError if the log belongs to another sim (map,
+ * simId or arena layout differ) — a map whose mapSimHash does not match the log header is refused
+ * before anything runs, as is a missing map for a log that was not recorded on the test plane.
  */
 export function replayLog(input: Uint8Array | ArrayBuffer | ParsedCommandLog, options: ReplayOptions): ReplayResult {
   const log = input instanceof Uint8Array || input instanceof ArrayBuffer ? parseCommandLog(input) : input;
   const h = log.header;
+  const hex = (v: number): string => `0x${(v >>> 0).toString(16).padStart(8, '0')}`;
+  let map: RtsMap;
+  try {
+    map = resolveMap(options.map, options.map === undefined ? h.mapSizeWu : undefined);
+  } catch (e) {
+    if (options.map !== undefined) throw e;
+    throw new CommandLogError(`the log was recorded on map ${hex(h.mapSimHash)} (size ${h.mapSizeWu}): pass that map to replay it`);
+  }
+  const mh = mapSimHash(map) >>> 0;
+  if (mh !== h.mapSimHash) {
+    throw new CommandLogError(
+      options.map === undefined
+        ? `the log was recorded on map ${hex(h.mapSimHash)}, not on the test plane: pass that map to replay it`
+        : `map mismatch: log mapSimHash ${hex(h.mapSimHash)} vs map '${map.meta.name}' ${hex(mh)}`,
+    );
+  }
   const source = new ReplaySource(log);
   const sim = new HeadlessSim({
     ...(options.simBin !== undefined ? { simBin: options.simBin } : {}),
@@ -164,7 +196,7 @@ export function replayLog(input: Uint8Array | ArrayBuffer | ParsedCommandLog, op
     seed: h.seed,
     armyCount: h.armyCount,
     playerArmy: h.playerArmy,
-    mapSizeWu: h.mapSizeWu,
+    map,
     buildHash: h.buildHash,
     sources: [source],
     ...(options.keyframes !== undefined ? { keyframes: options.keyframes } : {}),

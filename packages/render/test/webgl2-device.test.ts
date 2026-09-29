@@ -10,9 +10,10 @@ import { vf } from '../src/rhi/types.ts';
 import type { GlCall } from './support/fake-gl.ts';
 import { FakeCanvas } from './support/fake-gl.ts';
 
+// LOD distances far out: every unit of these tests uses LOD 0 (16-segment cylinder).
 const VISUALS = [
-  { spec: { hull: 'box', size: [1, 1, 1] }, color: 0x808080 },
-  { spec: { hull: 'cyl', size: [1, 2, 1] } },
+  { spec: { hull: 'box', size: [1, 1, 1] }, color: 0x808080, lodDistancesWU: [1000, 2000] },
+  { spec: { hull: 'cyl', size: [1, 2, 1] }, lodDistancesWU: [1000, 2000] },
 ] as const;
 
 function makeUnits(n: number): UnitRecordWriter {
@@ -109,17 +110,17 @@ describe('WebGL2 backend with a recording fake context', () => {
     expect(draws[1]!.args[4]).toBe(count1); // visual 1
     expect(draws[0]!.args[1]).toBe(36);
     expect(draws[1]!.args[1]).toBe(192);
-    expect(draws[1]!.args[3]).toBe(36 * 2); // firstIndex × 2 bytes
+    expect(draws[1]!.args[3]).toBe((36 + 36) * 2); // firstIndex × 2 bytes (box LOD 0/1 shared + box LOD 2)
     const prev = ptr.get(UNIT_ATTR.prevPos)!;
     expect(prev.length).toBe(2);
     expect((prev[1]!.args[4] as number) - base).toBe((n - count1) * UNIT_INSTANCE_STRIDE);
     const hl = ptr.get(UNIT_ATTR.highlight)!;
     expect((hl[1]!.args[4] as number) - (hl[0]!.args[4] as number)).toBe((n - count1) * HIGHLIGHT_STRIDE);
 
-    expect(r.stats.drawCalls).toBe(1 + 2); // ground + 2 visuals (no overlays)
+    expect(r.stats.drawCalls).toBe(2); // 2 visuals (no terrain set, no overlays)
     expect(r.stats.drawCalls).toBeLessThanOrEqual(2 + FIXED_PASS_DRAWS);
     expect(r.stats.visualsDrawn).toBe(2);
-    expect(r.stats.instances).toBe(1 + n);
+    expect(r.stats.instances).toBe(n);
     r.dispose();
   });
 
@@ -171,9 +172,9 @@ describe('WebGL2 backend with a recording fake context', () => {
       }),
     );
     const arrays = gl.named('drawArraysInstanced');
-    // ground (1 instance), lines (2), markers (2)
-    expect(arrays.map((c) => c.args[3])).toEqual([1, 2, 2]);
-    expect(r.stats.drawCalls).toBe(3 + 2);
+    // lines (2), markers (2); no terrain set ⇒ no ground draw
+    expect(arrays.map((c) => c.args[3])).toEqual([2, 2]);
+    expect(r.stats.drawCalls).toBe(2 + 2);
     r.dispose();
   });
 

@@ -4,6 +4,10 @@
  * Mesh space: origin at the center of the footprint on the ground, +y up, forward = +x
  * (Ang16 yaw 0). Triangles are counter-clockwise seen from outside. Every vertex carries a
  * `partId` for merged-part meshes; placeholder hulls are a single part (0).
+ *
+ * LODs (P2): {@link createPlaceholderLods} builds 3 levels (cylinders with 16/8/4 segments, boxes
+ * 24/24/8 vertices). {@link combineParts} merges several meshes into one merged-part mesh with part
+ * pivots and parents (PLAN §3.7 "Merged-Part-Mesh").
  */
 
 export type PlaceholderHull = 'box' | 'cyl';
@@ -21,17 +25,34 @@ export interface MeshData {
   readonly positions: Float32Array;
   /** Unit-length xyz normal per vertex. */
   readonly normals: Float32Array;
-  /** Part index per vertex (merged-part meshes, PLAN §3.7). */
+  /**
+   * Part index per vertex (merged-part meshes, PLAN §3.7): 0 = hull (moves with the unit only);
+   * part k ≥ 1 rotates with PartStream entry `partBase + k − 1` (if `k ≤ partCount`) around its pivot.
+   */
   readonly partIds: Uint8Array;
-  readonly indices: Uint16Array;
+  readonly indices: Uint16Array | Uint32Array;
   readonly vertexCount: number;
   readonly indexCount: number;
   /** Axis-aligned bounds in mesh space: [minX, minY, minZ, maxX, maxY, maxZ]. */
   readonly bounds: readonly [number, number, number, number, number, number];
+  /**
+   * Pivot (mesh space, xyz) per part id; part k rotates around `partPivots[3k..3k+2]` by its yaw
+   * (around +y) and pitch (nose +x up). Omitted ⇒ all pivots at the origin.
+   */
+  readonly partPivots?: Float32Array;
+  /**
+   * Parent part per part id (`partParents[k] < k`, hull = 0): a part also follows every ancestor's
+   * rotation (turret → barrel). Omitted ⇒ every part hangs directly on the hull.
+   */
+  readonly partParents?: Uint8Array;
 }
 
-/** Segments around a placeholder cylinder. */
+/** Segments around a placeholder cylinder (LOD 0). */
 export const CYL_SEGMENTS = 16;
+/** Cylinder segments per LOD level. */
+export const CYL_LOD_SEGMENTS: readonly [number, number, number] = [16, 8, 4];
+/** Part ids per mesh at most (hull + 15; the PartStream carries ≤ 8 parts per unit). */
+export const MAX_MESH_PARTS = 16;
 
 class MeshBuilder {
   readonly pos: number[] = [];
@@ -125,11 +146,40 @@ function buildBox(sx: number, sy: number, sz: number): MeshData {
   return m.build();
 }
 
-function buildCylinder(sx: number, sy: number, sz: number): MeshData {
+/** Box with 8 shared vertices and averaged corner normals (coarsest LOD). */
+function buildBoxLow(sx: number, sy: number, sz: number): MeshData {
+  const m = new MeshBuilder();
+  const hx = sx / 2;
+  const hz = sz / 2;
+  const v: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    const x = i & 1 ? hx : -hx;
+    const y = i & 2 ? sy : 0;
+    const z = i & 4 ? hz : -hz;
+    v.push(m.vertex(x, y, z, Math.sign(x), y > 0 ? 1 : -1, Math.sign(z)));
+  }
+  // faces: [a, b, c, d] corners + outward normal
+  const faces: readonly (readonly number[])[] = [
+    [1, 3, 7, 5, 1, 0, 0],
+    [0, 4, 6, 2, -1, 0, 0],
+    [2, 6, 7, 3, 0, 1, 0],
+    [0, 1, 5, 4, 0, -1, 0],
+    [4, 5, 7, 6, 0, 0, 1],
+    [0, 2, 3, 1, 0, 0, -1],
+  ];
+  for (const f of faces) {
+    const [a, b, c, d, nx, ny, nz] = f as [number, number, number, number, number, number, number];
+    m.tri(v[a]!, v[b]!, v[c]!, nx, ny, nz);
+    m.tri(v[a]!, v[c]!, v[d]!, nx, ny, nz);
+  }
+  return m.build();
+}
+
+function buildCylinder(sx: number, sy: number, sz: number, segments = CYL_SEGMENTS): MeshData {
   const m = new MeshBuilder();
   const rx = sx / 2;
   const rz = sz / 2;
-  const S = CYL_SEGMENTS;
+  const S = segments;
   // Side: smooth normals of the (possibly elliptic) mantle.
   const bottom: number[] = [];
   const top: number[] = [];
@@ -166,9 +216,147 @@ function buildCylinder(sx: number, sy: number, sz: number): MeshData {
   return m.build();
 }
 
-/** Builds the placeholder mesh for a spec (box: 24 vertices/36 indices, cylinder: 66/192). */
-export function createPlaceholderMesh(spec: PlaceholderSpec): MeshData {
+/**
+ * Builds the placeholder mesh for a spec (box: 24 vertices/36 indices, cylinder: 66/192).
+ * `lod` 1/2 gives coarser levels (cylinder 8/4 segments, box LOD 2 = 8 shared vertices).
+ */
+export function createPlaceholderMesh(spec: PlaceholderSpec, lod: 0 | 1 | 2 = 0): MeshData {
   const [sx, sy, sz] = spec.size;
   if (!(sx > 0 && sy > 0 && sz > 0)) throw new Error(`placeholder: size must be positive, got ${spec.size.join(',')}`);
-  return spec.hull === 'box' ? buildBox(sx, sy, sz) : buildCylinder(sx, sy, sz);
+  if (spec.hull === 'box') return lod === 2 ? buildBoxLow(sx, sy, sz) : buildBox(sx, sy, sz);
+  return buildCylinder(sx, sy, sz, CYL_LOD_SEGMENTS[lod]);
+}
+
+/** The three placeholder LODs of a spec (P2: "Platzhalter-LODs", cylinders 16/8/4 segments). */
+export function createPlaceholderLods(spec: PlaceholderSpec): [MeshData, MeshData, MeshData] {
+  const lod0 = createPlaceholderMesh(spec, 0);
+  // Boxes share LOD 0 and 1 (same 24-vertex mesh, stored once in the unit VBO).
+  const lod1 = spec.hull === 'box' ? lod0 : createPlaceholderMesh(spec, 1);
+  return [lod0, lod1, createPlaceholderMesh(spec, 2)];
+}
+
+/** One input of {@link combineParts}. */
+export interface MeshPart {
+  readonly mesh: MeshData;
+  /** Part id written into every vertex (0 = hull). */
+  readonly partId: number;
+  /** Translation applied to the part's vertices (mesh space). */
+  readonly offset?: readonly [number, number, number];
+  /** Rotation pivot of this part id (mesh space, after `offset`). */
+  readonly pivot?: readonly [number, number, number];
+  /** Parent part id (< partId), default 0 (hull). */
+  readonly parent?: number;
+}
+
+/**
+ * Merges meshes into one merged-part mesh (PLAN §3.7): vertices keep their part id, pivots and
+ * parents are collected per part id. Several inputs may share a part id (then pivot/parent of the
+ * first input with that id win).
+ */
+export function combineParts(parts: readonly MeshPart[]): MeshData {
+  let vtx = 0;
+  let idx = 0;
+  let maxPart = 0;
+  for (const p of parts) {
+    if (!Number.isInteger(p.partId) || p.partId < 0 || p.partId >= MAX_MESH_PARTS) {
+      throw new Error(`combineParts: partId ${p.partId} outside 0..${MAX_MESH_PARTS - 1}`);
+    }
+    if ((p.parent ?? 0) >= p.partId && p.partId !== 0) throw new Error(`combineParts: parent of part ${p.partId} must be smaller`);
+    vtx += p.mesh.vertexCount;
+    idx += p.mesh.indexCount;
+    maxPart = Math.max(maxPart, p.partId);
+  }
+  const positions = new Float32Array(vtx * 3);
+  const normals = new Float32Array(vtx * 3);
+  const partIds = new Uint8Array(vtx);
+  const indices = vtx > 65535 ? new Uint32Array(idx) : new Uint16Array(idx);
+  const pivots = new Float32Array((maxPart + 1) * 3);
+  const parents = new Uint8Array(maxPart + 1);
+  const seen = new Uint8Array(maxPart + 1);
+  const bounds: [number, number, number, number, number, number] = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+  let v0 = 0;
+  let i0 = 0;
+  for (const p of parts) {
+    const m = p.mesh;
+    const [ox, oy, oz] = p.offset ?? [0, 0, 0];
+    for (let v = 0; v < m.vertexCount; v++) {
+      const x = m.positions[v * 3]! + ox;
+      const y = m.positions[v * 3 + 1]! + oy;
+      const z = m.positions[v * 3 + 2]! + oz;
+      positions[(v0 + v) * 3] = x;
+      positions[(v0 + v) * 3 + 1] = y;
+      positions[(v0 + v) * 3 + 2] = z;
+      normals[(v0 + v) * 3] = m.normals[v * 3]!;
+      normals[(v0 + v) * 3 + 1] = m.normals[v * 3 + 1]!;
+      normals[(v0 + v) * 3 + 2] = m.normals[v * 3 + 2]!;
+      partIds[v0 + v] = p.partId;
+      bounds[0] = Math.min(bounds[0], x);
+      bounds[1] = Math.min(bounds[1], y);
+      bounds[2] = Math.min(bounds[2], z);
+      bounds[3] = Math.max(bounds[3], x);
+      bounds[4] = Math.max(bounds[4], y);
+      bounds[5] = Math.max(bounds[5], z);
+    }
+    for (let i = 0; i < m.indexCount; i++) indices[i0 + i] = m.indices[i]! + v0;
+    if (seen[p.partId] === 0) {
+      seen[p.partId] = 1;
+      const pv = p.pivot ?? [0, 0, 0];
+      pivots[p.partId * 3] = pv[0];
+      pivots[p.partId * 3 + 1] = pv[1];
+      pivots[p.partId * 3 + 2] = pv[2];
+      parents[p.partId] = p.parent ?? 0;
+    }
+    v0 += m.vertexCount;
+    i0 += m.indexCount;
+  }
+  return {
+    positions,
+    normals,
+    partIds,
+    indices,
+    vertexCount: vtx,
+    indexCount: idx,
+    bounds: vtx > 0 ? bounds : [0, 0, 0, 0, 0, 0],
+    partPivots: pivots,
+    partParents: parents,
+  };
+}
+
+/**
+ * Radius (WU) of a sphere around the mesh origin that contains the mesh for every part rotation:
+ * a part's vertices stay within `|pivot| + max distance to the pivot` (ancestors' pivots included).
+ */
+export function meshBoundingRadius(m: MeshData): number {
+  const pivots = m.partPivots;
+  const parents = m.partParents;
+  const n = m.vertexCount;
+  let r = 0;
+  for (let v = 0; v < n; v++) {
+    const x = m.positions[v * 3]!;
+    const y = m.positions[v * 3 + 1]!;
+    const z = m.positions[v * 3 + 2]!;
+    let k = m.partIds[v]!;
+    if (k === 0 || pivots === undefined) {
+      r = Math.max(r, Math.hypot(x, y, z));
+      continue;
+    }
+    // Walk up the chain: distance to the own pivot, then pivot-to-parent-pivot distances.
+    let px = pivots[k * 3] ?? 0;
+    let py = pivots[k * 3 + 1] ?? 0;
+    let pz = pivots[k * 3 + 2] ?? 0;
+    let reach = Math.hypot(x - px, y - py, z - pz);
+    for (let guard = 0; guard < MAX_MESH_PARTS && k !== 0; guard++) {
+      const parent = parents?.[k] ?? 0;
+      const qx = parent === 0 ? 0 : (pivots[parent * 3] ?? 0);
+      const qy = parent === 0 ? 0 : (pivots[parent * 3 + 1] ?? 0);
+      const qz = parent === 0 ? 0 : (pivots[parent * 3 + 2] ?? 0);
+      reach += Math.hypot(px - qx, py - qy, pz - qz);
+      px = qx;
+      py = qy;
+      pz = qz;
+      k = parent;
+    }
+    r = Math.max(r, reach);
+  }
+  return r;
 }

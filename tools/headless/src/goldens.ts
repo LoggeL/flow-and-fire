@@ -4,8 +4,8 @@
 import type { ScenarioResult } from './scenario.ts';
 
 export const GOLDEN_FORMAT = 'faf-golden';
-/** v2: + simBuild (the SIM_BUILD the chain was recorded with). */
-export const GOLDEN_VERSION = 2;
+/** v2: + simBuild (the SIM_BUILD the chain was recorded with); v3 (MS2): + map, mapSimHash. */
+export const GOLDEN_VERSION = 3;
 
 /** u32 → `0x1234abcd`. */
 export function hex32(v: number): string {
@@ -30,9 +30,13 @@ export interface Golden extends HashChain {
   readonly seed: string;
   /** SIM_BUILD (simId input) the chain was recorded with; a changed chain needs a new one. */
   readonly simBuild: string;
-  /** Inputs the chain depends on: blueprint sim hash and arena layout hash. */
+  /** Inputs the chain depends on: blueprint sim hash, arena layout hash and the map. */
   readonly simHash: string;
   readonly layoutHash: string;
+  /** Map label (`testplane:512` or the repo-relative .rtsmap path). */
+  readonly map: string;
+  /** mapSimHash of that map (simId input). */
+  readonly mapSimHash: string;
   readonly finalUnitCount: number;
   readonly commandCount: number;
 }
@@ -58,6 +62,8 @@ export function toGolden(r: ScenarioResult): Golden {
     seed: hex32(r.seed),
     simHash: hex32(r.simHash),
     layoutHash: hex32(r.layoutHash),
+    map: r.map,
+    mapSimHash: hex32(r.mapSimHash),
     hashIntervalTicks: r.hashIntervalTicks,
     finalUnitCount: r.finalUnitCount,
     commandCount: r.commandCount,
@@ -76,7 +82,14 @@ export function goldenJson(g: Golden): string {
 export function parseGolden(text: string): Golden {
   const g = JSON.parse(text) as Partial<Golden>;
   if (g.format !== GOLDEN_FORMAT || g.version !== GOLDEN_VERSION) throw new Error(`not a faf-golden v${GOLDEN_VERSION} file`);
-  if (typeof g.scenario !== 'string' || typeof g.simBuild !== 'string' || !Array.isArray(g.trail) || typeof g.finalFullHash !== 'string') {
+  if (
+    typeof g.scenario !== 'string' ||
+    typeof g.simBuild !== 'string' ||
+    typeof g.map !== 'string' ||
+    typeof g.mapSimHash !== 'string' ||
+    !Array.isArray(g.trail) ||
+    typeof g.finalFullHash !== 'string'
+  ) {
     throw new Error('golden: missing fields');
   }
   return g as Golden;
@@ -127,16 +140,19 @@ export type GoldenUpdateVerdict =
 
 /**
  * Decides whether `goldens --update` may write `next` over `old`. A changed hash chain (trail,
- * final hashes, simHash or layoutHash) is only accepted together with a new SIM_BUILD, so a sim
+ * final hashes, simHash, layoutHash or mapSimHash) is only accepted together with a new SIM_BUILD, so a sim
  * change can never keep the simId of logs recorded before it (PLAN §3.1).
  */
 export function goldenUpdateVerdict(old: Golden | null, next: Golden): GoldenUpdateVerdict {
   if (old === null) return { kind: 'new' };
   const chain = compareChains(old, next);
-  const inputsEqual = old.simHash === next.simHash && old.layoutHash === next.layoutHash;
+  const inputsEqual = old.simHash === next.simHash && old.layoutHash === next.layoutHash && old.mapSimHash === next.mapSimHash;
   if (chain.equal && inputsEqual) return { kind: 'unchanged' };
   const diff: ChainDiff = chain.equal
-    ? { equal: false, firstDivergentTick: 0, detail: `simHash/layoutHash ${next.simHash}/${next.layoutHash} ≠ ${old.simHash}/${old.layoutHash}` }
+    ? { equal: false, firstDivergentTick: 0, detail: `simHash/layoutHash/mapSimHash ${next.simHash}/${next.layoutHash}/${next.mapSimHash} ≠ ${old.simHash}/${old.layoutHash}/${old.mapSimHash}` }
     : chain;
-  return old.simBuild === next.simBuild ? { kind: 'needsBump', diff } : { kind: 'changed', diff };
+  if (old.simBuild !== next.simBuild) return { kind: 'changed', diff };
+  // A different map (edited .rtsmap) changes the simId through mapSimHash by itself: no bump.
+  if (old.mapSimHash !== next.mapSimHash && old.simHash === next.simHash) return { kind: 'changed', diff };
+  return { kind: 'needsBump', diff };
 }

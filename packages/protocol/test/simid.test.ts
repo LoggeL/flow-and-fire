@@ -1,12 +1,12 @@
 import { xxHash32 } from '@faf/fixed';
 import { describe, expect, it } from 'vitest';
-import { computeSimId, simIdBytes, utf8Encode } from '../src/index.ts';
+import { computeSimId, encodeUtf8, simIdBytes } from '../src/index.ts';
 
 describe('simId', () => {
   it('has a documented canonical byte encoding', () => {
     const b = simIdBytes('b1', 0x11223344, 0xaabbccdd, ['core']);
     expect(Array.from(b)).toEqual([
-      ...Array.from(utf8Encode('FAFSIMID')),
+      ...Array.from(encodeUtf8('FAFSIMID')),
       2, 0, 0, 0, 0x62, 0x31,
       0x44, 0x33, 0x22, 0x11,
       0xdd, 0xcc, 0xbb, 0xaa,
@@ -32,9 +32,10 @@ describe('simId', () => {
     for (const v of variants) expect(v).not.toBe(base);
   });
 
-  it('utf8Encode matches the platform encoder', () => {
-    for (const s of ['', 'abc', 'Größe', '€', '𝄞 music', 'x\ud800y']) {
-      expect(Array.from(utf8Encode(s))).toEqual(Array.from(new TextEncoder().encode(s)));
+  it('encodeUtf8 matches the platform encoder and rejects lone surrogates (simId never differs from the file codec)', () => {
+    for (const s of ['', 'abc', 'Größe', '€', '𝄞 music']) {
+      expect(Array.from(encodeUtf8(s))).toEqual(Array.from(new TextEncoder().encode(s)));
     }
+    expect(() => computeSimId('ms2', 1, 2, ['x\ud800y'])).toThrow(RangeError);
   });
 });

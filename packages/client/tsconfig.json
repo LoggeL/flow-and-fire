@@ -27,6 +27,12 @@
     },
     {
       "path": "../rules"
+    },
+    {
+      "path": "../formats"
+    },
+    {
+      "path": "../blueprints"
     }
   ]
 }

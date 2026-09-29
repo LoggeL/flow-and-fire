@@ -1,5 +1,6 @@
 /**
- * L2 goldens: `pnpm --filter @faf/headless goldens` checks both scenarios against
+ * L2 goldens: `pnpm --filter @faf/headless goldens` checks every scenario (test plane and
+ * hollow-ridge) against
  * tools/headless/goldens/*.json; `goldens -- --update` rewrites them and prints the first tick
  * at which the new chain diverges from the old one. A changed chain is only rewritten if
  * SIM_BUILD (@faf/sim) differs from the golden's `simBuild` — otherwise the update is refused.
@@ -8,15 +9,16 @@ import { SIM_BUILD } from '@faf/sim';
 import { compareChains, goldenJson, goldenUpdateVerdict, toGolden, toHashChain, type Golden } from '../src/goldens.ts';
 import { failedAsserts, runScenario } from '../src/scenario.ts';
 import { SCENARIO_NAMES, scenarioByName } from '../src/scenarios.ts';
-import { goldenPath, loadSimBin, readGolden, writeText } from './lib.ts';
+import { goldenPath, loadMaps, loadSimBin, readGolden, writeText } from './lib.ts';
 
 const update = process.argv.includes('--update');
 const simBin = loadSimBin();
+const maps = loadMaps();
 let failures = 0;
 
 for (const name of SCENARIO_NAMES) {
   const t0 = performance.now();
-  const result = runScenario(scenarioByName(name), { simBin });
+  const result = runScenario(scenarioByName(name), { simBin, maps });
   const ms = performance.now() - t0;
   const failed = failedAsserts(result);
   for (const a of failed) console.error(`  ✗ ${name} @${a.tick} ${a.name}: ${a.detail ?? ''}`);

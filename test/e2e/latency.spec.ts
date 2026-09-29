@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import type { MetricsSnapshot } from '../../packages/client/src/metrics.ts';
-import { captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
+import { captureErrors, expectNoErrors, HOLLOW_RIDGE, openGame, SERVERS, waitTick } from './support/game.ts';
 
 // SPK6 latency chain (PLAN §4, MS1 acceptance), per browser and transport, real right clicks.
 // Definitions (packages/client/src/metrics.ts): the click time is the pointerdown event timestamp;
@@ -123,16 +123,16 @@ for (const server of SERVERS) {
     await openGame(page, server.url, '', 1000);
     await waitTick(page, 30); // spawn settled, separation asleep
 
-    // Disjoint groups of resting cubes around a 11 × 10 grid over the start army.
+    // Disjoint groups of resting cubes around a 11 × 10 grid over the start army (own map start).
     const groups = await page.evaluate(
-      ({ count, size }) => {
+      ({ count, size, c }) => {
         const h = window.__faf!;
         const units = h.ownHandles().map((handle) => ({ handle, p: h.unitPos(handle)! }));
         const used = new Set<number>();
         const out: number[][] = [];
         for (let i = 0; i < count; i++) {
-          const gx = 256 - 27.5 + (i % 11) * 5.5;
-          const gz = 256 - 27 + Math.floor(i / 11) * 6;
+          const gx = c.x - 27.5 + (i % 11) * 5.5;
+          const gz = c.z - 27 + Math.floor(i / 11) * 6;
           const cand = units
             .filter((u) => !used.has(u.handle))
             .sort((a, b) => Math.hypot(a.p.x - gx, a.p.z - gz) - Math.hypot(b.p.x - gx, b.p.z - gz))
@@ -142,7 +142,7 @@ for (const server of SERVERS) {
         }
         return out;
       },
-      { count: GROUPS, size: GROUP },
+      { count: GROUPS, size: GROUP, c: HOLLOW_RIDGE.own },
     );
     expect(groups).toHaveLength(GROUPS);
 
@@ -166,12 +166,12 @@ for (const server of SERVERS) {
     const start = results['start']![0]!;
 
     // Main-JS and FPS with all 1,000 own cubes driving.
-    await page.evaluate(() => {
+    await page.evaluate((o) => {
       const h = window.__faf!;
       h.select(null);
-      h.setCamera(256, 256, 105);
-      h.sendMove(h.ownHandles(), 256, 150);
-    });
+      h.setCamera(o.x, o.z, 105);
+      h.sendMove(h.ownHandles(), o.x + 30, o.z - 30);
+    }, HOLLOW_RIDGE.own);
     await page.waitForTimeout(300);
     await page.evaluate(() => window.__faf!.metrics.reset());
     await page.waitForTimeout(3000);

@@ -1,9 +1,10 @@
 /**
- * L6 benchmarks in the engine workers (cold + warm): MS1 tick bench, SPK1 and SPK5.
+ * L6 benchmarks in the engine workers (cold + warm): tick bench on hollow-ridge and on the test
+ * plane, SPK1 and SPK5.
  * Parameters come from the environment (set by scripts/bench.ts); results are aggregated there.
  */
 import { expect, test } from '@playwright/test';
-import type { Job } from '../src/jobs.ts';
+import { jobKey, type Job } from '../src/jobs.ts';
 import { openHarness, runSeriesIn, writeRaw } from './harness.ts';
 
 const num = (name: string, fallback: number): number => {
@@ -12,16 +13,17 @@ const num = (name: string, fallback: number): number => {
 };
 
 const JOBS: readonly Job[] = [
+  { kind: 'tickBench', ticks: num('FAF_BENCH_TICKS', 1000), map: 'content/maps/hollow-ridge.rtsmap' },
   { kind: 'tickBench', ticks: num('FAF_BENCH_TICKS', 1000) },
   { kind: 'spk1', ticks: num('FAF_SPK1_TICKS', 300), rampTicks: num('FAF_SPK1_RAMP', 40) },
   { kind: 'spk5', reps: num('FAF_SPK5_REPS', 10) },
 ];
 
 for (const job of JOBS) {
-  test(`bench ${job.kind} (cold + warm)`, async ({ page }, info) => {
+  test(`bench ${jobKey(job)} (cold + warm)`, async ({ page }, info) => {
     await openHarness(page);
     const series = await runSeriesIn(page, job, info.project.name);
-    writeRaw(`bench-${info.project.name}-${job.kind}`, series);
+    writeRaw(`bench-${info.project.name}-${jobKey(job)}`, series);
     expect(series.cold.kind).toBe(job.kind);
     expect(series.warm.kind).toBe(job.kind);
     if (series.warm.kind === 'spk5') {

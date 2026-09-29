@@ -13,6 +13,8 @@
     { "path": "../../packages/protocol" },
     { "path": "../../packages/blueprints" },
     { "path": "../../packages/client" },
-    { "path": "../../packages/sim-host" }
+    { "path": "../../packages/sim-host" },
+    { "path": "../../packages/formats" },
+    { "path": "../../packages/rules" }
   ]
 }

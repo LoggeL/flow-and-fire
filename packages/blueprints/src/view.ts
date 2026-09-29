@@ -4,6 +4,9 @@
  * Its hash (viewHash) is not part of simId: view changes never break replays.
  */
 import { isPlainObject } from './merge.ts';
+import { ASSET_ID_PATTERN } from './asset-manifest.ts';
+
+const ASSET_ID_RE = new RegExp(ASSET_ID_PATTERN);
 
 export const VIEW_FORMAT = 'faf-view';
 export const VIEW_VERSION = 1;
@@ -18,6 +21,10 @@ export interface ViewPlaceholder {
 export interface ViewEntry {
   readonly id: string;
   readonly placeholder: ViewPlaceholder;
+  /** Model asset id (asset manifest key, e.g. `units/cube_bot`); absent ⇒ placeholder. */
+  readonly mesh?: string;
+  /** LOD switch distances in WU [LOD0→1, LOD1→2]; absent ⇒ renderer default. */
+  readonly lod?: readonly [number, number];
   readonly icon?: string;
   readonly iconThreshold?: number;
   readonly nameKey: string;
@@ -63,6 +70,19 @@ export function parseViewJson(input: string | unknown): ViewBundle {
         ? { hull: ph.hull, size: num3(ph.size, `${p}/placeholder/size`) }
         : { hull: ph.hull, size: num3(ph.size, `${p}/placeholder/size`), color: num3(ph.color, `${p}/placeholder/color`) };
     let entry: ViewEntry = { id: e.id, placeholder, nameKey: e.nameKey, descKey: e.descKey };
+    if (e.mesh !== undefined) {
+      if (typeof e.mesh !== 'string' || !ASSET_ID_RE.test(e.mesh)) fail(`${p}/mesh`, 'expected an asset id');
+      entry = { ...entry, mesh: e.mesh };
+    }
+    if (e.lod !== undefined) {
+      const l = e.lod;
+      if (!Array.isArray(l) || l.length !== 2 || !l.every((x) => typeof x === 'number' && Number.isFinite(x) && x > 0)) {
+        fail(`${p}/lod`, 'expected [number, number] (> 0)');
+      }
+      const lod: readonly [number, number] = [l[0] as number, l[1] as number];
+      if (!(lod[0] < lod[1])) fail(`${p}/lod`, 'expected lod[0] < lod[1]');
+      entry = { ...entry, lod };
+    }
     if (e.icon !== undefined) {
       if (typeof e.icon !== 'string') fail(`${p}/icon`, 'expected a string');
       entry = { ...entry, icon: e.icon };

@@ -52,6 +52,13 @@ export interface UnitBlueprint {
   };
   readonly view: {
     readonly placeholder: PlaceholderDef;
+    /**
+     * Asset id of the model (asset pipeline, e.g. `units/cube_bot`); without it the placeholder is
+     * drawn. View only: never part of simHash.
+     */
+    readonly mesh?: string;
+    /** LOD switch distances in WU [LOD0→1, LOD1→2] (renderer default [60, 180]). View only. */
+    readonly lod?: readonly [number, number];
     readonly icon?: string;
     /** Screen size (px) below which the strategic icon replaces the mesh. */
     readonly iconThreshold?: number;

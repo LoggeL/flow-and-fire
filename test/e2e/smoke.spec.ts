@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { captureErrors, expectNoErrors, SERVERS } from './support/game.ts';
 
-// Two servers from playwright.config.ts: 4173 with COOP/COEP, 4174 without (PLAN §5 DoD: "E2E ohne COOP/COEP").
+// Two servers from playwright.config.ts (ports: support/ports.ts): one with COOP/COEP, one without (PLAN §5 DoD: "E2E ohne COOP/COEP").
 // Smoke = hosting contract (G20): redirect to /b/<buildHash>/, headers/isolation, WebGL2, HUD with the build hash.
 
 async function probeWebGl2(page: Page): Promise<{ ok: boolean; renderer: string }> {
@@ -59,6 +59,23 @@ for (const server of SERVERS) {
     const root = await page.request.get(new URL('/', server.url).toString(), { maxRedirects: 0 });
     expect(root.headers()['cache-control']).toBe('no-cache');
     expect(await root.text()).toContain(`/b/${build.buildHash}/`);
+    // Pipeline assets under /b/<hash>/assets/: manifest + content-hashed files with their MIME types,
+    // immutable like the whole build, CORP for COEP pages (asset worker fetches).
+    const assetBase = new URL(`/b/${build.buildHash}/assets/`, server.url);
+    const manifestRes = await page.request.get(new URL('manifest.json', assetBase).toString());
+    expect(manifestRes.status()).toBe(200);
+    expect(manifestRes.headers()['content-type']).toContain('application/json');
+    const manifest = (await manifestRes.json()) as { assets: Record<string, { url: string; kind: string; bytes: number }> };
+    const mime: Record<string, string> = { map: 'application/octet-stream', simbin: 'application/octet-stream', viewjson: 'application/json', model: 'model/gltf-binary' };
+    for (const [id, a] of Object.entries(manifest.assets)) {
+      const r = await page.request.get(new URL(a.url, assetBase).toString());
+      expect(r.status(), id).toBe(200);
+      expect(r.headers()['content-type'], id).toContain(mime[a.kind]!);
+      expect(r.headers()['cache-control'], id).toBe('public, max-age=31536000, immutable');
+      expect((await r.body()).length, id).toBe(a.bytes);
+      if (server.coi) expect(r.headers()['cross-origin-resource-policy'], id).toBe('same-origin');
+    }
+    expect(Object.values(manifest.assets).some((a) => a.url.endsWith('.rtsmap'))).toBe(true);
     if (server.coi) {
       expect(html.headers()['cross-origin-opener-policy']).toBe('same-origin');
       expect(html.headers()['cross-origin-embedder-policy']).toBe('require-corp');

@@ -1,4 +1,4 @@
-// Public API of @faf/render (PLAN §3.7, MS1).
+// Public API of @faf/render (PLAN §3.7, MS1 + MS2: terrain, water, decals, probe, presets, P2).
 export * from './rhi/types.ts';
 export { createWebGL2Device, validateStreams } from './webgl2/device.ts';
 export type { DeviceCanvas, WebGL2Device, WebGL2DeviceOptions } from './webgl2/device.ts';
@@ -29,16 +29,93 @@ export {
   VisualBuckets,
 } from './instance-layout.ts';
 export type { UnitRecordInit } from './instance-layout.ts';
-export { createPlaceholderMesh, CYL_SEGMENTS } from './mesh/placeholder.ts';
-export type { MeshData, PlaceholderHull, PlaceholderSpec } from './mesh/placeholder.ts';
-export { UnitPass, mergeMeshes, MESH_VERTEX_STRIDE, HIGHLIGHT_STRIDE, UNIT_ATTR } from './passes/units.ts';
-export { GroundPass } from './passes/ground.ts';
-export type { GroundOptions } from './passes/ground.ts';
+export {
+  createPlaceholderMesh,
+  createPlaceholderLods,
+  combineParts,
+  meshBoundingRadius,
+  CYL_SEGMENTS,
+  CYL_LOD_SEGMENTS,
+  MAX_MESH_PARTS,
+} from './mesh/placeholder.ts';
+export type { MeshData, MeshPart, PlaceholderHull, PlaceholderSpec } from './mesh/placeholder.ts';
+export {
+  UnitPass,
+  mergeMeshes,
+  MESH_VERTEX_STRIDE,
+  HIGHLIGHT_STRIDE,
+  UNIT_ATTR,
+  PART_TEXTURE_WIDTH,
+  PART_STRIDE,
+} from './passes/units.ts';
+export type { UnitPartsView, UnitVisualMeshes } from './passes/units.ts';
+export { InstanceCuller, LOD_LEVELS, DEFAULT_LOD_DISTANCES, KEY_CULLED, KEY_DROPPED } from './units/culling.ts';
+export type { CullStats } from './units/culling.ts';
+export { Frustum, OUTSIDE, INTERSECTS, INSIDE } from './frustum.ts';
+export type { CullResult } from './frustum.ts';
+export {
+  TERRAIN_MAX_SIZE_WU,
+  TERRAIN_MIN_SIZE_WU,
+  TERRAIN_PATCH_WU,
+  TERRAIN_PATCH_VERTS,
+  LAND_MAX_WATER_DEPTH_RAW,
+  validateTerrain,
+  sampleTerrainHeightRaw,
+  computeChunkBounds,
+} from './terrain/heightfield.ts';
+export type { ChunkBounds, HeightfieldLike, TerrainDesc, TerrainLight, TerrainSplat } from './terrain/heightfield.ts';
+export {
+  TERRAIN_HEIGHT_GLSL,
+  TERRAIN_SPLAT_GLSL,
+  TERRAIN_HEIGHT_LAYOUT,
+  TERRAIN_ALBEDO_LAYERS,
+  TERRAIN_ALBEDO_SIZE,
+  TERRAIN_LAYER_COLORS,
+  SLOT_TERRAIN_HEIGHT,
+  UNIT_HEIGHTMAP,
+  generateTerrainAlbedo,
+} from './terrain/glsl.ts';
+export { PatchCuller, cullChunksBruteForce } from './terrain/patches.ts';
+export {
+  DecalBinner,
+  MAX_TERRAIN_DECALS,
+  MAX_DECALS_PER_CHUNK,
+  DECALS_PER_ROW,
+  DECAL_DATA_WIDTH,
+  DECAL_DATA_HEIGHT,
+  DECAL_LIST_WIDTH,
+} from './terrain/decals.ts';
+export type { DecalBinStats, TerrainDecal, TerrainDecalKind } from './terrain/decals.ts';
+export { TerrainPass, TerrainHeightResources, PATCH_INDEX_COUNT } from './passes/terrain.ts';
+export type { TerrainPassOptions } from './passes/terrain.ts';
+export { WaterPass, WATER_BORDER_WU, WATER_FOAM_DEPTH_WU } from './passes/water.ts';
+export { HeightProbe, PROBE_WIDTH, PROBE_HEIGHT, PROBE_BATCH } from './passes/probe.ts';
+export {
+  RENDER_PRESETS,
+  RENDER_PRESET_NAMES,
+  backbufferSize,
+  parsePresetName,
+  resolvePreset,
+} from './presets.ts';
+export type { RenderCaps, RenderPreset, RenderPresetName, ShadowMode, WaterQuality } from './presets.ts';
 export { OverlayPass, MARKER_STRIDE, SEGMENT_STRIDE } from './passes/overlay.ts';
 export type { OverlayMarker, OverlaySegment, Overlays } from './passes/overlay.ts';
-export { DEFAULT_ARMY_COLORS, MAX_ARMY_COLORS, MAX_VISUALS, FRAME_LAYOUT, PALETTE_LAYOUT, rgbHex } from './passes/shared.ts';
-export { createRenderer, FIXED_PASS_DRAWS } from './renderer.ts';
+export {
+  DEFAULT_ARMY_COLORS,
+  MAX_ARMY_COLORS,
+  MAX_VISUALS,
+  FRAME_LAYOUT,
+  PALETTE_LAYOUT,
+  FRAME_BLOCK_GLSL,
+  PALETTE_BLOCK_GLSL,
+  SLOT_FRAME,
+  SLOT_PALETTE,
+  SLOT_PASS,
+  rgbHex,
+} from './passes/shared.ts';
+export { createRenderer, FIXED_PASS_DRAWS, sunDirection } from './renderer.ts';
 export type {
+  PassDraws,
   Renderer,
   RendererCanvas,
   RendererOptions,

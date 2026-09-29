@@ -2,12 +2,14 @@
  * Unit lifecycle: spawn (slot alloc + mover), kill (mark) and release (Cleanup phase).
  */
 import { HANDLE_NONE } from '@faf/heap';
-import { MoverState, NO_REF, UnitBits, UnitState } from './constants.ts';
+import { MoverState, NO_BEST_DIST, NO_REF, UnitBits, UnitState } from './constants.ts';
+import { surfaceY, terrainHeight } from './terrain.ts';
 import type { World } from './world.ts';
 
 /**
- * Spawns a unit of blueprint `bp` for `army` at (x, z) with `yaw`. Returns the slot or −1 if
- * the unit table, the mover pool or the army's unit cap is exhausted. Caller validates bp/army.
+ * Spawns a unit of blueprint `bp` for `army` at (x, z) with `yaw`, standing on the terrain
+ * (y = surface height of its layer). Returns the slot or −1 if the unit table, the mover pool or
+ * the army's unit cap is exhausted. Caller validates bp/army and the position (deep water).
  */
 export function spawnUnit(w: World, bp: number, army: number, x: number, z: number, yaw: number): number {
   const A = w.armies.col;
@@ -28,11 +30,12 @@ export function spawnUnit(w: World, bp: number, army: number, x: number, z: numb
   U.layer[idx] = t.layerCol[bp]!;
   U.state[idx] = UnitState.Idle;
   U.flags[idx] = UnitBits.NoInterp | UnitBits.Fresh;
+  const y = surfaceY(w, t.layerCol[bp]!, terrainHeight(w, x, z));
   U.x[idx] = x;
-  U.y[idx] = 0;
+  U.y[idx] = y;
   U.z[idx] = z;
   U.px[idx] = x;
-  U.py[idx] = 0;
+  U.py[idx] = y;
   U.pz[idx] = z;
   U.yaw[idx] = yaw;
   U.pyaw[idx] = yaw;
@@ -55,6 +58,8 @@ export function spawnUnit(w: World, bp: number, army: number, x: number, z: numb
   M.speed[row] = 0;
   M.state[row] = MoverState.Idle;
   M.flags[row] = 0;
+  M.best[row] = NO_BEST_DIST;
+  M.stuck[row] = 0;
   A.unitCount[army] = A.unitCount[army]! + 1;
   return idx;
 }

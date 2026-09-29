@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorld, PhaseId, step, unitHandles, writeFrame, type PhaseProbe } from '../src/index.ts';
 import { measureAllocation } from './support/alloc.ts';
 import { gameTable, spawnCmd } from './support/fixtures.ts';
+import { hollowRidgeSim } from './support/maps.ts';
 
 const gc = (globalThis as { gc?: () => void }).gc;
 
@@ -89,5 +90,50 @@ describe('allocation (PLAN §3.4: warm < 1 MB over 10,000 ticks)', () => {
     expect(retained).toBeLessThan(256 * 1024);
     expect(probe.begins[PhaseId.Movement]).toBe(12_000);
     expect(probe.ends[PhaseId.HashTick]).toBe(1200);
+  });
+});
+
+describe('allocation with a map (MS2: hollow-ridge, terrain height + deep-water rule every tick)', () => {
+  it('10,000 warm ticks with 1,000 cubes driving over slopes and against the river', async () => {
+    expect(gc).toBeTypeOf('function');
+    const w = createWorld({ bpTable: gameTable(), seed: 12, armyCount: 2, map: hollowRidgeSim() });
+    step(w, [spawnCmd(0, 1000, 150, 150, 70, 0, 0, 1)]);
+    const hs = unitHandles(w, 0);
+    expect(hs.length).toBe(1000);
+    // 10 groups; targets on the NW side (x, z in [40, 200)) and every 4th variant across the
+    // river (blocked, sliding, stuck ⇒ idle) so every code path of placeUnit runs warm.
+    const batches: Uint8Array[] = [];
+    for (let k = 0; k < 4; k++) {
+      const e = new CommandBatchEncoder();
+      for (let g = 0; g < 10; g++) {
+        const a = ((k * 10 + g + 1) * 2654435761) >>> 0;
+        const across = k === 3 && g % 2 === 0;
+        const x = across ? 330 + (a % 60) : 40 + (a % 160);
+        const z = across ? 330 + ((a >>> 9) % 60) : 40 + ((a >>> 9) % 160);
+        e.add({ tick: asTick(0), army: asArmyId(0), seq: 2 + k * 10 + g, op: Op.Move, flags: 0, units: hs.slice(g * 100, g * 100 + 100), payload: encodeMove({ x: fx(x), y: fx(0), z: fx(z) }) });
+      }
+      batches.push(e.view().slice());
+    }
+    const writer = new FrameWriter();
+    const target = new Uint8Array(writer.capacityBytes);
+    let moving = 0;
+    const tickRun = (n: number): void => {
+      for (let i = 0; i < n; i++) {
+        const t = w.tick;
+        step(w, t % 100 === 0 ? batches[(t / 100) % 4]! : null);
+        writeFrame(w, 0, writer, target);
+        if (t % 1000 === 0) {
+          moving = 0;
+          for (let r = 0; r < w.movers.count; r++) if (w.movers.col.speed[r]! > 0) moving++;
+        }
+      }
+    };
+    tickRun(1000);
+    const m = await measureAllocation(tickRun, 10_000);
+    console.log(`[alloc] sim + map: allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks (${m.gcEvents} GCs), moving at last sample: ${moving}`);
+    expect(moving).toBeGreaterThan(300);
+    expect(m.gcEvents).toBe(0);
+    expect(m.ticks).toBe(10_000);
+    expect(m.bytes).toBeLessThan(1024 * 1024);
   });
 });

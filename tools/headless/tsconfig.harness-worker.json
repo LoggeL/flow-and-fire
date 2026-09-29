@@ -15,6 +15,7 @@
     { "path": "../../packages/protocol" },
     { "path": "../../packages/rules" },
     { "path": "../../packages/blueprints" },
-    { "path": "../../packages/sim" }
+    { "path": "../../packages/sim" },
+    { "path": "../../packages/formats" }
   ]
 }

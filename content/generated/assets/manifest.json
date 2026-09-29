@@ -1,0 +1,34 @@
+{
+  "assets": {
+    "content/sim.bin": {
+      "bytes": 132,
+      "hash": "sha256-5r6T97fU0K569GrMEDpZGLgrdHARgpehA+O+TpfsRu0=",
+      "kind": "simbin",
+      "url": "content/sim.e6be93f7.bin"
+    },
+    "content/view.json": {
+      "bytes": 412,
+      "hash": "sha256-Q4Ee9jv/E8/03YhNEtkY7ojD00F3oNw5axkVcX2ke50=",
+      "kind": "viewjson",
+      "url": "content/view.43811ef6.json"
+    },
+    "maps/hollow-ridge": {
+      "bytes": 593420,
+      "hash": "sha256-/Tsx14aJgX09nNgd+zMLcH7ZafXo8owfBxj8jF9lkew=",
+      "kind": "map",
+      "url": "maps/hollow-ridge.fd3b31d7.rtsmap"
+    },
+    "units/cube_bot": {
+      "bytes": 8388,
+      "fallback": {
+        "bytes": 13440,
+        "hash": "sha256-24zSUlulf1jkI+2BfknOll+axvYwG+MB8wSdxG5jfE4=",
+        "url": "models/units/cube_bot.db8cd252.raw.glb"
+      },
+      "hash": "sha256-+0N3f+78ZSjyBQ7csFo2Ea6smIn8OGPNWX99qFgxtH4=",
+      "kind": "model",
+      "url": "models/units/cube_bot.fb43777f.glb"
+    }
+  },
+  "version": 1
+}

@@ -1,6 +1,7 @@
 /**
- * Module worker of the cross-engine harness (L3/L6): loads sim.bin and the xxh32 WASM, then runs
- * jobs (`hashChain`, `tickBench`, `spk1`, `spk5`) on request and answers with JSON results.
+ * Module worker of the cross-engine harness (L3/L6): loads sim.bin, the xxh32 WASM and the
+ * scenario maps (.rtsmap bytes, emitted by Vite as hashed assets), then runs jobs (`hashChain`,
+ * `tickBench`, `spk1`, `spk5`) on request and answers with JSON results.
  */
 import { engineInfo, runJob, type JobAssets, type JobEnv } from '../jobs.ts';
 import type { WorkerRequest, WorkerResponse } from '../series.ts';
@@ -8,6 +9,10 @@ import type { WorkerRequest, WorkerResponse } from '../series.ts';
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 const SIM_BIN_URL = new URL('../../../../content/generated/sim.bin', import.meta.url);
 const XXH32_WASM_URL = new URL('../spk5/xxh32.wasm', import.meta.url);
+/** Scenario maps by repo-relative path (must match scripts/lib.ts MAP_PATHS). */
+const MAP_URLS: Readonly<Record<string, URL>> = {
+  'content/maps/hollow-ridge.rtsmap': new URL('../../../../content/maps/hollow-ridge.rtsmap', import.meta.url),
+};
 const clock = (): number => performance.now();
 
 let assets: JobAssets | null = null;
@@ -29,7 +34,9 @@ scope.onmessage = (ev: MessageEvent<WorkerRequest>): void => {
     try {
       if (req.t === 'init') {
         const [simBin, xxh32Wasm] = await Promise.all([fetchBytes(SIM_BIN_URL), fetchBytes(XXH32_WASM_URL)]);
-        assets = { simBin, xxh32Wasm };
+        const maps: Record<string, Uint8Array> = {};
+        for (const [path, url] of Object.entries(MAP_URLS)) maps[path] = await fetchBytes(url);
+        assets = { simBin, xxh32Wasm, maps };
         env = { clock, info: engineInfo(req.engine, clock) };
         reply({ id: req.id, ok: true, info: env.info });
         return;

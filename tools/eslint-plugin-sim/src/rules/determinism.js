@@ -14,12 +14,17 @@
  *  - Float32Array, Float16Array; Float64Array outside `float64Allow` files
  *  - DataView float accessors (getFloat16/32/64, setFloat16/32/64) on any object outside
  *    `float64Allow` files
- *  - parseFloat / Number.parseFloat, Number(…) as a conversion function
+ *  - parseFloat / Number.parseFloat, Number(…) as a conversion function, unary `+` (except on a
+ *    numeric literal) as a conversion operator
+ *  - JSON.parse outside `jsonParseAllow` files (those must validate every number as an integer)
+ *  - globalThis/self/window/global other than as `<global>.<name>` (aliases or computed access
+ *    would bypass the checks of the forbidden globals)
  *  - `/` and `/=` unless the quotient is truncated right away: direct argument of Math.floor /
  *    Math.trunc, or operand of a bitwise operator (`| 0`, `>> 0`, `>>> 0`, `& m`, …)
  *  - non-integer numeric literals unless the direct argument of fx()/fxSmall()/deg()
  *  - localeCompare / toLocale* / Intl
- *  - imports of @faf/render, @faf/client, @faf/ai, @faf/sim-host
+ *  - imports of @faf/render, @faf/client, @faf/ai, @faf/sim-host; Node modules with clocks,
+ *    timers or randomness (perf_hooks, crypto, timers, worker_threads, …)
  */
 
 const ALLOWED_MATH = new Set(['imul', 'floor', 'trunc', 'min', 'max', 'abs', 'sign', 'clz32']);
@@ -27,6 +32,8 @@ const TIMERS = new Set(['setTimeout', 'setInterval', 'setImmediate', 'queueMicro
 const COLLECTIONS = new Set(['Map', 'Set', 'WeakMap', 'WeakSet', 'WeakRef', 'FinalizationRegistry']);
 const LITERAL_HELPERS = new Set(['fx', 'fxSmall', 'deg']);
 const FORBIDDEN_IMPORTS = ['@faf/render', '@faf/client', '@faf/ai', '@faf/sim-host'];
+/** Node built-ins that expose wall clocks, timers, randomness or threads (with and without `node:`). */
+const FORBIDDEN_NODE_MODULES = new Set(['perf_hooks', 'crypto', 'timers', 'timers/promises', 'worker_threads', 'os', 'process', 'async_hooks']);
 const GLOBAL_OBJECTS = new Set(['globalThis', 'self', 'window', 'global']);
 const FLOAT_ACCESSORS = new Set(['getFloat16', 'getFloat32', 'getFloat64', 'setFloat16', 'setFloat32', 'setFloat64']);
 /** Operators whose operands are converted with ToInt32/ToUint32 (a quotient is truncated). */
@@ -73,7 +80,8 @@ function propertyName(node) {
 
 /** @param {string} source */
 function isForbiddenImport(source) {
-  return FORBIDDEN_IMPORTS.some((p) => source === p || source.startsWith(p + '/'));
+  if (FORBIDDEN_IMPORTS.some((p) => source === p || source.startsWith(p + '/'))) return true;
+  return FORBIDDEN_NODE_MODULES.has(source.startsWith('node:') ? source.slice(5) : source);
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -89,6 +97,7 @@ const rule = {
         properties: {
           sqrtAllow: { type: 'array', items: { type: 'string' } },
           float64Allow: { type: 'array', items: { type: 'string' } },
+          jsonParseAllow: { type: 'array', items: { type: 'string' } },
         },
         additionalProperties: false,
       },
@@ -114,6 +123,11 @@ const rule = {
       crypto: 'crypto is a non-deterministic random source; use rng32(seed, tick, entityIdx, salt).',
       parseFloat: '{{name}} yields non-integer numbers; numbers enter the simulation as Fx integers.',
       numberCall: 'Number(…) conversion can yield non-integer numbers; use explicit integer conversions.',
+      unaryPlus: 'Unary + converts to a (possibly non-integer) number; use explicit integer conversions.',
+      jsonParse:
+        'JSON.parse yields arbitrary (non-integer) numbers; only allowed in jsonParseAllow files that check every number with Number.isInteger.',
+      globalAlias:
+        '{{name}} may only be used as {{name}}.<name>; aliasing or computed access bypasses the determinism checks.',
       division:
         'Division yields non-integers; truncate it right away (Math.floor/Math.trunc(a / b), (a / b) | 0) or use fxDiv from @faf/fixed.',
       float64: 'Float64Array is only allowed through SafeInt storage (packages/heap/src/safeint.ts).',
@@ -121,15 +135,16 @@ const rule = {
         'Non-integer literal {{raw}} is forbidden; convert constants via fx(…), fxSmall(…) or deg(…).',
       intl: 'Intl is locale-dependent and forbidden in the simulation.',
       locale: '{{name}} is locale-dependent and forbidden in the simulation.',
-      forbiddenImport: 'Simulation packages must not import {{source}} (dependency direction, PLAN §3.2).',
+      forbiddenImport: 'Simulation packages must not import {{source}} (dependency direction / non-deterministic Node module, PLAN §3.2, §3.12).',
     },
   },
   create(context) {
-    const options = /** @type {{sqrtAllow?: string[], float64Allow?: string[]}} */ (context.options[0] ?? {});
+    const options = /** @type {{sqrtAllow?: string[], float64Allow?: string[], jsonParseAllow?: string[]}} */ (context.options[0] ?? {});
     const filename = context.filename;
     const cwd = context.cwd;
     const sqrtAllowed = fileMatches(filename, cwd, options.sqrtAllow ?? []);
     const float64Allowed = fileMatches(filename, cwd, options.float64Allow ?? []);
+    const jsonParseAllowed = fileMatches(filename, cwd, options.jsonParseAllow ?? []);
     const sourceCode = context.sourceCode;
 
     /** @param {any} node @param {string} name */
@@ -145,6 +160,21 @@ const rule = {
      * @param {string} name
      */
     function checkGlobalReference(identifier, name) {
+      if (GLOBAL_OBJECTS.has(name)) {
+        // Only `<global>.<static name>` (through TS assertions) is allowed; the property is then
+        // checked like a direct reference to that global.
+        /** @type {any} */
+        let child = identifier;
+        let parent = identifier.parent;
+        while (parent && TRANSPARENT.has(parent.type)) {
+          child = parent;
+          parent = parent.parent;
+        }
+        const prop = parent && parent.type === 'MemberExpression' && parent.object === child ? propertyName(parent) : null;
+        if (prop === null) context.report({ node: identifier, messageId: 'globalAlias', data: { name } });
+        else checkGlobalProperty(parent, prop);
+        return;
+      }
       if (name === 'Math') {
         const parent = identifier.parent;
         if (parent && parent.type === 'MemberExpression' && parent.object === identifier) {
@@ -162,6 +192,38 @@ const rule = {
       }
       const messageId = FORBIDDEN_GLOBALS[name];
       if (messageId !== undefined) context.report({ node: identifier, messageId, data: { name } });
+    }
+
+    /**
+     * `<global>.<prop>` (globalThis.Date, self.setTimeout, window.Math.random …): same rules as a
+     * direct reference to `prop`.
+     * @param {any} node MemberExpression
+     * @param {string} prop
+     */
+    function checkGlobalProperty(node, prop) {
+      if (prop === 'Math') {
+        const outer = node.parent;
+        if (outer && outer.type === 'MemberExpression' && outer.object === node) {
+          const inner = propertyName(outer);
+          if (inner === null) context.report({ node: outer, messageId: 'mathAlias' });
+          else checkMathMember(outer, inner);
+        } else context.report({ node, messageId: 'mathAlias' });
+      } else if (prop === 'Float64Array') {
+        if (!float64Allowed) context.report({ node, messageId: 'float64' });
+      } else if (GLOBAL_OBJECTS.has(prop)) {
+        // globalThis.self, window.globalThis … : treat like the alias it is.
+        const outer = node.parent;
+        if (!(outer && outer.type === 'MemberExpression' && outer.object === node && propertyName(outer) !== null)) {
+          context.report({ node, messageId: 'globalAlias', data: { name: prop } });
+        } else checkGlobalProperty(outer, /** @type {string} */ (propertyName(outer)));
+      } else if (prop === 'JSON') {
+        const outer = node.parent;
+        if (!jsonParseAllowed && outer && outer.type === 'MemberExpression' && outer.object === node && propertyName(outer) === 'parse') {
+          context.report({ node: outer, messageId: 'jsonParse' });
+        }
+      } else if (FORBIDDEN_GLOBALS[prop] !== undefined) {
+        context.report({ node, messageId: /** @type {string} */ (FORBIDDEN_GLOBALS[prop]), data: { name: prop } });
+      }
     }
 
     /**
@@ -214,7 +276,7 @@ const rule = {
         let globalScope = scope;
         while (globalScope.upper) globalScope = globalScope.upper;
         const seen = new Set();
-        const names = ['Math', 'Float64Array', ...Object.keys(FORBIDDEN_GLOBALS)];
+        const names = ['Math', 'Float64Array', ...GLOBAL_OBJECTS, ...Object.keys(FORBIDDEN_GLOBALS)];
         for (const name of names) {
           const variable = globalScope.set.get(name);
           const refs = [
@@ -233,25 +295,12 @@ const rule = {
       MemberExpression(node) {
         const prop = propertyName(node);
         if (prop === null) return;
-        // globalThis.Date, self.setTimeout, window.Math.random …
-        if (node.object.type === 'Identifier' && GLOBAL_OBJECTS.has(node.object.name)) {
-          if (prop === 'Math' || prop === 'Float64Array' || FORBIDDEN_GLOBALS[prop] !== undefined) {
-            if (prop === 'Math') {
-              const outer = node.parent;
-              if (outer && outer.type === 'MemberExpression' && outer.object === node) {
-                const inner = propertyName(outer);
-                if (inner === null) context.report({ node: outer, messageId: 'mathAlias' });
-                else checkMathMember(outer, inner);
-              } else context.report({ node, messageId: 'mathAlias' });
-            } else if (prop === 'Float64Array') {
-              if (!float64Allowed) context.report({ node, messageId: 'float64' });
-            } else {
-              context.report({ node, messageId: /** @type {string} */ (FORBIDDEN_GLOBALS[prop]), data: { name: prop } });
-            }
-          }
-        }
+        // globalThis.X / self.X / window.X are checked with the global references (Program:exit).
         if (node.object.type === 'Identifier' && node.object.name === 'Number' && prop === 'parseFloat' && isGlobalRef(node.object)) {
           context.report({ node, messageId: 'parseFloat', data: { name: 'Number.parseFloat' } });
+        }
+        if (node.object.type === 'Identifier' && node.object.name === 'JSON' && prop === 'parse' && !jsonParseAllowed && isGlobalRef(node.object)) {
+          context.report({ node, messageId: 'jsonParse' });
         }
         if (FLOAT_ACCESSORS.has(prop) && !float64Allowed) {
           context.report({ node: node.property, messageId: 'floatAccessor', data: { name: prop } });
@@ -275,6 +324,12 @@ const rule = {
       FunctionDeclaration: checkAsync,
       FunctionExpression: checkAsync,
       ArrowFunctionExpression: checkAsync,
+      UnaryExpression(node) {
+        if (node.operator !== '+') return;
+        const arg = /** @type {any} */ (node.argument);
+        if (arg.type === 'Literal' && typeof arg.value === 'number') return;
+        context.report({ node, messageId: 'unaryPlus' });
+      },
       AwaitExpression(node) {
         context.report({ node, messageId: 'await' });
       },

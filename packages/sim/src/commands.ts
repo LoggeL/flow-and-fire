@@ -6,19 +6,23 @@
  *
  * MS1 ops: Move (replaces the order; the Queue flag is treated like replace until shift-queues
  * arrive with G7 in MS3), Stop, Cheat Spawn, Cheat Kill (cheats may target any army's units).
+ * MS2: Cheat Spawn skips (and counts, WH_SPAWN_REJECTED) units whose point is deep water for
+ * their layer (M2).
  */
 import { angToDir, asAng16, asFx, fxMul, isqrt, rng32, rngRange } from '@faf/fixed';
 import { CheatSub, MOVE_PAYLOAD_BYTES, CHEAT_KILL_PAYLOAD_BYTES, CHEAT_SPAWN_PAYLOAD_BYTES, Op } from '@faf/protocol';
 import {
   MoverBits,
   MoverState,
+  NO_BEST_DIST,
   SALT_SPAWN_ANGLE,
   SALT_SPAWN_RADIUS,
   SALT_SPAWN_YAW,
   UnitBits,
   UnitState,
 } from './constants.ts';
-import { WH_SEED, WH_SPAWN_SERIAL, WH_TICK } from './schema.ts';
+import { WH_SEED, WH_SPAWN_REJECTED, WH_SPAWN_SERIAL, WH_TICK } from './schema.ts';
+import { isBlockedFor } from './terrain.ts';
 import { killUnit, spawnUnit } from './units.ts';
 import type { World } from './world.ts';
 
@@ -59,6 +63,8 @@ function applyMove(w: World, i: number): void {
     M.tz[row] = tz;
     M.state[row] = MoverState.Moving;
     M.flags[row] = M.flags[row]! & ~MoverBits.Asleep;
+    M.best[row] = NO_BEST_DIST;
+    M.stuck[row] = 0;
     U.state[idx] = UnitState.Moving;
   }
 }
@@ -78,6 +84,7 @@ function applyStop(w: World, i: number): void {
       M.state[row] = MoverState.Idle;
       M.tx[row] = U.x[idx]!;
       M.tz[row] = U.z[idx]!;
+      M.stuck[row] = 0;
     }
     U.state[idx] = UnitState.Idle;
   }
@@ -108,6 +115,11 @@ function applyCheatSpawn(w: World, i: number, tick: number): void {
     const x = clampMap(w, cx + fxMul(asFx(DIR[0]!), asFx(r)));
     const z = clampMap(w, cz + fxMul(asFx(DIR[1]!), asFx(r)));
     const yaw = rng32(seed, tick, serial, SALT_SPAWN_YAW) & 0xffff;
+    if (isBlockedFor(w, w.bp.layerCol[bp]!, x, z)) {
+      // M2: a land unit is never placed into deep water; the draw is consumed all the same.
+      h[WH_SPAWN_REJECTED] = (h[WH_SPAWN_REJECTED]! + 1) | 0;
+      continue;
+    }
     if (spawnUnit(w, bp, army, x, z, yaw) < 0) return; // cap reached
   }
 }

@@ -28,6 +28,9 @@
     },
     {
       "path": "../blueprints"
+    },
+    {
+      "path": "../formats"
     }
   ]
 }

@@ -16,7 +16,9 @@ const tester = new RuleTester({
 });
 
 const SIM_FILE = 'packages/sim/src/world.ts';
-const OPTIONS = [{ sqrtAllow: ['packages/fixed/src/isqrt.ts'], float64Allow: ['packages/heap/src/safeint.ts'] }];
+const OPTIONS = [
+  { sqrtAllow: ['packages/fixed/src/isqrt.ts'], float64Allow: ['packages/heap/src/safeint.ts'], jsonParseAllow: ['packages/formats/src/rtsmap.ts'] },
+];
 
 type Case = { code: string; filename?: string; errors: { messageId: string }[] };
 
@@ -94,6 +96,22 @@ const invalid: Case[] = [
   inv("const v = dv['getFloat64'](0);", 'floatAccessor'),
   inv("const v = parseFloat('1.5');", 'parseFloat'),
   inv("const v = Number.parseFloat(s);", 'parseFloat'),
+  // Other float sources (review MS2): unary plus conversion, JSON.parse, aliased globals, Node modules
+  inv("const v = +'0.25';", 'unaryPlus'),
+  inv('const v = +s;', 'unaryPlus'),
+  inv('const v = +(a as string);', 'unaryPlus'),
+  inv("const v = JSON.parse('1.5');", 'jsonParse'),
+  inv("const v = globalThis.JSON.parse('1.5');", 'jsonParse'),
+  inv('const g = globalThis; g.Math.random();', 'globalAlias'),
+  inv('const w = self; w.setTimeout(tick, 0);', 'globalAlias'),
+  inv("const r = globalThis['Math'];", 'mathAlias'),
+  inv('const r = globalThis[name];', 'globalAlias'),
+  inv('use(window);', 'globalAlias'),
+  inv('const g = (globalThis as any); g.Date.now();', 'globalAlias'),
+  inv('const d = globalThis.self.Date.now();', 'date'),
+  inv("import { performance } from 'node:perf_hooks';", 'forbiddenImport'),
+  inv("import { randomBytes } from 'crypto';", 'forbiddenImport'),
+  inv("import { setTimeout as later } from 'node:timers';", 'forbiddenImport'),
   inv("const v = Number('1.5');", 'numberCall'),
   inv('const v = Number(x);', 'numberCall'),
   // Division without immediate truncation
@@ -142,6 +160,11 @@ const valid: { code: string; filename?: string }[] = [
   { code: 'const r = Math.sqrt(n);', filename: 'packages/fixed/src/isqrt.ts' },
   { code: 'const v = dv.getFloat64(0, true); dv.setFloat64(0, v, true);', filename: 'packages/heap/src/safeint.ts' },
   { code: 'const f = new Float64Array(8);', filename: 'packages/heap/src/safeint.ts' },
+  { code: 'const a = +1 + -2; const b = -x;' },
+  { code: 'const w = (globalThis as unknown as { WebAssembly?: unknown }).WebAssembly; const s = globalThis.SharedArrayBuffer;' },
+  { code: 'const o = { JSON: { parse: (x: string) => x } }; const v = o.JSON.parse("1");' },
+  { code: "const m = JSON.parse(text) as unknown; const t = JSON.stringify(m);", filename: 'packages/formats/src/rtsmap.ts' },
+  { code: "import { readFileSync } from 'node:fs';" },
 ];
 
 tester.run('sim/determinism', plugin.rules.determinism, {

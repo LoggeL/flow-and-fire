@@ -1,9 +1,15 @@
 /**
- * GameClient: main-thread game loop of MS1 (S1, S3, A5, G14; SPK6 measurement chain).
+ * GameClient: main-thread game loop (MS1: S1, S3, A5, G14, SPK6 chain; MS2: map, C1, G15, G16, C11).
  *
  * Per requestAnimationFrame:
- *   keyboard pan → poll the newest frame (ack bookkeeping, selection/highlight rebuild) → alpha →
- *   renderer.render (UnitRecords straight from the frame bytes, highlight, overlays) → metrics.
+ *   edge scan + keyboard pan + focus-height smoothing → poll the newest frame (ack bookkeeping,
+ *   selection/highlight rebuild) → alpha → hover pick → renderer.render (UnitRecords and the
+ *   PartStream straight from the frame bytes, highlight, overlays) → metrics.
+ *
+ * Map (MS2): `setMap(clientMap)` sets the renderer terrain, the spot decals, the camera bounds and
+ * terrain following and the heightmap raymarch picking (G15); click markers, waypoint lines and
+ * the hover point sit on the terrain height. Without a map the client starts on the generated flat
+ * test plane map (`ClientMap.testPlane()`), which takes exactly the same path.
  *
  * Input is handled in the DOM event handlers: a right click picks the ground, sends the Move
  * command and adds the click marker immediately, so the marker is drawn in the very next rAF.
@@ -23,14 +29,21 @@ import {
   type OverlaySegment,
   type RenderStats,
   type RenderView,
+  type TerrainDecal,
+  type TerrainDesc,
+  type UnitPartsView,
   type VisualTable,
 } from '@faf/render';
+import type { ActionMap } from './actions.ts';
 import { CameraController, type CameraState } from './camera-controller.ts';
 import { CommandBuilder, seqAcked } from './commands.ts';
 import { FrameStream, type FrameStreamOptions } from './frames.ts';
+import { FullscreenController, PointerConfinement, type FullscreenDocument, type FullscreenRoot, type LockableCanvas } from './fullscreen.ts';
 import { InputController, type Action, type DragBox, type InputEventTarget, type InputSurface } from './input.ts';
+import { ClientMap } from './map.ts';
 import { ClientMetrics, type MetricsSnapshot } from './metrics.ts';
-import { GroundPicker, mapBoundsWU, type MapBounds } from './picking.ts';
+import type { MapBounds } from './picking.ts';
+import { TerrainPicker } from './terrain-picker.ts';
 import { interpolatedPos, isOwnUnit, Selection, type SelectionMode } from './selection.ts';
 import type { SimLink } from './sim-link.ts';
 
@@ -39,6 +52,10 @@ export interface RendererLike {
   render(view: RenderView): void;
   setVisuals(table: VisualTable): void;
   readonly stats?: Readonly<RenderStats>;
+  /** Heightmap terrain (MS2); null = flat test plane. */
+  setTerrain?(desc: TerrainDesc | null): void;
+  /** Terrain decals (spot rings). */
+  setTerrainDecals?(decals: readonly TerrainDecal[]): unknown;
 }
 
 /** requestAnimationFrame abstraction (tests drive frames manually). */
@@ -64,6 +81,8 @@ export interface GameClientCallbacks {
   onFrame?(client: GameClient): void;
   /** Every input action, after the client handled it. */
   onAction?(a: Action): void;
+  /** Fullscreen entered/left. */
+  onFullscreenChange?(active: boolean): void;
 }
 
 export interface GameClientOptions {
@@ -77,8 +96,19 @@ export interface GameClientOptions {
   /** Keyboard event target; default `globalThis` (window). */
   readonly keyTarget?: InputEventTarget;
   readonly camera?: RtsCamera;
-  /** Map rectangle for camera clamp and picking; default 512 × 512 WU test plane. */
-  readonly bounds?: MapBounds;
+  /** Initial map (MS2); omitted = the generated 512 WU test plane map until `setMap`. */
+  readonly map?: ClientMap;
+  /** Key bindings (default: DEFAULT_ACTION_MAP). */
+  readonly actionMap?: ActionMap;
+  /** Edge pan at the canvas border (default true). */
+  readonly edgePan?: boolean;
+  /**
+   * Fullscreen + pointer confinement (C11): the element that goes fullscreen (game root, also the
+   * parent of the virtual cursor) and the document. Omitted ⇒ no fullscreen support.
+   */
+  readonly fullscreen?: { readonly root: FullscreenRoot; readonly doc: FullscreenDocument; readonly confine?: boolean };
+  /** Flag per visual (1 = COMMAND category, `commanderVisuals`) for `jumpToCommander`. */
+  readonly commanderVisuals?: Uint8Array;
   readonly callbacks?: GameClientCallbacks;
   /** Default: window.requestAnimationFrame. */
   readonly raf?: RafLike;
@@ -97,6 +127,14 @@ export interface GameClientOptions {
 export interface ScreenPos {
   readonly x: number;
   readonly y: number;
+}
+
+/** A picked world point (raw Q20.12); `hit` = on the terrain (false = clamped edge fallback). */
+export interface WorldPick {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly hit: boolean;
 }
 
 const MAX_MARKERS = 32;
@@ -128,6 +166,7 @@ interface MutableSegment {
 interface MutableView {
   camera: RtsCamera;
   units: { bytes: Uint8Array; count: number; version: number };
+  parts: UnitPartsView & { bytes: Uint8Array; count: number; version: number };
   highlight: Uint8Array;
   highlightVersion: number;
   alpha: number;
@@ -174,14 +213,25 @@ export class GameClient {
   readonly link: SimLink;
   readonly renderer: RendererLike;
   readonly playerArmy: number;
+  /** Fullscreen toggle (null without `options.fullscreen`). */
+  readonly fullscreen: FullscreenController | null;
+  /** Pointer confinement in fullscreen (null without fullscreen or when disabled). */
+  readonly confinement: PointerConfinement | null;
   /** Last host `status` / `stats` / `ready` message. */
   lastHostMessage: HostMessage | null = null;
+  /** Current map (the generated test plane until `setMap`). */
+  map: ClientMap;
+  /** Terrain point under the cursor (raw), updated every frame while the pointer is known. */
+  readonly hover = { x: 0, y: 0, z: 0, valid: false, hit: false };
+  /** Flag per visual for `jumpToCommander` (COMMAND category). */
+  commanderVisuals: Uint8Array | null;
 
   private readonly canvas: ClientCanvas;
   private readonly callbacks: GameClientCallbacks;
   private readonly rafImpl: RafLike | undefined;
   private readonly nowFn: () => number;
-  private readonly picker: GroundPicker;
+  private terrainPicker: TerrainPicker;
+  private bounds: MapBounds;
   private readonly markerColor: number;
   private readonly lineColor: number;
   private readonly unsubscribeHost: () => void;
@@ -194,6 +244,7 @@ export class GameClient {
   private readonly lineSeqs: number[] = [];
   private readonly view: MutableView;
   private readonly emptyUnits = new Uint8Array(0);
+  private readonly unsubscribeFullscreen: () => void;
   private readonly tmp = new Float64Array(4);
   private readonly pos = new Float64Array(3);
 
@@ -220,11 +271,14 @@ export class GameClient {
     this.markerColor = opts.markerColor ?? 0x40ff60;
     this.lineColor = opts.lineColor ?? 0x40ff60;
 
-    const bounds = opts.bounds ?? mapBoundsWU();
+    const map = opts.map ?? ClientMap.testPlane();
+    this.map = map;
+    this.bounds = map.bounds;
+    this.terrainPicker = new TerrainPicker(map);
     this.camera = opts.camera ?? new RtsCamera();
-    this.cameraController = new CameraController(this.camera, { bounds });
+    this.cameraController = new CameraController(this.camera, { bounds: map.bounds, terrain: map });
     if (opts.camera === undefined) this.cameraController.centerOnMap();
-    this.picker = new GroundPicker(bounds);
+    this.commanderVisuals = opts.commanderVisuals ?? null;
     this.selection = new Selection(opts.playerArmy);
     this.commands = new CommandBuilder(opts.link, opts.playerArmy);
     this.stream = new FrameStream(opts.link.frames, opts.frameStream);
@@ -262,6 +316,7 @@ export class GameClient {
       highlight: this.selection.highlight,
       highlightVersion: 0,
       alpha: 1,
+      parts: { bytes: this.emptyUnits, count: 0, version: 0 },
       overlays: { markers: this.markers, lines: this.lines },
       timeMs: 0,
     };
@@ -272,12 +327,120 @@ export class GameClient {
       this.callbacks.onHostMessage?.(m);
     });
     const keyTarget = opts.keyTarget ?? (globalThis as unknown as InputEventTarget);
+    const fs = opts.fullscreen;
+    if (fs !== undefined) {
+      this.fullscreen = new FullscreenController(fs.root, fs.doc);
+      const lockable = opts.canvas as unknown as LockableCanvas;
+      this.confinement =
+        fs.confine === false
+          ? null
+          : new PointerConfinement({
+              canvas: lockable,
+              doc: fs.doc,
+              fullscreen: this.fullscreen,
+              viewport: () => ({ width: this.camera.viewportWidth, height: this.camera.viewportHeight }),
+              container: fs.root,
+            });
+      this.unsubscribeFullscreen = this.fullscreen.onChange((a) => this.callbacks.onFullscreenChange?.(a));
+    } else {
+      this.fullscreen = null;
+      this.confinement = null;
+      this.unsubscribeFullscreen = () => undefined;
+    }
     this.input = new InputController(opts.canvas, keyTarget, {
       onAction: (a) => this.handleAction(a),
       onDragBox: (b) => this.callbacks.onDragBox?.(b),
+      confinement: this.confinement,
       ...(opts.focusProbe !== undefined ? { focusProbe: opts.focusProbe } : {}),
+      ...(opts.actionMap !== undefined ? { actionMap: opts.actionMap } : {}),
+      ...(opts.edgePan !== undefined ? { edgePan: opts.edgePan } : {}),
     });
     this.syncViewport();
+    this.setMap(map);
+  }
+
+  // ---- map (MS2) ------------------------------------------------------------------------------
+
+  /**
+   * Sets the map: renderer terrain (heightmap, water, light) + spot decals, camera bounds and
+   * terrain following, heightmap picking.
+   */
+  setMap(map: ClientMap): void {
+    this.map = map;
+    this.renderer.setTerrain?.(map.toTerrainDesc());
+    this.renderer.setTerrainDecals?.(map.spotDecals());
+    this.bounds = map.bounds;
+    this.terrainPicker = new TerrainPicker(map);
+    this.cameraController.setTerrain(map, map.bounds);
+    this.hover.valid = false;
+  }
+
+  /** Map rectangle (raw) used for clamping. */
+  get mapBounds(): MapBounds {
+    return this.bounds;
+  }
+
+  /** Sim-exact terrain height (raw) at (x, z) raw. */
+  heightAtRaw(xRaw: number, zRaw: number): number {
+    return this.map.heightAtRaw(xRaw, zRaw);
+  }
+
+  /**
+   * World point under the CSS pixel (x, y) like a right click picks it (terrain raymarch); null
+   * above the horizon.
+   */
+  pickAt(cssX: number, cssY: number): WorldPick | null {
+    this.syncViewport();
+    return this.pick(cssX, cssY) ? { x: this.pickX, y: this.pickY, z: this.pickZ, hit: this.pickHit } : null;
+  }
+
+  /** Moves the camera focus to (x, z) raw (clamped), optionally with a zoom distance (WU). */
+  jumpTo(xRaw: number, zRaw: number, distance?: number): void {
+    this.cameraController.jumpTo(xRaw, zRaw, distance);
+  }
+
+  /**
+   * `jumpToCommander` (KeyH): to the own unit with category COMMAND (MS5 ACU); until then to the
+   * own start position of the map, else the map centre. Returns the target (raw).
+   */
+  jumpToCommander(): { x: number; z: number } {
+    const r = this.lastFrame;
+    const cv = this.commanderVisuals;
+    if (r !== null && cv !== null) {
+      for (let i = 0; i < r.unitCount; i++) {
+        if (!isOwnUnit(r, i, this.playerArmy) || cv[r.unitVisual(i)] !== 1) continue;
+        interpolatedPos(r, i, this.stream.lastAlpha, this.pos);
+        this.jumpTo(this.pos[0]!, this.pos[2]!);
+        return { x: this.pos[0]!, z: this.pos[2]! };
+      }
+    }
+    const start = this.map.startOf(this.playerArmy);
+    const b = this.bounds;
+    const x = start !== null ? start.x : (b.minX + b.maxX) / 2;
+    const z = start !== null ? start.z : (b.minZ + b.maxZ) / 2;
+    this.jumpTo(x, z);
+    return { x, z };
+  }
+
+  /** Toggles fullscreen (UI button / Alt+Enter). Resolves with the new state. */
+  toggleFullscreen(): Promise<boolean> {
+    return this.fullscreen === null ? Promise.resolve(false) : this.fullscreen.toggle();
+  }
+
+  private pickX = 0;
+  private pickY = 0;
+  private pickZ = 0;
+  private pickHit = false;
+
+  /** Picks into pickX/Y/Z (raw); false above the horizon. Allocation-free. */
+  private pick(cssX: number, cssY: number): boolean {
+    const tp = this.terrainPicker;
+    if (!tp.pick(this.camera, cssX, cssY)) return false;
+    this.pickX = tp.x;
+    this.pickY = tp.y;
+    this.pickZ = tp.z;
+    this.pickHit = tp.hit;
+    return true;
   }
 
   // ---- UI accessors ---------------------------------------------------------------------------
@@ -369,7 +532,7 @@ export class GameClient {
    * (x, z) raw with the same immediate feedback and measurement as a right click.
    */
   moveTo(xRaw: number, zRaw: number, handles?: ArrayLike<number>, clickMs?: number): number {
-    const b = this.picker.bounds;
+    const b = this.bounds;
     const x = Math.min(b.maxX, Math.max(b.minX, Math.round(xRaw)));
     const z = Math.min(b.maxZ, Math.max(b.minZ, Math.round(zRaw)));
     const units = handles ?? this.selection.selected();
@@ -415,6 +578,9 @@ export class GameClient {
     this.stop();
     this.disposed = true;
     this.input.dispose();
+    this.confinement?.dispose();
+    this.unsubscribeFullscreen();
+    this.fullscreen?.dispose();
     this.unsubscribeHost();
     this.unsubscribeAck();
   }
@@ -429,10 +595,11 @@ export class GameClient {
     const dt = Number.isNaN(this.lastNow) ? 0 : now - this.lastNow;
     this.lastNow = now;
 
-    // Camera (independent of sim and pause).
-    const ax = this.input.panAxisX(now);
-    const ay = this.input.panAxisY(now);
-    if (ax !== 0 || ay !== 0) this.cameraController.update(dt, ax, ay);
+    // Camera (independent of sim and pause): edge scan, keys, focus-height smoothing.
+    this.syncViewport(false);
+    const inp = this.input;
+    inp.updateEdge(this.camera.viewportWidth, this.camera.viewportHeight);
+    this.cameraController.update(dt, inp.panAxisX(now), inp.panAxisY(now), inp.edgeX, inp.edgeY);
 
     // Newest frame.
     const s = this.stream;
@@ -450,6 +617,10 @@ export class GameClient {
       v.units.count = 0;
     }
     v.units.version = s.frameCount;
+    v.parts.bytes = s.parts();
+    v.parts.count = s.partCount;
+    v.parts.version = s.frameCount;
+    this.updateHover();
     v.highlight = this.selection.highlight;
     v.highlightVersion = this.selection.highlightVersion;
     v.alpha = alpha;
@@ -467,14 +638,49 @@ export class GameClient {
     return this.rafImpl ?? defaultRaf();
   }
 
-  private syncViewport(): void {
+  /** Copies the canvas CSS size into the camera; `force` also recomputes the camera matrices. */
+  private syncViewport(force = true): void {
     const c = this.canvas;
     const w = c.clientWidth;
     const h = c.clientHeight;
+    let changed = false;
     if (w !== undefined && h !== undefined && w > 0 && h > 0) {
-      if (this.camera.viewportWidth !== w || this.camera.viewportHeight !== h) this.camera.setViewport(w, h);
+      if (this.camera.viewportWidth !== w || this.camera.viewportHeight !== h) {
+        this.camera.setViewport(w, h);
+        changed = true;
+      }
     }
-    this.camera.update();
+    if (force || changed) this.camera.update();
+  }
+
+  private hoverPx = Number.NaN;
+  private hoverPy = Number.NaN;
+  private hoverCam = -1;
+  private hoverMap: ClientMap | null = null;
+
+  /** Terrain point under the cursor; re-picked only when the pointer, camera or map changed. */
+  private updateHover(): void {
+    const inp = this.input;
+    const hv = this.hover;
+    if (!inp.pointerInside && !inp.confined) {
+      hv.valid = false;
+      return;
+    }
+    const px = inp.pointerX;
+    const py = inp.pointerY;
+    const cam = this.camera;
+    if (px === this.hoverPx && py === this.hoverPy && cam.version === this.hoverCam && this.map === this.hoverMap) return;
+    this.hoverPx = px;
+    this.hoverPy = py;
+    this.hoverCam = cam.version;
+    this.hoverMap = this.map;
+    hv.valid = this.pick(px, py);
+    if (hv.valid) {
+      hv.x = this.pickX;
+      hv.y = this.pickY;
+      hv.z = this.pickZ;
+      hv.hit = this.pickHit;
+    }
   }
 
   private onNewFrame(now: number): void {
@@ -523,24 +729,24 @@ export class GameClient {
       m = this.markers.shift() as MutableMarker;
     }
     m.x = x;
-    m.y = 0;
+    m.y = this.heightAtRaw(x, z);
     m.z = z;
     m.startMs = now;
     m.color = this.markerColor;
     this.markers.push(m);
   }
 
-  private addLine(seq: number, ax: number, az: number, bx: number, bz: number): void {
+  private addLine(seq: number, ax: number, ay: number, az: number, bx: number, bz: number): void {
     let l = this.linePool.pop();
     if (l === undefined) {
       l = this.lines.shift() as MutableSegment;
       this.lineSeqs.shift();
     }
     l.ax = ax;
-    l.ay = 0;
+    l.ay = ay;
     l.az = az;
     l.bx = bx;
-    l.by = 0;
+    l.by = this.heightAtRaw(bx, bz);
     l.bz = bz;
     l.color = this.lineColor;
     this.lines.push(l);
@@ -550,13 +756,14 @@ export class GameClient {
   private issueMove(units: ArrayLike<number>, fromSelection: boolean, x: number, z: number, queue: boolean, clickMs: number): number {
     if (units.length === 0) return -1;
     const now = this.nowFn();
-    const seq = this.commands.move(units, x, 0, z, queue, now);
+    const seq = this.commands.move(units, x, this.heightAtRaw(x, z), z, queue, now);
     this.addMarker(x, z, now);
     // Waypoint line from the group's displayed centre.
     const r = this.lastFrame;
     if (r !== null) {
       const alpha = this.stream.lastAlpha;
       let sx = 0;
+      let sy = 0;
       let sz = 0;
       let n = 0;
       if (fromSelection) {
@@ -564,6 +771,7 @@ export class GameClient {
         for (let k = 0; k < sel.count; k++) {
           interpolatedPos(r, sel.indices[k]!, alpha, this.pos);
           sx += this.pos[0]!;
+          sy += this.pos[1]!;
           sz += this.pos[2]!;
           n++;
         }
@@ -574,11 +782,12 @@ export class GameClient {
           if (!wanted.has(r.unitHandle(i))) continue;
           interpolatedPos(r, i, alpha, this.pos);
           sx += this.pos[0]!;
+          sy += this.pos[1]!;
           sz += this.pos[2]!;
           n++;
         }
       }
-      if (n > 0) this.addLine(seq, Math.round(sx / n), Math.round(sz / n), x, z);
+      if (n > 0) this.addLine(seq, Math.round(sx / n), Math.round(sy / n), Math.round(sz / n), x, z);
     }
     this.metrics.beginClick(clickMs, seq, units, r, this.stream.lastAlpha);
     return seq;
@@ -586,9 +795,28 @@ export class GameClient {
 
   private handleAction(a: Action): void {
     switch (a.type) {
+      case 'grabStart':
+        this.syncViewport();
+        this.cameraController.grabStart(a.x, a.y);
+        break;
       case 'pan':
         this.syncViewport();
-        this.cameraController.panPixels(a.dxPx, a.dyPx);
+        this.cameraController.grabMove(a.x, a.y, a.dxPx, a.dyPx);
+        break;
+      case 'grabEnd':
+        this.cameraController.grabEnd();
+        break;
+      case 'rotate':
+        this.cameraController.rotate(a.dxPx, a.dyPx);
+        break;
+      case 'resetCamera':
+        this.cameraController.resetRotation();
+        break;
+      case 'jumpToCommander':
+        this.jumpToCommander();
+        break;
+      case 'toggleFullscreen':
+        void this.toggleFullscreen();
         break;
       case 'zoom':
         this.syncViewport();
@@ -610,9 +838,9 @@ export class GameClient {
         break;
       case 'moveCommand': {
         this.syncViewport();
-        if (!this.picker.pick(this.camera, a.x, a.y)) break;
+        if (!this.pick(a.x, a.y)) break;
         const clickMs = a.timeStamp > 0 ? a.timeStamp : this.nowFn();
-        this.issueMove(this.selection.selected(), true, this.picker.x, this.picker.z, a.queue, clickMs);
+        this.issueMove(this.selection.selected(), true, this.pickX, this.pickZ, a.queue, clickMs);
         break;
       }
       case 'stop':

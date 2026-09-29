@@ -1,18 +1,22 @@
 /**
- * Browser smoke test for @faf/render (`pnpm --filter @faf/render smoke`).
+ * Browser smoke test for @faf/render (`pnpm --filter @faf/render smoke`), MS2 scene: procedural
+ * 512-WU terrain with water and spot decals, 2,000 units (3 visuals × 3 LODs, merged-part tank).
  *
  * 1. Typechecks and builds the demo (packages/render/demo → packages/render/dist/demo).
- * 2. Serves it from a short-lived node:http server on a free port.
+ * 2. Serves it from a short-lived node:http server on a free port (never 5199).
  * 3. Runs Chromium, Firefox and WebKit headless ONE AFTER ANOTHER (memory budget) with the same
  *    WebGL2 launch flags as the root playwright.config.ts and checks:
  *    - no shader/GL errors or page errors in the console,
- *    - the canvas is not a single color (decoded screenshot pixels),
- *    - draw calls ≤ visuals + fixed passes,
- *    - context loss → restore brings the picture back (if WEBGL_lose_context exists),
- *    and logs the main-thread JS time per frame.
+ *    - GPU height probe == JS reference of the height formula in 10,000 points (bit-identical),
+ *    - draw calls ≤ 50 and ≤ (visual, LOD) buckets + FIXED_PASS_DRAWS, one terrain and one water draw,
+ *      also in every frame of a 3-s camera flight,
+ *    - the canvas is not a single color, army colors present, a deep-water pixel is water-colored,
+ *      a mass-spot ring is visible as a green decal,
+ *    - context loss → restore brings terrain, water and the probe back (if WEBGL_lose_context exists),
+ *    and logs render-JS p50/p95 (static view and flight) and GPU time (timer query, where available).
  * 4. Closes every browser and the server; writes test-results/render-smoke.json.
  *
- * Flags: --browsers=chromium,firefox,webkit  --n=1000  --no-build  --headed
+ * Flags: --browsers=chromium,firefox,webkit  --n=2000  --no-build  --headed
  */
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -28,13 +32,15 @@ import { build } from 'vite';
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoDir = resolve(pkgDir, '../..');
 const outDir = resolve(pkgDir, 'dist/demo');
-const FIXED_PASS_DRAWS = 3; // ground, waypoint lines, click markers (mirrors src/renderer.ts)
+/** MS2 acceptance: ≤ 50 draws with 2,000 units + terrain + water. */
+const MAX_DRAWS = 50;
+const PROBE_POINTS = 10_000;
 
 const argv = process.argv.slice(2);
 const arg = (name: string): string | undefined =>
   argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? (argv.includes(`--${name}`) ? '' : undefined);
 const browserNames = (arg('browsers') ?? 'chromium,firefox,webkit').split(',').filter((s) => s.length > 0);
-const unitCount = Number(arg('n') ?? 1000);
+const unitCount = Number(arg('n') ?? 2000);
 const headed = arg('headed') !== undefined;
 
 // ---------------------------------------------------------------------------------------------
@@ -244,7 +250,13 @@ function launchConfig(name: string): { type: BrowserType; options: LaunchOptions
 
 interface DemoStats {
   drawCalls: number;
+  drawsByPass: { terrain: number; water: number; units: number; overlay: number };
   instances: number;
+  unitInstances: number;
+  culledInstances: number;
+  lodInstancesArr: number[];
+  terrainPatches: number;
+  decals: number;
   visualsDrawn: number;
   droppedUnits: number;
   gpuMs: number | undefined;
@@ -262,6 +274,16 @@ interface CpuStats {
   frameP50: number;
   frameP95: number;
   fps: number;
+  drawsMax: number;
+  gpuP50: number | null;
+  gpuP95: number | null;
+}
+
+interface ProbeResult {
+  n: number;
+  mismatches: number;
+  first: { i: number; x: number; z: number; gpu: number; cpu: number } | null;
+  ms: number;
 }
 
 interface BrowserResult {
@@ -272,12 +294,23 @@ interface BrowserResult {
   renderer?: string;
   multiDraw?: boolean;
   timerQuery?: boolean;
+  colorBufferFloat?: boolean;
   drawCalls?: number;
-  visualCount?: number;
+  drawsByPass?: DemoStats['drawsByPass'];
+  maxUnitDraws?: number;
   instances?: number;
+  unitInstances?: number;
+  culledInstances?: number;
+  lodInstances?: number[];
+  terrainPatches?: number;
   cpu?: CpuStats;
+  flight?: CpuStats;
   gpuMs?: number | undefined;
+  probe?: ProbeResult;
+  probeAfterRestore?: ProbeResult;
   pixels?: PixelReport;
+  waterPixel?: [number, number, number];
+  spotRingHits?: number;
   contextLoss?: 'ok' | 'unsupported' | 'failed';
   pixelsAfterRestore?: PixelReport;
   consoleErrors: string[];
@@ -289,8 +322,13 @@ interface DemoApiView {
   frames: number;
   units: number;
   visualCount: number;
+  maxUnitDraws: number;
+  fixedPassDraws: number;
   renderer: string;
-  caps: { multiDraw: boolean; timerQuery: boolean };
+  caps: { multiDraw: boolean; timerQuery: boolean; colorBufferFloat: boolean };
+  spots: { kind: 'mass' | 'hydro'; x: number; z: number }[];
+  deepWater: [number, number];
+  waterLevelRaw: number | null;
   lost: boolean;
   restores: number;
   glErrors: string[];
@@ -300,6 +338,11 @@ interface DemoApiView {
   loseContext(): boolean;
   restoreContext(): boolean;
   checkErrors(): string[];
+  heightAt(x: number, z: number): number;
+  probe(n: number, seed: number): ProbeResult;
+  setPose(xWU: number, zWU: number, distance: number, pitchDeg: number, yawDeg: number): void;
+  setFlight(on: boolean): void;
+  project(x: number, y: number, z: number): [number, number] | null;
 }
 
 type DemoWindow = Window & { __renderDemo?: DemoApiView };
@@ -319,12 +362,48 @@ async function framesNow(page: Page): Promise<number> {
   return page.evaluate(() => (window as DemoWindow).__renderDemo?.frames ?? 0);
 }
 
+async function settle(page: Page, frames = 12): Promise<void> {
+  await waitFrames(page, (await framesNow(page)) + frames);
+}
+
 function pixelFailures(tag: string, p: PixelReport): string[] {
   const f: string[] = [];
   if (p.distinctColors < 24) f.push(`${tag}: only ${p.distinctColors} distinct colors (canvas looks uniform)`);
   if (p.dominantShare > 0.9) f.push(`${tag}: one color covers ${(p.dominantShare * 100).toFixed(1)} % of the canvas`);
-  if (p.bluish < 20 || p.reddish < 20) f.push(`${tag}: army colors missing (blue ${p.bluish}, red ${p.reddish} samples)`);
+  if (p.bluish < 20 || p.reddish < 20) f.push(`${tag}: army/water colors missing (blue ${p.bluish}, red ${p.reddish} samples)`);
   return f;
+}
+
+function pixelAt(img: Image, x: number, y: number): [number, number, number] {
+  const px = Math.min(img.width - 1, Math.max(0, Math.round(x)));
+  const py = Math.min(img.height - 1, Math.max(0, Math.round(y)));
+  const o = (py * img.width + px) * img.channels;
+  return [img.data[o]!, img.data[o + 1]!, img.data[o + 2]!];
+}
+
+function probeFailures(tag: string, p: ProbeResult): string[] {
+  if (p.mismatches === 0 && p.n === PROBE_POINTS) return [];
+  const f = p.first;
+  return [
+    `${tag}: GPU probe ≠ JS reference in ${p.mismatches}/${p.n} points` +
+      (f === null ? '' : ` (first #${f.i} at x=${f.x}, z=${f.z}: gpu ${f.gpu}, cpu ${f.cpu})`),
+  ];
+}
+
+function drawFailures(tag: string, s: DemoStats, maxUnitDraws: number, fixed: number): string[] {
+  const f: string[] = [];
+  if (s.drawCalls > MAX_DRAWS) f.push(`${tag}: ${s.drawCalls} draw calls > ${MAX_DRAWS}`);
+  if (s.drawCalls > maxUnitDraws + fixed) f.push(`${tag}: ${s.drawCalls} draws > (visual, LOD) buckets ${maxUnitDraws} + fixed ${fixed}`);
+  if (s.drawsByPass.terrain !== 1) f.push(`${tag}: terrain draws ${s.drawsByPass.terrain} ≠ 1`);
+  if (s.drawsByPass.water !== 1) f.push(`${tag}: water draws ${s.drawsByPass.water} ≠ 1`);
+  if (s.drawsByPass.units < 1) f.push(`${tag}: no unit draws`);
+  if (s.terrainPatches < 1) f.push(`${tag}: no terrain patches visible`);
+  return f;
+}
+
+async function screenshot(page: Page): Promise<Image> {
+  const shot = await page.locator('canvas#view').screenshot({ type: 'png' });
+  return decodePng(new Uint8Array(shot));
 }
 
 async function runBrowser(name: string, url: string): Promise<BrowserResult> {
@@ -348,18 +427,27 @@ async function runBrowser(name: string, url: string): Promise<BrowserResult> {
 
     await page.goto(`${url}?n=${unitCount}`, { waitUntil: 'load' });
     await waitFrames(page, 60);
-    await page.evaluate(() => (window as DemoWindow).__renderDemo!.resetSamples());
-    // Measure ~2 s of steady-state frames (at least 120 frames or until the timeout).
+
+    // ---- 1. GPU height probe == JS reference (10,000 points)
+    result.probe = await page.evaluate((n) => (window as DemoWindow).__renderDemo!.probe(n, 1), PROBE_POINTS);
+    failures.push(...probeFailures('probe', result.probe));
+
+    // ---- 2. static overview: draws, CPU/GPU times
+    await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      d.setPose(256, 276, 150, 52, -90);
+      d.resetSamples();
+    });
     const start = await framesNow(page);
     await page.waitForTimeout(2000);
     await waitFrames(page, start + 60);
-
     const info = await page.evaluate(() => {
       const d = (window as DemoWindow).__renderDemo!;
       return {
         renderer: d.renderer,
         caps: d.caps,
-        visualCount: d.visualCount,
+        maxUnitDraws: d.maxUnitDraws,
+        fixed: d.fixedPassDraws,
         units: d.units,
         stats: d.stats(),
         cpu: d.cpuStats(),
@@ -369,23 +457,95 @@ async function runBrowser(name: string, url: string): Promise<BrowserResult> {
     result.renderer = info.renderer;
     result.multiDraw = info.caps.multiDraw;
     result.timerQuery = info.caps.timerQuery;
+    result.colorBufferFloat = info.caps.colorBufferFloat;
     result.drawCalls = info.stats.drawCalls;
-    result.visualCount = info.visualCount;
+    result.drawsByPass = info.stats.drawsByPass;
+    result.maxUnitDraws = info.maxUnitDraws;
     result.instances = info.stats.instances;
+    result.unitInstances = info.stats.unitInstances;
+    result.culledInstances = info.stats.culledInstances;
+    result.lodInstances = info.stats.lodInstancesArr;
+    result.terrainPatches = info.stats.terrainPatches;
     result.cpu = info.cpu;
     result.gpuMs = info.stats.gpuMs;
     if (info.glErrors.length > 0) failures.push(`GL errors: ${info.glErrors.join(', ')}`);
-    if (info.stats.drawCalls > info.visualCount + FIXED_PASS_DRAWS) {
-      failures.push(`draw calls ${info.stats.drawCalls} > visuals ${info.visualCount} + fixed passes ${FIXED_PASS_DRAWS}`);
+    failures.push(...drawFailures('overview', info.stats, info.maxUnitDraws, info.fixed));
+    if (info.cpu.drawsMax > MAX_DRAWS) failures.push(`overview: a frame had ${info.cpu.drawsMax} draws > ${MAX_DRAWS}`);
+    if (info.stats.unitInstances + info.stats.culledInstances + info.stats.droppedUnits !== info.units) {
+      failures.push(`units: visible ${info.stats.unitInstances} + culled ${info.stats.culledInstances} ≠ ${info.units}`);
     }
-    if (info.stats.drawCalls < 1 + info.visualCount) failures.push(`only ${info.stats.drawCalls} draw calls`);
-    if (info.stats.instances < info.units) failures.push(`only ${info.stats.instances} instances drawn (${info.units} units)`);
+    if (info.stats.unitInstances < 100) failures.push(`only ${info.stats.unitInstances} unit instances visible in the overview`);
 
-    const shot = await page.locator('canvas#view').screenshot({ type: 'png' });
-    result.pixels = analyze(decodePng(new Uint8Array(shot)));
+    result.pixels = analyze(await screenshot(page));
     failures.push(...pixelFailures('screenshot', result.pixels));
 
-    // Context loss → restore (P10 groundwork): the registry must bring the picture back.
+    // ---- 3. camera flight: culling/LOD every frame, draws ≤ 50 in every frame
+    await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      d.setFlight(true);
+      d.resetSamples();
+    });
+    await page.waitForTimeout(3000);
+    const flight = await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      d.setFlight(false);
+      return { cpu: d.cpuStats(), stats: d.stats() };
+    });
+    result.flight = flight.cpu;
+    if (flight.cpu.drawsMax > MAX_DRAWS) failures.push(`flight: a frame had ${flight.cpu.drawsMax} draws > ${MAX_DRAWS}`);
+    if (flight.cpu.n < 20) failures.push(`flight: only ${flight.cpu.n} frames in 3 s`);
+    failures.push(...drawFailures('flight', flight.stats, info.maxUnitDraws, info.fixed));
+
+    // ---- 4. water pixel (deep lake) and a mass-spot ring decal
+    const water = await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      const [x, z] = d.deepWater;
+      d.setPose(x / 4096, z / 4096, 40, 70, -90);
+      return { x, z };
+    });
+    await settle(page);
+    const wp = await page.evaluate((w) => {
+      const d = (window as DemoWindow).__renderDemo!;
+      return d.project(w.x, d.waterLevelRaw ?? 0, w.z);
+    }, water);
+    const wimg = await screenshot(page);
+    if (wp === null) failures.push('water: deep-water point not on screen');
+    else {
+      const c = pixelAt(wimg, wp[0], wp[1]);
+      result.waterPixel = c;
+      if (!(c[2] > c[0] + 10 && c[2] >= c[1] - 30)) failures.push(`water: pixel at the deep lake is not water-colored (rgb ${c.join(',')})`);
+    }
+    const ring = await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      const s = d.spots.find((p) => p.kind === 'mass')!;
+      d.setPose(s.x / 4096, s.z / 4096, 16, 80, -90);
+      return s;
+    });
+    await settle(page);
+    const ringPts = await page.evaluate((s) => {
+      const d = (window as DemoWindow).__renderDemo!;
+      const pts: ([number, number] | null)[] = [];
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const x = Math.round(s.x + Math.cos(a) * 1.6 * 4096);
+        const z = Math.round(s.z + Math.sin(a) * 1.6 * 4096);
+        pts.push(d.project(x, d.heightAt(x, z), z));
+      }
+      return pts;
+    }, ring);
+    const rimg = await screenshot(page);
+    let hits = 0;
+    for (const p of ringPts) {
+      if (p === null) continue;
+      const [r, g, b] = pixelAt(rimg, p[0], p[1]);
+      if (g > 150 && g > r + 40 && g > b + 20) hits++;
+    }
+    result.spotRingHits = hits;
+    if (hits < 6) failures.push(`spot decal: only ${hits}/16 ring samples are decal-green`);
+
+    // ---- 5. context loss → restore brings terrain, water and the probe back
+    await page.evaluate(() => (window as DemoWindow).__renderDemo!.setPose(256, 276, 150, 52, -90));
+    await settle(page);
     const lostOk = await page.evaluate(() => (window as DemoWindow).__renderDemo!.loseContext());
     if (!lostOk) result.contextLoss = 'unsupported';
     else {
@@ -400,12 +560,17 @@ async function runBrowser(name: string, url: string): Promise<BrowserResult> {
           undefined,
           { timeout: 10_000 },
         );
-        await waitFrames(page, (await framesNow(page)) + 30);
-        const shot2 = await page.locator('canvas#view').screenshot({ type: 'png' });
-        result.pixelsAfterRestore = analyze(decodePng(new Uint8Array(shot2)));
+        await settle(page, 30);
+        result.pixelsAfterRestore = analyze(await screenshot(page));
         const f2 = pixelFailures('after restore', result.pixelsAfterRestore);
-        const errs = await page.evaluate(() => (window as DemoWindow).__renderDemo!.checkErrors());
-        if (errs.length > 0) f2.push(`GL errors after restore: ${errs.join(', ')}`);
+        const after = await page.evaluate(() => {
+          const d = (window as DemoWindow).__renderDemo!;
+          return { errs: d.checkErrors(), stats: d.stats(), maxUnitDraws: d.maxUnitDraws, fixed: d.fixedPassDraws };
+        });
+        if (after.errs.length > 0) f2.push(`GL errors after restore: ${after.errs.join(', ')}`);
+        f2.push(...drawFailures('after restore', after.stats, after.maxUnitDraws, after.fixed));
+        result.probeAfterRestore = await page.evaluate((n) => (window as DemoWindow).__renderDemo!.probe(n, 2), PROBE_POINTS);
+        f2.push(...probeFailures('probe after restore', result.probeAfterRestore));
         failures.push(...f2);
         result.contextLoss = f2.length === 0 ? 'ok' : 'failed';
       } catch (e) {
@@ -446,12 +611,17 @@ async function main(): Promise<void> {
       const r = await runBrowser(name, server.url);
       results.push(r);
       const c = r.cpu;
+      const fl = r.flight;
+      const p = r.drawsByPass;
       process.stdout.write(
         `[smoke] ${name} ${r.version}: ${r.ok ? 'OK' : 'FAIL'} | ${r.renderer ?? '?'} | draws ${r.drawCalls ?? '?'} ` +
-          `(visuals ${r.visualCount ?? '?'} + ${FIXED_PASS_DRAWS}) | inst ${r.instances ?? '?'} | ` +
-          `render-JS mean ${fmt(c?.renderMean)} p50 ${fmt(c?.renderP50)} p95 ${fmt(c?.renderP95)} max ${fmt(c?.renderMax)} ms ` +
-          `(timer ${fmt(c?.timerResolutionMs)} ms) | ` +
-          `frame-JS p95 ${fmt(c?.frameP95)} ms | ${fmt(c?.fps, 1)} FPS | GPU ${fmt(r.gpuMs, 2)} ms | ` +
+          `(terrain ${p?.terrain ?? '?'}, units ${p?.units ?? '?'}/${r.maxUnitDraws ?? '?'}, water ${p?.water ?? '?'}, overlay ${p?.overlay ?? '?'}) | ` +
+          `patches ${r.terrainPatches ?? '?'} | units ${r.unitInstances ?? '?'} vis / ${r.culledInstances ?? '?'} culled, LOD ${r.lodInstances?.join('/') ?? '?'} | ` +
+          `probe ${r.probe?.mismatches ?? '?'}/${r.probe?.n ?? '?'} mismatches (${fmt(r.probe?.ms, 1)} ms) | ` +
+          `render-JS p50 ${fmt(c?.renderP50)} p95 ${fmt(c?.renderP95)} max ${fmt(c?.renderMax)} ms (timer ${fmt(c?.timerResolutionMs)} ms) | ` +
+          `flight render-JS p95 ${fmt(fl?.renderP95)} ms, draws max ${fl?.drawsMax ?? '?'}, ${fmt(fl?.fps, 1)} FPS | ` +
+          `GPU p50 ${fmt(c?.gpuP50 ?? undefined, 2)} / flight p95 ${fmt(fl?.gpuP95 ?? undefined, 2)} ms | ` +
+          `water rgb ${r.waterPixel?.join(',') ?? '?'} | ring ${r.spotRingHits ?? '?'}/16 | ` +
           `colors ${r.pixels?.distinctColors ?? '?'} | ctx-loss ${r.contextLoss ?? '?'} | ${r.durationMs} ms\n`,
       );
       for (const f of r.failures) process.stdout.write(`[smoke]   ✗ ${f}\n`);

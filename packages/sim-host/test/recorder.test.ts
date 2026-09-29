@@ -8,6 +8,11 @@ import {
   LocalSource,
   LOG_DIR_NAME,
   LOG_ENTRY_HEADER_BYTES,
+  LOG_FIXED_HEADER_BYTES,
+  LOG_V1_FIXED_HEADER_BYTES,
+  LOG_VERSION,
+  parseLogHeader,
+  legacyTestPlaneMapSimHash,
   LogEntryKind,
   listLogFiles,
   logFileName,
@@ -31,6 +36,7 @@ const HEADER: LogHeader = {
   playerArmy: 0,
   hashInterval: 10,
   buildHash: 'b-äöü-🚀-7f3a',
+  mapSimHash: 0x90ec94f0,
 };
 
 function stamped(tick: number, envs: Parameters<typeof encodeBatch>[0]): Uint8Array {
@@ -76,6 +82,51 @@ describe('command log format + recorder', () => {
     // The live log continues after an export (no END inside).
     expect(parseCommandLog(r.bytes).endTick).toBe(-1);
     expect(parseCommandLog(r.bytes).lastTick).toBe(20);
+  });
+
+  it('header v2 carries mapSimHash (byte layout pinned)', () => {
+    const r = new CommandLogRecorder(HEADER);
+    const b = r.bytes;
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    expect(LOG_VERSION).toBe(2);
+    expect(LOG_FIXED_HEADER_BYTES).toBe(36);
+    expect(dv.getUint16(4, true)).toBe(2);
+    expect(dv.getUint32(32, true)).toBe(0x90ec94f0);
+    const parsed = parseCommandLog(r.export(0));
+    expect(parsed.version).toBe(2);
+    expect(parsed.header).toEqual(HEADER);
+    expect(parseLogHeader(b).headerBytes).toBe(dv.getUint16(6, true));
+  });
+
+  it('reads MS1 v1 logs (no mapSimHash ⇒ test plane of their size)', () => {
+    // A v1 file as MS1 wrote it: 32-byte fixed header, buildHash at 32, entries unchanged.
+    const v2 = new CommandLogRecorder({ ...HEADER, buildHash: 'ms1', mapSizeWu: 256 });
+    v2.commands(3, stamped(3, [moveCmd(0, [asHandle(1)], 1, 1, 1)]));
+    v2.hash(10, 0xabcdef01);
+    const cur = new Uint8Array(v2.export(12));
+    const cdv = new DataView(cur.buffer);
+    const hb2 = cdv.getUint16(6, true);
+    const bh = new TextEncoder().encode('ms1');
+    const hb1 = (LOG_V1_FIXED_HEADER_BYTES + bh.length + 3) & ~3;
+    const v1 = new Uint8Array(hb1 + (cur.byteLength - hb2));
+    v1.set(cur.subarray(0, 32), 0);
+    const dv = new DataView(v1.buffer);
+    dv.setUint16(4, 1, true);
+    dv.setUint16(6, hb1, true);
+    v1.set(bh, 32);
+    v1.set(cur.subarray(hb2), hb1);
+    const log = parseCommandLog(v1);
+    expect(log.version).toBe(1);
+    expect(log.truncated).toBe(false);
+    expect(log.header).toEqual({ ...HEADER, buildHash: 'ms1', mapSizeWu: 256, mapSimHash: legacyTestPlaneMapSimHash(256) });
+    expect(log.commands.map((c) => c.tick)).toEqual([3]);
+    expect(log.hashes).toEqual([{ tick: 10, hash: 0xabcdef01 }]);
+    expect(log.endTick).toBe(12);
+    // Unknown versions are refused.
+    dv.setUint16(4, 3, true);
+    expect(() => parseCommandLog(v1)).toThrow(/version 3/);
+    dv.setUint16(4, 0, true);
+    expect(() => parseCommandLog(v1)).toThrow(CommandLogError);
   });
 
   it('only cheat / devReload / restore marks taint the log', () => {

@@ -35,6 +35,8 @@ export interface TestHostOptions {
   readonly seed?: number;
   readonly startPaused?: boolean;
   readonly autoStart?: boolean;
+  /** `.rtsmap` bytes for InitMessage.map (default: test plane). */
+  readonly map?: ArrayBuffer;
   /** Record host messages in `msgs` (default true; false: post is a no-op, e.g. allocation tests). */
   readonly keepMessages?: boolean;
   readonly host?: Partial<Omit<SimHostOptions, 'post' | 'port' | 'wakeup'>>;
@@ -85,6 +87,7 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
     frameCapacity: FRAME_CAP,
     buildHash: 'test-build',
     ...(o.startPaused !== undefined ? { startPaused: o.startPaused } : {}),
+    ...(o.map !== undefined ? { map: o.map } : {}),
   };
   host.init(init);
   return {

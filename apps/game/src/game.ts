@@ -1,23 +1,34 @@
 /**
- * Game session (MS1): sim worker + frame transport + renderer + GameClient, the dev-console API
- * and the E2E test hooks. UI state is exposed as Preact signals (see ui/).
+ * Game session (MS1 + MS2): sim worker + frame transport + renderer + GameClient on a map, the
+ * dev-console API and the state behind the E2E test hooks. UI state is exposed as Preact signals.
  *
- * Boot: view.json → visual table; sim.bin → blueprint ids; module worker from
- * `@faf/sim-host/worker`; transport SAB when cross-origin isolated (else transfer, or as requested
- * by `?transport=`); `init` (optionally `startPaused` for `?autostart=0`); on `ready` the start
- * armies are spawned by cheat commands through the normal command pipeline (S8).
+ * Boot (see main.tsx): the assets arrive from the AssetManager (sim.bin, view.json, the `.rtsmap`,
+ * the pipeline's models) → visual table (glTF LOD meshes where `view.mesh` has a model, else
+ * placeholders) → renderer with the `?preset=` → GameClient with the ClientMap (terrain, water,
+ * spot decals, heightmap picking, terrain-following camera, fullscreen root) → `init` with a
+ * transferred copy of the map bytes → on `ready` the start armies are spawned by cheat commands
+ * through the normal command pipeline (S8): own cubes around the own map start, the second army
+ * around its start (both on land), plus the flight-test units of `?units=` over the whole map.
+ * The camera starts at the own start position.
  */
 import { decodeSimBin, type SimBpTable } from '@faf/blueprints/simbin';
 import {
-  createRenderer,
+  ClientMap,
   GameClient,
   RAW_PER_WU,
+  commanderVisuals,
+  createRenderer,
   type DragBox,
   type MetricsSnapshot,
+  type ModelLookup,
+  type RenderPresetName,
   type Renderer,
 } from '@faf/client';
 import {
   DEFAULT_FRAME_CAPS,
+  Op,
+  decodeBatch,
+  decodeMove,
   frameCapacityBytes,
   type CtlMessage,
   type HostMessage,
@@ -25,7 +36,7 @@ import {
 } from '@faf/protocol';
 import type { HostInitMessage, HostReadyMsg, HostStatsMsg, HostStatusMsg } from '@faf/sim-host';
 import { signal } from '@preact/signals';
-import { spawnSpreadWU, visualsFromViewJson } from './content.ts';
+import { flightClusters, spawnSpreadWU, startLayout, visualsFromViewJson, type StartLayout } from './content.ts';
 import { runConsoleCommand, type ConsoleApi, type ConsoleResult } from './console-commands.ts';
 import { FrameHasher, type FrameFingerprint } from './frame-hash.ts';
 import { chooseTransport, type GameParams } from './params.ts';
@@ -33,13 +44,19 @@ import { WorkerSimLink, type WorkerLike } from './worker-link.ts';
 
 /** Army of the local player. */
 export const PLAYER_ARMY = 0;
-/** Armies in the MS1 session: the player and one passive second army. */
+/** Second (passive) army. */
+export const ENEMY_ARMY = 1;
+/** Armies in the session: the player and one passive second army. */
 export const ARMY_COUNT = 2;
-/** Start positions (WU) on the 512 WU test plane. */
-const OWN_CENTER_WU = { x: 256, z: 256 } as const;
-const ENEMY_CENTER_WU = { x: 312, z: 214 } as const;
 /** Initial camera distance (WU): the whole start army is in view. */
-const START_CAMERA_DISTANCE = 105;
+export const START_CAMERA_DISTANCE = 105;
+
+export interface HudCursor {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly hit: boolean;
+}
 
 export interface HudState {
   tick: number;
@@ -55,6 +72,13 @@ export interface HudState {
   selected: number;
   contextLost: boolean;
   ready: boolean;
+  /** Map name (META name, or 'testplane'). */
+  mapName: string;
+  mapSimHash: number | null;
+  /** Terrain point under the cursor (WU), null when the pointer is outside. */
+  cursor: HudCursor | null;
+  preset: RenderPresetName;
+  fullscreen: boolean;
 }
 
 export interface ConsoleLine {
@@ -68,6 +92,10 @@ export interface GameAssets {
   readonly simBin: ArrayBuffer;
   /** view.json text. */
   readonly viewJson: string;
+  /** Pipeline models (LOD meshes) by `view.mesh` id. */
+  readonly models?: ModelLookup;
+  /** `.rtsmap` bytes of the session map (the test plane is a generated map, see loading.ts). */
+  readonly mapBytes: Uint8Array;
 }
 
 export interface GameOptions {
@@ -77,11 +105,25 @@ export interface GameOptions {
   readonly assets: GameAssets;
   /** Creates the sim worker. */
   readonly createWorker: () => WorkerLike;
+  /** Element that goes fullscreen (contains canvas + UI overlay); omitted = no fullscreen. */
+  readonly root?: HTMLElement;
+}
+
+/** Last Move command target sent to the sim (E2E: right-click target == pick). */
+export interface MoveTarget {
+  readonly seq: number;
+  readonly units: number;
+  /** Raw Q20.12. */
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
 }
 
 function hex32(v: number): string {
   return '0x' + (v >>> 0).toString(16).padStart(8, '0');
 }
+
+const fmtWU = (raw: number): string => (raw / RAW_PER_WU).toFixed(1);
 
 export class Game {
   readonly params: GameParams;
@@ -94,6 +136,10 @@ export class Game {
   readonly client: GameClient;
   readonly bp: SimBpTable;
   readonly cubeBp: number;
+  /** Map of the session (null = flat test plane) and its bytes as loaded. */
+  readonly map: ClientMap;
+  readonly mapBytes: Uint8Array;
+  readonly layout: StartLayout;
 
   // ---- UI state (signals) ----
   readonly hud = signal<HudState>({
@@ -110,6 +156,11 @@ export class Game {
     selected: 0,
     contextLost: false,
     ready: false,
+    mapName: 'testplane',
+    mapSimHash: null,
+    cursor: null,
+    preset: 'medium',
+    fullscreen: false,
   });
   readonly consoleOpen = signal(false);
   readonly consoleLines = signal<readonly ConsoleLine[]>([]);
@@ -121,8 +172,13 @@ export class Game {
 
   // ---- session state ----
   ready: HostReadyMsg | null = null;
+  /** performance.now() when `init` was posted / `ready` arrived. */
+  readonly initAtMs: number;
+  readyAtMs: number | null = null;
   readonly hostErrors: string[] = [];
   readonly consoleApi: ConsoleApi;
+  /** Last Move command sent (decoded from the command batch; E2E). */
+  lastMove: MoveTarget | null = null;
   private readonly hasher = new FrameHasher();
   private recordHashes = false;
   private readonly hashByTick: (number | undefined)[] = [];
@@ -130,6 +186,7 @@ export class Game {
   private autoPaused = false;
   private hudTimer: ReturnType<typeof setInterval> | null = null;
   private readyWaiters: ((m: HostReadyMsg) => void)[] = [];
+  private failWaiters: ((e: Error) => void)[] = [];
   private logWaiters: ((bytes: ArrayBuffer) => void)[] = [];
   private readonly onVisibility = (): void => this.handleVisibility();
   private disposed = false;
@@ -147,17 +204,26 @@ export class Game {
     const cube = this.bp.indexOf('core:cube');
     if (cube < 0) throw new Error("sim.bin has no 'core:cube'");
     this.cubeBp = cube;
-    const visuals = visualsFromViewJson(opts.assets.viewJson);
+    const visuals = visualsFromViewJson(opts.assets.viewJson, opts.assets.models);
+
+    const mapBytes = opts.assets.mapBytes;
+    this.mapBytes = mapBytes;
+    this.map = ClientMap.fromBytes(mapBytes);
+    this.layout = startLayout(this.map, PLAYER_ARMY, ENEMY_ARMY);
 
     const capacity = frameCapacityBytes(DEFAULT_FRAME_CAPS);
     this.link = new WorkerSimLink(opts.createWorker(), this.transport, capacity);
-    this.renderer = createRenderer(opts.canvas, { clearColor: [0.043, 0.059, 0.078] });
+    this.link.onCommandBatch = (batch) => this.tapCommands(batch);
+    this.renderer = createRenderer(opts.canvas, { clearColor: [0.043, 0.059, 0.078], preset: opts.params.preset });
     this.client = new GameClient({
       canvas: opts.canvas,
       renderer: this.renderer,
       link: this.link,
       visuals,
       playerArmy: PLAYER_ARMY,
+      map: this.map,
+      commanderVisuals: commanderVisuals(this.bp),
+      ...(opts.root !== undefined ? { fullscreen: { root: opts.root, doc: document } } : {}),
       callbacks: {
         onToggleConsole: () => this.toggleConsole(),
         onDragBox: (b) => {
@@ -165,15 +231,24 @@ export class Game {
         },
         onHostMessage: (m) => this.onHostMessage(m),
         onFrame: () => this.onFrame(),
+        onFullscreenChange: () => this.refreshHud(),
       },
     });
-    this.client.camera.distance = START_CAMERA_DISTANCE;
-    this.client.cameraController.focusRaw(OWN_CENTER_WU.x * RAW_PER_WU, OWN_CENTER_WU.z * RAW_PER_WU);
+    this.client.jumpTo(this.layout.own.x, this.layout.own.z, START_CAMERA_DISTANCE);
 
     this.consoleApi = this.createConsoleApi();
-    this.hud.value = { ...this.hud.value, transport: this.transport, buildHash: this.buildHash };
+    this.hud.value = {
+      ...this.hud.value,
+      transport: this.transport,
+      buildHash: this.buildHash,
+      mapName: this.map.name,
+      preset: this.renderer.preset.name,
+    };
 
     const simBinCopy = opts.assets.simBin.slice(0);
+    const transfer: ArrayBuffer[] = [simBinCopy];
+    const mapCopy = mapBytes.slice().buffer;
+    transfer.push(mapCopy);
     const init: HostInitMessage = {
       t: 'init',
       simBin: simBinCopy,
@@ -185,8 +260,10 @@ export class Game {
       frameCapacity: capacity,
       buildHash: this.buildHash,
       startPaused: !opts.params.autostart,
+      map: mapCopy,
     };
-    this.link.sendInit(init, [simBinCopy]);
+    this.initAtMs = performance.now();
+    this.link.sendInit(init, transfer);
     document.addEventListener('visibilitychange', this.onVisibility);
     this.hudTimer = setInterval(() => this.refreshHud(), 200);
     this.client.start();
@@ -195,10 +272,13 @@ export class Game {
 
   // ---- lifecycle ------------------------------------------------------------------------------
 
-  /** Resolves with the host's `ready` message. */
+  /** Resolves with the host's `ready` message; rejects if the host reports an error before it. */
   whenReady(): Promise<HostReadyMsg> {
     if (this.ready !== null) return Promise.resolve(this.ready);
-    return new Promise((res) => this.readyWaiters.push(res));
+    return new Promise((res, rej) => {
+      this.readyWaiters.push(res);
+      this.failWaiters.push(rej);
+    });
   }
 
   dispose(): void {
@@ -242,6 +322,12 @@ export class Game {
     });
   }
 
+  /** Switches the render preset (splat layers, LOD bias, water quality, render scale). */
+  setPreset(name: RenderPresetName): void {
+    this.renderer.setPreset(name);
+    this.hud.value = { ...this.hud.value, preset: this.renderer.preset.name };
+  }
+
   // ---- E2E support ----------------------------------------------------------------------------
 
   /** Starts/stops recording a frame fingerprint for every received tick. */
@@ -265,7 +351,27 @@ export class Game {
     return this.client.metricsSnapshot();
   }
 
+  /** Map info lines (console `map`). */
+  mapInfo(): string[] {
+    const m = this.map;
+    const r = this.ready;
+    const ident = `mapSimHash ${r === null ? '–' : hex32(r.mapSimHash)}  simId ${r === null ? '–' : hex32(r.simId)}`;
+    const mass = m.spots.filter((s) => s.kind === 'mass').length;
+    return [
+      `Karte: ${m.name} (${m.sizeWu} × ${m.sizeWu} WU, Höhen ${m.minHeightWU.toFixed(1)}–${m.maxHeightWU.toFixed(1)} WU)`,
+      `Wasserspiegel: ${m.waterLevelRaw === null ? 'kein Wasser' : `${fmtWU(m.waterLevelRaw)} WU`}`,
+      `Starts: ${m.starts.map((s) => `Armee ${s.army} (${fmtWU(s.x)}, ${fmtWU(s.z)})`).join(', ')}`,
+      `Spots: ${mass} Mass, ${m.spots.length - mass} Hydro`,
+      ident,
+    ];
+  }
+
   // ---- internals ------------------------------------------------------------------------------
+
+  private tapCommands(batch: Uint8Array): void {
+    const mv = decodeLastMove(batch);
+    if (mv !== null) this.lastMove = mv;
+  }
 
   private onFrame(): void {
     if (!this.recordHashes) return;
@@ -278,9 +384,11 @@ export class Game {
       case 'ready': {
         const r = m as HostReadyMsg;
         this.ready = r;
-        this.hud.value = { ...this.hud.value, simId: r.simId, ready: true };
+        this.readyAtMs = performance.now();
+        this.hud.value = { ...this.hud.value, simId: r.simId, ready: true, mapSimHash: r.mapSimHash };
         document.documentElement.dataset['simId'] = String(r.simId);
         this.spawnStartArmies();
+        this.failWaiters.length = 0;
         for (const w of this.readyWaiters.splice(0)) w(r);
         break;
       }
@@ -297,37 +405,36 @@ export class Game {
         this.print('out', `export: ${m.bytes.byteLength} Bytes Command-Log`);
         break;
       }
-      case 'error':
+      case 'error': {
         this.hostErrors.push(m.message);
-        // The worker itself failed (load error / crash): no more frames will come.
+        // The worker itself failed (load error / crash) or init was rejected: no frames will come.
         if (m.message.startsWith('worker:')) this.fatal.value = `Sim-Worker ausgefallen – ${m.message.slice(7).trim()}`;
+        else if (this.ready === null) this.fatal.value = `Sim-Start fehlgeschlagen – ${m.message}`;
         this.print('err', `host: ${m.message}`);
         console.error(`[faf] sim host error: ${m.message}`);
+        if (this.ready === null) {
+          const err = new Error(m.message);
+          this.readyWaiters.length = 0;
+          for (const w of this.failWaiters.splice(0)) w(err);
+        }
         break;
+      }
     }
   }
 
   private spawnStartArmies(): void {
     const p = this.params;
+    const l = this.layout;
     if (p.cubes > 0) {
-      this.client.spawn(
-        this.cubeBp,
-        p.cubes,
-        PLAYER_ARMY,
-        OWN_CENTER_WU.x * RAW_PER_WU,
-        OWN_CENTER_WU.z * RAW_PER_WU,
-        Math.round(spawnSpreadWU(p.cubes) * RAW_PER_WU),
-      );
+      this.client.spawn(this.cubeBp, p.cubes, PLAYER_ARMY, l.own.x, l.own.z, Math.round(spawnSpreadWU(p.cubes) * RAW_PER_WU));
     }
     if (p.enemyCubes > 0) {
-      this.client.spawn(
-        this.cubeBp,
-        p.enemyCubes,
-        1,
-        ENEMY_CENTER_WU.x * RAW_PER_WU,
-        ENEMY_CENTER_WU.z * RAW_PER_WU,
-        Math.round(spawnSpreadWU(p.enemyCubes) * RAW_PER_WU),
-      );
+      this.client.spawn(this.cubeBp, p.enemyCubes, ENEMY_ARMY, l.enemy.x, l.enemy.z, Math.round(spawnSpreadWU(p.enemyCubes) * RAW_PER_WU));
+    }
+    if (p.units > 0) {
+      for (const c of flightClusters(this.map, p.units, [PLAYER_ARMY, ENEMY_ARMY], p.seed)) {
+        this.client.spawn(this.cubeBp, c.count, c.army, c.x, c.z, c.spread);
+      }
     }
   }
 
@@ -350,6 +457,7 @@ export class Game {
     const stats = this.stats.value;
     const mainJs = snap.mainJs.count > 0 ? snap.mainJs.percentile(0.95) : null;
     const fps = snap.rafInterval.count > 0 ? 1000 / Math.max(0.001, snap.rafInterval.summary().mean) : 0;
+    const hv = c.hover;
     this.hud.value = {
       tick: c.tick,
       paused: c.paused,
@@ -364,6 +472,11 @@ export class Game {
       selected: c.selection.count,
       contextLost: this.renderer.stats.lost,
       ready: this.ready !== null,
+      mapName: this.map.name,
+      mapSimHash: this.ready?.mapSimHash ?? null,
+      cursor: hv.valid ? { x: hv.x / RAW_PER_WU, y: hv.y / RAW_PER_WU, z: hv.z / RAW_PER_WU, hit: hv.hit } : null,
+      preset: this.renderer.preset.name,
+      fullscreen: c.fullscreen?.active ?? false,
     };
   }
 
@@ -432,6 +545,19 @@ export class Game {
         if (st !== null) lines.push(`Frames verworfen (Host): ${st.framesDropped}, Recorder: ${st.recorder}${st.recorderNote === null ? '' : ` – ${st.recorderNote}`}`);
         return lines;
       },
+      mapInfo: () => this.mapInfo(),
+      mapSizeWu: () => c.mapBounds.maxX / RAW_PER_WU,
+      jumpCamera: (x, z, distance) => {
+        c.jumpTo(x * RAW_PER_WU, z * RAW_PER_WU, distance);
+        const s = c.cameraState();
+        return [`Kamera: Fokus (${s.x.toFixed(1)}, ${s.y.toFixed(1)}, ${s.z.toFixed(1)}) WU, Abstand ${s.distance.toFixed(1)} WU`];
+      },
+      setPreset: (name) => {
+        this.setPreset(name);
+        const p = this.renderer.preset;
+        return [`preset ${p.name}: Render-Scale ${p.renderScale}, Splat-Layer ${p.splatLayers}, LOD-Bias ${p.lodBias}, Wasser ${p.waterQuality}`];
+      },
+      presetName: () => this.renderer.preset.name,
     };
   }
 
@@ -439,4 +565,15 @@ export class Game {
   ctl(msg: CtlMessage): void {
     this.client.sendCtl(msg);
   }
+}
+
+/** Decodes the last Move command of a command batch (null if it has none). */
+export function decodeLastMove(batch: Uint8Array): MoveTarget | null {
+  let last: MoveTarget | null = null;
+  for (const e of decodeBatch(batch)) {
+    if (e.op !== Op.Move) continue;
+    const p = decodeMove(e.payload);
+    last = { seq: e.seq, units: e.units.length, x: p.x, y: p.y, z: p.z };
+  }
+  return last;
 }

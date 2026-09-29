@@ -2,7 +2,7 @@
  * DOM-free fakes for client tests: event targets with dispatch, a canvas surface, synthetic
  * pointer/wheel/keyboard events, a manual rAF and a recording renderer.
  */
-import type { RenderView, VisualTable } from '@faf/render';
+import type { RenderView, TerrainDecal, TerrainDesc, VisualTable } from '@faf/render';
 import type { InputEventTarget, InputSurface } from '../../src/input.ts';
 import type { RafLike, RendererLike } from '../../src/client.ts';
 
@@ -186,9 +186,19 @@ export class FakeRenderer implements RendererLike {
   record = true;
   readonly log: RecordedRender[] = [];
   last: RenderView | null = null;
+  terrain: TerrainDesc | null = null;
+  decals: readonly TerrainDecal[] = [];
 
   setVisuals(table: VisualTable): void {
     this.visuals = table;
+  }
+
+  setTerrain(desc: TerrainDesc | null): void {
+    this.terrain = desc;
+  }
+
+  setTerrainDecals(decals: readonly TerrainDecal[]): void {
+    this.decals = decals;
   }
 
   render(view: RenderView): void {

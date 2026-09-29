@@ -9,6 +9,8 @@ import tseslint from 'typescript-eslint';
  * Sources bound by the determinism contract (PLAN §3.1, §3.12): every module that runs inside
  * the sim step or builds sim state. `blueprints/src/simbin.ts` is the sim.bin decoder that
  * createWorld runs in the sim worker (the rest of @faf/blueprints is the offline compiler).
+ * `formats/src` parses .rtsmap files inside the sim worker (mapSimHash, mapSimData); its Node-only
+ * CLI tools under `formats/scripts` are not bound by the contract.
  * Exported for the config test (tools/eslint-plugin-sim/test/config.test.ts).
  */
 export const SIM_SOURCES = [
@@ -18,6 +20,7 @@ export const SIM_SOURCES = [
   'packages/sim/src/**/*.ts',
   'packages/nav/src/**/*.ts',
   'packages/protocol/src/**/*.ts',
+  'packages/formats/src/**/*.ts',
   'packages/blueprints/src/simbin.ts',
 ];
 
@@ -51,14 +54,20 @@ export default defineConfig(
       ],
     },
   },
-  // Browser code (render, client, game, harness pages).
+  // Browser code (render, client, game, harness pages, render benchmark page).
   {
-    files: ['packages/render/**/*.ts', 'packages/client/**/*.{ts,tsx}', 'apps/**/src/**/*.{ts,tsx}', 'tools/headless/harness/**/*.ts'],
+    files: [
+      'packages/render/**/*.ts',
+      'packages/client/**/*.{ts,tsx}',
+      'apps/**/src/**/*.{ts,tsx}',
+      'tools/headless/src/harness/page/**/*.ts',
+      'tools/render-bench/{src,page}/**/*.ts',
+    ],
     languageOptions: { globals: { ...globals.browser } },
   },
-  // Worker code.
+  // Worker code (sim worker, harness worker, asset worker of the client – P3).
   {
-    files: ['packages/sim-host/src/**/*.ts', 'tools/headless/harness/worker/**/*.ts'],
+    files: ['packages/sim-host/src/**/*.ts', 'tools/headless/src/harness/worker-entry.ts', 'packages/client/src/assets/worker.ts'],
     languageOptions: { globals: { ...globals.worker } },
   },
   // Node code: configs, scripts, tools, tests, benches.
@@ -72,6 +81,7 @@ export default defineConfig(
       '**/test/**/*.ts',
       'test/**/*.ts',
       'tools/**/*.{js,ts}',
+      'tools/assets-pipeline/**/*.{js,mjs,ts}',
       'apps/*/vite.config.ts',
       'packages/*/vite.config.ts',
     ],
@@ -93,6 +103,8 @@ export default defineConfig(
         {
           sqrtAllow: ['packages/fixed/src/isqrt.ts'],
           float64Allow: ['packages/heap/src/safeint.ts'],
+          // The .rtsmap META reader checks every number with Number.isInteger (num()/isInt()).
+          jsonParseAllow: ['packages/formats/src/rtsmap.ts'],
         },
       ],
     },

@@ -1,6 +1,11 @@
 import { createRay, intersectGround, RAW_PER_WU, RtsCamera } from '@faf/render';
 import { describe, expect, it } from 'vitest';
-import { GroundPicker, clampRaw, mapBoundsWU, wuToRaw } from '../src/picking.ts';
+import { ClientMap } from '../src/map.ts';
+import { clampRaw, mapBoundsWU, wuToRaw } from '../src/picking.ts';
+import { TerrainPicker } from '../src/terrain-picker.ts';
+
+/** The flat test plane goes through the heightmap raymarch like every map. */
+const plane = (): TerrainPicker => new TerrainPicker(ClientMap.testPlane());
 
 function camera(xWU: number, zWU: number, opts: ConstructorParameters<typeof RtsCamera>[0] = {}): RtsCamera {
   const c = new RtsCamera(opts);
@@ -10,7 +15,7 @@ function camera(xWU: number, zWU: number, opts: ConstructorParameters<typeof Rts
   return c;
 }
 
-describe('GroundPicker', () => {
+describe('picking the generated test plane map (TerrainPicker)', () => {
   it('intersects the view ray exactly with y = 0 (hit lies on the ray and on the plane)', () => {
     const cam = camera(256, 256, { yaw: 0.7, pitch: 0.9, distance: 120 });
     const ray = createRay();
@@ -26,7 +31,7 @@ describe('GroundPicker', () => {
       const t = -ray.origin[1]! / ray.dir[1]!;
       expect(hit[0]).toBeCloseTo(ray.origin[0]! + ray.dir[0]! * t, 9);
       expect(hit[1]).toBeCloseTo(ray.origin[2]! + ray.dir[2]! * t, 9);
-      const p = new GroundPicker(mapBoundsWU());
+      const p = plane();
       expect(p.pick(cam, px, py)).toBe(true);
       expect(p.wuX).toBeCloseTo(hit[0]!, 9);
       expect(p.wuZ).toBeCloseTo(hit[1]!, 9);
@@ -34,7 +39,7 @@ describe('GroundPicker', () => {
   });
 
   it('picks the screen position of a world point back to that point within 1/16 WU (raw integers)', () => {
-    const p = new GroundPicker(mapBoundsWU());
+    const p = plane();
     const out = new Float64Array(4);
     for (const [cx, cz, yaw, pitch, dist] of [
       [256, 256, -Math.PI / 2, 0.96, 80],
@@ -61,9 +66,10 @@ describe('GroundPicker', () => {
     // Camera at the map corner looking outwards: the screen centre hits the plane outside.
     const cam = camera(2, 2, { yaw: -3 * Math.PI / 4, pitch: 0.6, distance: 60 });
     const b = mapBoundsWU();
-    const p = new GroundPicker(b);
+    const p = plane();
     expect(p.pick(cam, 640, 100)).toBe(true);
     expect(p.wuX < 0 || p.wuZ < 0).toBe(true);
+    expect(p.hit).toBe(false);
     expect(p.clamped).toBe(true);
     expect(p.x).toBeGreaterThanOrEqual(b.minX);
     expect(p.z).toBeGreaterThanOrEqual(b.minZ);
@@ -71,14 +77,16 @@ describe('GroundPicker', () => {
     // Inside: not clamped.
     const c2 = camera(256, 256);
     expect(p.pick(c2, 640, 360)).toBe(true);
+    expect(p.hit).toBe(true);
     expect(p.clamped).toBe(false);
+    expect(p.y).toBe(0);
     expect(p.x).toBe(256 * RAW_PER_WU);
     expect(p.z).toBe(256 * RAW_PER_WU);
   });
 
   it('reports a miss for rays above the horizon', () => {
     const cam = camera(256, 256, { pitch: 0.3, fovY: 1.2 });
-    const p = new GroundPicker(mapBoundsWU());
+    const p = plane();
     p.x = 123;
     expect(p.pick(cam, 640, 0)).toBe(false);
     expect(p.x).toBe(123);

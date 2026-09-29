@@ -1,11 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
+import { attachJson, captureErrors, expectNoErrors, HOLLOW_RIDGE, openGame, SERVERS, waitTick } from './support/game.ts';
 import { decodePng, pixelStats } from './support/png.ts';
 
-// Boot (S1, P1, G14, blueprint skeleton): the game loads, the sim worker is ready with a simId,
-// 1,000 own cubes (+ the second army) arrive in the frame and are drawn by the instanced renderer.
+// Boot (S1, P1, G14, blueprint skeleton; MS2: on hollow-ridge): the game loads, the sim worker is
+// ready with a simId, 1,000 own cubes (+ the second army) arrive in the frame at the map starts and
+// are drawn by the instanced renderer on the terrain.
 
 for (const server of SERVERS) {
   test(`boot: 1.000 Würfel, ready mit simId – ${server.label}`, async ({ page }, testInfo) => {
@@ -26,6 +27,9 @@ for (const server of SERVERS) {
         tick: h.tick,
         render: h.renderStats(),
         hostErrors: h.hostErrors,
+        map: h.mapName,
+        mapSimHash: h.mapSimHash,
+        heights: h.unitHeights(),
       };
     });
     expect(info.transport).toBe(server.transport);
@@ -37,6 +41,11 @@ for (const server of SERVERS) {
     expect(info.render.instances).toBeGreaterThanOrEqual(1024);
     expect(info.render.lost).toBe(false);
     expect(info.hostErrors).toEqual([]);
+    // MS2: the session runs on hollow-ridge, every cube stands on the terrain.
+    expect(info.map).toBe(HOLLOW_RIDGE.name);
+    expect(info.mapSimHash).toBe(HOLLOW_RIDGE.mapSimHash);
+    expect(info.heights.mismatches).toBe(0);
+    expect(info.render.drawsByPass.terrain).toBe(1);
 
     const simIdHex = '0x' + (info.simId! >>> 0).toString(16).padStart(8, '0');
     await expect(page.locator('[data-testid="hud-simid"]')).toHaveText(simIdHex);

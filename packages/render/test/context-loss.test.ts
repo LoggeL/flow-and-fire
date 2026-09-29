@@ -114,7 +114,7 @@ describe('WebGL2 device context loss', () => {
     const camera = new RtsCamera();
     const v = { camera, units: { bytes: w.bytes, count: 8, version: 7 }, alpha: 1, timeMs: 0 };
     r.render(v);
-    expect(r.stats.drawCalls).toBe(2);
+    expect(r.stats.drawCalls).toBe(1); // one visual; no terrain set ⇒ no ground draw
     const buffersBefore = gl.named('createBuffer').length - gl.named('deleteBuffer').length;
     const programsBefore = gl.named('createProgram').length - gl.named('deleteProgram').length;
 
@@ -128,13 +128,13 @@ describe('WebGL2 device context loss', () => {
     // Every live buffer and pipeline exists again in the new context generation.
     expect(gl.created('buffer')).toBe(buffersBefore);
     expect(gl.created('program')).toBe(programsBefore);
-    // Static contents (mesh VBO/IBO, palette, frame and ground UBOs, ground corners) were rewritten.
-    expect(gl.named('bufferSubData').length).toBe(6);
+    // Static contents (mesh VBO/IBO, palette and frame UBOs) were rewritten.
+    expect(gl.named('bufferSubData').length).toBe(4);
 
     gl.resetCalls();
     r.render(v); // same version: the ring must still be re-uploaded after the restore
     expect(r.stats.lost).toBe(false);
-    expect(r.stats.drawCalls).toBe(2);
+    expect(r.stats.drawCalls).toBe(1); // one visual; no terrain set ⇒ no ground draw
     expect(gl.named('bufferSubData').length).toBe(1 + 2);
     r.dispose();
   });

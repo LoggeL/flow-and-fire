@@ -1,9 +1,15 @@
 /**
- * Phase 2 Orders (MS1: Move arrival) and phase 7 Movement (PLAN §3.4, §3.8 MS1 subset):
- * prev = cur, yaw towards the target with the turn rate (angRotateTowards on atan2A), speed
- * ramps with the acceleration (braking distance respected), Fx integration along the heading,
- * then a simple integer separation push against ≤ 8 overlapping neighbors from the fine grid,
- * iterated in dense order (each unit moves only itself, by half the overlap).
+ * Phase 2 Orders (Move arrival, MS2 deep-water stuck rule) and phase 7 Movement (PLAN §3.4, §3.8
+ * MS1/MS2 subset): prev = cur, yaw towards the target with the turn rate (angRotateTowards on
+ * atan2A), speed ramps with the acceleration (braking distance respected), Fx integration along
+ * the heading, then a simple integer separation push against ≤ 8 overlapping neighbors from the
+ * fine grid, iterated in dense order (each unit moves only itself, by half the overlap).
+ *
+ * MS2: every position change goes through `placeUnit` (terrain.ts): y = terrain height at the new
+ * position (rules.sampleHeightRaw), and land units never enter deep water (axis-separated sliding,
+ * same rule for the integration step and the separation push). A moving unit that makes no
+ * progress towards its target for STUCK_TICKS ticks while trying to move ends its order (Idle,
+ * see ordersPhase) — the MS2 minimal form until passability/HPA* in MS3 (M5).
  *
  * Everything is integer math through @faf/fixed; no allocation.
  */
@@ -15,10 +21,13 @@ import {
   MoverBits,
   MoverState,
   SALT_SEPARATION,
+  STUCK_PROGRESS_RAW,
+  STUCK_TICKS,
   UnitBits,
   UnitState,
 } from './constants.ts';
 import { WH_SEED, WH_TICK } from './schema.ts';
+import { Placement, placeUnit } from './terrain.ts';
 import type { World } from './world.ts';
 
 const ARRIVE_TOL2 = ARRIVE_TOLERANCE * ARRIVE_TOLERANCE;
@@ -26,7 +35,14 @@ const CONTAGION2 = CONTAGION_MAX_DIST * CONTAGION_MAX_DIST;
 const NOT_FRESH = ~UnitBits.Fresh;
 const NOT_NO_INTERP = ~UnitBits.NoInterp;
 
-/** Phase 2: a moving unit within the arrival tolerance (or touched by contagion) becomes idle. */
+/**
+ * Phase 2: a moving unit within the arrival tolerance (or touched by contagion) becomes idle.
+ * Stuck rule (PLAN §3.8 "Stuck (< ε über 20 Ticks)", MS2 minimal form without repath): a moving
+ * unit that tries to move — it has speed, or deep water cut its last movement — but has not got
+ * STUCK_PROGRESS_RAW closer to its target than its best distance for STUCK_TICKS such ticks ends
+ * its order like a Stop (target = current position, Idle). Turning on the spot (speed 0) does not
+ * count. This stops a unit at the bank of deep water and, with it, the units jammed behind it.
+ */
 export function ordersPhase(w: World): void {
   const movers = w.movers;
   const n = movers.count;
@@ -36,6 +52,7 @@ export function ordersPhase(w: World): void {
   for (let r = 0; r < n; r++) {
     const f = M.flags[r]!;
     const touched = (f & MoverBits.TouchedArrived) !== 0;
+    const blocked = (f & MoverBits.WaterBlocked) !== 0;
     M.flags[r] = f & MoverBits.Asleep;
     if (M.state[r] !== MoverState.Moving) continue;
     const u = owner[r]!;
@@ -46,6 +63,24 @@ export function ordersPhase(w: World): void {
     if (d2 <= ARRIVE_TOL2 || (touched && d2 <= CONTAGION2)) {
       M.state[r] = MoverState.Idle;
       U.state[u] = UnitState.Idle;
+      continue;
+    }
+    const d = isqrt(d2);
+    if (d + STUCK_PROGRESS_RAW <= M.best[r]!) {
+      M.best[r] = d;
+      M.stuck[r] = 0;
+    } else if (blocked || M.speed[r]! > 0) {
+      // Trying to move (driving, or cut by deep water) without getting closer.
+      const s = M.stuck[r]! + 1;
+      if (s >= STUCK_TICKS) {
+        M.state[r] = MoverState.Idle;
+        M.tx[r] = U.x[u]!;
+        M.tz[r] = U.z[u]!;
+        M.stuck[r] = 0;
+        U.state[u] = UnitState.Idle;
+      } else {
+        M.stuck[r] = s;
+      }
     }
   }
 }
@@ -123,10 +158,14 @@ function integrate(w: World): void {
     const a = asAng16(yaw);
     const vx = fxMul(cosA(a), asFx(stepLen));
     const vz = fxMul(sinA(a), asFx(stepLen));
-    U.vx[u] = vx;
-    U.vz[u] = vz;
-    U.x[u] = clamp(x + vx, mapMax);
-    U.z[u] = clamp(z + vz, mapMax);
+    const p = placeUnit(w, u, x, z, clamp(x + vx, mapMax), clamp(z + vz, mapMax));
+    // Velocity = the displacement actually taken this tick.
+    U.vx[u] = U.x[u]! - x;
+    U.vz[u] = U.z[u]! - z;
+    if (p !== Placement.Full) {
+      M.flags[r] = M.flags[r]! | MoverBits.WaterBlocked;
+      if (p === Placement.Blocked) M.speed[r] = 0;
+    }
   }
 }
 
@@ -222,13 +261,14 @@ function separate(w: World): void {
         }
       }
     }
+    let cut = 0;
     if (sx !== 0 || sz !== 0) {
-      X[u] = clamp(xu + sx, mapMax);
-      Z[u] = clamp(zu + sz, mapMax);
+      // Same land/deep-water rule as the integration step (axis-separated sliding).
+      if (placeUnit(w, u, xu, zu, clamp(xu + sx, mapMax), clamp(zu + sz, mapMax)) !== Placement.Full) cut = MoverBits.WaterBlocked;
     }
     // Fall asleep when idle, at rest and without overlap.
     const sleep = found === 0 && !moving && MV[r] === 0 ? MoverBits.Asleep : 0;
-    MF[r] = mf | touched | sleep;
+    MF[r] = mf | touched | sleep | cut;
   }
 }
 

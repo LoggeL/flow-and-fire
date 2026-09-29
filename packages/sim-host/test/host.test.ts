@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FrameReader, FrameFlags, decodeBatch, Op } from '@faf/protocol';
 import { unitHandles } from '@faf/sim';
+import { createTestPlaneMap, mapSimHash } from '@faf/formats';
 import {
   DebugFlags,
   DebugSectionKind,
@@ -10,7 +11,7 @@ import {
   parseCommandLog,
   replayLog,
   SimHost,
-  simIdOf,
+  simIdFor,
   STATS_EVERY_TICKS,
   type HostReadyMsg,
   type HostStatsMsg,
@@ -45,7 +46,7 @@ describe('SimHost (fake clock, SAB transport)', () => {
     const h = host();
     const ready = h.of('ready')[0] as HostReadyMsg;
     const table = decodeSimBin(gameSimBin());
-    expect(ready.simId).toBe(simIdOf(table.simHash, 512));
+    expect(ready.simId).toBe(simIdFor(table.simHash, mapSimHash(createTestPlaneMap(512)) >>> 0));
     expect(ready.layoutHash).toBe(h.host.core.world.layoutHash >>> 0);
     expect(ready.transport).toBe('sab');
     expect(ready.simBuild).toMatch(/^faf-sim\//);

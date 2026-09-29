@@ -253,6 +253,11 @@ export function compileBlueprints(defs: readonly SourcedDefinition[], options: C
       report(e.id, e.source, '/sim/motion/layer', `layer '${layer}' is not active in the MVP (allowed: ${MVP_MOTION_LAYERS.join(', ')})`);
       continue;
     }
+    const lod = bp.view.lod;
+    if (lod !== undefined && !(lod[0] < lod[1])) {
+      report(e.id, e.source, '/view/lod', `LOD distances must increase (got [${lod[0]}, ${lod[1]}])`);
+      continue;
+    }
     if (!included(e.id)) continue;
     emitted.push({ entry: e, bp });
   }
@@ -307,6 +312,8 @@ export function compileBlueprints(defs: readonly SourcedDefinition[], options: C
       placeholder: ph.color === undefined ? { hull: ph.hull, size: ph.size } : { hull: ph.hull, size: ph.size, color: ph.color },
       nameKey: bp.view.nameKey!,
       descKey: bp.view.descKey!,
+      ...(bp.view.mesh === undefined ? {} : { mesh: bp.view.mesh }),
+      ...(bp.view.lod === undefined ? {} : { lod: [bp.view.lod[0], bp.view.lod[1]] as const }),
       ...(bp.view.icon === undefined ? {} : { icon: bp.view.icon }),
       ...(bp.view.iconThreshold === undefined ? {} : { iconThreshold: bp.view.iconThreshold }),
     };

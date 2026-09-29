@@ -46,6 +46,11 @@ export class WorkerSimLink implements SimLink {
   private readonly onMessage: (ev: object) => void;
   private readonly onError: (ev: object) => void;
   private closed = false;
+  /**
+   * Optional tap on outgoing command batches (called before the buffer is transferred and
+   * detached; the view is only valid during the call). Used by the E2E hooks.
+   */
+  onCommandBatch: ((batch: Uint8Array) => void) | null = null;
 
   constructor(worker: WorkerLike, transport: TransportKind, capacity: number) {
     this.worker = worker;
@@ -71,6 +76,7 @@ export class WorkerSimLink implements SimLink {
 
   sendCommands(batch: ArrayBuffer): void {
     if (this.closed) return;
+    this.onCommandBatch?.(new Uint8Array(batch));
     this.worker.postMessage({ t: 'cmd', batch }, [batch]);
   }
 

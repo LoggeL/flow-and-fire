@@ -53,7 +53,7 @@ describe('InputController action mapping', () => {
     ]);
   });
 
-  it('middle drag → pan deltas; wheel → zoom steps at the cursor', () => {
+  it('middle drag → grabStart, pan deltas (with cursor position), grabEnd; wheel → zoom steps at the cursor', () => {
     const { canvas, actions } = setup();
     const d = canvas.dispatch(pointer('pointerdown', 100, 100, 1));
     expect(d.defaultPrevented).toBe(true);
@@ -62,8 +62,10 @@ describe('InputController action mapping', () => {
     canvas.dispatch(pointer('pointerup', 130, 95, 1));
     canvas.dispatch(pointer('pointermove', 200, 200, 1));
     expect(actions).toEqual([
-      { type: 'pan', dxPx: 30, dyPx: -10 },
-      { type: 'pan', dxPx: 0, dyPx: 5 },
+      { type: 'grabStart', x: 90, y: 80 },
+      { type: 'pan', dxPx: 30, dyPx: -10, x: 120, y: 70 },
+      { type: 'pan', dxPx: 0, dyPx: 5, x: 120, y: 75 },
+      { type: 'grabEnd' },
     ]);
     actions.length = 0;
     const w = canvas.dispatch(wheel(200, 50, 60));

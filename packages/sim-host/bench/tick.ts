@@ -1,11 +1,11 @@
 /**
- * Node tick benchmark of the sim host (PLAN §3.12 L6, MS1 acceptance "Sim p95 ≤ 2 ms inkl.
- * Hash-Tick"): 1,000 driving cubes with continuously new move targets, measured through the real
- * host tick path (LocalSource → recorder → sim.step with phase probe → keyframes → frame writing
+ * Node tick benchmark of the sim host (PLAN §3.12 L6, MS1/MS2 acceptance "Sim p95 ≤ 2 ms inkl.
+ * Hash-Tick"): 1,000 driving cubes with continuously new move targets on hollow-ridge (MS2; flag
+ * `--testplane` = the flat MS1 plane), measured through the real host tick path (LocalSource → recorder → sim.step with phase probe → keyframes → frame writing
  * into the SAB triple buffer). p50/p95/p99 per phase, for the whole step, the hash tick, frame
  * and host overhead.
  *
- * Run: pnpm --filter @faf/sim-host bench [-- --ticks 10000 --warmup 1000]
+ * Run: pnpm --filter @faf/sim-host bench [-- --ticks 10000 --warmup 1000 --testplane]
  * Output: table on stdout + JSON in packages/sim-host/bench/results/node-<date>.json
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -23,6 +23,7 @@ import {
   Op,
   type CommandEnvelope,
 } from '@faf/protocol';
+import { createTestPlaneMap, writeRtsMap } from '@faf/formats';
 import { ACTIVE_PHASES, unitHandles } from '@faf/sim';
 import { emptySummary, Metric, METRIC_NAMES, SimHost, type PercentileSummary } from '../src/index.ts';
 
@@ -42,11 +43,18 @@ const BUDGET_P95_MS = 2;
 const simBinBytes = readFileSync(fileURLToPath(new URL('../../../content/generated/sim.bin', import.meta.url)));
 const simBin = new ArrayBuffer(simBinBytes.length);
 new Uint8Array(simBin).set(simBinBytes);
+const TEST_PLANE = process.argv.includes('--testplane');
+// The test plane is a generated map (formats createTestPlaneMap) sent as .rtsmap bytes like any map.
+const mapBytes = TEST_PLANE ? writeRtsMap(createTestPlaneMap()) : readFileSync(fileURLToPath(new URL('../../../content/maps/hollow-ridge.rtsmap', import.meta.url)));
+const map = new Uint8Array(mapBytes).slice().buffer;
+/** Spawn disc and target square (WU): hollow-ridge keeps both on the NW side of the river. */
+const SPAWN = TEST_PLANE ? { x: 256, z: 256, spread: 90 } : { x: 150, z: 150, spread: 70 };
+const AREA = TEST_PLANE ? { min: 24, span: 464 } : { min: 40, span: 160 };
 
 const cap = frameCapacityBytes(DEFAULT_FRAME_CAPS);
 const sab = createSabFrameBuffer(cap);
 const host = new SimHost({ post: () => undefined, opfs: null, autoStart: false, statsWindow: TICKS, logCapacity: 8 << 20 });
-host.init({ t: 'init', simBin, seed: 20260928, armyCount: 2, playerArmy: 0, transport: 'sab', frameSab: sab, frameCapacity: cap, buildHash: 'bench' });
+host.init({ t: 'init', simBin, seed: 20260928, armyCount: 2, playerArmy: 0, transport: 'sab', frameSab: sab, frameCapacity: cap, buildHash: 'bench', map });
 const consumer = createSabConsumer(sab);
 
 const spawn: CommandEnvelope = {
@@ -56,7 +64,7 @@ const spawn: CommandEnvelope = {
   op: Op.Cheat,
   flags: 0,
   units: [],
-  payload: encodeCheatSpawn({ bp: 0, army: 0, count: UNITS, x: fx(256), z: fx(256), spread: fx(90) }),
+  payload: encodeCheatSpawn({ bp: 0, army: 0, count: UNITS, x: fx(SPAWN.x), z: fx(SPAWN.z), spread: fx(SPAWN.spread) }),
 };
 host.submit(encodeBatch([spawn]));
 host.runTicks(1);
@@ -78,7 +86,7 @@ for (let k = 0; k < 97; k++) {
         op: Op.Move,
         flags: 0,
         units,
-        payload: encodeMove({ x: fx(24 + (a % 464)), y: fx(0), z: fx(24 + ((a >>> 11) % 464)) }),
+        payload: encodeMove({ x: fx(AREA.min + (a % AREA.span)), y: fx(0), z: fx(AREA.min + ((a >>> 11) % AREA.span)) }),
       },
     ]),
   );
@@ -132,12 +140,12 @@ for (const m of metrics) {
 }
 
 const f = (v: number): string => v.toFixed(3).padStart(8);
-console.log(`sim-host tick bench — node ${process.version}, ${os.cpus()[0]?.model ?? 'cpu?'}, ${TICKS} ticks (+${WARMUP} warm-up), ${host.core.world.units.liveCount} cubes, avg moving ${(moving / movingSamples).toFixed(0)}`);
+console.log(`sim-host tick bench (${host.core.mapName}) — node ${process.version}, ${os.cpus()[0]?.model ?? 'cpu?'}, ${TICKS} ticks (+${WARMUP} warm-up), ${host.core.world.units.liveCount} cubes, avg moving ${(moving / movingSamples).toFixed(0)}`);
 console.log(`${'metric'.padEnd(28)} ${'p50 ms'.padStart(8)} ${'p95 ms'.padStart(8)} ${'p99 ms'.padStart(8)} ${'max ms'.padStart(8)} ${'mean ms'.padStart(8)}  samples`);
 for (const r of rows) console.log(`${r.metric.padEnd(28)} ${f(r.p50Ms)} ${f(r.p95Ms)} ${f(r.p99Ms)} ${f(r.maxMs)} ${f(r.meanMs)}  ${r.samples}`);
 const step = rows[0]!;
 const pass = step.p95Ms <= BUDGET_P95_MS;
-console.log(`MS1 budget: sim p95 ${step.p95Ms.toFixed(3)} ms ≤ ${BUDGET_P95_MS} ms (incl. hash tick) → ${pass ? 'PASS' : 'FAIL'}; wall ${wall.toFixed(0)} ms (${(wall / TICKS).toFixed(3)} ms/tick incl. host + frame)`);
+console.log(`MS2 budget: sim p95 ${step.p95Ms.toFixed(3)} ms ≤ ${BUDGET_P95_MS} ms (incl. hash tick) → ${pass ? 'PASS' : 'FAIL'}; wall ${wall.toFixed(0)} ms (${(wall / TICKS).toFixed(3)} ms/tick incl. host + frame)`);
 
 const date = new Date().toISOString().slice(0, 10);
 const outDir = fileURLToPath(new URL('./results/', import.meta.url));
@@ -146,6 +154,7 @@ const out = {
   bench: 'sim-host/tick',
   date: new Date().toISOString(),
   engine: 'node',
+  map: host.core.mapName,
   node: process.version,
   v8: process.versions.v8,
   platform: `${os.platform()} ${os.arch()}`,

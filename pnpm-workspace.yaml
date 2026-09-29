@@ -19,4 +19,7 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/utils@8.71.0'
   - '@typescript-eslint/visitor-keys@8.71.0'
   - typescript-eslint@8.71.0
+  - '@gltf-transform/core@4.5.1'
+  - '@gltf-transform/extensions@4.5.1'
+  - '@gltf-transform/functions@4.5.1'
 strictPeerDependencies: false

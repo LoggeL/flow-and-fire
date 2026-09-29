@@ -117,3 +117,28 @@ export function diffPixels(a: DecodedImage, b: DecodedImage, threshold = 24): nu
   }
   return n;
 }
+
+/** RGB of the pixel at (x, y) (rounded, clamped to the image). */
+export function pixelAt(img: DecodedImage, x: number, y: number): [number, number, number] {
+  const px = Math.min(img.width - 1, Math.max(0, Math.round(x)));
+  const py = Math.min(img.height - 1, Math.max(0, Math.round(y)));
+  const o = (py * img.width + px) * img.channels;
+  return [img.data[o]!, img.data[o + 1]!, img.data[o + 2]!];
+}
+
+/** Share of pixels within `tolerance` (per channel) of `rgb`. */
+export function colorShare(img: DecodedImage, rgb: readonly [number, number, number], tolerance = 6): number {
+  let n = 0;
+  const total = img.width * img.height;
+  for (let i = 0; i < total; i++) {
+    const o = i * img.channels;
+    if (
+      Math.abs(img.data[o]! - rgb[0]) <= tolerance &&
+      Math.abs(img.data[o + 1]! - rgb[1]) <= tolerance &&
+      Math.abs(img.data[o + 2]! - rgb[2]) <= tolerance
+    ) {
+      n++;
+    }
+  }
+  return total === 0 ? 0 : n / total;
+}

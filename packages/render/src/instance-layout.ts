@@ -213,6 +213,57 @@ export class VisualBuckets {
     return this.sorted.byteLength / UNIT_INSTANCE_STRIDE;
   }
 
+  /**
+   * Counting sort by a precomputed bucket key per record (P2: key = visual × 3 + LOD). Keys
+   * ≥ `bucketCount` are skipped (culled/dropped) and not counted in {@link dropped}; `dropped` is left
+   * to the caller. Afterwards bucket b holds `count[b]` records starting at `start[b]`.
+   */
+  sortByKeys(src: Uint8Array, n: number, keys: Uint16Array, bucketCount: number, highlight?: Uint8Array): void {
+    if (n * UNIT_INSTANCE_STRIDE > src.byteLength) throw new Error('VisualBuckets.sortByKeys: count exceeds source');
+    this.ensure(n, bucketCount);
+    const count = this.count;
+    const start = this.start;
+    const cursor = this.cursor;
+    count.fill(0, 0, bucketCount);
+    for (let i = 0; i < n; i++) {
+      const k = keys[i]!;
+      if (k < bucketCount) count[k]!++;
+    }
+    let acc = 0;
+    for (let b = 0; b < bucketCount; b++) {
+      start[b] = acc;
+      cursor[b] = acc;
+      acc += count[b]!;
+    }
+    const aligned = src.byteOffset % 4 === 0;
+    let s32 = this.src32;
+    if (aligned && (this.srcBuffer !== src.buffer || this.srcOffset !== src.byteOffset || s32.length < n * WORDS)) {
+      s32 = this.src32 = new Uint32Array(src.buffer, src.byteOffset, src.byteLength >> 2);
+      this.srcBuffer = src.buffer;
+      this.srcOffset = src.byteOffset;
+    }
+    const d32 = this.sorted32;
+    const d8 = this.sorted;
+    const hl = this.highlight;
+    const hasHl = highlight !== undefined;
+    for (let i = 0; i < n; i++) {
+      const k = keys[i]!;
+      if (k >= bucketCount) continue;
+      const j = cursor[k]!++;
+      if (aligned) {
+        const si = i * WORDS;
+        const di = j * WORDS;
+        for (let w = 0; w < WORDS; w++) d32[di + w] = s32[si + w]!;
+      } else {
+        const sb = i * UNIT_INSTANCE_STRIDE;
+        const db = j * UNIT_INSTANCE_STRIDE;
+        for (let w = 0; w < UNIT_INSTANCE_STRIDE; w++) d8[db + w] = src[sb + w]!;
+      }
+      hl[j] = hasHl ? (highlight[i] ?? 0) : 0;
+    }
+    this.total = acc;
+  }
+
   sort(src: Uint8Array, n: number, highlight?: Uint8Array): void {
     const vc = this.visualCount;
     if (n * UNIT_INSTANCE_STRIDE > src.byteLength) throw new Error('VisualBuckets.sort: count exceeds source');

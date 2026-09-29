@@ -1,19 +1,55 @@
 /**
  * Shared E2E helpers for the game page: navigation, readiness, test-hook access, error capture.
- * Servers (playwright.config.ts): 4173 with COOP/COEP (SAB transport), 4174 without (transfer).
+ * Servers (playwright.config.ts, ports in ./ports.ts): COI_PORT with COOP/COEP (SAB transport), NO_COI_PORT without (transfer).
  */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, type Page, type TestInfo } from '@playwright/test';
 import type { FafTestHooks } from '../../../apps/game/src/hooks.ts';
+import { COI_ORIGIN, COI_PORT, NO_COI_ORIGIN, NO_COI_PORT } from './ports.ts';
 
-export const COI_URL = 'http://localhost:4173/';
-export const NO_COI_URL = 'http://localhost:4174/';
+export const COI_URL = `${COI_ORIGIN}/`;
+export const NO_COI_URL = `${NO_COI_ORIGIN}/`;
 
 export const SERVERS = [
-  { name: 'sab', label: 'COOP/COEP (4173, SAB)', url: COI_URL, coi: true, transport: 'sab' },
-  { name: 'transfer', label: 'ohne COOP/COEP (4174, Transfer)', url: NO_COI_URL, coi: false, transport: 'transfer' },
+  { name: 'sab', label: `COOP/COEP (${COI_PORT}, SAB)`, url: COI_URL, coi: true, transport: 'sab' },
+  { name: 'transfer', label: `ohne COOP/COEP (${NO_COI_PORT}, Transfer)`, url: NO_COI_URL, coi: false, transport: 'transfer' },
 ] as const;
 
 export type ServerSpec = (typeof SERVERS)[number];
+
+
+/**
+ * Machine-dependent millisecond limits (load times, FPS, Main-JS) are only gated in an explicit
+ * measurement run (DECISIONS 16): `FAF_PERF_GATE=1 pnpm test:e2e`. Otherwise they are measured and
+ * reported in test-results/*.json.
+ */
+export const PERF_GATE = process.env['FAF_PERF_GATE'] === '1';
+
+/** Label for locally measured performance numbers (DECISIONS 5). */
+export const MEASURED_LOCALLY = 'lokal gemessen (Apple M5 Pro, Playwright headless), kein iGPU-/GPU-Runner';
+
+/** hollow-ridge (content/maps/hollow-ridge.rtsmap): identities fixed by ms2-p0/ms2-p2. */
+export const HOLLOW_RIDGE = {
+  name: 'Hollow Ridge',
+  mapSimHash: 0x90ec94f0,
+  /** Starts in WU: army 0 (player) NW plateau, army 1 SE plateau. */
+  own: { x: 96, z: 96 },
+  enemy: { x: 416, z: 416 },
+  /** Deep lake centre (3.5 WU deep), a contested mass spot, a hydro spot. */
+  deepWater: { x: 256, z: 256 },
+  massSpot: { x: 112, z: 244 },
+  hydroSpot: { x: 200, z: 150 },
+} as const;
+
+/** Writes a report to test-results/<name>.json and returns its path. */
+export function writeReport(name: string, data: unknown): string {
+  const dir = resolve(import.meta.dirname, '../../../test-results');
+  mkdirSync(dir, { recursive: true });
+  const file = resolve(dir, `${name}.json`);
+  writeFileSync(file, JSON.stringify(data, null, 2));
+  return file;
+}
 
 declare global {
   interface Window {

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { unitHandles } from '@faf/sim';
 import { makeTestHost } from './support/host.ts';
 import { measureAllocation } from './support/alloc.ts';
-import { bufferOf, driveBatches, spawnCmd } from './support/fixtures.ts';
+import { bufferOf, driveBatches, hollowRidgeBuffer, spawnCmd } from './support/fixtures.ts';
 import type { Clock } from '../src/index.ts';
 
 const gc = (globalThis as { gc?: () => void }).gc;
@@ -22,7 +22,16 @@ function heap(): { used: number; ab: number } {
 /** Cold tolerance (first 1,000 ticks incl. world creation, JIT, first keyframes). */
 const COLD_TOLERANCE_BYTES = 8 * 1024 * 1024;
 
-describe('allocation of the host tick path', () => {
+/**
+ * Test plane (MS1) and hollow-ridge (MS2: terrain height and the deep-water rule in every
+ * position update; targets on the NW side of the river, x/z in [40, 200)).
+ */
+const CASES = [
+  { name: 'test plane', map: false, spawn: [256, 256, 80], area: [64, 384] },
+  { name: 'hollow-ridge', map: true, spawn: [150, 150, 70], area: [40, 160] },
+] as const;
+
+describe.each(CASES)('allocation of the host tick path ($name)', (c) => {
   it('warm: 10,000 ticks with 1,000 driving cubes allocate < 1 MB; cold within tolerance', async () => {
     expect(gc).toBeTypeOf('function');
     const cold0 = heap();
@@ -32,11 +41,12 @@ describe('allocation of the host tick path', () => {
     let clockMs = 0;
     const clock: Clock = { now: () => (clockMs += 1) };
     // Messages are not recorded (a real worker serializes them in postMessage).
-    const h = makeTestHost({ autoStart: false, seed: 3, keepMessages: false, host: { clock, logCapacity: 4 << 20 } });
+    const h = makeTestHost({ autoStart: false, seed: 3, keepMessages: false, host: { clock, logCapacity: 4 << 20 }, ...(c.map ? { map: hollowRidgeBuffer() } : {}) });
     try {
-      h.host.submit(bufferOf([spawnCmd(0, 1000, 256, 256, 80, 1)]));
+      h.host.submit(bufferOf([spawnCmd(0, 1000, c.spawn[0], c.spawn[1], c.spawn[2], 1)]));
       h.host.runTicks(1);
-      const batches = driveBatches(unitHandles(h.host.core.world, 0), 10, 4, 2);
+      expect(unitHandles(h.host.core.world, 0).length).toBe(1000);
+      const batches = driveBatches(unitHandles(h.host.core.world, 0), 10, 4, 2, c.area[0], c.area[1]);
       let moving = 0;
       const run = (n: number): void => {
         for (let i = 0; i < n; i++) {
@@ -62,7 +72,7 @@ describe('allocation of the host tick path', () => {
       const retained = after.used - before.used;
       const abGrown = after.ab - before.ab;
       console.log(
-        `[alloc] host tick path: allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks ` +
+        `[alloc] host tick path (${c.name}): allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks ` +
           `(${m.chunks - m.chunksWithGc}/${m.chunks} chunks, ${m.gcEvents} GCs inside chunks), retained ${(retained / 1024).toFixed(1)} KiB, ` +
           `ArrayBuffer growth ${(abGrown / 1024).toFixed(0)} KiB (keyframes), cold (1,000 ticks) ${(cold / 1024 / 1024).toFixed(2)} MiB, ` +
           `moving ${moving}, frames ${h.host.framesWritten}, log ${h.host.core.recorder!.byteLength} B`,

@@ -8,6 +8,7 @@ node_modules/
 # build output
 dist/
 **/dist/**
+tools/render-bench/dist/
 tools/headless/dist-harness/
 content/generated/
 
@@ -21,6 +22,7 @@ bench-results/
 # measurement output of bench / test:xengine (dated JSON, local evidence; docs via --update-docs)
 tools/headless/results/*.json
 packages/*/bench/results/*.json
+tools/render-bench/results/*.json
 *.bench.tmp.*
 *.cpuprofile
 *.heapsnapshot

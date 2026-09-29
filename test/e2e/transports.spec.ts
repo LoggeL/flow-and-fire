@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { captureErrors, COI_URL, expectNoErrors, NO_COI_URL, openGame, stepTicks } from './support/game.ts';
 
-// Transport equality (S4, G14): the SAB triple buffer (4173, COOP/COEP) and the transfer ping-pong
-// (4174, no COOP/COEP) deliver byte-identical frames. Both runs start paused (?autostart=0) and are
+// Transport equality (S4, G14): the SAB triple buffer (COI_PORT, COOP/COEP) and the transfer ping-pong
+// (NO_COI_PORT, no COOP/COEP) deliver byte-identical frames. Both runs start paused (?autostart=0) and are
 // advanced tick by tick with `step`; the frame fingerprint (xxHash32 over all frame bytes except the
 // wall-clock tickTimeUs/debug section, see apps/game/src/frame-hash.ts) must match at ticks 1..200.
 
@@ -18,10 +18,11 @@ async function runHashes(page: Page, base: string, transport: 'sab' | 'transfer'
   expect(info.tick).toBe(0);
   await page.evaluate(() => window.__faf!.recordFrameHashes(true));
   await stepTicks(page, MOVE_AT);
-  // A move command while paused → applied in tick MOVE_AT + 1 (same in both runs).
+  // A move command while paused → applied in tick MOVE_AT + 1 (same in both runs); the target lies
+  // in the lowland below the NW plateau of hollow-ridge (the cubes drive down the cliff).
   await page.evaluate(() => {
     const h = window.__faf!;
-    h.sendMove(h.ownHandles().filter((_, i) => i % 2 === 0), 200, 300);
+    h.sendMove(h.ownHandles().filter((_, i) => i % 2 === 0), 150, 190);
   });
   await stepTicks(page, TICKS - MOVE_AT);
   const hashes = await page.evaluate((n) => {
@@ -33,7 +34,7 @@ async function runHashes(page: Page, base: string, transport: 'sab' | 'transfer'
   return hashes;
 }
 
-test('transports: SAB (4173) und Transfer (4174) liefern bytegleiche Frames (Ticks 1..200)', async ({ browser }, testInfo) => {
+test('transports: SAB (COOP/COEP) und Transfer (ohne) liefern bytegleiche Frames (Ticks 1..200)', async ({ browser }, testInfo) => {
   const results: Record<string, number[]> = {};
   for (const [transport, base] of [
     ['sab', COI_URL],

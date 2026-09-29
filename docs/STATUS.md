@@ -49,7 +49,7 @@ Legende Abnahme: ✅ erfüllt · ⚠️ teilweise erfüllt / Abweichung dokument
 
 | Paket | Inhalt MS1 | Tests (Vitest) | Fragment |
 |---|---|---|---|
-| Root-Tooling | pnpm-11-Workspace, TS strict + Project References, ESLint 10 + `sim/determinism`, dependency-cruiser (§3.2), Vitest (≤ 4 Forks), Playwright (3 Browser, 1 Worker, Server 4173 COI / 4174 ohne) | – | P0 |
+| Root-Tooling | pnpm-11-Workspace, TS strict + Project References, ESLint 10 + `sim/determinism`, dependency-cruiser (§3.2), Vitest (≤ 4 Forks), Playwright (3 Browser, 1 Worker, Server 4183 COI / 4184 ohne, seit MS2 per `FAF_E2E_PORT` verschiebbar) | – | P0 |
 | `tools/eslint-plugin-sim` | Regel `sim/determinism` (Math-Whitelist, Date/Timer/async/Map-State/`**`/Float32/16Array, crypto, parseFloat/`Number()`, DataView-Float-Zugriffe, Division ohne sofortiges Abschneiden …) + Konfigurationstest (Regel greift in allen Sim-Paketen) | 113 (103 RuleTester + 10 Config) | P0 |
 | `@faf/fixed` | Fx Q20.12, FxSmall, Ang16 + LUTs (eingecheckt, Hash gepinnt), fxMul/fxDiv/isqrt mit Korrektur, rng32, xxHash32, SafeInt | 46 | P0 |
 | `@faf/heap` | Arena = eine `WebAssembly.Memory` ohne Grow, Table-DSL (SoA), Dense, Slab, Raw-Regionen, Handles `index:20\|gen:12`, FIFO-Freelist, Layout-Hash, Regel-/Voll-Hash, Snapshot/Restore | 32 | P1 |
@@ -102,7 +102,7 @@ Firefox 155, WebKit 26.6). „Bun“ ist durch WebKit (JavaScriptCore) ersetzt (
 | 1.000 fahrende Würfel: ≥ 60 FPS (GPU-Runner) | ✅ **erfüllt, lokal gemessen (Apple M5 Pro), kein GPU-Runner** | Chromium 60,0 (vsync), Firefox 120,0, WebKit 57,3–58,1 (headless-rAF-Takt); GPU (Chromium Timer-Query) ≈ 0,3 ms | E2E `latency` (Lastphase 3 s, 1.000 fahrend) → `test-results/latency-*.json`; P2-Smoke |
 | 1.000 fahrende Würfel: Main-JS ≤ 2 ms | ✅ **erfüllt** | p95 Chromium 0,17 / 0,20 ms, Firefox 0,26 ms (4174: ≤ 1,0 ms, 1-ms-Uhr), WebKit 0,18 ms (4174: ≤ 1,0 ms) | E2E `latency` (gegated ≤ 2 ms) |
 | SAB- und Transfer-Transport liefern bytegleiche Frames | ✅ **erfüllt** | Node: 204 Frames eines Laufs bytegleich; Browser: Ticks 1..200 per `step` identisch in Chromium, Firefox, WebKit (Ketten-Fingerprint `4cb4c3aa` in **allen** Browsern gleich) | `packages/sim-host/test/transport.test.ts`, `packages/protocol/test/transport.test.ts`, E2E `transports` → `test-results/transport-hashes-*.json` |
-| E2E läuft ohne COOP/COEP | ✅ **erfüllt** | jede Spec (außer dem SAB-Teil von `transports`) läuft zusätzlich gegen 4174 ohne COOP/COEP (Transfer) | `pnpm test:e2e` (51/51; `smoke` prüft den Root-Status seit dem Review per Request statt über `goto()`, Firefox-stabil) |
+| E2E läuft ohne COOP/COEP | ✅ **erfüllt** | jede Spec (außer dem SAB-Teil von `transports`) läuft zusätzlich gegen 4174 ohne COOP/COEP (Transfer); gilt nach dem MS2-Review auch für die MS2-Specs `camera`, `picking`, `flight` (Ports seit MS2: 4183/4184) | `pnpm test:e2e` (51/51; `smoke` prüft den Root-Status seit dem Review per Request statt über `goto()`, Firefox-stabil) |
 | Pause: Tick steht, Kamera und Command-Annahme laufen weiter | ✅ **erfüllt** | Tick steht ≥ 1,1 s, Kamera verschiebt/zoomt, Move angenommen, nach Step (N) genau 1 Tick + Ack, nach Resume ≥ 45/50 Würfel am Ziel unterwegs; Tab verborgen ⇒ Pause | E2E `pause` |
 | Latenz: Klickmarker ≤ 1 Frame | ✅ **erfüllt** | max. 1 rAF in allen 6 Kombinationen (je 106 Klicks, in Frames gezählt – gegated) | E2E `latency`, `move` |
 | Latenz: Klick → erster bewegter Pixel ≤ 150 ms (p95) | ⚠️ **teilweise erfüllt – Abweichung** | **Startansicht (105 WU, Spielansicht): p95 216–283 ms – nicht erfüllt.** Nur die reine Pipeline (6 WU Kameraabstand, ≈ 0,007 WU/px) liegt bei p95 115–157 ms (5 von 6 Kombinationen ≤ 150 ms; WebKit/Transfer 157 ms bei rAF-Stalls bis 87 ms unter Fremdlast, frühere Läufe 117–133 ms). Ursache: Die Würfel beschleunigen aus dem Stand mit 3 WU/s² (0,03 WU im ersten Tick), der erste sichtbare Pixel in der Startansicht kommt 1–2 Ticks nach dem Befehl; Transport + Tick + Render-Delay allein liegen bei ≈ 100–120 ms. Behebung gehört zum Bewegungsgefühl (SPK2/MS3: Sofort-Drehung bzw. Anfahrverhalten), nicht zum Transport (DECISIONS 11) | E2E `latency` → `test-results/latency-*.json` (`criteria.firstMovedPixelStartViewLe150`); ms-Gate nur im Messlauf `FAF_LATENCY_GATE=1` |
@@ -304,7 +304,8 @@ bewusst nicht umgesetzt (Begründung DECISIONS 11).
   Pixel in der Startansicht erneut messen; Ack-Latenz bleibt taktbedingt (DECISIONS 11).
 - **Referenzhardware:** FPS/GPU-Messung und alle Budgets auf Referenz-Laptop bzw. GPU-Runner nachholen (DECISIONS 5,
   SPK4 in MS2).
-- **Spikes offen:** SPK2 (vor MS3), SPK3 (MS3 mit `nav`), SPK4 (MS2 mit Terrain-Pipeline), SPK7 (MS6).
+- **Spikes offen:** SPK2 (vor MS3), SPK3 (MS3 mit `nav`), SPK4 (MS2 mit Terrain-Pipeline – in MS2 erledigt,
+  DECISIONS 17), SPK7 (MS6).
 - **Sim im Spiel:** p95 bis 1,16 ms (Extremfall Node 1,87 ms) bei „alle Würfel auf einen Punkt“ – Beobachtungspunkt
   für MS3 (Steering/Flow-Fields).
 
@@ -319,3 +320,205 @@ bewusst nicht umgesetzt (Begründung DECISIONS 11).
   (Anfahrverhalten); die Client-Ack-Latenz bleibt taktbedingt bei p95 ≈ 100–110 ms (DECISIONS 11).
 - Keyframes unkomprimiert; `.rtsreplay`-Format und Replay-Viewer in MS11.
 - Kein Strategic Zoom/IconPass, keine Schatten/Post, keine UI außer HUD/Konsole (spätere Meilensteine).
+
+## Stand MS2 – Terrain, Karte & Kamera
+
+**Stand 2026-09-29 (nach Review-Nachbesserung): MS2 abgeschlossen; alle maschinenunabhängigen Abnahmekriterien
+erfüllt und gegated. ⚠️ bleiben: echtes Safari nicht geprüft (Remote Automation nicht freigegeben), kein
+GPU-/iGPU-Runner (DECISIONS 5), FPS/Ladezeiten/Restore nur lokal gemessen und nur mit `FAF_PERF_GATE=1` gegated,
+Pointer Lock im headless Chromium/WebKit nicht verfügbar (Tests übersprungen).** Feature-IDs MS2: **M1, M2, M3, M4,
+C1, C11, P2, P3, P10**; Grundbausteine G15, G16; Spike **SPK4** (DECISIONS 17).
+
+Spielbar mit `pnpm dev` (→ http://localhost:5173/): die 512-WU-Karte *Hollow Ridge* (aus `content/maps/src` per
+`mapgen` + `mapc` erzeugt) mit Heightmap-Terrain (CDLOD, Auto-Splat), Wasser mit Tiefenfarbe/Uferschaum, Mass- und
+Hydro-Spots als Decals, 1.000 + 24 Würfel auf dem Terrain (y = Sim-Höhe), FA-Kamera (Zoom zum Cursor, Mittelklick-Grab,
+Kanten/WASD/Pfeile, Strg+Mittelklick-Rotation, H = Start, Pos1 = Rotation zurück, Alt+Enter = Vollbild).
+`?map=testplane` lädt die flache MS1-Ebene – seit dem Review als generierte Karte im selben Pfad (DECISIONS 18).
+URL-Parameter zusätzlich zu MS1: `?map=`, `?preset=low|medium|high|ultra`, `?units=N` (Flugtest), `?assets=raw`.
+
+Arbeitspakete (Wellen 0–2): [ms2-p0-formats](status/ms2-p0-formats.md), [ms2-p1-render](status/ms2-p1-render.md),
+[ms2-p2-sim](status/ms2-p2-sim.md), [ms2-p3-client](status/ms2-p3-client.md), [ms2-p4-game](status/ms2-p4-game.md),
+[ms2-p5-spk4](status/ms2-p5-spk4.md).
+
+### MS2 starten und prüfen
+
+Voraussetzungen wie MS1 (Node ≥ 24, pnpm 11, `pnpm install`, `pnpm exec playwright install chromium firefox webkit`).
+Die generierten Artefakte (`content/maps/*.rtsmap`, `content/generated/assets/`) sind eingecheckt; nach Änderungen an
+Kartenquellen oder Blueprints zuerst `pnpm maps`, dann `pnpm assets`.
+
+| Zweck | Befehl |
+|---|---|
+| Spiel im Browser (Dev) | `pnpm dev` → http://localhost:5173/ (hollow-ridge, Preset Medium); Strg+C beendet den Server |
+| Varianten | `?map=testplane` (flache MS1-Ebene), `?preset=low\|medium\|high\|ultra`, `?units=2000` (Flugtest), `?assets=raw` (ohne meshopt), `?transport=transfer` |
+| Produktionsbuild lokal | `pnpm build`, dann `pnpm --filter @faf/game run serve --port 4173 --coi` |
+| Karten erzeugen | `pnpm maps` (mapgen → Quellen, mapc → `.rtsmap`, deterministisch); einzelne Heightmap: `mapc` in `packages/formats/scripts/` (`.png`/`.pgm`/`.r16`) |
+| Assets erzeugen / prüfen | `pnpm assets`; `pnpm --filter @faf/assets-pipeline run check` |
+| Statik / Unit-Tests | `pnpm typecheck`, `pnpm lint`, `pnpm test` |
+| Goldens / Cross-Engine / Bench | `pnpm --filter @faf/headless goldens`, `pnpm test:xengine`, `pnpm bench` |
+| Render-Smoke (Sonde CPU == GPU) | `pnpm --filter @faf/render smoke` |
+| E2E (3 Browser × SAB/Transfer) | `pnpm test:e2e` (Ports 4183/4184, `FAF_E2E_PORT`); ms-Grenzen zusätzlich mit `FAF_PERF_GATE=1` |
+| SPK4-Benchmark | `pnpm bench:spk4` (voll, alle 3 Browser, `--update-docs`) bzw. `pnpm bench:spk4 -- --quick` |
+| Echtes Safari (nach Freigabe „Remote Automation“) | `pnpm build && node --import tsx test/e2e/safari/safari-check.ts` |
+| Alles nacheinander | `pnpm ci:local` |
+
+Steuerung zusätzlich zu MS1: Mausrad = Zoom zum Cursor (6 WU bis ganze Karte, Neigung folgt dem Zoom), Mittelklick
+ziehen = Karte greifen, Bildschirmrand/WASD/Pfeile = Pan, Strg+Mittelklick = Rotation, Pos1 = Rotation zurück,
+H = eigener Start, Alt+Enter = Vollbild (mit Pointer-Confinement und virtuellem Cursor). Konsole neu: `map`,
+`camera <x> <z> [dist]`, `preset <name>`.
+
+### Umsetzungsorte der Feature-IDs MS2
+
+| ID | Inhalt (MS2-Umfang) | Umsetzung | Beleg |
+|---|---|---|---|
+| **M1** | Heightmap-Terrain: R16UI-Höhen, CDLOD-Patches 32 WU (ein instanzierter Draw), Auto-Splat nach Höhe/Neigung, Sim-Höhe = `sampleHeightRaw` | `packages/rules/src/terrain.ts`, `packages/render/src/terrain/*`, `packages/render/src/passes/{terrain,probe}.ts`, `packages/sim/src/{terrain,movement}.ts`, `packages/client/src/map.ts` | `packages/rules/test/terrain.test.ts`, `packages/sim/test/terrain.test.ts`, E2E `terrain`, `render smoke` |
+| **M2** | Wasser: Tiefenfarbe, Wellennormalen, Uferschaum, Himmelsreflexion; Tiefwasser blockiert Land, Furten passierbar | `packages/render/src/passes/water.ts`, `packages/sim/src/{terrain,movement}.ts` (`isDeepWaterForLand`, achsgetrenntes Gleiten) | `packages/sim/test/water.test.ts`, Golden `ridge-water-block`, E2E `terrain` |
+| **M3** | Kartenformat `.rtsmap` (Chunk-Container, CRC-32, META/HGT/SPLT/PREV/PROP, unbekannte Chunks erhalten), `mapSimHash`, CLI-Import, Generator, Karte *Hollow Ridge* | `packages/formats/src/*`, `packages/formats/scripts/{mapc,mapgen,maps,png,heightmap-io}.ts`, `content/maps/` | `packages/formats/test/*`, E2E `map-roundtrip` |
+| **M4** | Mass-/Hydro-Spots als Ring-Decals, in `mapSimHash` und Sim-Arena | `packages/render/src/terrain/decals.ts`, `packages/client/src/map.ts`, `packages/sim/src/terrain.ts` | `packages/render/test/decals-presets.test.ts`, E2E `terrain` (Ringe 16/16) |
+| **C1** | FA-Kamera: Zoom zum Cursor, Mittelklick-Grab, Kanten/WASD, Rotation, Terrain-Folge, Mindestabstand 2 WU, auch in der Pause | `packages/client/src/camera-controller.ts`, `packages/client/src/terrain-picker.ts` (G15) | `packages/client/test/{camera-controller,terrain-picker}.test.ts`, E2E `camera`, `picking` |
+| **C11** | Browser-Input: Hotkeys über `code`, Cursor-FSM, Kontextmenü/Autoscroll unterdrückt, Vollbild, Pointer-Confinement (G16) | `packages/client/src/{actions,input,cursor-fsm,fullscreen}.ts`, `apps/game/src/{game,main.tsx}` | `packages/client/test/input-ms2.test.ts`, E2E `camera` |
+| **P2** | Unit-Culling (prev/cur), 3 Mesh-LODs, ein Draw pro (Visual, LOD), Merged-Part mit PartStream | `packages/render/src/{units,frustum.ts,passes/units.ts}`, `packages/client/src/visuals.ts` | `packages/render/test/*` (Culling, LOD, Draws), E2E `flight` |
+| **P3** | Asset-Pipeline (glTF + meshopt + Fallback, Manifest SHA-256), Asset-Worker (Cache API, Integrität, Fortschritt), Ladebildschirm | `tools/assets-pipeline/src/*`, `packages/client/src/assets/*`, `packages/blueprints/src/asset-manifest.ts`, `apps/game/src/loading.ts` | `pnpm --filter @faf/assets-pipeline run check`, E2E `map-load` |
+| **P10** | Context-Loss mit Terrain/Wasser/Decals/Texturen (RHI-Registry stellt alles wieder her) | `packages/render/src/webgl2/device.ts`, `packages/render/src/renderer.ts` | `packages/render/test/context-loss.test.ts`, E2E `context-loss` |
+| **G15** | Heightmap-Raymarch-Picking (Chunk-Schranken, Marsch ≤ 0,5 WU, Bisektion) | `packages/client/src/terrain-picker.ts`, `packages/render` (`computeChunkBounds`) | `packages/client/test/terrain-picker.test.ts`, E2E `picking` |
+| **G16** | Action-Mapping, Fokusregel, Fullscreen-Root | `packages/client/src/{actions,input,fullscreen}.ts` | `packages/client/test/input-ms2.test.ts` |
+| **SPK4** | Render-Last-Benchmark (full/fallback/ms2) in 3 Browsern | `tools/render-bench/{src,scripts/spk4.ts}` | `pnpm bench:spk4`, DECISIONS 17, [ms2-p5](status/ms2-p5-spk4.md) |
+
+**Messregel (DECISIONS 16):** Maschinenabhängige ms-Grenzen – Laden ≤ 8 s / ≤ 3 s, FPS, Main-JS, Restore ≤ 2 s –
+werden in jedem E2E-Lauf **gemessen und berichtet** (`test-results/*.json`, git-ignoriert), aber **nur mit
+`FAF_PERF_GATE=1 pnpm test:e2e` gegated**. Immer gegated sind die maschinenunabhängigen Kriterien (CPU == GPU,
+Frame-y == CPU, Pick-Genauigkeit und Miss-Konsistenz, Draws ≤ 50, alle 3 LODs gezeichnet, Cache-Treffer/0 Netz-Bytes,
+Roundtrip-Bytes, Hash-Gleichheit). Alle Werte lokal: Apple M5 Pro, Playwright headless (Chromium 153, Firefox 155,
+WebKit 26.6) – **kein GPU-/iGPU-Runner, kein echtes Safari**.
+
+### Abnahme MS2 (docs/plans/MS2.json „acceptance“, PLAN §5.2)
+
+Messlauf: vollständiges `pnpm test:e2e` nach der Review-Nachbesserung (107 bestanden, 4 übersprungen, 10,0 min),
+**unter Fremdlast** (paralleler MLX-GPU-Job des Nutzers, Load ≈ 5–6) – betrifft nur FPS/GPU-Werte (s. ⚠️).
+
+| Kriterium | Status | Messwert | Nachweis |
+|---|---|---|---|
+| M3/Formate: Chunk-Container (4CC, Länge, CRC32), META/HGT/SPLT/PREV/PROP, Roundtrip CLI → Datei → Spiel → Datei bytegleich, mapSimHash in Node/Worker/Spiel gleich, unbekannte Chunks erhalten, CRC-/Längenfehler erkannt | ✅ erfüllt | SHA-256 `fd3b31d7…` (mapc == Datei == `exportMap` im Browser), mapSimHash `0x90ec94f0` in Node == Worker == Seite == HUD, simId `0xb3668e44` stabil über Reload; Testebene simId `0xafe386cc` / mapSimHash `0xecdb4513` (generierte Karte, Export bytegleich) – alle 3 Browser × 2 Server | `packages/formats/test/*`, E2E `map-roundtrip` → `test-results/map-roundtrip-*.json` |
+| Hollow Ridge aus Quellen reproduzierbar; Starts, 16 Mass + 2 Hydro, Tiefwasser-Rinne, Furten | ✅ erfüllt | Frische-Test bytegleich; 2 Starts, 16/2 Spots | `packages/formats/test/*`, [ms2-p0](status/ms2-p0-formats.md) |
+| M1: CDLOD (33×33-Patches, Chunk-Culling, 1 Draw), Auto-Texturierung; CPU == GPU in 10.000 Stichproben | ✅ erfüllt | 0 Abweichungen in allen 6 Browser/Server-Kombinationen und im `render smoke` (3 × 10.000); Terrain 1 Draw | E2E `terrain` → `test-results/terrain-*.json`, `pnpm --filter @faf/render smoke` |
+| M1/Sim: Sim-y == `sampleHeightRaw` (Vitest + Szenario), Frame-y == CPU im Browser | ✅ erfüllt | 0 Abweichungen (cur/prev) in allen Kombinationen; seit dem Review zusätzlich auf einer 1.024-WU-Karte (Ränder/Ecken) | `packages/sim/test/terrain.test.ts`, Goldens `ridge-*`, E2E `terrain`, `flight` |
+| M2: Wasser (Tiefenfarbe, Normalen, Uferschaum); Flachwasser passierbar, Tiefwasser blockiert Land | ✅ erfüllt | Wasserpixel (256, 256) Box 100 %; Golden `ridge-water-block` (keine Landeinheit im Tiefwasser, Furt-Gruppe am Ziel) | E2E `terrain`, `tools/headless/goldens/ridge-water-block.json` |
+| M4: Spots als Decals sichtbar, in mapSimHash | ✅ erfüllt | Mass-Ring 16/16, Hydro-Ring 16/16 (Pixelprüfung) | E2E `terrain`, `render smoke` |
+| Laden der 512-WU-Karte: kalt ≤ 8 s, Cache ≤ 3 s (keine Netz-Bytes) | ✅ erfüllt (lokal; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated, Cache-Treffer/0 Netz-Bytes immer) | kalt Wand **226–471 ms** (Nav → ready 164–310 ms), Cache Wand **131–191 ms**; 4/4 Cache-Treffer, 0 Netz-Bytes; frühere Läufe kalt 168–488 ms, Cache 95–224 ms | E2E `map-load` → `test-results/map-load-*.json` |
+| P2 + Kameraflug: 2.000 Platzhalter, 10 s, Draws ≤ 50 (gegated), FPS ≥ 60 bzw. rAF-Takt, Main-JS p95; 1 Draw pro (Visual, LOD), 3 LODs, Frustum-Culling, Merged-Part/PartStream | ✅ erfüllt (Draws, LODs, Culling gegated); ⚠️ FPS unter Fremdlast, lokal | Draws max **4**; LOD-Instanzen max **[32, 192–223, 1.273–1.321]** (alle 3 LODs, seit dem Review gegated); gecullt bis > 1.000; FPS / rAF-Leerlauftakt: Chromium 60,0 / 60,0, Firefox 108–112 / 117–119 (0,93–0,94), WebKit 29,6–42,8 / 31,1–40,5 (0,95–1,06 – WebKits rAF lief unter der Fremdlast nur mit 31–40 Hz; Einzelwiederholung des Reviews unbelastet 57,9 FPS); Kriterium „≥ 60 FPS oder ≥ 0,95 × rAF-Leerlauftakt“ in allen 6 Läufen erfüllt; Main-JS p95 0,28–0,30 ms (ohne COOP/COEP 1-ms-Uhr: 1,0); GPU p95 (Chromium, Timer-Query, unter Fremdlast) 4,7–5,0 ms | E2E `flight` → `test-results/flight-<browser>-<transport>.json` (`criteria`) |
+| G15 Picking: ≤ 1/16 WU in ≥ 10.000 Zufallsstrahlen und ≥ 200 Bildschirmpunkten je Browser; Zoom zum Cursor ≤ 1/16 WU | ✅ erfüllt | Vitest 10.000 Strahlen (hollow-ridge) + 2.000 Strahlen auf 1.024 WU (Chunk-Grenzen, Kartenrand); E2E 380 Vergleiche je Browser × Server, max \|Δxz\| 1,7·10⁻⁴ WU, max \|Δy\| 0,020 WU; Picker-Misses bei Referenz-Treffer **0**, Treffer bei Referenz-Miss **0** (seit dem Review gegated; „overview“: 4 Punkte, in denen beide verfehlen); 5/5 Rechtsklicks == Pick; Zoom-Anker 0 raw | `packages/client/test/terrain-picker.test.ts`, E2E `picking`, `camera` |
+| C1 Kamera: Edge-Pan, WASD/Pfeile, Mittelklick-Grab, Zoom zum Cursor, Terrain-Folge, Rotation, KeyH, in der Pause | ✅ erfüllt | Grab-Fehler 0, Zoom-Anker 0, Edge-Pan 20,2–23,8 WU in 0,5 s; alles auch in der Pause | E2E `camera` (3 Browser × 2 Server), `packages/client/test/camera-controller.test.ts` |
+| C11/G16: Hotkeys über `code` (DE/US), Kontextmenü/Autoscroll unterdrückt, Vollbild, Pointer-Confinement, Cursor-FSM, Fokus | ✅ erfüllt; ⚠️ Pointer Lock headless nur in Firefox | Vollbild (Alt+Enter) in allen 3 Engines; Pointer Lock + virtueller Cursor in Firefox; in Chromium/WebKit headless wird der Lock nicht gewährt ⇒ 4 Tests (2 Engines × 2 Server) mit Begründung übersprungen; Unit-Tests mit Fakes vollständig | E2E `camera`, `packages/client/test/input-ms2.test.ts` |
+| P3: Asset-Pipeline deterministisch (meshopt + Fallback), Manifest sha256, Asset-Worker mit Cache API/Integrität/Fortschritt, Ladebildschirm | ✅ erfüllt | `check` grün (6 Dateien aktuell); zweimal gebaut bytegleich; Laden immer im Worker, Modelle meshopt-dekodiert | `pnpm --filter @faf/assets-pipeline run check`, E2E `map-load`, [ms2-p3](status/ms2-p3-client.md) |
+| P10 Context-Loss mit Terrain/Wasser/Decals: Bild ≤ 2 s zurück, Sim tickt weiter, Regel-Hash gleich | ✅ erfüllt (Restore-ms nur mit `FAF_PERF_GATE=1` gegated) | Restore → erster Frame **13,7–25,3 ms**; 11–15 Ticks während des Verlusts; Regel-Hash Tick 60 `0x8f16dc4c` mit/ohne Verlust gleich in allen 3 Browsern; Registry-Test (fake-gl) | E2E `context-loss` → `test-results/context-loss-*.json`, `packages/render/test/context-loss.test.ts` |
+| Presets low/medium/high/ultra, Render-Scale Medium 0,8, Splat-Layer, wirkt über `?preset=` | ✅ erfüllt | Backbuffer = CSS × DPR × 0,8 (gegated im Flug) | E2E `flight`, `terrain`; `packages/render/test/decals-presets.test.ts` |
+| Determinismus: `SIM_BUILD faf-sim/ms2.0`; ≥ 4 Goldens; Cross-Engine kalt/warm; L4 Replay + Restore auf hollow-ridge; Log v2 mit mapSimHash; statische Karte nicht in Hash/Snapshot, aber in simId; Sim p95 ≤ 2 ms; Allokation < 1 MB; Lint deckt formats/rules ab | ✅ erfüllt | 4 Goldens bitgleich (`cubes-*` nach dem Review mit neuer Testebenen-Identität neu aufgenommen, Ketten unverändert); **80/80** Hash-Ketten (Node, Chromium, Firefox, WebKit; kalt/warm); L4 auf hollow-ridge und 1.024 WU; Snapshots tragen jetzt simId (Restore auf fremder Karte ⇒ `SnapshotError`); Sim-Tick p95 0,55–0,57 ms (Node, Host-Pfad, Testebene/hollow-ridge); Allokation mit Karte ≈ 164–350 KiB / 10.000 Ticks | `pnpm --filter @faf/headless goldens`, `pnpm test:xengine`, `packages/sim-host/test/{map,l4-replay,alloc}.test.ts`, `pnpm --filter @faf/sim-host bench` |
+| SPK4 als Benchmark (full/fallback/ms2) in 3 Browsern, Entscheidung mit Messwerten | ✅ erfüllt (lokal); ⚠️ kein Iris Xe | s. DECISIONS 17 (Draws, Main-JS, GPU je Szenario) | `pnpm bench:spk4`, [ms2-p5](status/ms2-p5-spk4.md) |
+| WebKit-Smoke und alle E2E-Specs in Chromium, Firefox, WebKit, mit und ohne COOP/COEP | ✅ erfüllt | 107/111 grün, 4 übersprungen (Pointer Lock); seit dem Review laufen auch `camera`, `picking` und `flight` gegen beide Server (SAB und Transfer, Flug mit 2.000 Einheiten auch mit dem Transfer-Transport) | `pnpm test:e2e` → `test-results/e2e.json` |
+| Echtes Safari per safaridriver | ⚠️ nicht geprüft | `safaridriver` startet, Session abgelehnt: „Allow remote automation“ in Safari nicht freigegeben (Systemeinstellung bewusst nicht geändert) | `test-results/safari-check.json` (`status: unavailable`), Nachholen: `pnpm build && node --import tsx test/e2e/safari/safari-check.ts` |
+| GPU-Runner in CI | ⚠️ nicht verfügbar | FPS/GPU nur lokal (M5 Pro) | DECISIONS 5 |
+| DoD: frozen-lockfile, typecheck, lint (inkl. dep-cruiser), Vitest, Goldens, Cross-Engine, Bench, E2E, render smoke; spielbar mit `pnpm dev`; STATUS | ✅ erfüllt | s. Abschluss-Verifikation | dieser Abschnitt |
+
+### Abschluss-Verifikation nach der Review-Nachbesserung (2026-09-29, streng sequenziell)
+
+| Befehl | Ergebnis |
+|---|---|
+| `pnpm install --frozen-lockfile` | grün (Lockfile unverändert) |
+| `pnpm typecheck` | grün |
+| `pnpm lint` | grün (ESLint 0 Warnungen inkl. erweitertem `sim/determinism`; dep-cruiser 0 Verstöße, 337 Module) |
+| `pnpm test` | 89 Dateien, **724/724** grün |
+| `pnpm --filter @faf/assets-pipeline run check` | grün (6 Dateien aktuell) |
+| `pnpm --filter @faf/headless goldens` | 4/4 bitgleich |
+| `pnpm test:xengine` | **80/80** Hash-Ketten == Goldens |
+| `pnpm --filter @faf/sim-host bench` (+ `-- --testplane`) | MS2-Budget PASS, Sim p95 0,568 / 0,550 ms |
+| `pnpm --filter @faf/render smoke` | Chromium, Firefox, WebKit OK (Sonde 0/10.000, Ringe 16/16, Context-Loss ok) |
+| `pnpm test:e2e` | **107 bestanden, 4 übersprungen** (Pointer Lock headless Chromium/WebKit), 10,0 min, unter Fremdlast |
+
+Nicht wiederholt nach dem Review (Code unverändert): `pnpm bench:spk4` (Werte in DECISIONS 17), `pnpm dev`-Check
+([ms2-p4](status/ms2-p4-game.md); `?map=testplane` jetzt über die E2E `terrain` abgedeckt).
+
+### Nachbesserung nach dem MS2-Review (2026-09-29)
+
+| Befund | Umsetzung | Beleg |
+|---|---|---|
+| STATUS ohne MS2-Abnahmetabelle | dieser Abschnitt (Kriterien, Messwerte, ⚠️, Messregel) | – |
+| `camera`/`picking`/`flight` nur gegen COOP/COEP | laufen über `SERVERS` (4183 SAB und 4184 Transfer); Berichte je Transport (`*-<browser>-<transport>.json`); `COI_SERVERS` entfernt; MS1-Aussage „jede Spec auch ohne COOP/COEP“ gilt wieder | `test/e2e/{camera,picking,flight}.spec.ts` |
+| Sonnen-Azimut in render gegenüber dem Format gespiegelt | `sunDirection` folgt der Formatsemantik (0° = +z, 90° = +x), Test über formats → ClientMap → render (DECISIONS 19) | `packages/render/src/renderer.ts`, `packages/client/test/map.test.ts`, `packages/render/test/terrain-renderer.test.ts` |
+| Testebene als Sonderpfad in 22 Dateien | generierte Karte `createTestPlaneMap` überall; `GroundPass`, `GroundPicker`, `FlatTerrain`, `World.testPlane`/`MT_TEST_PLANE`, `simIdOf`, `map === null`-Zweige entfernt; Kartengröße überall Zweierpotenz 64..4096; Goldens `cubes-*` neu (nur Identität) (DECISIONS 18) | `packages/{formats,sim,sim-host,client,render}/src`, `apps/game/src`, `tools/headless/src` |
+| Picking-E2E zählte Picker-Misses still | Misses getrennt (beide / nur Picker / nur Referenz), die zwei Inkonsistenz-Arten gegated | `test/e2e/picking.spec.ts` |
+| LOD 0 im Flug nie gezeichnet | Flug beginnt 20 WU über einem Einheiten-Cluster; `every(n > 0)` gegated | `test/e2e/flight.spec.ts` |
+| Fest verdrahtete 58-FPS-Schwelle, WebKit-Wert lastbedingt | rAF-Leerlauftakt je Engine vor dem Flug (2 s), Kriterium ≥ 60 FPS oder ≥ 0,95 × Leerlauftakt; kompletter E2E-Lauf neu (e2e.json vollständig) | `test/e2e/flight.spec.ts`, `test-results/flight-*.json` |
+| Snapshot ohne Identität | Sitzungs-Snapshot mit Kopf (simId, layoutHash, Länge), `SnapshotError` bei fremder Karte (DECISIONS 20) | `packages/sim-host/src/core.ts`, `packages/sim-host/test/map.test.ts` |
+| Determinismus-Lint mit Lücken | unäres `+` (außer auf Zahlliteralen), `JSON.parse` nur in `formats/src/rtsmap.ts` (`jsonParseAllow`), Aliase/berechneter Zugriff auf `globalThis`/`self`/`window`/`global`, Node-Module `perf_hooks`/`crypto`/`timers`/… verboten; 20 neue RuleTester-Fälle | `tools/eslint-plugin-sim/src/rules/determinism.js`, `…/test/determinism.test.ts`, `eslint.config.js` |
+| 1.024 WU ungetestet | Sim (Ränder/Ecken, y == Höhe, Snapshot/Restore, Eckklemmung), Host (init-Bytes, simId, Replay, Restore), Client (Chunk-Grenzen == render, Picking an Chunk-Grenzen/Rand) | `packages/sim/test/terrain.test.ts`, `packages/sim-host/test/map.test.ts`, `packages/client/test/{map,terrain-picker}.test.ts` |
+| Chunk-Schranken doppelt implementiert | `ClientMap` nutzt `render.computeChunkBounds`; `MAP_CHUNK_WU = TERRAIN_PATCH_WU` | `packages/client/src/map.ts` |
+| Zwei UTF-8-Codecs | strikter Codec in `@faf/protocol` (`encodeUtf8`/`decodeUtf8`), formats re-exportiert, Log-Kopf nutzt ihn (DECISIONS 21) | `packages/protocol/src/utf8.ts` |
+| Tote Globals-Globs des Headless-Harness | Globs korrigiert (`tools/headless/src/harness/page/**`, `…/worker-entry.ts`); Test: jeder Glob eines Globals-Blocks trifft ≥ 1 Datei | `eslint.config.js`, `tools/eslint-plugin-sim/test/config.test.ts` |
+
+Keiner der Befunde wurde verworfen.
+
+### Abweichungen MS2 (konsolidiert; Details in den Fragmenten)
+
+- **E2E-Ports 4183/4184** statt 4173/4174 (fremder Server auf 4173), per `FAF_E2E_PORT` verschiebbar (Runde 1, s. u.).
+- **Messung ≠ Gate:** Ladezeiten, FPS, Main-JS, Restore nur mit `FAF_PERF_GATE=1` gegated (DECISIONS 16).
+- **FPS-Kriterium** als „≥ 60 FPS oder ≥ 0,95 × rAF-Leerlauftakt der headless Engine“ (gemessen, nicht angenommen).
+- **Pointer Lock** in headless Chromium/WebKit nicht verfügbar ⇒ 4 E2E-Tests mit Begründung übersprungen; Firefox
+  prüft Lock, virtuellen Cursor, Klemmung und Freigabe vollständig.
+- **⚠️ Echtes Safari** nicht geprüft (Remote Automation nicht freigegeben, Systemeinstellung nicht angefasst).
+- **⚠️ Kein GPU-/iGPU-Runner** (DECISIONS 5); GPU-Zeiten lokal und teils unter Fremdlast (obere Schranke).
+- **Testebene** = generierte Karte (DECISIONS 18); Rendering ohne gesetzte Karte zeichnet keinen Boden mehr.
+- **Licht-Konvention** = Formatsemantik (DECISIONS 19).
+- Weitere Paket-Abweichungen: [ms2-p0](status/ms2-p0-formats.md), [ms2-p1](status/ms2-p1-render.md),
+  [ms2-p2](status/ms2-p2-sim.md), [ms2-p3](status/ms2-p3-client.md), [ms2-p4](status/ms2-p4-game.md),
+  [ms2-p5](status/ms2-p5-spk4.md).
+
+### Offene Punkte nach MS2
+
+- Echtes Safari und iGPU/Referenz-Laptop nachmessen (SPK4-GPU-Ziel ≤ 12 ms für Medium unbelegt, DECISIONS 17).
+- FPS-Messung ohne Fremdlast wiederholen (`FAF_PERF_GATE=1 pnpm test:e2e`), WebKit lag unter Last bei 31–40 Hz rAF.
+- Transfer-Transport allokiert weiterhin pro Frame (nur SAB allokationsfrei); gemessen jetzt auch im Flug mit
+  2.000 Einheiten: Main-JS p95 ≤ 1,0 ms (1-ms-Uhr), Draws max 4 wie im SAB-Lauf, LOD-Verteilung gleichwertig.
+- Setons (1.024 WU) als nächste Standardkarte: Sim/Host/Client sind auf 1.024 WU getestet, Terrain-LOD (M11) folgt MS14.
+- **Preset-Werte aus SPK4** (Medium = Blob-Schatten + HDR/Bloom, CSM ab High) sind entschieden, aber noch nicht in
+  `packages/render/src/presets.ts` eingetragen (dort noch `shadows: 'none'`, HDR/Bloom aus) – mit MS8/MS14. Terrain- und
+  Unit-Pass brauchen dafür Schatten-Eingänge; Caster-Bündelung bzw. `WEBGL_multi_draw` gegen das Draw-Wachstum (MS14).
+- **Nur eine Terrain-LOD-Stufe** (32-WU-Patches); echte CDLOD-Stufen/Morphing mit M11 in MS14.
+- **Kein Pathing:** Einheiten fahren geradeaus, gleiten am Tiefwasser entlang und geben nach 20 Ticks ohne Fortschritt
+  auf; die Furt finden sie nicht selbst (HPA\*/Flow-Fields in MS3, vorher SPK2/SPK3). Keine Neigungsgrenze, kein Tilt –
+  Klippen sind befahrbar.
+- Karten-Props (`core:rock_01/02`) werden weder simuliert noch gerendert (Blueprints ab MS8); KTX2-Splat (Codec 1)
+  wird nur durchgereicht, Dekodierung ab MS9.
+- `deploy/nginx.conf` mit den neuen MIME-Regeln (`.rtsmap`, `.glb`) nicht per `nginx -t` nachgeprüft (Image lokal
+  nicht vorhanden).
+- MS1-Logs (v1) sind lesbar, wegen `SIM_BUILD faf-sim/ms2.0` aber nicht mehr abspielbar (erwartet).
+- Offene Spikes: SPK2 (vor MS3), SPK3 (MS3), SPK7 (MS6).
+
+### Integrations-Verifikation Runde 1 (2026-09-29, vor dem Review)
+
+Alle Prüfbefehle streng sequenziell gelaufen: `pnpm install --frozen-lockfile`, `typecheck`, `lint` (inkl.
+dependency-cruiser), `test` (89 Dateien / 694 Tests), `assets-pipeline check`, `headless goldens` (4 Szenarien inkl.
+`ridge-1000-move`/`ridge-water-block`), `test:xengine` (80 Hash-Ketten bitgleich), `bench` (MS2-Sim-Tick p95 ≤ 0,6 ms
+auf hollow-ridge), `render smoke` (Chromium/Firefox/WebKit OK), `test:e2e` (91 bestanden, 2 übersprungen:
+Pointer-Lock im Vollbild ist im headless Chromium/WebKit nicht verfügbar – absichtlicher `test.skip`),
+`bench:spk4 -- --quick` (Exit 0).
+
+**Abweichung E2E-Ports:** Die Playwright-Server liegen jetzt standardmäßig auf **4183** (COOP/COEP) und **4184**
+(ohne), überschreibbar mit `FAF_E2E_PORT=<n>` (zweiter Server `n + 1`); zentral in `test/e2e/support/ports.ts`, von
+`playwright.config.ts` und allen Specs genutzt (keine hartkodierten URLs mehr). Grund: 4173 ist der
+Vite-Preview-Standardport und war auf der Entwicklungsmaschine durch einen fremden Server (`127.0.0.1:4173`) belegt;
+unser Dual-Stack-Server hätte zwar gebunden, Browser hätten je nach IPv4/IPv6-Auflösung aber den fremden Server
+erwischt. `serve.mjs` selbst behält Default 4173 für den manuellen Start.
+
+**SPK4 quick** lief unter GPU-Fremdlast (paralleler MLX-Job des Nutzers, im Bericht als `CONTENDED` markiert):
+Main-JS p95 0,22 ms (`ms2`) / 0,47 ms (`full`), Draws 25 / 90 innerhalb der Grenzen; GPU p95 17,9 / 158 ms über dem
+12-ms-Budget – unter Fremdlast nicht aussagekräftig, Budgets werden laut DECISIONS 5 nur gemessen, nicht lokal gegated.
+Unkontendierte Wiederholung (Vollmodus wartet auf Fremdlast) bzw. Referenzhardware bleibt offen.
+
+### Integrations-Verifikation nach dem Review (2026-09-29)
+
+Alle Prüfbefehle streng sequenziell erneut gelaufen, ohne dass Code-Fixes nötig waren: `install --frozen-lockfile`,
+`typecheck`, `lint` (337 Module, keine Abhängigkeitsverstöße), `test` (89 Dateien / 724 Tests), `assets-pipeline
+check`, `headless goldens` (4/4 gleich), `test:xengine` (80 Hash-Ketten bitgleich), `bench` (MS2-Sim-Tick p95
+0,48 ms, Firefox kalt), `render smoke` (Chromium/Firefox/WebKit OK, 0/10.000 Probe-Abweichungen), `test:e2e`
+(107 bestanden, 4 übersprungen: Pointer-Lock im Vollbild in headless Chromium/WebKit, je SAB und Transfer),
+`bench:spk4 -- --quick` (Exit 0; Draws 25/90, Main-JS p95 0,23/0,45 ms; GPU p95 86/230 ms unter Fremdlast
+durch parallelen MLX-Job, als `CONTENDED` markiert – laut DECISIONS 5 nicht gegated).
