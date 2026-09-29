@@ -25,7 +25,8 @@ Strg+Mittelklick = Rotation (Pos1 = zurück), H = eigener Start (auf Setons SW-M
 Landbrücke), Alt+Enter = Vollbild, **P = Pause**,
 N = Einzelschritt, **^ / ` / F1 = Dev-Konsole** (`help`, `spawn`, `kill`, `pause`, `resume`, `step`, `speed`, `hash`,
 `budget`, `export`, `map`, `camera`, `preset`).
-URL-Parameter: `?map=setons|hollow-ridge|testplane` (Standard `setons`; `hollow-ridge` = 512-WU-Karte aus MS2,
+URL-Parameter: `?map=setons|tessera|braidwater|hollow-ridge|testplane` (Standard `setons`; `tessera` und
+`braidwater` = 1v1-Skirmish-Karten mit 512 WU, siehe STATUS „1v1-Karten“; `hollow-ridge` = 512-WU-Karte aus MS2,
 `testplane` = flache MS1-Ebene), `?preset=low|medium|high|ultra`, `?units=<n>` (Flugtest über das Land der ganzen
 Karte), `?assets=raw`, `?cubes=<n>` (eigene Würfel am eigenen Start), `?enemy=<n>` (Gegner-Würfel), `?seed=<u32>`,
 `?transport=sab|transfer`, `?autostart=0`. Ohne Pathing (MS3) fahren Einheiten geradeaus: auf Setons führt Mid ↔ Mid

@@ -119,3 +119,25 @@ describe('flight-test clusters (?units=)', () => {
     expect(() => flightClusters(flooded, 10, [0])).toThrow(/no land/);
   });
 });
+
+describe('start layout on Braidwater (?map=braidwater)', () => {
+  const braidwater = ClientMap.fromBytes(new Uint8Array(readFileSync(resolve(repo, 'content/maps/braidwater.rtsmap'))));
+
+  it('own = army 0 (south base plateau), enemy = army 1 (north, across the river); spawn discs are dry land, the river is not', () => {
+    const l = startLayout(braidwater, 0, 1);
+    expect([l.own.x / RAW_PER_WU, l.own.z / RAW_PER_WU]).toEqual([154, 446]);
+    expect([l.enemy.x / RAW_PER_WU, l.enemy.z / RAW_PER_WU]).toEqual([154, 66]);
+    expect(discIsLand(braidwater, 154, 446, spawnSpreadWU(1000))).toBe(true);
+    expect(discIsLand(braidwater, 154, 66, spawnSpreadWU(1000))).toBe(true);
+    // Middle river section and estuary are deep water; the west ford is not.
+    expect(discIsLand(braidwater, 208, 256, 3)).toBe(false);
+    expect(discIsLand(braidwater, 490, 256, 3)).toBe(false);
+    expect(discIsLand(braidwater, 80, 256, 3)).toBe(true);
+  });
+
+  it('flight clusters find land on Braidwater', () => {
+    const cl = flightClusters(braidwater, 2000, [0, 1], 1);
+    expect(cl.reduce((n, c) => n + c.count, 0)).toBe(2000);
+    for (const c of cl) expect(discIsLand(braidwater, c.x / RAW_PER_WU, c.z / RAW_PER_WU, c.spread / RAW_PER_WU)).toBe(true);
+  });
+});

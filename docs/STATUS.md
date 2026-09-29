@@ -582,3 +582,44 @@ Chromium 60 FPS, Firefox 120/108, WebKit 52/58 FPS; Main-JS p95 ≤ 0,5 ms (≤ 
 - Wracks/Bäume/Unterwasser-Wracks und sichtbare Fels-Props ab MS8; strategische Spot-Symbole (Overlay) ab MS8/MS14.
 - Schelf-Begehbarkeit und Neigungsgrenze (Klippen aktuell befahrbar) mit MS3 entscheiden.
 - Messungen auf iGPU/echtem Safari und unbelastete `FAF_PERF_GATE=1`-Wiederholung stehen aus.
+
+## 1v1-Karten (Skirmish-Kartenset, 2026-09-29)
+
+Erste zwei Karten des Skirmish-Kartensets für M8/MS9 (PLAN MS9: „1v1 auf 3 Karten“, gespielt 256–512 WU). Beide sind
+**eigene Entwürfe** (kein Nachbau, keine FA-Namen), aufgebaut wie Setons: Layout-Spezifikation →
+Generator (in `pnpm maps` registriert) → Quellen (Heightmap 513², Splat 2 × RGBA8, `markers.json`) → `mapc` →
+`.rtsmap`; Kartenvertrag in Vitest, E2E-Spec wie `setons.spec.ts`. Aufruf per `?map=tessera` bzw. `?map=braidwater`;
+Standardkarte bleibt Setons. Beide 512 WU (Diagonale 724 WU → Hochofen-Gate 200 WU ≤ 40 % erfüllt, ≥ 354 WU laut
+DECISIONS Roster 1).
+
+| | **Tessera** (`tessera`, „Scherbenmulde“) | **Braidwater** (`braidwater`, „Zopfstrom“) |
+|---|---|---|
+| Charakter | offene Landkarte für Einsteiger, D2-symmetrisch (exakt punktsymmetrisch + Layout an beiden Diagonalen) | taktische Flusskarte, exakt spiegelsymmetrisch an z = 256 |
+| Spec / Generator | `content/maps/src/tessera.spec.md`, `packages/formats/scripts/mapgen-tessera.ts` | `content/maps/src/braidwater.spec.md`, `packages/formats/scripts/mapgen-braidwater.ts` |
+| Datei | `tessera.rtsmap` 726.732 B, SHA-256 `f80e2eef…2865`, **mapSimHash `0x22cb60a8`** | `braidwater.rtsmap` 1.120.112 B, SHA-256 `3b1fcc5b…78ea`, **mapSimHash `0xeeaec694`** |
+| Starts | SW (108/404) gegen NO (404/108), Luftlinie 418,6 WU | S (154/446) gegen N (154/66), Luftlinie 380 WU |
+| Spots / Props | 34 Mass (je 12 sicher, 10 umkämpft), 4 Hydro, 61 Fels-Props (37 in der Mulde) | 36 Mass (je 17, 2 auf der Insel), 5 Hydro, 64 Fels-Props |
+| Gelände | Scherbenmulde mit Mass-Raute, 2 Klippenriegel mit je einer Scharte (26 WU), 4 Felsnasen als Flankentore, Eckmassive NW/SO, 2 Quelltümpel (< 0,5 % Wasser) | Fluss W→O (≈ 13 % Wasser), West-Furt, Hochufer, Zopfinsel mit 2 Inselfurten, Mündungsbecken; Basis-, Wacht-, Hochufer-Plateaus mit Rampen, Kanzeln |
+| Wege | Mitte ≈ 419 WU, über eine Flanke ≈ 509 WU | kurz ≈ 428 WU (West-Furt), lang ≈ 676 WU (Inselfurten) |
+| Tests | `packages/formats/test/tessera.test.ts` (Symmetrie, Spots flach/trocken, Konnektivität Mitte/Flanke, Riegel/Scharten, Weglängen, Range-Gates, Splat, Frische), `test/e2e/tessera.spec.ts` | `packages/formats/test/braidwater.test.ts` (Symmetrie, Wasseranteil, Routen/Furten, Plateaus/Rampen, Artillerie-Positionen, Props, Splat, Frische), `test/e2e/braidwater.spec.ts` |
+
+Zusätzlich: `apps/game/test/loading.test.ts` (Session-Assets beider Karten) und `apps/game/test/content.test.ts`
+(Startlayout/Flugtest auf Braidwater). Beide Karten wurden in je zwei Runden visuell gegen die Spec geprüft
+(Headless-Chromium-Screenshots) und am Splat nachgebessert (Tessera: Wiesen-/Steppenflecken, zerklüftete
+Eckmassiv-Fußlinie ±8 WU; Braidwater: Hochwiese auf den Basisplateaus, Rampen-Fahrspuren, Fels-Saum an
+Plateaukanten, Kiesflecken unter den Spots).
+
+**Abschluss-Verifikation (2026-09-29, sequenziell über `tools/heavy`):** `pnpm maps` ✓ (alle Quellen
+unverändert, Karten bytegleich), `pnpm typecheck` ✓, `pnpm lint` ✓ (343 Module, keine Abhängigkeitsverstöße),
+`pnpm test` 775/777 (91/92 Dateien; rot nur `packages/client/test/assets.test.ts`, siehe unten), `pnpm build` ✓,
+`FAF_E2E_PORT=4383 pnpm test:e2e` ✓ (125 bestanden, 4 übersprungen, 13,1 min; `tessera` und `braidwater` in Chromium,
+Firefox und WebKit, jeweils mit und ohne COOP/COEP).
+
+**Offene Punkte**
+
+- `packages/client/test/assets.test.ts` erwartet eine feste Kartenliste (hollow-ridge + setons) und schlägt mit den
+  beiden neuen Karten im Manifest fehl (2 Tests: Bytes der ersten Karte, Load-Order/Dateiliste). Die Datei liegt in
+  `packages/client` (parallel MS3) und wird im MS3-Zweig bzw. beim Merge angepasst.
+- Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
+- Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
+  fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
