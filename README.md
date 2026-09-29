@@ -62,6 +62,23 @@ Einzelnes Paket testen: `pnpm vitest run packages/fixed`. Einzelnes Paket-Skript
 `IRONFLOW_BUILD_HASH` wird weiter gelesen) oder `git rev-parse --short=12 HEAD`, bei schmutzigem Arbeitsbaum mit
 Zusatz `-d<hash>` (Fallback `dev`). `deploy/nginx.conf` ist die Hosting-Konfiguration (COOP/COEP/CORP, Caching).
 
+## Modelle ansehen
+
+Die Einheiten-Modelle (Kitbash-DSL `@faf/modelkit`, Quellen in `content/models/<fraktion>/`) sind noch nicht ins
+Spiel integriert. Ansehen kann man sie im Model-Viewer:
+
+```sh
+pnpm models          # GLBs + Metadaten → content/models/dist/, Icon-SVGs → content/icons/svg/
+pnpm models:viewer   # Vite-Server, http://localhost:5210/ (oder nächster freier Port); mit Strg+C beenden
+```
+
+Routen: `#/` Galerie, `#/f/<fraktion>` Galerie einer Fraktion, `#/model/<fraktion>/<unit>` Einzelansicht mit
+Teamfarben, Silhouette, Parts-Animation, Drahtgitter und Distanz-Slider (LOD/Icon), `#/compare` Größenvergleich,
+`#/icons` Strategic Icons. Statischer Build: `pnpm --filter @faf/model-viewer build`. Kontaktabzüge und
+Silhouettenblätter erzeugt `tools/heavy pnpm models:shots` (nach `/private/tmp/claude-501/faf-models/<fraktion>/`).
+Kit, Konventionen, Stand und Integrationsplan stehen in [`docs/design/models.md`](docs/design/models.md), die Anleitung für
+Autoren in [`content/models/README.md`](content/models/README.md).
+
 ## Paketstruktur
 
 ```
@@ -76,14 +93,17 @@ packages/
   sim-host/    Worker-Entry (`@faf/sim-host/worker`), Scheduler, CommandSources, Command-Log, Headless-Entry
   render/      WebGL2-RHI, CDLOD-Terrain, Wasser, Decals, Unit-Culling/LOD/Merged-Part, Presets, Context-Loss
   client/      Input/Actions, FA-Kamera, Heightmap-Picking, ClientMap, Asset-Worker, Selection, Command-Builder
+  modelkit/    Kitbash-DSL für Einheiten-Modelle (Primitive, Parts, Materialslots, Auto-LODs, GLB-Export), nur Content-Tooling
 apps/
   game/        Vite-App (Spiel, Dev-Konsole), scripts/serve.mjs (statischer Server für E2E/Hosting-Test)
+  model-viewer/ Model-Viewer (three.js, nur Tool): Galerie, Einzelansicht, Größenvergleich, Icons
 tools/
   eslint-plugin-sim/  eigene ESLint-Regel `sim/determinism`
   headless/           Node-Runner, Browser-Harness (Playwright-Worker), Benchmarks, Replay-Verify
   assets-pipeline/    deterministische Asset-Pipeline (glTF + meshopt + Fallback, Manifest SHA-256)
   render-bench/       SPK4-Benchmark (Render-Last full/fallback/ms2)
-content/              Blueprints, Karten (`maps/src` → `maps/*.rtsmap`), generierte Artefakte (`generated/`)
+  model-shots/        Playwright-Kontaktabzüge, Silhouettenblätter und Einzelbilder der Modelle
+content/              Blueprints, Karten (`maps/src` → `maps/*.rtsmap`), Modelle (`models/<fraktion>/`), Icons (`icons/`), generierte Artefakte (`generated/`)
 test/e2e/             Playwright-Specs (Root-`playwright.config.ts`)
 docs/                 Plan, Entscheidungen, Status (`docs/STATUS.md`, Fragmente in `docs/status/`)
 ```

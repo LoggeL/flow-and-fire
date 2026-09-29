@@ -69,6 +69,8 @@ module.exports = {
     ]),
     onlyWorkspaceDeps('ai-deps', 'ai', ['fixed', 'protocol', 'rules', 'nav', 'blueprints']),
     onlyWorkspaceDeps('render-deps', 'render', ['protocol', 'fixed']),
+    // Kitbash DSL: pure TypeScript, independent of render/sim (only @gltf-transform/core from npm).
+    onlyWorkspaceDeps('modelkit-is-leaf', 'modelkit', []),
     onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
     {
       name: 'render-npm-deps',

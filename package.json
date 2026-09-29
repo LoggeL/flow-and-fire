@@ -18,11 +18,15 @@
     "ci:local": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:xengine && pnpm test:e2e && pnpm bench && pnpm --filter @faf/assets-pipeline run check && pnpm bench:spk4 -- --quick",
     "maps": "pnpm --filter @faf/formats run maps",
     "assets": "pnpm --filter @faf/assets-pipeline run build",
-    "bench:spk4": "pnpm --filter @faf/render-bench run spk4"
+    "bench:spk4": "pnpm --filter @faf/render-bench run spk4",
+    "models": "tsx packages/modelkit/scripts/models.ts",
+    "models:shots": "pnpm --filter @faf/model-shots run shots",
+    "models:viewer": "pnpm --filter @faf/model-viewer dev"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@faf/eslint-plugin-sim": "workspace:*",
+    "@faf/modelkit": "workspace:*",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.0",
     "dependency-cruiser": "^18.4.0",

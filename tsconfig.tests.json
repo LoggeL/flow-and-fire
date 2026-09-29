@@ -25,6 +25,8 @@
     "tools/*/vite.config.ts",
     "tools/*/vite.*.config.ts",
     "test/**/*.ts",
+    "content/models/**/*.ts",
+    "content/icons/**/*.ts",
     "vitest.config.ts",
     "playwright.config.ts"
   ]
