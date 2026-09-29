@@ -1,0 +1,7877 @@
+{
+  "schema": "faf-roster/1",
+  "faction": "core (Varkan-Kompakt)",
+  "generated": "2026-09-29",
+  "language": "de",
+  "sourceOfTruth": "roster.json ist die einzige Quelle für Zahlen, ●/○-Status und Kitbash-Parts; faction.md und roster.md verweisen darauf.",
+  "counts": {
+    "total": 50,
+    "mobile": 23,
+    "structures": 27,
+    "ms9Core": 26,
+    "visuals": 28,
+    "iconGlyphs": 19
+  },
+  "conventions": {
+    "units": "1 WU = 1 FA-Ogrid (20-km-Karte = 1024 WU, DECISIONS „Setons“); Reichweiten/Tempo 1:1 in WU bzw. WU/s",
+    "buildTime": "Sekunden = buildTime / Build Power des Erbauers (FA-Semantik); Upgrade-Dauer = buildTime der Zielstufe / buildPower der Vorstufe",
+    "upgradeCost": "Kosten von Upgrade-Stufen (upgradeFrom gesetzt) sind Upgrade-Kosten, nicht Gesamtkosten (FA-Semantik)",
+    "reload": "reloadS ist ein Vielfaches von 0,1 s (10-Hz-Tick); dps = damage × salvo / reloadS",
+    "dpsBomber": "Bomber-DPS = Salvenschaden / Nachladezeit (theoretisch, pro Anflug)",
+    "balanceGate": "Hart: |devDpsPerMassPct| und |devHpPerMassPct| ≤ 25 (PLAN U3). Ziel (vom Generator erzwungen): Einzelachsen, Produkt (DPS/Mass × HP/Mass) und Pulk-DPS/Mass der Artillerie je ≤ ±15 %; Treffer-bis-Tod-Matrix exakt wie FA.",
+    "productGate": "devProductPct = (dpsPerMass/FA) × (hpPerMass/FA) − 1; bestimmt die Stärke im direkten Gefecht",
+    "pulkModel": "Pulk-DPS/Mass = Schaden × Salve × Ziele / Nachladezeit / Mass, Ziele = π (Splash + 0,5)² / 4 (1 Ziel pro 4 WU², Zielradius 0,5); gilt für Kategorie ARTILLERY",
+    "hitsToKill": "Treffer (Salven) bis zum Tod = ceil(Ziel-HP / Salvenschaden); Pflichtpaare in checks.hitsToKill müssen exakt der FA-Referenz entsprechen",
+    "hpBasis": "Bei Schild-Einheiten (eigene oder FA-Referenz) wird HP+Schild-HP verglichen",
+    "shieldRegen": "regenStartS = Verzögerung nach dem letzten Treffer, bis die Regeneration einsetzt (FA: 3/3/1 s)",
+    "commander": "Vogt: Mass 2000 nominell (nicht baubar), DPS nur Hauptwaffe",
+    "faReference": "dev-only: faReference wird beim Blueprint-Build per Lint entfernt und darf nie in view.json oder i18n landen (faction.md §2.4)",
+    "scale": "Mobil uniform T1 1,0 / T2 1,3 / T3 1,7, bei 1×1-Footprint max. 1,4. Strukturen: xz = Footprint-Kante / Footprint-Kante der niedrigsten Stufe des Visuals (Sockel füllt 100 % des Footprints), y = xz × Höhenfaktor (T1 1,0 / T2 1,2 / T3 1,4) relativ zur Basis.",
+    "techStripes": "Breite 0,10 WU × Maßstab, Abstand 0,10 WU, im hinteren Drittel des Decks; keramikweiß, bei Engineers graphit (#1E1C1B) auf Keramik; Vogt und Mauer ohne Streifen",
+    "visual": "Ein Visual = ein Superset-Mesh pro Rolle (Vereinigung der Parts aller Tech-Stufen nach Part+Material). Jeder Vertex trägt eine Tech-Bitmaske; der Vertex-Shader kollabiert Parts, die für die Instanz-Tech nicht gelten (Skalierung 0). Ein Draw pro (Visual, LOD).",
+    "faSource": "FAForever/spooky-db app/data/index.json (Version 3810), DPS-Formel app/js/dps.js; Stichprobe gegen FAForever/fa develop"
+  },
+  "hotbuildGrid": {
+    "Landwerk": {
+      "Q": "Panzer (Punze/Meißel)",
+      "W": "Artillerie (Kelle/Rinne/Pfanne)",
+      "E": "Engineer (Lehrling/Geselle/Meister)",
+      "R": "Flugabwehr (Sieb/Rüttelsieb/Trommelsieb)",
+      "A": "Späher (Funke)",
+      "S": "Bots (Stichel/Zange/Fallhammer)",
+      "D": "Support (Schürze)",
+      "F": "Präzision (Reißnadel)"
+    },
+    "Luftwerk": {
+      "Q": "Abfangjäger (Turmfalke)",
+      "W": "Bomber (Dohle)",
+      "E": "Gunship (Krähe)",
+      "R": "Jagdbomber (Elster)",
+      "A": "Aufklärer (Lerche)"
+    },
+    "Bau": {
+      "Q": "Zapfstelle",
+      "W": "Glutkessel",
+      "E": "Dampfquelle",
+      "R": "Erzspeicher",
+      "T": "Glutspeicher",
+      "A": "Landwerk",
+      "S": "Luftwerk",
+      "D": "Horcher",
+      "F": "Schirm",
+      "Z": "Riegel",
+      "X": "Rost/Hochrost",
+      "C": "Mauer",
+      "V": "Tiegel/Hochofen"
+    },
+    "rule": "Gleiche Taste = gleiche Rolle über alle Tech-Stufen; mehrfaches Drücken wechselt nur die Tech-Stufe (höchste baubare zuerst). Upgrade-Stufen über das Upgrade-Kommando der Command Card. Das Bau-Menü nutzt die 5. Spalte (T), weil 13 Rollen nicht auf 12 Tasten passen."
+  },
+  "silhouettePairs": {
+    "ms9": [
+      [
+        "core:lnd_t1_tank",
+        "core:lnd_t1_aa"
+      ],
+      [
+        "core:lnd_t1_arty",
+        "core:lnd_t1_aa"
+      ],
+      [
+        "core:lnd_t2_mml",
+        "core:lnd_t2_aa"
+      ],
+      [
+        "core:lnd_t2_tank",
+        "core:lnd_t2_mml"
+      ],
+      [
+        "core:lnd_t1_engineer",
+        "core:lnd_t1_scout"
+      ],
+      [
+        "core:str_t1_pd",
+        "core:str_t1_aa"
+      ],
+      [
+        "core:str_t1_mex",
+        "core:str_t1_pgen"
+      ],
+      [
+        "core:str_t1_pgen",
+        "core:str_t1_estore"
+      ],
+      [
+        "core:str_t1_mstore",
+        "core:str_t1_estore"
+      ]
+    ],
+    "ms14": [
+      [
+        "core:air_t1_bomber",
+        "core:air_t1_fighter"
+      ],
+      [
+        "core:air_t1_fighter",
+        "core:air_t2_fbomber"
+      ],
+      [
+        "core:air_t1_scout",
+        "core:air_t1_bomber"
+      ],
+      [
+        "core:str_t1_radar",
+        "core:str_t2_shield"
+      ],
+      [
+        "core:lnd_t1_scout",
+        "core:lnd_t2_shield"
+      ],
+      [
+        "core:str_t3_arty",
+        "core:str_t3_pgen"
+      ],
+      [
+        "core:str_t3_mex",
+        "core:str_t1_hydro"
+      ]
+    ]
+  },
+  "iconGlyphs": [
+    "aa",
+    "arty",
+    "bomb",
+    "bot",
+    "build",
+    "direct",
+    "energy",
+    "estore",
+    "fac_air",
+    "fac_land",
+    "fbomb",
+    "hydro",
+    "intel",
+    "mass",
+    "mml",
+    "mstore",
+    "sam",
+    "shield",
+    "sniper"
+  ],
+  "visuals": {
+    "v_cmd": {
+      "members": [
+        "core:cmd_commander"
+      ],
+      "supersetParts": 7,
+      "trisEstimate": 256,
+      "parts": {
+        "legs": 1,
+        "hull": 1,
+        "plumb:team": 1,
+        "stack:glow": 1,
+        "bell:team": 1,
+        "barrel": 1,
+        "boom:ceramic": 1
+      }
+    },
+    "v_eng": {
+      "members": [
+        "core:lnd_t1_engineer",
+        "core:lnd_t2_engineer",
+        "core:lnd_t3_engineer"
+      ],
+      "supersetParts": 7,
+      "trisEstimate": 220,
+      "parts": {
+        "hull:ceramic": 1,
+        "tracks": 1,
+        "boiler:team": 1,
+        "boom:copper": 3,
+        "ring:glow": 1
+      }
+    },
+    "v_scout": {
+      "members": [
+        "core:lnd_t1_scout"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 76,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "mast:copper": 1
+      }
+    },
+    "v_bot": {
+      "members": [
+        "core:lnd_t1_bot",
+        "core:lnd_t2_bot",
+        "core:lnd_t3_bot"
+      ],
+      "supersetParts": 8,
+      "trisEstimate": 304,
+      "parts": {
+        "legs": 1,
+        "hull": 2,
+        "bell:team": 2,
+        "barrel": 2,
+        "hull:team": 1
+      }
+    },
+    "v_tank": {
+      "members": [
+        "core:lnd_t1_tank",
+        "core:lnd_t2_tank"
+      ],
+      "supersetParts": 8,
+      "trisEstimate": 236,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "bell:team": 1,
+        "barrel": 2,
+        "barrel:copper": 1,
+        "hull": 2
+      }
+    },
+    "v_arty": {
+      "members": [
+        "core:lnd_t1_arty",
+        "core:lnd_t3_arty"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 152,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "boom": 1,
+        "ladle:team": 1,
+        "hull": 1
+      }
+    },
+    "v_aa": {
+      "members": [
+        "core:lnd_t1_aa",
+        "core:lnd_t2_aa",
+        "core:lnd_t3_aa"
+      ],
+      "supersetParts": 8,
+      "trisEstimate": 188,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "grate": 1,
+        "barrel": 4,
+        "hull": 1
+      }
+    },
+    "v_mml": {
+      "members": [
+        "core:lnd_t2_mml"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 152,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "boiler": 1,
+        "boom": 1,
+        "hull": 1
+      }
+    },
+    "v_shield_mobile": {
+      "members": [
+        "core:lnd_t2_shield"
+      ],
+      "supersetParts": 4,
+      "trisEstimate": 124,
+      "parts": {
+        "hull:team": 1,
+        "tracks": 1,
+        "mast": 1,
+        "ring:team": 1
+      }
+    },
+    "v_sniper": {
+      "members": [
+        "core:lnd_t3_sniper"
+      ],
+      "supersetParts": 4,
+      "trisEstimate": 168,
+      "parts": {
+        "legs": 1,
+        "hull:team": 1,
+        "bell:team": 1,
+        "barrel": 1
+      }
+    },
+    "v_air_scout": {
+      "members": [
+        "core:air_t1_scout"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 52,
+      "parts": {
+        "hull:team": 1,
+        "wing:team": 1,
+        "wing": 1
+      }
+    },
+    "v_fighter": {
+      "members": [
+        "core:air_t1_fighter"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 52,
+      "parts": {
+        "hull": 1,
+        "wing:team": 1,
+        "wing": 1
+      }
+    },
+    "v_bomber": {
+      "members": [
+        "core:air_t1_bomber"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 88,
+      "parts": {
+        "hull": 1,
+        "wing:team": 1,
+        "boiler": 1
+      }
+    },
+    "v_gunship": {
+      "members": [
+        "core:air_t2_gunship"
+      ],
+      "supersetParts": 4,
+      "trisEstimate": 164,
+      "parts": {
+        "ductfan:team": 1,
+        "hull": 1,
+        "bell": 1,
+        "barrel": 1
+      }
+    },
+    "v_fbomber": {
+      "members": [
+        "core:air_t2_fbomber"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 148,
+      "parts": {
+        "hull": 1,
+        "wing:team": 1,
+        "boiler": 2,
+        "wing": 1
+      }
+    },
+    "v_mex": {
+      "members": [
+        "core:str_t1_mex",
+        "core:str_t2_mex",
+        "core:str_t3_mex"
+      ],
+      "supersetParts": 6,
+      "trisEstimate": 204,
+      "parts": {
+        "hull": 3,
+        "ring:team": 1,
+        "stack:glow": 1,
+        "ring": 1
+      }
+    },
+    "v_pgen": {
+      "members": [
+        "core:str_t1_pgen",
+        "core:str_t2_pgen",
+        "core:str_t3_pgen"
+      ],
+      "supersetParts": 7,
+      "trisEstimate": 204,
+      "parts": {
+        "hull": 3,
+        "boiler:team": 1,
+        "stack:glow": 3
+      }
+    },
+    "v_hydro": {
+      "members": [
+        "core:str_t1_hydro"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 148,
+      "parts": {
+        "hull": 1,
+        "ring:team": 1,
+        "stack:glow": 3
+      }
+    },
+    "v_mstore": {
+      "members": [
+        "core:str_t1_mstore"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 84,
+      "parts": {
+        "hull": 2,
+        "hull:team": 1
+      }
+    },
+    "v_estore": {
+      "members": [
+        "core:str_t1_estore"
+      ],
+      "supersetParts": 3,
+      "trisEstimate": 124,
+      "parts": {
+        "hull": 1,
+        "boiler:team": 1,
+        "boiler": 1
+      }
+    },
+    "v_fac_land": {
+      "members": [
+        "core:str_t1_fac_land",
+        "core:str_t2_fac_land",
+        "core:str_t3_fac_land"
+      ],
+      "supersetParts": 9,
+      "trisEstimate": 244,
+      "parts": {
+        "hull": 3,
+        "hull:team": 3,
+        "hull:glow": 1,
+        "stack": 2
+      }
+    },
+    "v_fac_air": {
+      "members": [
+        "core:str_t1_fac_air",
+        "core:str_t2_fac_air"
+      ],
+      "supersetParts": 7,
+      "trisEstimate": 212,
+      "parts": {
+        "hull": 1,
+        "hull:team": 3,
+        "ring": 1,
+        "hull:glow": 1,
+        "stack": 1
+      }
+    },
+    "v_pd": {
+      "members": [
+        "core:str_t1_pd",
+        "core:str_t2_pd"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 160,
+      "parts": {
+        "hull": 2,
+        "bell:team": 1,
+        "barrel": 2
+      }
+    },
+    "v_aa_struct": {
+      "members": [
+        "core:str_t1_aa",
+        "core:str_t2_aa",
+        "core:str_t3_sam"
+      ],
+      "supersetParts": 7,
+      "trisEstimate": 164,
+      "parts": {
+        "hull": 2,
+        "grate:team": 1,
+        "barrel": 4
+      }
+    },
+    "v_wall": {
+      "members": [
+        "core:str_t1_wall"
+      ],
+      "supersetParts": 1,
+      "trisEstimate": 28,
+      "parts": {
+        "hull:team": 1
+      }
+    },
+    "v_radar": {
+      "members": [
+        "core:str_t1_radar",
+        "core:str_t2_radar",
+        "core:str_t3_radar"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 100,
+      "parts": {
+        "hull": 1,
+        "mast": 2,
+        "wing:team": 1,
+        "wing": 1
+      }
+    },
+    "v_shield": {
+      "members": [
+        "core:str_t2_shield",
+        "core:str_t3_shield"
+      ],
+      "supersetParts": 6,
+      "trisEstimate": 224,
+      "parts": {
+        "hull": 2,
+        "boiler": 1,
+        "mast": 1,
+        "ring:team": 1,
+        "ring": 1
+      }
+    },
+    "v_arty_struct": {
+      "members": [
+        "core:str_t2_arty",
+        "core:str_t3_arty"
+      ],
+      "supersetParts": 5,
+      "trisEstimate": 152,
+      "parts": {
+        "hull": 2,
+        "boom": 1,
+        "ladle:team": 1,
+        "barrel": 1
+      }
+    }
+  },
+  "checks": {
+    "hitsToKill": [
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_bot",
+        "salvoDamage": 100,
+        "targetHp": 70,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0106",
+          "salvoDamage": 100,
+          "targetHp": 60,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_tank",
+        "salvoDamage": 100,
+        "targetHp": 300,
+        "hits": 3,
+        "ttkS": 2.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0201",
+          "salvoDamage": 100,
+          "targetHp": 300,
+          "hits": 3,
+          "ttkS": 2.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_arty",
+        "salvoDamage": 100,
+        "targetHp": 210,
+        "hits": 3,
+        "ttkS": 2.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0103",
+          "salvoDamage": 100,
+          "targetHp": 205,
+          "hits": 3,
+          "ttkS": 2.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_aa",
+        "salvoDamage": 100,
+        "targetHp": 310,
+        "hits": 4,
+        "ttkS": 3.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0104",
+          "salvoDamage": 100,
+          "targetHp": 310,
+          "hits": 4,
+          "ttkS": 3.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_engineer",
+        "salvoDamage": 100,
+        "targetHp": 160,
+        "hits": 2,
+        "ttkS": 1.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0105",
+          "salvoDamage": 100,
+          "targetHp": 150,
+          "hits": 2,
+          "ttkS": 1.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:cmd_commander",
+        "weapon": "core:wpn_reeve_cannon",
+        "target": "core:lnd_t1_scout",
+        "salvoDamage": 100,
+        "targetHp": 32,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEL0001",
+          "target": "UEL0101",
+          "salvoDamage": 100,
+          "targetHp": 29,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t1_pd",
+        "weapon": "core:wpn_bolt_cannon_t1",
+        "target": "core:lnd_t1_tank",
+        "salvoDamage": 50,
+        "targetHp": 300,
+        "hits": 6,
+        "ttkS": 1.5,
+        "fa": {
+          "attacker": "UEB2101",
+          "target": "UEL0201",
+          "salvoDamage": 50,
+          "targetHp": 300,
+          "hits": 6,
+          "ttkS": 1.5
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t1_pd",
+        "weapon": "core:wpn_bolt_cannon_t1",
+        "target": "core:lnd_t1_bot",
+        "salvoDamage": 50,
+        "targetHp": 70,
+        "hits": 2,
+        "ttkS": 0.3,
+        "fa": {
+          "attacker": "UEB2101",
+          "target": "UEL0106",
+          "salvoDamage": 50,
+          "targetHp": 60,
+          "hits": 2,
+          "ttkS": 0.3
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t1_arty",
+        "weapon": "core:wpn_slag_mortar_t1",
+        "target": "core:lnd_t1_bot",
+        "salvoDamage": 100,
+        "targetHp": 70,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEL0103",
+          "target": "UEL0106",
+          "salvoDamage": 100,
+          "targetHp": 60,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t1_arty",
+        "weapon": "core:wpn_slag_mortar_t1",
+        "target": "core:lnd_t1_engineer",
+        "salvoDamage": 100,
+        "targetHp": 160,
+        "hits": 2,
+        "ttkS": 9.0,
+        "fa": {
+          "attacker": "UEL0103",
+          "target": "UEL0105",
+          "salvoDamage": 100,
+          "targetHp": 150,
+          "hits": 2,
+          "ttkS": 8.3
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t1_arty",
+        "weapon": "core:wpn_slag_mortar_t1",
+        "target": "core:lnd_t1_tank",
+        "salvoDamage": 100,
+        "targetHp": 300,
+        "hits": 3,
+        "ttkS": 18.0,
+        "fa": {
+          "attacker": "UEL0103",
+          "target": "UEL0201",
+          "salvoDamage": 100,
+          "targetHp": 300,
+          "hits": 3,
+          "ttkS": 16.6
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t2_tank",
+        "weapon": "core:wpn_cannon_t2",
+        "target": "core:lnd_t1_bot",
+        "salvoDamage": 70,
+        "targetHp": 70,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEL0202",
+          "target": "UEL0106",
+          "salvoDamage": 70,
+          "targetHp": 60,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t2_tank",
+        "weapon": "core:wpn_cannon_t2",
+        "target": "core:lnd_t1_tank",
+        "salvoDamage": 70,
+        "targetHp": 300,
+        "hits": 5,
+        "ttkS": 5.2,
+        "fa": {
+          "attacker": "UEL0202",
+          "target": "UEL0201",
+          "salvoDamage": 70,
+          "targetHp": 300,
+          "hits": 5,
+          "ttkS": 5.2
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:lnd_t2_mml",
+        "weapon": "core:wpn_runner_missile_t2",
+        "target": "core:str_t2_pd",
+        "salvoDamage": 600,
+        "targetHp": 2400,
+        "hits": 4,
+        "ttkS": 30.0,
+        "fa": {
+          "attacker": "UEL0111",
+          "target": "UEB2301",
+          "salvoDamage": 600,
+          "targetHp": 2250,
+          "hits": 4,
+          "ttkS": 30.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t2_arty",
+        "weapon": "core:wpn_crucible_shell_t2",
+        "target": "core:str_t2_mex",
+        "salvoDamage": 2100,
+        "targetHp": 2100,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEB2303",
+          "target": "UEB1202",
+          "salvoDamage": 2000,
+          "targetHp": 2000,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t2_arty",
+        "weapon": "core:wpn_crucible_shell_t2",
+        "target": "core:str_t1_pd",
+        "salvoDamage": 2100,
+        "targetHp": 1350,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEB2303",
+          "target": "UEB2101",
+          "salvoDamage": 2000,
+          "targetHp": 1300,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t2_arty",
+        "weapon": "core:wpn_crucible_shell_t2",
+        "target": "core:str_t2_pgen",
+        "salvoDamage": 2100,
+        "targetHp": 2600,
+        "hits": 2,
+        "ttkS": 21.0,
+        "fa": {
+          "attacker": "UEB2303",
+          "target": "UEB1201",
+          "salvoDamage": 2000,
+          "targetHp": 2500,
+          "hits": 2,
+          "ttkS": 20.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t1_aa",
+        "weapon": "core:wpn_grate_aa_t1",
+        "target": "core:air_t1_scout",
+        "salvoDamage": 40,
+        "targetHp": 40,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEB2104",
+          "target": "UEA0101",
+          "salvoDamage": 46,
+          "targetHp": 35,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t3_sam",
+        "weapon": "core:wpn_high_grate_sam_t3",
+        "target": "core:air_t2_gunship",
+        "salvoDamage": 1200,
+        "targetHp": 760,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEB2304",
+          "target": "UEA0203",
+          "salvoDamage": 1200,
+          "targetHp": 700,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      },
+      {
+        "attacker": "core:str_t3_sam",
+        "weapon": "core:wpn_high_grate_sam_t3",
+        "target": "core:air_t2_fbomber",
+        "salvoDamage": 1200,
+        "targetHp": 1150,
+        "hits": 1,
+        "ttkS": 0.0,
+        "fa": {
+          "attacker": "UEB2304",
+          "target": "DEA0202",
+          "salvoDamage": 1200,
+          "targetHp": 1200,
+          "hits": 1,
+          "ttkS": 0.0
+        },
+        "match": true
+      }
+    ],
+    "shieldBreak": [
+      {
+        "attacker": "core:str_t2_arty",
+        "target": "core:str_t2_shield",
+        "shots": 59,
+        "timeS": 1218.0,
+        "faShots": 55,
+        "faTimeS": 1080.0,
+        "note": "Einzelner Schütze; FA-Waffe gegen FA-Schild-HP mit gleicher Regeneration/Verzögerung"
+      },
+      {
+        "attacker": "core:str_t3_arty",
+        "target": "core:str_t2_shield",
+        "shots": 2,
+        "timeS": 15.0,
+        "faShots": 2,
+        "faTimeS": 10.0,
+        "note": "Einzelner Schütze; FA-Waffe gegen FA-Schild-HP mit gleicher Regeneration/Verzögerung"
+      },
+      {
+        "attacker": "core:str_t3_arty",
+        "target": "core:str_t3_shield",
+        "shots": 5,
+        "timeS": 60.0,
+        "faShots": 4,
+        "faTimeS": 30.0,
+        "note": "Einzelner Schütze; FA-Waffe gegen FA-Schild-HP mit gleicher Regeneration/Verzögerung"
+      },
+      {
+        "attacker": "core:lnd_t3_arty",
+        "target": "core:str_t2_shield",
+        "shots": null,
+        "timeS": null,
+        "faShots": null,
+        "faTimeS": null,
+        "note": "Einzelner Schütze; FA-Waffe gegen FA-Schild-HP mit gleicher Regeneration/Verzögerung"
+      }
+    ]
+  },
+  "units": [
+    {
+      "id": "core:cmd_commander",
+      "name": {
+        "de": "Vogt",
+        "en": "Reeve"
+      },
+      "role": {
+        "de": "Kommandant",
+        "en": "Commander"
+      },
+      "tech": 0,
+      "group": "cmd",
+      "visual": "v_cmd",
+      "ms9Core": true,
+      "msFirst": "MS4",
+      "msNote": "MS4 Bauen ohne Waffe; MS5 Waffe + Lotbruch; MS6 Abstich (U8)",
+      "faReference": {
+        "devOnly": true,
+        "role": "Armored Command Unit (ACU)",
+        "bp": "UEL0001",
+        "crossCheckBp": "URL0001"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "COMMAND",
+        "ENGINEER",
+        "DIRECTFIRE",
+        "RECLAIM",
+        "REPAIR",
+        "UNIQUE"
+      ],
+      "buildableBy": null,
+      "economy": {
+        "mass": 2000,
+        "energy": 5000000,
+        "buildTime": 6000000,
+        "buildPower": 10,
+        "massPerSec": 1,
+        "energyPerSec": 20,
+        "storageMass": 650,
+        "storageEnergy": 3900
+      },
+      "health": {
+        "max": 12000,
+        "regenPerSec": 10
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_reeve_cannon",
+          "type": "Direktfeuer-Kanone",
+          "damage": 100,
+          "salvo": 1,
+          "reloadS": 1.0,
+          "dps": 100.0,
+          "rangeMin": 1,
+          "range": 22,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        },
+        {
+          "ref": "core:wpn_reeve_tapshot",
+          "type": "Abstich (Overcharge, manuell/auto)",
+          "damage": 15000,
+          "salvo": 1,
+          "reloadS": 3.3,
+          "dps": 4545.45,
+          "range": 22,
+          "projectile": "linear",
+          "muzzleVelocity": 25,
+          "splash": 2.5,
+          "layers": [
+            "land"
+          ],
+          "notes": "FAF-Formel (OverchargeProjectile/OverchargeShared): Schaden = clamp(max. HP der mobilen Nicht-Vogt-Einheiten im Umkreis 2,7 WU [ohne Ziel: 1250], 1250, min(15000, 0,9 x Vorrat / 6)); Drain = 6 x tatsächlicher Schaden. Unter 7500 E Vorrat: Schaden = 0,9 x Vorrat / 6. Gegen Strukturen fix 800, gegen Vogt fix 400. Feuern erst ab 7500 E Vorrat (> Grundspeicher 3900 E => braucht Glutspeicher). Kosten: gegen Punze 7500 E, gegen Meißel 9600 E; mit 1 Glutspeicher und +120 E/s ≈ 1 Abstich pro 60 s (FA-Relation). Nicht in DPS/Mass gewertet."
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 1.7,
+        "turnRateDeg": 90,
+        "accel": 2.0,
+        "sizeClass": 2,
+        "footprint": [
+          2,
+          2
+        ]
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [
+          "auto_tapshot (MS10, C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_plumb_break",
+          "inner": {
+            "damage": 2000,
+            "radius": 30
+          },
+          "outer": {
+            "damage": 500,
+            "radius": 40
+          },
+          "note": "Lotbruch, Kamera-Shake X4, FA-Relation 1:1"
+        },
+        "notes": "Einzigartig, Tod = Niederlage (U1/A4). Baut alle T1-Strukturen. Regeneration 10 HP/s. Wrack offen (faction.md §10.2 Nr. 3)."
+      },
+      "hotbuild": null,
+      "icon": "cmd_commander",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "hull",
+            "anim": "yaw",
+            "note": "torso"
+          },
+          {
+            "part": "plumb",
+            "mat": "team",
+            "note": "kopf"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "rueckenschlot"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "note": "rechte_schulter"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch"
+          },
+          {
+            "part": "boom",
+            "mat": "ceramic",
+            "note": "rueckenkran"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 2,
+        "trisEstimate": 256,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Lot-Kopf auf Bot-Beinen, Torso-Wanne mit Schulterplatten (Team), Rücken-Schlot als stärkster Glutpunkt; Glocke mit Rohr auf der rechten Schulter, Keramik-Rückenkran über die linke Schulter (kein Waffen-/Bauarm-Schema). Höhe ≥ 2,4 WU, Schulterbreite ≥ 2,0 WU."
+      },
+      "balance": {
+        "dps": 100.0,
+        "dpsPerMass": 0.05,
+        "hpPerMass": 6.0,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0001",
+          "mass": 2000,
+          "energy": 5000000,
+          "buildTime": 6000000,
+          "hp": 12000,
+          "shieldHp": null,
+          "dps": 100.0,
+          "dpsPerMass": 0.05,
+          "hpPerMass": 6.0,
+          "speed": 1.7,
+          "range": 256
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": 0.0,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_engineer",
+      "name": {
+        "de": "Lehrling",
+        "en": "Prentice"
+      },
+      "role": {
+        "de": "Ingenieur",
+        "en": "Engineer"
+      },
+      "tech": 1,
+      "group": "cmd",
+      "visual": "v_eng",
+      "ms9Core": true,
+      "msFirst": "MS6",
+      "msNote": "U2 (T1) in MS6",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Engineer",
+        "bp": "UEL0105",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ENGINEER",
+        "TECH1",
+        "RECLAIM",
+        "REPAIR"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 52,
+        "energy": 260,
+        "buildTime": 260,
+        "buildPower": 5
+      },
+      "health": {
+        "max": 160
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 1.9,
+        "turnRateDeg": 180,
+        "accel": 3.0,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 18
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Baut T1-Strukturen, Assist, Reclaim, Repair. FA-Engineers sind amphibisch, hier nur land (Marine Post-MVP)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "E"
+      },
+      "icon": "eng_build_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "ceramic"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boiler",
+            "mat": "team",
+            "note": "kessel_bauchband"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "anim": "yaw"
+          },
+          {
+            "part": "ring",
+            "mat": "glow",
+            "anim": "pitch",
+            "note": "emitter"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 172,
+        "techStripes": 1,
+        "techStripeMat": "graphite",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Kurze breite Wanne mit Keramik-Deck, ein diagonaler Kupfer-Kranarm mit Glut-Emitter, liegender Kessel mit teamfarbenem Bauchband; 1 Tech-Streifen graphit auf dem Keramik-Deck."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 3.0769,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0105",
+          "mass": 52,
+          "energy": 260,
+          "buildTime": 260,
+          "hp": 150,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.8846,
+          "speed": 1.9,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 6.7,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_engineer",
+      "name": {
+        "de": "Geselle",
+        "en": "Journeyman"
+      },
+      "role": {
+        "de": "Ingenieur",
+        "en": "Engineer"
+      },
+      "tech": 2,
+      "group": "cmd",
+      "visual": "v_eng",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "U2 T2 als Daten in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Engineer",
+        "bp": "UEL0208",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ENGINEER",
+        "TECH2",
+        "RECLAIM",
+        "REPAIR"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 130,
+        "energy": 650,
+        "buildTime": 650,
+        "buildPower": 13
+      },
+      "health": {
+        "max": 420
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 1.9,
+        "turnRateDeg": 150,
+        "accel": 2.8,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Baut T1+T2-Strukturen (u. a. Zapfstelle II direkt, Glutkessel II, Riegel II, Rost II)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "E"
+      },
+      "icon": "eng_build_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "ceramic"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boiler",
+            "mat": "team",
+            "note": "kessel_bauchband"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "anim": "yaw"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "anim": "yaw",
+            "note": "kurzer_arm"
+          },
+          {
+            "part": "ring",
+            "mat": "glow",
+            "note": "emitter"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 2,
+        "trisEstimate": 196,
+        "techStripes": 2,
+        "techStripeMat": "graphite",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Wie Lehrling, Maßstab 1,3, zwei Kupfer-Kranarme verschiedener Länge, 2 Tech-Streifen graphit."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 3.2308,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0208",
+          "mass": 130,
+          "energy": 650,
+          "buildTime": 650,
+          "hp": 400,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 3.0769,
+          "speed": 1.9,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t3_engineer",
+      "name": {
+        "de": "Meister",
+        "en": "Master"
+      },
+      "role": {
+        "de": "Ingenieur",
+        "en": "Engineer"
+      },
+      "tech": 3,
+      "group": "cmd",
+      "visual": "v_eng",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "Rest U2 (T3-Engineer) in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Engineer",
+        "bp": "UEL0309",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ENGINEER",
+        "TECH3",
+        "RECLAIM",
+        "REPAIR"
+      ],
+      "buildableBy": "FACTORY & LAND & TECH3",
+      "economy": {
+        "mass": 310,
+        "energy": 1550,
+        "buildTime": 1550,
+        "buildPower": 32
+      },
+      "health": {
+        "max": 840
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 1.9,
+        "turnRateDeg": 120,
+        "accel": 2.6,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Baut T1–T3-Strukturen (Hochrost, Hochofen, Glutkessel III, Zapfstelle III)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "E"
+      },
+      "icon": "eng_build_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "ceramic"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boiler",
+            "mat": "team",
+            "note": "kessel_bauchband"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "anim": "yaw"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "anim": "yaw"
+          },
+          {
+            "part": "boom",
+            "mat": "copper",
+            "note": "dritter_arm"
+          },
+          {
+            "part": "ring",
+            "mat": "glow",
+            "note": "emitter"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 2,
+        "trisEstimate": 220,
+        "techStripes": 3,
+        "techStripeMat": "graphite",
+        "scale": {
+          "xz": 1.4,
+          "y": 1.4
+        },
+        "description": "Maßstab 1,4 (Deckel für 1×1-Footprint), drei Kupfer-Kranarme (Anzahl = Tech), 3 Tech-Streifen graphit; dritter Arm statisch (Anim-Limit 2)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 2.7097,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0309",
+          "mass": 312,
+          "energy": 1560,
+          "buildTime": 1560,
+          "hp": 800,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.5641,
+          "speed": 1.9,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.7,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_scout",
+      "name": {
+        "de": "Funke",
+        "en": "Spark"
+      },
+      "role": {
+        "de": "Späher",
+        "en": "Scout"
+      },
+      "tech": 1,
+      "group": "land",
+      "visual": "v_scout",
+      "ms9Core": true,
+      "msFirst": "MS7",
+      "msNote": "U4 T1-Armee in MS7; Radar-Feld wirkt ab MS10 (I3)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Land Scout",
+        "bp": "UEL0101",
+        "crossCheckBp": "URL0101"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "SCOUT",
+        "INTELLIGENCE",
+        "TECH1",
+        "DIRECTFIRE"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 12,
+        "energy": 80,
+        "buildTime": 60
+      },
+      "health": {
+        "max": 32
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_spark_mg_t1",
+          "type": "Rumpf-MG (fester Bugwinkel 90°)",
+          "damage": 4,
+          "salvo": 1,
+          "reloadS": 2.0,
+          "dps": 2.0,
+          "range": 22,
+          "projectile": "linear",
+          "muzzleVelocity": 25,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 4.5,
+        "turnRateDeg": 90,
+        "accel": 4.0,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 26,
+        "radar": 40
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kein Turm (Monopol-Regel); Waffe starr im Rumpf, arcDeg 90."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "A"
+      },
+      "icon": "land_intel_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "mast",
+            "mat": "copper"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 76,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Kleinster Rumpf (Deck teamfarben), hoher dünner Mast ≥ 1,0 × Rumpflänge ohne Kopfteil, Glutnaht an der Spitze."
+      },
+      "balance": {
+        "dps": 2.0,
+        "dpsPerMass": 0.1667,
+        "hpPerMass": 2.6667,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0101",
+          "mass": 12,
+          "energy": 80,
+          "buildTime": 60,
+          "hp": 29,
+          "shieldHp": null,
+          "dps": 2.0,
+          "dpsPerMass": 0.1667,
+          "hpPerMass": 2.4167,
+          "speed": 4.5,
+          "range": 26
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": 10.3,
+        "devProductPct": 10.3,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_bot",
+      "name": {
+        "de": "Stichel",
+        "en": "Graver"
+      },
+      "role": {
+        "de": "Leichter Sturmläufer",
+        "en": "Light Assault Bot"
+      },
+      "tech": 1,
+      "group": "land",
+      "visual": "v_bot",
+      "ms9Core": true,
+      "msFirst": "MS6",
+      "msNote": "erste Fabrik-Einheit im Opening (MS6); U4 abgenommen MS7",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Light Assault Bot",
+        "bp": "UEL0106",
+        "crossCheckBp": "URL0106"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "BOT",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 32,
+        "energy": 130,
+        "buildTime": 130
+      },
+      "health": {
+        "max": 70
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_mg_t1",
+          "type": "Schnellfeuer-MG",
+          "damage": 7,
+          "salvo": 1,
+          "reloadS": 0.3,
+          "dps": 23.33,
+          "range": 14,
+          "projectile": "linear",
+          "muzzleVelocity": 25,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 4.3,
+        "turnRateDeg": 60,
+        "accel": 4.0,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 18
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Raider/Engineer-Jäger: höchste DPS/Mass der T1-Armee, wenig HP."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "S"
+      },
+      "icon": "land_bot_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "hull"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 2,
+        "trisEstimate": 168,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Kleine Wanne auf Beinen, Glocke mit kurzem waagerechtem Rohr."
+      },
+      "balance": {
+        "dps": 23.33,
+        "dpsPerMass": 0.7291,
+        "hpPerMass": 2.1875,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0106",
+          "mass": 30,
+          "energy": 120,
+          "buildTime": 120,
+          "hp": 60,
+          "shieldHp": null,
+          "dps": 23.33,
+          "dpsPerMass": 0.7777,
+          "hpPerMass": 2.0,
+          "speed": 4.2,
+          "range": 14
+        },
+        "devDpsPerMassPct": -6.2,
+        "devHpPerMassPct": 9.4,
+        "devProductPct": 2.5,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_tank",
+      "name": {
+        "de": "Punze",
+        "en": "Punch"
+      },
+      "role": {
+        "de": "Kampfpanzer",
+        "en": "Battle Tank"
+      },
+      "tech": 1,
+      "group": "land",
+      "visual": "v_tank",
+      "ms9Core": true,
+      "msFirst": "MS5",
+      "msNote": "erste Kampfeinheit (Konsole, MS5), Fabrik ab MS6",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Medium Tank",
+        "bp": "UEL0201",
+        "crossCheckBp": "URL0107"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "TANK",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 56,
+        "energy": 280,
+        "buildTime": 300
+      },
+      "health": {
+        "max": 300
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_cannon_t1",
+          "type": "Glockenkanone",
+          "damage": 28,
+          "salvo": 1,
+          "reloadS": 1.2,
+          "dps": 23.33,
+          "range": 18,
+          "projectile": "linear",
+          "muzzleVelocity": 25,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.3,
+        "turnRateDeg": 90,
+        "accel": 2.5,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Linienhalter nach FA-Relation. HP 300 hält die Breakpoints: 3 Vogt-Treffer, 6 Riegel-I-Treffer, 5 Meißel-Salven."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "Q"
+      },
+      "icon": "land_direct_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch"
+          },
+          {
+            "part": "barrel",
+            "mat": "copper",
+            "note": "kupferleitung"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 156,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Gedrungene Wanne 1,0×0,4×1,4 WU auf Ketten, mittige Glocke, Rohr ≈ 65 % der Rumpflänge über den Bug."
+      },
+      "balance": {
+        "dps": 23.33,
+        "dpsPerMass": 0.4166,
+        "hpPerMass": 5.3571,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0201",
+          "mass": 56,
+          "energy": 266,
+          "buildTime": 300,
+          "hp": 300,
+          "shieldHp": null,
+          "dps": 24.0,
+          "dpsPerMass": 0.4286,
+          "hpPerMass": 5.3571,
+          "speed": 3.4,
+          "range": 18
+        },
+        "devDpsPerMassPct": -2.8,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": -2.8,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_arty",
+      "name": {
+        "de": "Kelle",
+        "en": "Ladle"
+      },
+      "role": {
+        "de": "Mobile Artillerie",
+        "en": "Mobile Artillery"
+      },
+      "tech": 1,
+      "group": "land",
+      "visual": "v_arty",
+      "ms9Core": true,
+      "msFirst": "MS7",
+      "msNote": "K2 Ballistik in MS7",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Mobile Light Artillery",
+        "bp": "UEL0103",
+        "crossCheckBp": "URL0103"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 36,
+        "energy": 180,
+        "buildTime": 200
+      },
+      "health": {
+        "max": 210
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_slag_mortar_t1",
+          "type": "Schlackenmörser",
+          "damage": 100,
+          "salvo": 1,
+          "reloadS": 9.0,
+          "dps": 11.11,
+          "rangeMin": 6,
+          "range": 30,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 14,
+          "splash": 1.1,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.7,
+        "turnRateDeg": 90,
+        "accel": 2.2,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 18
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Splash 1,1 statt 1 (FA), dafür langsamer (9,0 s statt 8,3 s). Schaden 100 wie FA: 1 Treffer Stichel, 2 Lehrling, 3 Punze. Glüht nur beim Schuss (0,5 s)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "W"
+      },
+      "icon": "land_arty_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "pitch"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 152,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Lange schmale Wanne, offene Kelle auf kurzem Schwenkarm, Gegengewicht am Heck; keine Glocke, kein waagerechtes Rohr."
+      },
+      "balance": {
+        "dps": 11.11,
+        "dpsPerMass": 0.3086,
+        "hpPerMass": 5.8333,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0103",
+          "mass": 36,
+          "energy": 180,
+          "buildTime": 200,
+          "hp": 205,
+          "shieldHp": null,
+          "dps": 12.05,
+          "dpsPerMass": 0.3347,
+          "hpPerMass": 5.6944,
+          "speed": 2.8,
+          "range": 30
+        },
+        "devDpsPerMassPct": -7.8,
+        "devHpPerMassPct": 2.4,
+        "devProductPct": -5.6,
+        "pulk": {
+          "splash": 1.1,
+          "faSplash": 1,
+          "pulkDpsPerMass": 0.6206,
+          "faPulkDpsPerMass": 0.5914,
+          "devPct": 4.9
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t1_aa",
+      "name": {
+        "de": "Sieb",
+        "en": "Sieve"
+      },
+      "role": {
+        "de": "Mobile Flugabwehr",
+        "en": "Mobile AA"
+      },
+      "tech": 1,
+      "group": "land",
+      "visual": "v_aa",
+      "ms9Core": true,
+      "msFirst": "MS7",
+      "msNote": "U4 in MS7, Wirkung gegen Luft MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Mobile Anti-Air Gun",
+        "bp": "UEL0104",
+        "crossCheckBp": "URL0104"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ANTIAIR",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH1 | TECH2 | TECH3)",
+      "economy": {
+        "mass": 55,
+        "energy": 275,
+        "buildTime": 220
+      },
+      "health": {
+        "max": 310
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_aa_repeater_t1",
+          "type": "Zwillings-Flugabwehrkanone",
+          "damage": 14,
+          "salvo": 2,
+          "reloadS": 1.0,
+          "dps": 28.0,
+          "range": 30,
+          "projectile": "linear (Vorhalt)",
+          "muzzleVelocity": 45,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.3,
+        "turnRateDeg": 80,
+        "accel": 2.5,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "R"
+      },
+      "icon": "land_aa_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "grate",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "note": "senkrecht"
+          },
+          {
+            "part": "barrel",
+            "note": "senkrecht"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 1,
+        "trisEstimate": 112,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Wanne mit Rost-Platte, darauf 2 dünne senkrechte Rohre (≥ 75°) als Kamm quer zur Fahrtrichtung."
+      },
+      "balance": {
+        "dps": 28.0,
+        "dpsPerMass": 0.5091,
+        "hpPerMass": 5.6364,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0104",
+          "mass": 55,
+          "energy": 275,
+          "buildTime": 220,
+          "hp": 310,
+          "shieldHp": null,
+          "dps": 26.0,
+          "dpsPerMass": 0.4727,
+          "hpPerMass": 5.6364,
+          "speed": 3.3,
+          "range": 32
+        },
+        "devDpsPerMassPct": 7.7,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": 7.7,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_tank",
+      "name": {
+        "de": "Meißel",
+        "en": "Chisel"
+      },
+      "role": {
+        "de": "Schwerer Panzer",
+        "en": "Heavy Tank"
+      },
+      "tech": 2,
+      "group": "land",
+      "visual": "v_tank",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "U6 in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Heavy Tank",
+        "bp": "UEL0202",
+        "crossCheckBp": "URL0202"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "TANK",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 200,
+        "energy": 1000,
+        "buildTime": 900
+      },
+      "health": {
+        "max": 1600
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_cannon_t2",
+          "type": "Doppel-Glockenkanone",
+          "damage": 35,
+          "salvo": 2,
+          "reloadS": 1.3,
+          "dps": 53.85,
+          "range": 22,
+          "projectile": "linear",
+          "muzzleVelocity": 30,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.9,
+        "turnRateDeg": 90,
+        "accel": 2.2,
+        "sizeClass": 2,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Rohre am Glocken-Part geparentet (1 animierter Part)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "Q"
+      },
+      "icon": "land_direct_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_l"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_r"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 1,
+        "trisEstimate": 212,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Punze ×1,3, breitere Glocke mit zwei parallelen Rohren, seitliche Schürzenplatten, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 53.85,
+        "dpsPerMass": 0.2692,
+        "hpPerMass": 8.0,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0202",
+          "mass": 198,
+          "energy": 990,
+          "buildTime": 880,
+          "hp": 1500,
+          "shieldHp": null,
+          "dps": 53.85,
+          "dpsPerMass": 0.272,
+          "hpPerMass": 7.5758,
+          "speed": 3.1,
+          "range": 22
+        },
+        "devDpsPerMassPct": -1.0,
+        "devHpPerMassPct": 5.6,
+        "devProductPct": 4.5,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_mml",
+      "name": {
+        "de": "Rinne",
+        "en": "Runner"
+      },
+      "role": {
+        "de": "Raketenwerfer",
+        "en": "Missile Launcher"
+      },
+      "tech": 2,
+      "group": "land",
+      "visual": "v_mml",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "U6 inkl. MML über K11 in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Mobile Missile Launcher",
+        "bp": "UEL0111",
+        "crossCheckBp": "URL0111"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "SILO",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 180,
+        "energy": 1300,
+        "buildTime": 800
+      },
+      "health": {
+        "max": 780
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_runner_missile_t2",
+          "type": "Glutraketen (2er-Salve)",
+          "damage": 300,
+          "salvo": 2,
+          "reloadS": 10.0,
+          "dps": 60.0,
+          "rangeMin": 12,
+          "range": 60,
+          "projectile": "homing (Wenderate, K11)",
+          "muzzleVelocity": 3,
+          "splash": 1.0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.8,
+        "turnRateDeg": 90,
+        "accel": 2.2,
+        "sizeClass": 2,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 18
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Lenkflugkörper mit begrenzter Wenderate (ausweichbar, K11)."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "W"
+      },
+      "icon": "land_mml_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boiler"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw"
+          },
+          {
+            "part": "hull",
+            "anim": "pitch",
+            "note": "raketenkasten"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 152,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Wanne mit liegendem Kessel, ein breiter Raketenkasten 0,5 × 0,25 × 1,1 WU auf Schwenkarm, 50° geneigt (≥ 25° flacher als AA-Rohre, Breite ≥ 2 × AA-Rohr-Ø); kein Rohr."
+      },
+      "balance": {
+        "dps": 60.0,
+        "dpsPerMass": 0.3333,
+        "hpPerMass": 4.3333,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0111",
+          "mass": 180,
+          "energy": 1350,
+          "buildTime": 800,
+          "hp": 825,
+          "shieldHp": null,
+          "dps": 60.0,
+          "dpsPerMass": 0.3333,
+          "hpPerMass": 4.5833,
+          "speed": 2.9,
+          "range": 65
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": -5.5,
+        "devProductPct": -5.5,
+        "pulk": {
+          "splash": 1.0,
+          "faSplash": 1,
+          "pulkDpsPerMass": 0.589,
+          "faPulkDpsPerMass": 0.589,
+          "devPct": 0.0
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_aa",
+      "name": {
+        "de": "Rüttelsieb",
+        "en": "Riddle"
+      },
+      "role": {
+        "de": "Flak",
+        "en": "Flak"
+      },
+      "tech": 2,
+      "group": "land",
+      "visual": "v_aa",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "U6 in MS8, Wirkung/Näherungszünder MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Mobile AA Flak Artillery",
+        "bp": "UEL0205",
+        "crossCheckBp": "URL0205"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ANTIAIR",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 160,
+        "energy": 800,
+        "buildTime": 800
+      },
+      "health": {
+        "max": 1050
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_flak_t2",
+          "type": "Splitterflak",
+          "damage": 70,
+          "salvo": 1,
+          "reloadS": 0.5,
+          "dps": 140.0,
+          "range": 38,
+          "projectile": "linear + Näherungszünder (MS12)",
+          "muzzleVelocity": 20,
+          "splash": 4,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.0,
+        "turnRateDeg": 90,
+        "accel": 2.4,
+        "sizeClass": 2,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele, Splash trifft Pulks."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "R"
+      },
+      "icon": "land_aa_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "grate",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 1,
+        "trisEstimate": 164,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Sieb ×1,3 mit 3 senkrechten Rohren (≥ 75°) und Schürzenplatte, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 140.0,
+        "dpsPerMass": 0.875,
+        "hpPerMass": 6.5625,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0205",
+          "mass": 160,
+          "energy": 800,
+          "buildTime": 800,
+          "hp": 1000,
+          "shieldHp": null,
+          "dps": 144.0,
+          "dpsPerMass": 0.9,
+          "hpPerMass": 6.25,
+          "speed": 3.1,
+          "range": 40
+        },
+        "devDpsPerMassPct": -2.8,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": 2.1,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_shield",
+      "name": {
+        "de": "Schürze",
+        "en": "Apron"
+      },
+      "role": {
+        "de": "Mobiler Schild",
+        "en": "Mobile Shield"
+      },
+      "tech": 2,
+      "group": "land",
+      "visual": "v_shield_mobile",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "Rest U6 (mobiler Schild) mit K10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Mobile Shield Generator",
+        "bp": "UEL0307",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "SHIELD",
+        "DEFENSE",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 220,
+        "energy": 950,
+        "buildTime": 700
+      },
+      "health": {
+        "max": 160
+      },
+      "shield": {
+        "hp": 3200,
+        "radius": 16,
+        "regenPerSec": 50,
+        "regenStartS": 3,
+        "rechargeS": 25,
+        "upkeepEnergyPerSec": 80
+      },
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 3.4,
+        "turnRateDeg": 120,
+        "accel": 2.8,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [
+          "shield (MS13, C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kuppelschild; Energy-Stall schaltet ab (E3). Vergleich HP/Mass über HP+Schild."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "D"
+      },
+      "icon": "land_shield_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "waagerecht"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 1,
+        "trisEstimate": 124,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Wanne mit Mast, waagerechter Ring (Ø ≥ 1,2 × Rumpfbreite) als höchster Punkt; kein Rohr, keine Glocke."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 15.2727,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEL0307",
+          "mass": 220,
+          "energy": 900,
+          "buildTime": 660,
+          "hp": 150,
+          "shieldHp": 3000,
+          "dps": 0.0,
+          "dpsPerMass": null,
+          "hpPerMass": 14.3182,
+          "speed": 3.5,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 6.7,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t2_bot",
+      "name": {
+        "de": "Zange",
+        "en": "Tongs"
+      },
+      "role": {
+        "de": "Sturmläufer",
+        "en": "Assault Bot"
+      },
+      "tech": 2,
+      "group": "land",
+      "visual": "v_bot",
+      "ms9Core": false,
+      "msFirst": "MS14",
+      "msNote": "Roster-Auffüllung auf 45–55 BP (MS14); nicht Teil von U6",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Gatling Bot (FAF)",
+        "bp": "DEL0204",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "BOT",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & LAND & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 190,
+        "energy": 950,
+        "buildTime": 950
+      },
+      "health": {
+        "max": 650
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_gatling_t2",
+          "type": "Glut-Gatling",
+          "damage": 20,
+          "salvo": 1,
+          "reloadS": 0.3,
+          "dps": 66.67,
+          "range": 30,
+          "projectile": "linear",
+          "muzzleVelocity": 28,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.2,
+        "turnRateDeg": 80,
+        "accel": 3.2,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 24
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Sturm-Bot, der Riegel I (RW 26) überreicht; RW 30 statt 34 (FA), 1 Waffe statt 2."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "S"
+      },
+      "icon": "land_bot_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_l"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_r"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 2,
+        "trisEstimate": 224,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Stichel ×1,3 mit Schürzenplatten und 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 66.67,
+        "dpsPerMass": 0.3509,
+        "hpPerMass": 3.4211,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "DEL0204",
+          "mass": 200,
+          "energy": 1000,
+          "buildTime": 1000,
+          "hp": 650,
+          "shieldHp": null,
+          "dps": 69.09,
+          "dpsPerMass": 0.3455,
+          "hpPerMass": 3.25,
+          "speed": 2.9,
+          "range": 34
+        },
+        "devDpsPerMassPct": 1.6,
+        "devHpPerMassPct": 5.3,
+        "devProductPct": 6.9,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t3_bot",
+      "name": {
+        "de": "Fallhammer",
+        "en": "Drophammer"
+      },
+      "role": {
+        "de": "Belagerungsläufer",
+        "en": "Siege Bot"
+      },
+      "tech": 3,
+      "group": "land",
+      "visual": "v_bot",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "U10 T3-Landarmee in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Heavy Assault Bot",
+        "bp": "UEL0303",
+        "crossCheckBp": "URL0303"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "BOT",
+        "TECH3"
+      ],
+      "buildableBy": "FACTORY & LAND & TECH3",
+      "economy": {
+        "mass": 500,
+        "energy": 5000,
+        "buildTime": 2500
+      },
+      "health": {
+        "max": 3200
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_cannon_t3",
+          "type": "Doppel-Glocke, schwer",
+          "damage": 60,
+          "salvo": 2,
+          "reloadS": 0.8,
+          "dps": 150.0,
+          "range": 24,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.3,
+        "turnRateDeg": 100,
+        "accel": 2.6,
+        "sizeClass": 2,
+        "footprint": [
+          2,
+          2
+        ]
+      },
+      "intel": {
+        "vision": 22
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kein Personal-Schild (FA-Referenz hat 700 Schild-HP) – dafür mehr Rumpf-HP; Vergleich über HP+Schild."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "S"
+      },
+      "icon": "land_bot_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 2,
+        "trisEstimate": 248,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.7,
+          "y": 1.7
+        },
+        "description": "Überlange Wanne auf Beinen, Doppelaufbau aus zwei Glocken, 3 Tech-Streifen; kein Schlot (Glut-Monopol)."
+      },
+      "balance": {
+        "dps": 150.0,
+        "dpsPerMass": 0.3,
+        "hpPerMass": 6.4,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEL0303",
+          "mass": 480,
+          "energy": 5250,
+          "buildTime": 2400,
+          "hp": 2400,
+          "shieldHp": 700,
+          "dps": 150.0,
+          "dpsPerMass": 0.3125,
+          "hpPerMass": 6.4583,
+          "speed": 3.8,
+          "range": 24
+        },
+        "devDpsPerMassPct": -4.0,
+        "devHpPerMassPct": -0.9,
+        "devProductPct": -4.9,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t3_arty",
+      "name": {
+        "de": "Pfanne",
+        "en": "Pour Pan"
+      },
+      "role": {
+        "de": "Schwere Artillerie",
+        "en": "Heavy Artillery"
+      },
+      "tech": 3,
+      "group": "land",
+      "visual": "v_arty",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "U10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Mobile Heavy Artillery",
+        "bp": "UEL0304",
+        "crossCheckBp": "URL0304"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "TECH3"
+      ],
+      "buildableBy": "FACTORY & LAND & TECH3",
+      "economy": {
+        "mass": 800,
+        "energy": 8000,
+        "buildTime": 4300
+      },
+      "health": {
+        "max": 1000
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_pour_shell_t3",
+          "type": "Gießgranate",
+          "damage": 700,
+          "salvo": 1,
+          "reloadS": 10.0,
+          "dps": 70.0,
+          "rangeMin": 25,
+          "range": 85,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 24,
+          "splash": 4.4,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.2,
+        "turnRateDeg": 75,
+        "accel": 1.8,
+        "sizeClass": 2,
+        "footprint": [
+          2,
+          2
+        ]
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kein Deploy (FA-Referenz muss sich aufstellen) – ein Mechanik-Sonderfall weniger."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "W"
+      },
+      "icon": "land_arty_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "pitch"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 152,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.7,
+          "y": 1.7
+        },
+        "description": "Kelle ×1,7 auf überlanger Wanne, 3 Tech-Streifen; kein Schlot (Glut-Monopol)."
+      },
+      "balance": {
+        "dps": 70.0,
+        "dpsPerMass": 0.0875,
+        "hpPerMass": 1.25,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEL0304",
+          "mass": 800,
+          "energy": 8000,
+          "buildTime": 4300,
+          "hp": 950,
+          "shieldHp": null,
+          "dps": 75.0,
+          "dpsPerMass": 0.0938,
+          "hpPerMass": 1.1875,
+          "speed": 2.2,
+          "range": 90
+        },
+        "devDpsPerMassPct": -6.7,
+        "devHpPerMassPct": 5.3,
+        "devProductPct": -1.8,
+        "pulk": {
+          "splash": 4.4,
+          "faSplash": 4,
+          "pulkDpsPerMass": 1.65,
+          "faPulkDpsPerMass": 1.491,
+          "devPct": 10.7
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t3_sniper",
+      "name": {
+        "de": "Reißnadel",
+        "en": "Scriber"
+      },
+      "role": {
+        "de": "Präzisionsläufer",
+        "en": "Sniper Bot"
+      },
+      "tech": 3,
+      "group": "land",
+      "visual": "v_sniper",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "U10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Sniper Bot (UEF/Cybran haben keinen – Referenz aus anderer FA-Fraktion)",
+        "bp": "XAL0305",
+        "crossCheckBp": "XSL0305"
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "DIRECTFIRE",
+        "SNIPER",
+        "BOT",
+        "TECH3"
+      ],
+      "buildableBy": "FACTORY & LAND & TECH3",
+      "economy": {
+        "mass": 720,
+        "energy": 20000,
+        "buildTime": 4800
+      },
+      "health": {
+        "max": 560
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_scriber_rail_t3",
+          "type": "Langrohr-Präzisionskanone",
+          "damage": 1000,
+          "salvo": 1,
+          "reloadS": 7.0,
+          "dps": 142.86,
+          "range": 58,
+          "projectile": "linear (schnell)",
+          "muzzleVelocity": 90,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 2.4,
+        "turnRateDeg": 110,
+        "accel": 2.4,
+        "sizeClass": 1,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Energy-Anteil niedriger als FA (20k statt 25k), sonst FA-Relation."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "F"
+      },
+      "icon": "land_sniper_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "legs"
+          },
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch",
+            "note": "langrohr"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 2,
+        "trisEstimate": 168,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.4,
+          "y": 1.4
+        },
+        "description": "Schlanke Beine, Glocke mit extrem langem waagerechtem Rohr (≥ 1,2 × Rumpflänge), kein zweites Rohr; Maßstab 1,4 (1×1-Deckel)."
+      },
+      "balance": {
+        "dps": 142.86,
+        "dpsPerMass": 0.1984,
+        "hpPerMass": 0.7778,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "XAL0305",
+          "mass": 700,
+          "energy": 25000,
+          "buildTime": 4950,
+          "hp": 500,
+          "shieldHp": null,
+          "dps": 143.94,
+          "dpsPerMass": 0.2056,
+          "hpPerMass": 0.7143,
+          "speed": 2.4,
+          "range": 60
+        },
+        "devDpsPerMassPct": -3.5,
+        "devHpPerMassPct": 8.9,
+        "devProductPct": 5.1,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:lnd_t3_aa",
+      "name": {
+        "de": "Trommelsieb",
+        "en": "Trommel"
+      },
+      "role": {
+        "de": "Schwere Flugabwehr",
+        "en": "Heavy AA"
+      },
+      "tech": 3,
+      "group": "land",
+      "visual": "v_aa",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "U10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Mobile Rapid-fire AA Cannon (FAF)",
+        "bp": "DELK002",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "LAND",
+        "MOBILE",
+        "ANTIAIR",
+        "TECH3"
+      ],
+      "buildableBy": "FACTORY & LAND & TECH3",
+      "economy": {
+        "mass": 600,
+        "energy": 7000,
+        "buildTime": 3000
+      },
+      "health": {
+        "max": 2000
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_aa_drum_t3",
+          "type": "Trommel-Flugabwehrkanone",
+          "damage": 105,
+          "salvo": 1,
+          "reloadS": 0.5,
+          "dps": 210.0,
+          "range": 55,
+          "projectile": "linear (Vorhalt)",
+          "muzzleVelocity": 100,
+          "splash": 1.5,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 3.3,
+        "turnRateDeg": 100,
+        "accel": 2.4,
+        "sizeClass": 2,
+        "footprint": [
+          1,
+          1
+        ]
+      },
+      "intel": {
+        "vision": 26
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele."
+      },
+      "hotbuild": {
+        "menu": "Landwerk",
+        "slot": "R"
+      },
+      "icon": "land_aa_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "tracks"
+          },
+          {
+            "part": "grate",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 1,
+        "trisEstimate": 160,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.4,
+          "y": 1.4
+        },
+        "description": "Sieb ×1,4 (1×1-Deckel) mit 4 senkrechten Rohren, 3 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 210.0,
+        "dpsPerMass": 0.35,
+        "hpPerMass": 3.3333,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "DELK002",
+          "mass": 600,
+          "energy": 7500,
+          "buildTime": 3000,
+          "hp": 1900,
+          "shieldHp": null,
+          "dps": 212.12,
+          "dpsPerMass": 0.3535,
+          "hpPerMass": 3.1667,
+          "speed": 3.5,
+          "range": 60
+        },
+        "devDpsPerMassPct": -1.0,
+        "devHpPerMassPct": 5.3,
+        "devProductPct": 4.2,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:air_t1_scout",
+      "name": {
+        "de": "Lerche",
+        "en": "Lark"
+      },
+      "role": {
+        "de": "Aufklärer",
+        "en": "Air Scout"
+      },
+      "tech": 1,
+      "group": "air",
+      "visual": "v_air_scout",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "U11 Luftwaffe in MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Air Scout",
+        "bp": "UEA0101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "SCOUT",
+        "INTELLIGENCE",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+      "economy": {
+        "mass": 40,
+        "energy": 560,
+        "buildTime": 200
+      },
+      "health": {
+        "max": 40
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "air",
+        "speed": 18,
+        "turnRateDeg": 100,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 40,
+        "radar": 60
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_air_crash_s",
+          "damage": 10,
+          "radius": 1,
+          "note": "Absturzschaden (K12)"
+        },
+        "notes": "Unbewaffnet, Mindesttempo 16."
+      },
+      "hotbuild": {
+        "menu": "Luftwerk",
+        "slot": "A"
+      },
+      "icon": "air_intel_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team"
+          },
+          {
+            "part": "wing",
+            "mat": "team"
+          },
+          {
+            "part": "wing",
+            "note": "seitenleitwerk"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 52,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Kleinster Flieger, gerader Kurzflügel, einzelnes Seitenleitwerk."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 1.0,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEA0101",
+          "mass": 40,
+          "energy": 580,
+          "buildTime": 200,
+          "hp": 35,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 0.875,
+          "speed": 19,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 14.3,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:air_t1_fighter",
+      "name": {
+        "de": "Turmfalke",
+        "en": "Kestrel"
+      },
+      "role": {
+        "de": "Abfangjäger",
+        "en": "Interceptor"
+      },
+      "tech": 1,
+      "group": "air",
+      "visual": "v_fighter",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "U11 in MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Interceptor",
+        "bp": "UEA0102",
+        "crossCheckBp": "URA0102"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "ANTIAIR",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+      "economy": {
+        "mass": 50,
+        "energy": 2200,
+        "buildTime": 500
+      },
+      "health": {
+        "max": 280
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_kestrel_gun_t1",
+          "type": "Zwillings-Luftkanone",
+          "damage": 25,
+          "salvo": 2,
+          "reloadS": 1.0,
+          "dps": 50.0,
+          "range": 25,
+          "projectile": "linear (Vorhalt)",
+          "muzzleVelocity": 90,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 15,
+        "turnRateDeg": 120,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_air_crash_s",
+          "damage": 25,
+          "radius": 1,
+          "note": "Absturzschaden (K12)"
+        },
+        "notes": "Nur Luftziele; verfolgt mit Vorhalt."
+      },
+      "hotbuild": {
+        "menu": "Luftwerk",
+        "slot": "Q"
+      },
+      "icon": "air_aa_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "note": "delta"
+          },
+          {
+            "part": "wing",
+            "note": "leitwerk"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 52,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Schmales, stark gepfeiltes Delta (lang > breit), 2 Glutnähte am Heck."
+      },
+      "balance": {
+        "dps": 50.0,
+        "dpsPerMass": 1.0,
+        "hpPerMass": 5.6,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEA0102",
+          "mass": 50,
+          "energy": 2250,
+          "buildTime": 500,
+          "hp": 295,
+          "shieldHp": null,
+          "dps": 50.0,
+          "dpsPerMass": 1.0,
+          "hpPerMass": 5.9,
+          "speed": 15,
+          "range": 25
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": -5.1,
+        "devProductPct": -5.1,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:air_t1_bomber",
+      "name": {
+        "de": "Dohle",
+        "en": "Jackdaw"
+      },
+      "role": {
+        "de": "Bomber",
+        "en": "Bomber"
+      },
+      "tech": 1,
+      "group": "air",
+      "visual": "v_bomber",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "U11 in MS12 (Bomber-FSM)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Attack Bomber",
+        "bp": "UEA0103",
+        "crossCheckBp": "URA0103"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "BOMBER",
+        "TECH1"
+      ],
+      "buildableBy": "FACTORY & AIR & (TECH1 | TECH2)",
+      "economy": {
+        "mass": 90,
+        "energy": 2000,
+        "buildTime": 500
+      },
+      "health": {
+        "max": 230
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_slag_bomb_t1",
+          "type": "Schlackenbomben (4er-Reihe)",
+          "damage": 85,
+          "salvo": 4,
+          "reloadS": 5.0,
+          "dps": 68.0,
+          "range": 40,
+          "projectile": "ballistisch (Abwurf)",
+          "muzzleVelocity": 0,
+          "splash": 3,
+          "layers": [
+            "land"
+          ],
+          "notes": "DPS = Salve/Nachladezeit (pro Anflug). Kein Napalm-DoT wie FA-UEF."
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 10,
+        "turnRateDeg": 80,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 32,
+        "radar": 40
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_air_crash_m",
+          "damage": 100,
+          "radius": 1,
+          "note": "Absturzschaden (K12)"
+        },
+        "notes": "Bombenreihe quer zur Anflugrichtung; Snipe-Gate MS12."
+      },
+      "hotbuild": {
+        "menu": "Luftwerk",
+        "slot": "W"
+      },
+      "icon": "air_bomb_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "note": "breitfluegel"
+          },
+          {
+            "part": "boiler",
+            "note": "bombenbauch"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 88,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Gerader Breitflügel (breit ≥ lang) mit Bauch-Kessel, T-Form von oben; Kessellänge ≥ 1,4 × Flügeltiefe, ragt vorn und hinten sichtbar über."
+      },
+      "balance": {
+        "dps": 68.0,
+        "dpsPerMass": 0.7556,
+        "hpPerMass": 2.5556,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEA0103",
+          "mass": 90,
+          "energy": 2050,
+          "buildTime": 500,
+          "hp": 215,
+          "shieldHp": null,
+          "dps": 70.0,
+          "dpsPerMass": 0.7778,
+          "hpPerMass": 2.3889,
+          "speed": 10,
+          "range": 40
+        },
+        "devDpsPerMassPct": -2.9,
+        "devHpPerMassPct": 7.0,
+        "devProductPct": 3.9,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:air_t2_gunship",
+      "name": {
+        "de": "Krähe",
+        "en": "Crow"
+      },
+      "role": {
+        "de": "Kampfschweber",
+        "en": "Gunship"
+      },
+      "tech": 2,
+      "group": "air",
+      "visual": "v_gunship",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "U11 in MS12 (Orbit)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Gunship",
+        "bp": "UEA0203",
+        "crossCheckBp": "URA0203"
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "GUNSHIP",
+        "DIRECTFIRE",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & AIR & TECH2",
+      "economy": {
+        "mass": 200,
+        "energy": 3800,
+        "buildTime": 1300
+      },
+      "health": {
+        "max": 760
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_crow_gun_t2",
+          "type": "Bauch-Glocke",
+          "damage": 16,
+          "salvo": 1,
+          "reloadS": 0.3,
+          "dps": 53.33,
+          "range": 22,
+          "projectile": "linear",
+          "muzzleVelocity": 80,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 12,
+        "turnRateDeg": 90,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 32
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_air_crash_m",
+          "damage": 100,
+          "radius": 1,
+          "note": "Absturzschaden (K12)"
+        },
+        "notes": "Schwebt im Orbit um das Ziel. Kein Transport (U13 Post-MVP)."
+      },
+      "hotbuild": {
+        "menu": "Luftwerk",
+        "slot": "E"
+      },
+      "icon": "air_direct_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "ductfan",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "hull"
+          },
+          {
+            "part": "bell",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 2,
+        "trisEstimate": 164,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Keine Flügel: Ringdüse als Scheibe, darunter Glocke mit Rohr."
+      },
+      "balance": {
+        "dps": 53.33,
+        "dpsPerMass": 0.2666,
+        "hpPerMass": 3.8,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEA0203",
+          "mass": 192,
+          "energy": 3840,
+          "buildTime": 1280,
+          "hp": 700,
+          "shieldHp": null,
+          "dps": 53.33,
+          "dpsPerMass": 0.2778,
+          "hpPerMass": 3.6458,
+          "speed": 13.5,
+          "range": 22
+        },
+        "devDpsPerMassPct": -4.0,
+        "devHpPerMassPct": 4.2,
+        "devProductPct": 0.1,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:air_t2_fbomber",
+      "name": {
+        "de": "Elster",
+        "en": "Magpie"
+      },
+      "role": {
+        "de": "Jagdbomber",
+        "en": "Fighter-Bomber"
+      },
+      "tech": 2,
+      "group": "air",
+      "visual": "v_fbomber",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "U11 in MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Fighter/Bomber (FAF)",
+        "bp": "DEA0202",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "AIR",
+        "MOBILE",
+        "BOMBER",
+        "ANTIAIR",
+        "TECH2"
+      ],
+      "buildableBy": "FACTORY & AIR & TECH2",
+      "economy": {
+        "mass": 340,
+        "energy": 11000,
+        "buildTime": 2600
+      },
+      "health": {
+        "max": 1150
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_magpie_gun_t2",
+          "type": "Luftkanone",
+          "damage": 70,
+          "salvo": 1,
+          "reloadS": 1.0,
+          "dps": 70.0,
+          "range": 30,
+          "projectile": "linear (Vorhalt)",
+          "muzzleVelocity": 90,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        },
+        {
+          "ref": "core:wpn_magpie_bomb_t2",
+          "type": "Schlackenbomben (2er)",
+          "damage": 360,
+          "salvo": 2,
+          "reloadS": 5.0,
+          "dps": 144.0,
+          "range": 50,
+          "projectile": "ballistisch (Abwurf)",
+          "muzzleVelocity": 0,
+          "splash": 3,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "air",
+        "speed": 15,
+        "turnRateDeg": 110,
+        "accel": null,
+        "sizeClass": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "note": "kinematisches Flugmodell: speed = Reisetempo, turnRateDeg = Entwurfswert (FA: Air.TurnSpeed)"
+      },
+      "intel": {
+        "vision": 32,
+        "radar": 60
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": {
+          "ref": "core:wpn_air_crash_l",
+          "damage": 200,
+          "radius": 1,
+          "note": "Absturzschaden (K12)"
+        },
+        "notes": "Beide Waffen addiert im DPS-Vergleich (wie FA-Referenz)."
+      },
+      "hotbuild": {
+        "menu": "Luftwerk",
+        "slot": "R"
+      },
+      "icon": "air_fbomb_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "note": "delta"
+          },
+          {
+            "part": "boiler",
+            "note": "gondel_l"
+          },
+          {
+            "part": "boiler",
+            "note": "gondel_r"
+          },
+          {
+            "part": "wing",
+            "note": "leitwerk"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 0,
+        "trisEstimate": 148,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.3,
+          "y": 1.3
+        },
+        "description": "Delta mit zwei Kessel-Gondeln an den Flügelspitzen, Spannweite +30 % gegenüber Turmfalke; keine Ringdüse."
+      },
+      "balance": {
+        "dps": 214.0,
+        "dpsPerMass": 0.6294,
+        "hpPerMass": 3.3824,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "DEA0202",
+          "mass": 360,
+          "energy": 12600,
+          "buildTime": 2800,
+          "hp": 1200,
+          "shieldHp": null,
+          "dps": 235.0,
+          "dpsPerMass": 0.6528,
+          "hpPerMass": 3.3333,
+          "speed": 15,
+          "range": 60
+        },
+        "devDpsPerMassPct": -3.6,
+        "devHpPerMassPct": 1.5,
+        "devProductPct": -2.2,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_mex",
+      "name": {
+        "de": "Zapfstelle I",
+        "en": "Tap I"
+      },
+      "role": {
+        "de": "Massebohrung",
+        "en": "Mass Extractor"
+      },
+      "tech": 1,
+      "group": "eco",
+      "visual": "v_mex",
+      "ms9Core": true,
+      "msFirst": "MS4",
+      "msNote": "E5 in MS4",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Mass Extractor",
+        "bp": "UEB1103",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "MASSEXTRACTION",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 36,
+        "energy": 360,
+        "buildTime": 60,
+        "buildPower": 10,
+        "massPerSec": 2,
+        "upkeepEnergyPerSec": 2
+      },
+      "health": {
+        "max": 420
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {},
+      "special": {
+        "toggles": [],
+        "upgradesTo": "core:str_t2_mex",
+        "upgradeFrom": null,
+        "adjacency": "Gibt Fabriken −7,5 % Mass-Verbrauch (8×8); erhält +12,5 % je angrenzendem Erzspeicher.",
+        "deathWeapon": null,
+        "notes": "Nur auf Mass-Spots; produziert während des Upgrades weiter (B4)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Q"
+      },
+      "icon": "struct_mass_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "note": "kranz"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "pumpenkopf"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 1,
+        "trisEstimate": 100,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Ring um den Spot, zentraler glühender Pumpenkopf (Pumpentakt-Animation), niedrig."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 11.6667,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1103",
+          "mass": 36,
+          "energy": 360,
+          "buildTime": 60,
+          "hp": 400,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 11.1111,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_mex",
+      "name": {
+        "de": "Zapfstelle II",
+        "en": "Tap II"
+      },
+      "role": {
+        "de": "Massebohrung",
+        "en": "Mass Extractor"
+      },
+      "tech": 2,
+      "group": "eco",
+      "visual": "v_mex",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B4 (T1→T2) in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Mass Extractor (Upgrade-Kosten)",
+        "bp": "UEB1202",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "MASSEXTRACTION",
+        "TECH2",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3) | UPGRADE",
+      "economy": {
+        "mass": 900,
+        "energy": 5400,
+        "buildTime": 900,
+        "buildPower": 15,
+        "massPerSec": 6,
+        "upkeepEnergyPerSec": 9
+      },
+      "health": {
+        "max": 2100
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": "core:str_t3_mex",
+        "upgradeFrom": "core:str_t1_mex",
+        "adjacency": "Fabriken −10 % Mass-Verbrauch; +12,5 % je Erzspeicher.",
+        "deathWeapon": null,
+        "notes": "Kosten = Upgrade-Kosten (FA-Semantik). Auch direkt von Geselle/Meister baubar."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Q (Upgrade: Command Card)"
+      },
+      "icon": "struct_mass_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "note": "kranz"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "pumpenkopf"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_l"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_r"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 1,
+        "trisEstimate": 156,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.2
+        },
+        "description": "Zapfstelle auf 2×2 (Höhe ×1,2) mit Schürzenplatten, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 2.3333,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1202",
+          "mass": 900,
+          "energy": 5400,
+          "buildTime": 900,
+          "hp": 2000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.2222,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_mex",
+      "name": {
+        "de": "Zapfstelle III",
+        "en": "Tap III"
+      },
+      "role": {
+        "de": "Massebohrung",
+        "en": "Mass Extractor"
+      },
+      "tech": 3,
+      "group": "eco",
+      "visual": "v_mex",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "Rest B4 (T3-Mex) in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Mass Extractor (Upgrade-Kosten)",
+        "bp": "UEB1302",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "MASSEXTRACTION",
+        "TECH3",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & TECH3 | UPGRADE",
+      "economy": {
+        "mass": 4500,
+        "energy": 31000,
+        "buildTime": 2900,
+        "massPerSec": 18,
+        "upkeepEnergyPerSec": 54
+      },
+      "health": {
+        "max": 7000
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": "core:str_t2_mex",
+        "adjacency": "Fabriken −12,5 % Mass-Verbrauch; +12,5 % je Erzspeicher.",
+        "deathWeapon": null,
+        "notes": "Upgrade-Kosten."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Q (Upgrade: Command Card)"
+      },
+      "icon": "struct_mass_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "note": "kranz"
+          },
+          {
+            "part": "ring",
+            "note": "zweiter_kranz"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "pumpenkopf"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_l"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_r"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 204,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.4
+        },
+        "description": "Zapfstelle auf 2×2 (Höhe ×1,4), doppelter Kranz, 3 Tech-Streifen; kein Heckschlot (unterscheidet sich so von der Dampfquelle)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 1.5556,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1302",
+          "mass": 4600,
+          "energy": 31625,
+          "buildTime": 2875,
+          "hp": 7000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 1.5217,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 2.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_pgen",
+      "name": {
+        "de": "Glutkessel I",
+        "en": "Ember Boiler I"
+      },
+      "role": {
+        "de": "Kraftwerk",
+        "en": "Power Generator"
+      },
+      "tech": 1,
+      "group": "eco",
+      "visual": "v_pgen",
+      "ms9Core": true,
+      "msFirst": "MS4",
+      "msNote": "E6 in MS4",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Power Generator",
+        "bp": "UEB1101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "ENERGYPRODUCTION",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 75,
+        "energy": 750,
+        "buildTime": 125,
+        "energyPerSec": 20
+      },
+      "health": {
+        "max": 620
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {},
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "Fabriken (8×8) −1,56 % Energy-Verbrauch, 2×2-Verbraucher −6,25 %; erhält +25 % Produktion je angrenzendem Glutspeicher (SIZE4).",
+        "deathWeapon": {
+          "ref": "core:wpn_boiler_burst_t1",
+          "damage": 250,
+          "radius": 2,
+          "note": "K14, Kettenreaktion-Golden MS10"
+        },
+        "notes": "Frei platzierbar; kein Upgrade (T2/T3 werden neu gebaut, wie FA)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "W"
+      },
+      "icon": "struct_energy_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler",
+            "mat": "team"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "krone"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 100,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Liegender Kessel mit einem Schlot (Zahl der Schlote = Tech, Schlothöhe ≥ 1,5 × Kessel-Ø), glühende Krone, Ruß-Gradient."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 8.2667,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1101",
+          "mass": 75,
+          "energy": 750,
+          "buildTime": 125,
+          "hp": 600,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 8.0,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 3.3,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_pgen",
+      "name": {
+        "de": "Glutkessel II",
+        "en": "Ember Boiler II"
+      },
+      "role": {
+        "de": "Kraftwerk",
+        "en": "Power Generator"
+      },
+      "tech": 2,
+      "group": "eco",
+      "visual": "v_pgen",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "E6-Tech-Leiter mit T2-Engineer (MS8); KI-Tech bis T2 in MS9",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Power Generator",
+        "bp": "UEB1201",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "ENERGYPRODUCTION",
+        "TECH2",
+        "SIZE12"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 1200,
+        "energy": 12000,
+        "buildTime": 2200,
+        "energyPerSec": 500
+      },
+      "health": {
+        "max": 2600
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "Fabriken −12,5 % Energy-Verbrauch; erhält +8,3 % Produktion je angrenzendem Glutspeicher (SIZE12).",
+        "deathWeapon": {
+          "ref": "core:wpn_boiler_burst_t2",
+          "damage": 1500,
+          "radius": 5,
+          "note": "K14"
+        },
+        "notes": "—"
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "W"
+      },
+      "icon": "struct_energy_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler",
+            "mat": "team"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "krone"
+          },
+          {
+            "part": "stack",
+            "mat": "glow",
+            "note": "krone"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 0,
+        "trisEstimate": 152,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 3.0,
+          "y": 3.6
+        },
+        "description": "Kessel auf 6×6 (Maßstab 3,0, Höhe ×1,2) mit 2 Schloten, 2 Tech-Streifen; füllt ≥ 70 % der Footprint-Kante."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 2.1667,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1201",
+          "mass": 1200,
+          "energy": 12000,
+          "buildTime": 2198,
+          "hp": 2500,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.0833,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 4.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_pgen",
+      "name": {
+        "de": "Glutkessel III",
+        "en": "Ember Boiler III"
+      },
+      "role": {
+        "de": "Kraftwerk",
+        "en": "Power Generator"
+      },
+      "tech": 3,
+      "group": "eco",
+      "visual": "v_pgen",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "T3-Pgen-Nachlieferung in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Power Generator",
+        "bp": "UEB1301",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "ENERGYPRODUCTION",
+        "TECH3",
+        "SIZE16"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 3200,
+        "energy": 57000,
+        "buildTime": 6800,
+        "energyPerSec": 2500
+      },
+      "health": {
+        "max": 9000
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "Fabriken −15,6 % Energy-Verbrauch; erhält +6,25 % Produktion je angrenzendem Glutspeicher (SIZE16).",
+        "deathWeapon": {
+          "ref": "core:wpn_boiler_burst_t3",
+          "damage": 5000,
+          "radius": 10,
+          "note": "K14; FA 5500"
+        },
+        "notes": "—"
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "W"
+      },
+      "icon": "struct_energy_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler",
+            "mat": "team"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_l"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze_r"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 0,
+        "trisEstimate": 204,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 4.0,
+          "y": 5.6
+        },
+        "description": "Kessel auf 8×8 (Maßstab 4,0, Höhe ×1,4) mit 3 Schloten, 3 Tech-Streifen; füllt ≥ 70 % der Footprint-Kante."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 2.8125,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1301",
+          "mass": 3240,
+          "energy": 57600,
+          "buildTime": 6824,
+          "hp": 9000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.7778,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 1.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_hydro",
+      "name": {
+        "de": "Dampfquelle",
+        "en": "Vent Cap"
+      },
+      "role": {
+        "de": "Dampfkraftwerk",
+        "en": "Geothermal Plant"
+      },
+      "tech": 1,
+      "group": "eco",
+      "visual": "v_hydro",
+      "ms9Core": true,
+      "msFirst": "MS10",
+      "msNote": "E9 in MS10; als Daten-Vorgriff im MS9-Kern (nur Spot-Regel wie E5)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Hydrocarbon Power Plant",
+        "bp": "UEB1102",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "ENERGYPRODUCTION",
+        "HYDROCARBON",
+        "TECH1",
+        "SIZE12"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 160,
+        "energy": 800,
+        "buildTime": 400,
+        "energyPerSec": 100
+      },
+      "health": {
+        "max": 1800
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "structure": true
+      },
+      "intel": {},
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "Wie Glutkessel II (Fabriken −12,5 % Energy); erhält +8,3 % je angrenzendem Glutspeicher (SIZE12).",
+        "deathWeapon": null,
+        "notes": "Nur auf Hydro-Spots; keine Death-Weapon (wie FA)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "E"
+      },
+      "icon": "struct_hydro_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "ring",
+            "mat": "team"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          },
+          {
+            "part": "stack",
+            "mat": "glow"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 0,
+        "trisEstimate": 148,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Ring mit drei stehenden Schloten darin."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 11.25,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1102",
+          "mass": 160,
+          "energy": 800,
+          "buildTime": 400,
+          "hp": 1800,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 11.25,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_mstore",
+      "name": {
+        "de": "Erzspeicher",
+        "en": "Ore Silo"
+      },
+      "role": {
+        "de": "Massespeicher",
+        "en": "Mass Storage"
+      },
+      "tech": 1,
+      "group": "eco",
+      "visual": "v_mstore",
+      "ms9Core": true,
+      "msFirst": "MS10",
+      "msNote": "E10 in MS10; Daten-Vorgriff im MS9-Kern (E4-Speicherlimit existiert ab MS4)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Mass Storage",
+        "bp": "UEB1106",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "MASSSTORAGE",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 200,
+        "energy": 1500,
+        "buildTime": 250,
+        "storageMass": 500
+      },
+      "health": {
+        "max": 850
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {},
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "+12,5 % Produktion je angrenzender Zapfstelle (FA-Relation, max. 4 Seiten = +50 %).",
+        "deathWeapon": null,
+        "notes": "Keine Death-Weapon."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "R"
+      },
+      "icon": "struct_mstore_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "stapel"
+          },
+          {
+            "part": "hull",
+            "note": "stapel"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 84,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Niedriger eckiger Stapel (Mass = eckig), kein Schlot."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 4.25,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1106",
+          "mass": 200,
+          "energy": 1500,
+          "buildTime": 250,
+          "hp": 800,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 4.0,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 6.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_estore",
+      "name": {
+        "de": "Glutspeicher",
+        "en": "Heat Bank"
+      },
+      "role": {
+        "de": "Energiespeicher",
+        "en": "Energy Storage"
+      },
+      "tech": 1,
+      "group": "eco",
+      "visual": "v_estore",
+      "ms9Core": true,
+      "msFirst": "MS6",
+      "msNote": "Abstich (U8, MS6) feuert erst ab 7500 E Vorrat (> Grundspeicher 3900 E) ⇒ Daten-Vorgriff ab MS6; E10-Abnahme MS10",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Energy Storage",
+        "bp": "UEB1105",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "ECONOMIC",
+        "ENERGYSTORAGE",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 250,
+        "energy": 1200,
+        "buildTime": 200,
+        "storageEnergy": 10000
+      },
+      "health": {
+        "max": 520
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {},
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": "Bufft alle angrenzenden Energieproduzenten (FA-Relation): Glutkessel I +25 % (SIZE4), Glutkessel II und Dampfquelle +8,3 % (SIZE12), Glutkessel III +6,25 % (SIZE16).",
+        "deathWeapon": {
+          "ref": "core:wpn_heatbank_burst",
+          "damage": 1000,
+          "radius": 5,
+          "note": "K14"
+        },
+        "notes": "—"
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "T"
+      },
+      "icon": "struct_estore_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler",
+            "mat": "team",
+            "note": "trommel_stehend"
+          },
+          {
+            "part": "boiler",
+            "note": "trommel_stehend"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 0,
+        "trisEstimate": 124,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Zwei stehende, flache Trommeln (Ø 0,8 × Kante, Höhe ≤ 0,3 × Kante; Energy = rund), kein liegender Kessel, kein Schlot."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 2.08,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB1105",
+          "mass": 250,
+          "energy": 1200,
+          "buildTime": 200,
+          "hp": 500,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 2.0,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 4.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_fac_land",
+      "name": {
+        "de": "Landwerk I",
+        "en": "Land Works I"
+      },
+      "role": {
+        "de": "Landfabrik",
+        "en": "Land Factory"
+      },
+      "tech": 1,
+      "group": "fac",
+      "visual": "v_fac_land",
+      "ms9Core": true,
+      "msFirst": "MS6",
+      "msNote": "B3 in MS6",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Land Factory",
+        "bp": "UEB0101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "FACTORY",
+        "LAND",
+        "TECH1",
+        "SIZE16"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 240,
+        "energy": 2100,
+        "buildTime": 300,
+        "buildPower": 20,
+        "storageMass": 80
+      },
+      "health": {
+        "max": 4200
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": "core:str_t2_fac_land",
+        "upgradeFrom": null,
+        "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
+        "deathWeapon": null,
+        "notes": "Queue/Repeat/Rally (B3). Upgrade-Verb „Freisprechen“."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "A"
+      },
+      "icon": "struct_fac_land_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_l"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_r"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "dach"
+          },
+          {
+            "part": "hull",
+            "note": "rampe"
+          },
+          {
+            "part": "hull",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "werkhallentor"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 168,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "U-Portal mit Rampe (offene Seite = Ausgang), glühendes Werkhallentor."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 17.5,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB0101",
+          "mass": 240,
+          "energy": 2100,
+          "buildTime": 300,
+          "hp": 4000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 16.6667,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_fac_land",
+      "name": {
+        "de": "Landwerk II",
+        "en": "Land Works II"
+      },
+      "role": {
+        "de": "Landfabrik",
+        "en": "Land Factory"
+      },
+      "tech": 2,
+      "group": "fac",
+      "visual": "v_fac_land",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "U5 in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Land Factory HQ (Upgrade-Kosten)",
+        "bp": "UEB0201",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "FACTORY",
+        "LAND",
+        "TECH2",
+        "SIZE16"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 1400,
+        "energy": 11000,
+        "buildTime": 2300,
+        "buildPower": 40,
+        "storageMass": 160
+      },
+      "health": {
+        "max": 8200
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": "core:str_t3_fac_land",
+        "upgradeFrom": "core:str_t1_fac_land",
+        "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
+        "deathWeapon": null,
+        "notes": "Nur per Upgrade (kein HQ/Support-System, B9 Post-MVP)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_fac_land_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_l"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_r"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "dach"
+          },
+          {
+            "part": "hull",
+            "note": "rampe"
+          },
+          {
+            "part": "hull",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "werkhallentor"
+          },
+          {
+            "part": "stack",
+            "note": "schlot"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 1,
+        "trisEstimate": 192,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.2
+        },
+        "description": "Landwerk ×1,3 mit Schlot, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 5.8571,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB0201",
+          "mass": 1410,
+          "energy": 11200,
+          "buildTime": 2300,
+          "hp": 8000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 5.6738,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 3.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_fac_land",
+      "name": {
+        "de": "Landwerk III",
+        "en": "Land Works III"
+      },
+      "role": {
+        "de": "Landfabrik",
+        "en": "Land Factory"
+      },
+      "tech": 3,
+      "group": "fac",
+      "visual": "v_fac_land",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "U5 T3 / U10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Land Factory HQ (Upgrade-Kosten)",
+        "bp": "UEB0301",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "FACTORY",
+        "LAND",
+        "TECH3",
+        "SIZE16"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 5200,
+        "energy": 47000,
+        "buildTime": 12000,
+        "buildPower": 90,
+        "storageMass": 320
+      },
+      "health": {
+        "max": 16000
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": "core:str_t2_fac_land",
+        "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
+        "deathWeapon": null,
+        "notes": "Nur per Upgrade."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_fac_land_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_l"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_r"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "dach"
+          },
+          {
+            "part": "hull",
+            "note": "rampe"
+          },
+          {
+            "part": "hull",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "werkhallentor"
+          },
+          {
+            "part": "stack"
+          },
+          {
+            "part": "stack"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 9,
+        "animatedParts": 1,
+        "trisEstimate": 244,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.4
+        },
+        "description": "Landwerk ×1,7 mit zwei Schloten und Schürze, 3 Tech-Streifen (9 Parts = Struktur-Maximum)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 3.0769,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB0301",
+          "mass": 5220,
+          "energy": 47400,
+          "buildTime": 12000,
+          "hp": 16000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 3.0651,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 0.4,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_fac_air",
+      "name": {
+        "de": "Luftwerk I",
+        "en": "Air Works I"
+      },
+      "role": {
+        "de": "Luftfabrik",
+        "en": "Air Factory"
+      },
+      "tech": 1,
+      "group": "fac",
+      "visual": "v_fac_air",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "Luftfabrik T1→T2 in MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Air Factory",
+        "bp": "UEB0102",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "FACTORY",
+        "AIR",
+        "TECH1",
+        "SIZE16"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 210,
+        "energy": 2400,
+        "buildTime": 300,
+        "buildPower": 20,
+        "storageMass": 80
+      },
+      "health": {
+        "max": 4200
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": "core:str_t2_fac_air",
+        "upgradeFrom": null,
+        "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
+        "deathWeapon": null,
+        "notes": "Baut keine Engineers (wie FA)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "S"
+      },
+      "icon": "struct_fac_air_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_l"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_r"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "dach"
+          },
+          {
+            "part": "ring",
+            "note": "landescheibe"
+          },
+          {
+            "part": "hull",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "werkhallentor"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 188,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "U-Portal mit Landescheibe statt Rampe."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 20.0,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB0102",
+          "mass": 210,
+          "energy": 2400,
+          "buildTime": 300,
+          "hp": 4000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 19.0476,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 5.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_fac_air",
+      "name": {
+        "de": "Luftwerk II",
+        "en": "Air Works II"
+      },
+      "role": {
+        "de": "Luftfabrik",
+        "en": "Air Factory"
+      },
+      "tech": 2,
+      "group": "fac",
+      "visual": "v_fac_air",
+      "ms9Core": false,
+      "msFirst": "MS12",
+      "msNote": "MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Air Factory HQ (Upgrade-Kosten)",
+        "bp": "UEB0202",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "FACTORY",
+        "AIR",
+        "TECH2",
+        "SIZE16"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 920,
+        "energy": 17500,
+        "buildTime": 2300,
+        "buildPower": 40,
+        "storageMass": 160
+      },
+      "health": {
+        "max": 8200
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": "core:str_t1_fac_air",
+        "adjacency": "Empfängt Adjacency von Zapfstellen (Mass) und Kraftwerken (Energy).",
+        "deathWeapon": null,
+        "notes": "Nur per Upgrade; kein T3-Luftwerk (U12 Post-MVP)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_fac_air_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_l"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "wand_r"
+          },
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "dach"
+          },
+          {
+            "part": "ring",
+            "note": "landescheibe"
+          },
+          {
+            "part": "hull",
+            "mat": "glow",
+            "anim": "tilt",
+            "note": "werkhallentor"
+          },
+          {
+            "part": "stack",
+            "note": "schlot"
+          }
+        ],
+        "partCount": 7,
+        "animatedParts": 1,
+        "trisEstimate": 212,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.2
+        },
+        "description": "Luftwerk ×1,3 mit Schlot, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 8.913,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB0202",
+          "mass": 920,
+          "energy": 18000,
+          "buildTime": 2300,
+          "hp": 8000,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 8.6957,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 2.5,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_pd",
+      "name": {
+        "de": "Riegel I",
+        "en": "Bolt I"
+      },
+      "role": {
+        "de": "Punktverteidigung",
+        "en": "Point Defense"
+      },
+      "tech": 1,
+      "group": "def",
+      "visual": "v_pd",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B5 in MS8; Minimal-A8 der KI in MS9",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Point Defense",
+        "bp": "UEB2101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "DIRECTFIRE",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 240,
+        "energy": 2000,
+        "buildTime": 250
+      },
+      "health": {
+        "max": 1350
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_bolt_cannon_t1",
+          "type": "Glockenkanone (Turm)",
+          "damage": 50,
+          "salvo": 1,
+          "reloadS": 0.3,
+          "dps": 166.67,
+          "range": 26,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 0,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 24
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Dieselbe Glocke wie der Panzer, auf Sockel."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Z"
+      },
+      "icon": "struct_direct_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel",
+            "anim": "pitch"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 2,
+        "trisEstimate": 108,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Gefaster Gusssockel, Glocke mit waagerechtem Rohr."
+      },
+      "balance": {
+        "dps": 166.67,
+        "dpsPerMass": 0.6945,
+        "hpPerMass": 5.625,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2101",
+          "mass": 250,
+          "energy": 2000,
+          "buildTime": 250,
+          "hp": 1300,
+          "shieldHp": null,
+          "dps": 166.67,
+          "dpsPerMass": 0.6667,
+          "hpPerMass": 5.2,
+          "speed": null,
+          "range": 26
+        },
+        "devDpsPerMassPct": 4.2,
+        "devHpPerMassPct": 8.2,
+        "devProductPct": 12.7,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_pd",
+      "name": {
+        "de": "Riegel II",
+        "en": "Bolt II"
+      },
+      "role": {
+        "de": "Punktverteidigung",
+        "en": "Point Defense"
+      },
+      "tech": 2,
+      "group": "def",
+      "visual": "v_pd",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B5 (T2) in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Point Defense",
+        "bp": "UEB2301",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "DIRECTFIRE",
+        "TECH2",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 520,
+        "energy": 3700,
+        "buildTime": 700
+      },
+      "health": {
+        "max": 2400
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_bolt_cannon_t2",
+          "type": "Doppel-Glockenkanone (Turm)",
+          "damage": 100,
+          "salvo": 2,
+          "reloadS": 1.6,
+          "dps": 125.0,
+          "range": 48,
+          "projectile": "linear",
+          "muzzleVelocity": 35,
+          "splash": 1.5,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kein Upgrade von Riegel I (wie FA; B8 generisch ist Post-MVP)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Z"
+      },
+      "icon": "struct_direct_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "bell",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 1,
+        "trisEstimate": 160,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 2.0,
+          "y": 2.4
+        },
+        "description": "Riegel ×1,3, breitere Glocke, zwei Rohre, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 125.0,
+        "dpsPerMass": 0.2404,
+        "hpPerMass": 4.6154,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2301",
+          "mass": 540,
+          "energy": 3780,
+          "buildTime": 675,
+          "hp": 2250,
+          "shieldHp": null,
+          "dps": 131.25,
+          "dpsPerMass": 0.2431,
+          "hpPerMass": 4.1667,
+          "speed": null,
+          "range": 50
+        },
+        "devDpsPerMassPct": -1.1,
+        "devHpPerMassPct": 10.8,
+        "devProductPct": 9.6,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_aa",
+      "name": {
+        "de": "Rost I",
+        "en": "Grate I"
+      },
+      "role": {
+        "de": "Flugabwehrturm",
+        "en": "AA Tower"
+      },
+      "tech": 1,
+      "group": "def",
+      "visual": "v_aa_struct",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B5 in MS8, Wirkung MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Anti-Air Turret",
+        "bp": "UEB2104",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "ANTIAIR",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 150,
+        "energy": 1500,
+        "buildTime": 190
+      },
+      "health": {
+        "max": 820
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_grate_aa_t1",
+          "type": "Zwillings-Flugabwehr",
+          "damage": 20,
+          "salvo": 2,
+          "reloadS": 0.6,
+          "dps": 66.67,
+          "range": 42,
+          "projectile": "linear (Vorhalt)",
+          "muzzleVelocity": 45,
+          "splash": 0,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 24
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "X"
+      },
+      "icon": "struct_aa_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "grate",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 1,
+        "trisEstimate": 88,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Sockel mit Rost-Platte und 2 senkrechten Rohren."
+      },
+      "balance": {
+        "dps": 66.67,
+        "dpsPerMass": 0.4445,
+        "hpPerMass": 5.4667,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2104",
+          "mass": 150,
+          "energy": 1500,
+          "buildTime": 188,
+          "hp": 800,
+          "shieldHp": null,
+          "dps": 65.71,
+          "dpsPerMass": 0.4381,
+          "hpPerMass": 5.3333,
+          "speed": null,
+          "range": 44
+        },
+        "devDpsPerMassPct": 1.5,
+        "devHpPerMassPct": 2.5,
+        "devProductPct": 4.0,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_aa",
+      "name": {
+        "de": "Rost II",
+        "en": "Grate II"
+      },
+      "role": {
+        "de": "Flakturm",
+        "en": "Flak Tower"
+      },
+      "tech": 2,
+      "group": "def",
+      "visual": "v_aa_struct",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B5 (T2) in MS8, Näherungszünder MS12",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Anti-Air Flak Artillery",
+        "bp": "UEB2204",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "ANTIAIR",
+        "TECH2",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 400,
+        "energy": 4000,
+        "buildTime": 550
+      },
+      "health": {
+        "max": 2600
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_grate_flak_t2",
+          "type": "Splitterflak (Turm)",
+          "damage": 90,
+          "salvo": 1,
+          "reloadS": 0.5,
+          "dps": 180.0,
+          "range": 48,
+          "projectile": "linear + Näherungszünder (MS12)",
+          "muzzleVelocity": 35,
+          "splash": 3.5,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 24
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "X"
+      },
+      "icon": "struct_aa_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "grate",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 140,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 2.0,
+          "y": 2.4
+        },
+        "description": "Rost ×1,3 mit 3 Rohren, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 180.0,
+        "dpsPerMass": 0.45,
+        "hpPerMass": 6.5,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2204",
+          "mass": 400,
+          "energy": 4000,
+          "buildTime": 540,
+          "hp": 2590,
+          "shieldHp": null,
+          "dps": 178.57,
+          "dpsPerMass": 0.4464,
+          "hpPerMass": 6.475,
+          "speed": null,
+          "range": 50
+        },
+        "devDpsPerMassPct": 0.8,
+        "devHpPerMassPct": 0.4,
+        "devProductPct": 1.2,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_sam",
+      "name": {
+        "de": "Hochrost",
+        "en": "High Grate"
+      },
+      "role": {
+        "de": "Raketenabwehr",
+        "en": "SAM Site"
+      },
+      "tech": 3,
+      "group": "def",
+      "visual": "v_aa_struct",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "MS8 per Konsole/Test-Szenario gespawnt (B5: homing, K11), baubar ab MS13 (Meister)",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Anti-Air SAM Launcher",
+        "bp": "UEB2304",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "ANTIAIR",
+        "TECH3",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 800,
+        "energy": 8000,
+        "buildTime": 1400
+      },
+      "health": {
+        "max": 5000
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_high_grate_sam_t3",
+          "type": "Glutraketen-Flugabwehr",
+          "damage": 200,
+          "salvo": 6,
+          "reloadS": 3.5,
+          "dps": 342.86,
+          "range": 58,
+          "projectile": "homing + Näherungszünder",
+          "muzzleVelocity": 45,
+          "splash": 1.5,
+          "layers": [
+            "air"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur Luftziele."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "X"
+      },
+      "icon": "struct_sam_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "grate",
+            "mat": "team",
+            "anim": "yaw"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          },
+          {
+            "part": "barrel"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 136,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 2.0,
+          "y": 2.8
+        },
+        "description": "Rost auf 2×2 mit doppelt so vielen, dickeren Rohren (4), 3 Tech-Streifen; kein Schlot (Glut-Monopol)."
+      },
+      "balance": {
+        "dps": 342.86,
+        "dpsPerMass": 0.4286,
+        "hpPerMass": 6.25,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2304",
+          "mass": 800,
+          "energy": 8000,
+          "buildTime": 1400,
+          "hp": 5000,
+          "shieldHp": null,
+          "dps": 342.86,
+          "dpsPerMass": 0.4286,
+          "hpPerMass": 6.25,
+          "speed": null,
+          "range": 60
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": 0.0,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_wall",
+      "name": {
+        "de": "Mauer",
+        "en": "Wall"
+      },
+      "role": {
+        "de": "Mauer",
+        "en": "Wall"
+      },
+      "tech": 1,
+      "group": "def",
+      "visual": "v_wall",
+      "ms9Core": true,
+      "msFirst": "MS8",
+      "msNote": "B5/Minimal-Drag (DECISIONS 3) in MS8",
+      "faReference": {
+        "devOnly": true,
+        "role": "Wall Section",
+        "bp": "UEB5101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "WALL",
+        "TECH1"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 3,
+        "energy": 20,
+        "buildTime": 15
+      },
+      "health": {
+        "max": 550
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          1,
+          1
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 0
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "wall-Flag (Drag-Linie), blockiert Schüsse und Pathing."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "C"
+      },
+      "icon": "wall",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "mat": "team",
+            "note": "oberkante"
+          }
+        ],
+        "partCount": 1,
+        "animatedParts": 0,
+        "trisEstimate": 28,
+        "techStripes": 0,
+        "techStripeMat": null,
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Niedriger Quader, nur die Oberkante teamfarben (≈ 10 %)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 183.3333,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB5101",
+          "mass": 3,
+          "energy": 20,
+          "buildTime": 15,
+          "hp": 500,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 166.6667,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 10.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t1_radar",
+      "name": {
+        "de": "Horcher I",
+        "en": "Listener I"
+      },
+      "role": {
+        "de": "Radar",
+        "en": "Radar"
+      },
+      "tech": 1,
+      "group": "intel",
+      "visual": "v_radar",
+      "ms9Core": false,
+      "msFirst": "MS10",
+      "msNote": "I3 in MS10",
+      "faReference": {
+        "devOnly": true,
+        "role": "T1 Radar System",
+        "bp": "UEB3101",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "INTELLIGENCE",
+        "RADAR",
+        "TECH1",
+        "SIZE4"
+      ],
+      "buildableBy": "(ENGINEER & (TECH1 | TECH2 | TECH3)) | COMMAND",
+      "economy": {
+        "mass": 80,
+        "energy": 720,
+        "buildTime": 80,
+        "buildPower": 13,
+        "upkeepEnergyPerSec": 20
+      },
+      "health": {
+        "max": 11
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20,
+        "radar": 116
+      },
+      "special": {
+        "toggles": [
+          "radar (MS10, C17)"
+        ],
+        "upgradesTo": "core:str_t2_radar",
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Stall schaltet ab (E3), Wiedereinschalten mit Hysterese. Sehr fragil (FA-Relation)."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "D"
+      },
+      "icon": "struct_intel_t1",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "radarplatte"
+          }
+        ],
+        "partCount": 3,
+        "animatedParts": 1,
+        "trisEstimate": 64,
+        "techStripes": 1,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Hoher dünner Mast mit rechteckiger Radarplatte (wing-Prisma 1,6 × 0,8 × 0,1 WU, 35° gekippt), rotierend; kein Ring (Ring = Flow/Schild)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.1375,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB3101",
+          "mass": 80,
+          "energy": 720,
+          "buildTime": 80,
+          "hp": 10,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 0.125,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 10.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_radar",
+      "name": {
+        "de": "Horcher II",
+        "en": "Listener II"
+      },
+      "role": {
+        "de": "Radar",
+        "en": "Radar"
+      },
+      "tech": 2,
+      "group": "intel",
+      "visual": "v_radar",
+      "ms9Core": false,
+      "msFirst": "MS10",
+      "msNote": "I3 T1→T2 in MS10",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Radar System (Upgrade-Kosten)",
+        "bp": "UEB3201",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "INTELLIGENCE",
+        "RADAR",
+        "TECH2",
+        "SIZE4"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 180,
+        "energy": 3600,
+        "buildTime": 780,
+        "buildPower": 20,
+        "upkeepEnergyPerSec": 150
+      },
+      "health": {
+        "max": 55
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 24,
+        "radar": 200
+      },
+      "special": {
+        "toggles": [
+          "radar (MS10, C17)"
+        ],
+        "upgradesTo": "core:str_t3_radar",
+        "upgradeFrom": "core:str_t1_radar",
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur per Upgrade."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_intel_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "radarplatte"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 1,
+        "trisEstimate": 88,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.2
+        },
+        "description": "Horcher auf 2×2 (Höhe ×1,2) mit Doppelmast, 2 Tech-Streifen."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.3056,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB3201",
+          "mass": 180,
+          "energy": 3600,
+          "buildTime": 780,
+          "hp": 50,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 0.2778,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 10.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_radar",
+      "name": {
+        "de": "Horcher III",
+        "en": "Listener III"
+      },
+      "role": {
+        "de": "Radar",
+        "en": "Radar"
+      },
+      "tech": 3,
+      "group": "intel",
+      "visual": "v_radar",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "Rest I3 (T3-Radar) in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Omni Sensor Array (Upgrade-Kosten; hier ohne Omni)",
+        "bp": "UEB3104",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "INTELLIGENCE",
+        "RADAR",
+        "TECH3",
+        "SIZE4"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 1200,
+        "energy": 16000,
+        "buildTime": 1500,
+        "upkeepEnergyPerSec": 400
+      },
+      "health": {
+        "max": 55
+      },
+      "shield": null,
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 30,
+        "radar": 350
+      },
+      "special": {
+        "toggles": [
+          "radar (MS10, C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": "core:str_t2_radar",
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kein Omni (I4/I5 Post-MVP) ⇒ Kosten und Reichweite gegenüber FA halbiert, HP/Mass in Relation. Unterhalt 400 E/s (FA 2.000 mit Omni): r350 bringt auf 256–512-WU-Karten nur begrenzt mehr als Horcher II."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_intel_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "wing",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "radarplatte"
+          },
+          {
+            "part": "wing",
+            "note": "zweite_platte"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 1,
+        "trisEstimate": 100,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.4
+        },
+        "description": "Horcher auf 2×2 (Höhe ×1,4) mit zweiter Radarplatte, 3 Tech-Streifen; kein Schlot (Glut-Monopol)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 0.0458,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB3104",
+          "mass": 2400,
+          "energy": 30000,
+          "buildTime": 2400,
+          "hp": 100,
+          "shieldHp": null,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 0.0417,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 10.0,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_shield",
+      "name": {
+        "de": "Schirm II",
+        "en": "Canopy II"
+      },
+      "role": {
+        "de": "Schildgenerator",
+        "en": "Shield Generator"
+      },
+      "tech": 2,
+      "group": "intel",
+      "visual": "v_shield",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "K10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Shield Generator",
+        "bp": "UEB4202",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "SHIELD",
+        "DEFENSE",
+        "TECH2",
+        "SIZE12"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 600,
+        "energy": 6000,
+        "buildTime": 1150,
+        "buildPower": 20,
+        "upkeepEnergyPerSec": 200
+      },
+      "health": {
+        "max": 280
+      },
+      "shield": {
+        "hp": 9000,
+        "radius": 24,
+        "regenPerSec": 110,
+        "regenStartS": 3,
+        "rechargeS": 25,
+        "upkeepEnergyPerSec": 200
+      },
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [
+          "shield (MS13, C17)"
+        ],
+        "upgradesTo": "core:str_t3_shield",
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Kollaps + Wiederaufbau nach rechargeS; Stall schaltet ab. Vergleich über HP+Schild."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "F"
+      },
+      "icon": "struct_shield_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "waagerecht"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 1,
+        "trisEstimate": 148,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Mast mit waagerechtem Ring (Ø ≥ 0,8 × Footprint-Kante), Generator-Kessel am Fuß."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 15.4667,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEB4202",
+          "mass": 600,
+          "energy": 6000,
+          "buildTime": 1150,
+          "hp": 250,
+          "shieldHp": 9000,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 15.4167,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 0.3,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_shield",
+      "name": {
+        "de": "Schirm III",
+        "en": "Canopy III"
+      },
+      "role": {
+        "de": "Schildgenerator",
+        "en": "Shield Generator"
+      },
+      "tech": 3,
+      "group": "intel",
+      "visual": "v_shield",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "K10 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Heavy Shield Generator (Upgrade-Kosten)",
+        "bp": "UEB4301",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "SHIELD",
+        "DEFENSE",
+        "TECH3",
+        "SIZE12"
+      ],
+      "buildableBy": "UPGRADE",
+      "economy": {
+        "mass": 3200,
+        "energy": 52000,
+        "buildTime": 5000,
+        "upkeepEnergyPerSec": 400
+      },
+      "health": {
+        "max": 520
+      },
+      "shield": {
+        "hp": 17000,
+        "radius": 40,
+        "regenPerSec": 130,
+        "regenStartS": 1,
+        "rechargeS": 25,
+        "upkeepEnergyPerSec": 400
+      },
+      "weapons": [],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          6,
+          6
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 20
+      },
+      "special": {
+        "toggles": [
+          "shield (MS13, C17)"
+        ],
+        "upgradesTo": null,
+        "upgradeFrom": "core:str_t2_shield",
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Nur per Upgrade."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "Upgrade (Command Card)"
+      },
+      "icon": "struct_shield_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boiler"
+          },
+          {
+            "part": "mast"
+          },
+          {
+            "part": "ring",
+            "mat": "team",
+            "anim": "yaw",
+            "note": "waagerecht"
+          },
+          {
+            "part": "ring",
+            "note": "zweiter_ring"
+          },
+          {
+            "part": "hull",
+            "note": "schuerze"
+          }
+        ],
+        "partCount": 6,
+        "animatedParts": 1,
+        "trisEstimate": 224,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.17
+        },
+        "description": "Schirm auf 6×6 (Höhe ×1,4/1,2) mit zweitem Ring und Schürze, 3 Tech-Streifen; kein Schlot (Glut-Monopol)."
+      },
+      "balance": {
+        "dps": null,
+        "dpsPerMass": null,
+        "hpPerMass": 5.475,
+        "hpBasis": "HP+Schild",
+        "fa": {
+          "bp": "UEB4301",
+          "mass": 3300,
+          "energy": 55000,
+          "buildTime": 5000,
+          "hp": 500,
+          "shieldHp": 17000,
+          "dps": 0,
+          "dpsPerMass": null,
+          "hpPerMass": 5.303,
+          "speed": null,
+          "range": null
+        },
+        "devDpsPerMassPct": null,
+        "devHpPerMassPct": 3.2,
+        "devProductPct": null,
+        "pulk": null,
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t2_arty",
+      "name": {
+        "de": "Tiegel",
+        "en": "Crucible"
+      },
+      "role": {
+        "de": "Artilleriestellung",
+        "en": "Artillery Emplacement"
+      },
+      "tech": 2,
+      "group": "arty",
+      "visual": "v_arty_struct",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "K13 in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T2 Artillery Installation",
+        "bp": "UEB2303",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "TECH2",
+        "SIZE4"
+      ],
+      "buildableBy": "ENGINEER & (TECH2 | TECH3)",
+      "economy": {
+        "mass": 1800,
+        "energy": 13000,
+        "buildTime": 1600
+      },
+      "health": {
+        "max": 3600
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_crucible_shell_t2",
+          "type": "Tiegelgranate",
+          "damage": 2100,
+          "salvo": 1,
+          "reloadS": 21.0,
+          "dps": 100.0,
+          "rangeMin": 50,
+          "range": 110,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 26,
+          "splash": 3,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          2,
+          2
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "Artillerie-Adjacency (Kraftwerke erhöhen Feuerrate, FA-Relation) optional mit E11."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "V"
+      },
+      "icon": "struct_arty_t2",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "pitch",
+            "note": "tiegel"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht"
+          }
+        ],
+        "partCount": 4,
+        "animatedParts": 2,
+        "trisEstimate": 128,
+        "techStripes": 2,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 1.0,
+          "y": 1.0
+        },
+        "description": "Große Kelle (Tiegel) auf Schwenkarm über Sockel, Gegengewicht."
+      },
+      "balance": {
+        "dps": 100.0,
+        "dpsPerMass": 0.0556,
+        "hpPerMass": 2.0,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2303",
+          "mass": 1900,
+          "energy": 13585,
+          "buildTime": 1600,
+          "hp": 3600,
+          "shieldHp": null,
+          "dps": 100.0,
+          "dpsPerMass": 0.0526,
+          "hpPerMass": 1.8947,
+          "speed": null,
+          "range": 115
+        },
+        "devDpsPerMassPct": 5.6,
+        "devHpPerMassPct": 5.6,
+        "devProductPct": 11.4,
+        "pulk": {
+          "splash": 3,
+          "faSplash": 3,
+          "pulkDpsPerMass": 0.5345,
+          "faPulkDpsPerMass": 0.5064,
+          "devPct": 5.6
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    },
+    {
+      "id": "core:str_t3_arty",
+      "name": {
+        "de": "Hochofen",
+        "en": "Blast Furnace"
+      },
+      "role": {
+        "de": "Schwere Artilleriestellung",
+        "en": "Heavy Artillery Emplacement"
+      },
+      "tech": 3,
+      "group": "arty",
+      "visual": "v_arty_struct",
+      "ms9Core": false,
+      "msFirst": "MS13",
+      "msNote": "K13 + Reichweiten-Gate in MS13",
+      "faReference": {
+        "devOnly": true,
+        "role": "T3 Heavy Artillery Installation (auf MVP-Kartengröße skaliert)",
+        "bp": "UEB2302",
+        "crossCheckBp": null
+      },
+      "categories": [
+        "STRUCTURE",
+        "DEFENSE",
+        "INDIRECTFIRE",
+        "ARTILLERY",
+        "TECH3",
+        "SIZE16"
+      ],
+      "buildableBy": "ENGINEER & TECH3",
+      "economy": {
+        "mass": 48000,
+        "energy": 900000,
+        "buildTime": 76700
+      },
+      "health": {
+        "max": 10000
+      },
+      "shield": null,
+      "weapons": [
+        {
+          "ref": "core:wpn_furnace_shell_t3",
+          "type": "Hochofengranate",
+          "damage": 5500,
+          "salvo": 1,
+          "reloadS": 15.0,
+          "dps": 366.67,
+          "rangeMin": 60,
+          "range": 200,
+          "projectile": "ballistisch",
+          "muzzleVelocity": 55,
+          "splash": 6,
+          "layers": [
+            "land"
+          ]
+        }
+      ],
+      "motion": {
+        "layer": "land",
+        "speed": 0,
+        "footprint": [
+          8,
+          8
+        ],
+        "structure": true
+      },
+      "intel": {
+        "vision": 28
+      },
+      "special": {
+        "toggles": [],
+        "upgradesTo": null,
+        "upgradeFrom": null,
+        "adjacency": null,
+        "deathWeapon": null,
+        "notes": "FA-Referenz: Reichweite 825, 72.000 Mass, 5.500 Schaden alle 10 s. Hier Reichweite 200 (Gate ≤ 40 % der kleinsten Kartendiagonale ⇒ Kartenpool ≥ 354 WU), Kosten ≈ 67 %, gleicher Einzelschuss (Burst gegen Schilde: Schirm III fällt nach 5 Schüssen/60 s), Feuerrate ×2/3; DPS/Mass und HP/Mass bleiben in Relation."
+      },
+      "hotbuild": {
+        "menu": "Bau",
+        "slot": "V"
+      },
+      "icon": "struct_arty_t3",
+      "kitbash": {
+        "parts": [
+          {
+            "part": "hull",
+            "note": "sockel"
+          },
+          {
+            "part": "boom",
+            "anim": "yaw",
+            "note": "lafette"
+          },
+          {
+            "part": "ladle",
+            "mat": "team",
+            "anim": "pitch",
+            "note": "kelle"
+          },
+          {
+            "part": "barrel",
+            "note": "steilrohr"
+          },
+          {
+            "part": "hull",
+            "note": "gegengewicht"
+          }
+        ],
+        "partCount": 5,
+        "animatedParts": 2,
+        "trisEstimate": 152,
+        "techStripes": 3,
+        "techStripeMat": "ceramic",
+        "scale": {
+          "xz": 4.0,
+          "y": 4.67
+        },
+        "description": "Tiegel-Silhouette auf 8×8: Lafette, Kelle Ø 3,0 WU (Team), Steilrohr 7 WU × Ø 0,6 aus der Kelle (an die Kelle geparentet), Gegengewicht; kein Schlot, 3 Tech-Streifen."
+      },
+      "balance": {
+        "dps": 366.67,
+        "dpsPerMass": 0.0076,
+        "hpPerMass": 0.2083,
+        "hpBasis": "HP",
+        "fa": {
+          "bp": "UEB2302",
+          "mass": 72000,
+          "energy": 1350000,
+          "buildTime": 115000,
+          "hp": 15000,
+          "shieldHp": null,
+          "dps": 550.0,
+          "dpsPerMass": 0.0076,
+          "hpPerMass": 0.2083,
+          "speed": null,
+          "range": 825
+        },
+        "devDpsPerMassPct": 0.0,
+        "devHpPerMassPct": 0.0,
+        "devProductPct": 0.0,
+        "pulk": {
+          "splash": 6,
+          "faSplash": 6,
+          "pulkDpsPerMass": 0.2535,
+          "faPulkDpsPerMass": 0.2535,
+          "devPct": 0.0
+        },
+        "withinBand25": true,
+        "withinTarget15": true
+      }
+    }
+  ]
+}
