@@ -575,15 +575,19 @@ U(id='core:str_t3_arty', de='Hochofen', en='Blast Furnace', roleDe='Schwere Arti
 # eigene Lints (Budget T4, Parts ≤ 16, animiert ≤ 8 = PartStream-Limit), eigene Visuals (kein Superset mit T1–T3).
 EXP_BUILD = 'ENGINEER & TECH3'
 XM = {
-    'XM1': 'Mobile Großbaustelle: Meister gießen mobile T4 als Baustelle mit Footprint (blockiert Pathing wie ein Gebäude, B1/B6), die bei 100 % zur Einheit wird und ausläuft (FA: NEEDMOBILEBUILD)',
-    'XM2': 'Massiv/Crush: kleinere Einheiten blockieren nicht (Steering-Priorität nach sizeClass, M7), werden beiseitegeschoben; Mauern und Wracks unter dem Footprint werden überrollt; Fußtritt-Schaden je Schritt (FA: Footfall-Damage)',
-    'XM3': 'Große Größenklassen: sizeClass 6–7 mit eigenen Clearance-Komponenten (M5/M6); nicht-quadratischer Footprint 7×9',
-    'XM4': 'Verzögerte Death-Weapon (Umkippen/Absturz, 1,5–3 s Fluchtfenster) mit Kamera-Shake und Großereignis-Effekt (P14)',
+    'XM1': 'Mobile Großbaustelle: Meister gießen mobile T4 als Baustelle mit Footprint (blockiert Pathing wie ein Gebäude, B1/B6), die bei 100 % zur Einheit wird und ausläuft (FA: NEEDMOBILEBUILD). '
+            'Platzierung nur, wenn der Footprint in der Clearance-Komponente (Land, sizeClass) der Hauptfläche liegt (kein T4 im Basis-Kessel); '
+            'Baustellen < 100 % haben keine Todeswaffe, ihr Wrack trägt 90 % der verbauten Mass',
+    'XM2': 'Massiv/Crush: kleinere Einheiten blockieren nicht (Steering-Priorität nach sizeClass, M7), werden beiseitegeschoben; Mauern und Wracks unter dem Footprint werden überrollt; '
+            'Fußtritt-Schaden je Schritt (FA: Footfall-Damage) im festen Sim-Takt (12 Ticks, Fuß abwechselnd), im Tick vor der Kollisionsauflösung',
+    'XM3': 'Große Größenklassen: sizeClass 6–7 mit eigenen Clearance-Komponenten (M5/M6); Pfad-Klasse nach der Breite, die Länge 9 der Kokille löst das Steering (Wenden auf der Stelle, Stuck → Repath); Abnahme mit Basisgassen 7–9 WU',
+    'XM4': 'Verzögerte Death-Weapon (Umkippen/Absturz, 1,5–3 s Fluchtfenster) mit Kamera-Shake und Großereignis-Effekt (P14); Selbstzerstörung nutzt dieselbe Verzögerung; Kettenreaktionen (K14) je Glied ≥ 3 Ticks versetzt',
     'XM5': 'Mobile Fabrik: Bauliste (B3) in einer mobilen Einheit, Ausgang Heckrampe, Rally relativ zum Träger; baut nur im Stand',
-    'XM6': 'Strategische Reichweite: Feuern auf Radar-/Ghost-Ziele außerhalb der Sicht, Streuung proportional zur Distanz, Einschlagwarnung für den Beschossenen (Decal + Ansage P8)',
+    'XM6': 'Strategische Reichweite: Feuern auf Radar-/Ghost-Ziele außerhalb der Sicht (baut auf I3/K6 auf), Streuung σ = max(8 WU, 1,2 % der Distanz), Einschlagwarnung für den Beschossenen ab dem Abschuss (Ring Splash + 2σ, Ansage P8)',
     'XM7': 'Bedarfsdeckende Produktion: Ertrag = Grundlast + clamp(Bedarf − Einkommen, 0, Deckel) je Eco-Tick, deterministisch nach der Stall-Auflösung (E3)',
-    'XM8': 'T4-Icon: Klammer statt Tech-Kerben, Faktor 1,5 (content/icons/grammar.ts), Mesh bleibt länger vor dem Icon sichtbar (C2)',
-    'XM9': 'Großguss-Meldung: sieht ein Haus eine fremde T4-Baustelle (Sicht, nicht Radar), meldet die Ansage „Großguss gesichtet“ (P8); ab 75 % Baufortschritt zusätzlich Minimap-Ping (C16)',
+    'XM8': 'T4-Icon: Klammer statt Tech-Kerben, Faktor 1,5 (content/icons/grammar.ts), Zeichenreihenfolge über T1–T3, Mesh bleibt länger vor dem Icon sichtbar (C2)',
+    'XM9': 'Großguss-Meldung: sieht ein Haus eine fremde T4-Baustelle (Sicht, nicht Radar), meldet die Ansage „Großguss gesichtet“ (P8); ab 75 % Baufortschritt zusätzlich Minimap-Ping (C16). '
+            'Konverter-Baustellen melden sich ab 50 % allen Gegnern auch ohne Sicht (Ping mit 40 WU Unschärfe, „Großguss-Signatur“)',
 }
 
 U(id='core:exp_lnd_walker', de='Stampfe', en='Stamper', roleDe='Experimenteller Sturmläufer', roleEn='Experimental Assault Walker', tech=4,
@@ -599,7 +603,8 @@ U(id='core:exp_lnd_walker', de='Stampfe', en='Stamper', roleDe='Experimenteller 
   death=dict(ref='core:wpn_stamper_break', damage=8000, radius=7, delayS=2.0,
              note='Gussbruch: kippt in Laufrichtung, Explosion nach 2,0 s (XM4), Friendly Fire (K8); FA-Relation 8000 r7'),
   special='Reiner Nahkampf-Koloss ohne Flugabwehr: Konter sind Luft (Krähe, Elster, Kolkrabe), Hochofen-/Pfannen-Beschuss auf Abstand und '
-          'Reißnadel-Pulks. Regeneration 10 HP/s. Wrack 90 % Mass (24.300) – „Schlacke ist auch Erz“.',
+          'Reißnadel-Pulks. Regeneration 10 HP/s. Nicht amphibisch (Layer Land; Amphibious erst mit U17), Wasser nur über Brücken. '
+          'Wrack 90 % Mass (24.300) – „Schlacke ist auch Erz“.',
   hotbuild=('Großguss', 'Q'), icon='land_bot_t4',
   parts=P('legs*legs@bein_l legs*legs@bein_r hull@becken hull:team*yaw@torso bell:team@schulter_l bell:team@schulter_r '
           'barrel*pitch@rohr_l barrel*pitch@rohr_r boiler@rueckenkessel hull@stampffuss_l hull@stampffuss_r hull:ceramic@klammer'),
@@ -609,7 +614,7 @@ U(id='core:exp_lnd_walker', de='Stampfe', en='Stamper', roleDe='Experimenteller 
   exp=dict(features=['U16', 'B2', 'B1', 'B6', 'M5', 'M6', 'M7', 'K4', 'K5', 'K8', 'P14', 'A16', 'C2'], newMechanics=['XM1', 'XM2', 'XM3', 'XM4', 'XM8', 'XM9'],
            crush=dict(walls=True, wrecks=True, pushSizeClassMax=3, footfallDamage=3000, footfallRadius=1.2, friendly=False),
            counters=['Luft (Krähe, Elster, Kolkrabe) – keine Flugabwehr', 'Artillerie auf Abstand (Pfanne 85 WU, Hochofen 200 WU) gegen Tempo 2,4',
-                     'Reißnadel-Pulks (58 WU) kiten', 'Baustelle früh angreifen (XM9)'],
+                     'Reißnadel-Pulks auf 58 WU (gleiches Tempo 2,4: Abstand halten braucht Mikro)', 'Baustelle früh angreifen (XM9)'],
            compareNote='FA-DPS = Strahl 2.500 + Greifer 0,04 (ohne Todeswaffe); Stampfen nicht gewertet (FA-Footfall ebenfalls nicht in spooky-DPS)',
            t3Equivalent=dict(unit='core:lnd_t3_bot', faT4='UAL0401', faT3='UEL0303')))
 
@@ -628,7 +633,7 @@ U(id='core:exp_lnd_foundry', de='Kokille', en='Mould', roleDe='Mobile Gießhalle
   toggles=['shield (C17)'],
   death=dict(ref='core:wpn_foundry_burst', damage=4000, radius=7, delayS=1.5, note='Kesselbruch (XM4), Friendly Fire (K8); FA-Relation 4000 r7'),
   special='Mobile Fabrik mit der Bauliste von Landwerk III (Build Power 135 wie FA), Personal-Kuppel 20.000 HP (Radius 24, deckt Begleiter). '
-          'Baut nur im Stand, Ausgang über die Heckrampe (XM5). Kein Torpedo (Marine Post-MVP): FA-Vergleich ohne Anti-Navy-Waffe.',
+          'Baut nur im Stand, Ausgang über die Heckrampe (XM5), kein Assist auf fremde Baustellen. Kein Torpedo (Marine Post-MVP): FA-Vergleich ohne Anti-Navy-Waffe.',
   hotbuild=('Großguss', 'E'), icon='land_fac_land_t4',
   parts=P('tracks@kette_l tracks@kette_r hull@wanne hull:team@deck hull@portal stack:glow@schlot_l stack:glow@schlot_r '
           'ladle:team*yaw@kelle_l ladle:team*yaw@kelle_r bell:team*yaw@glocke_l bell:team*yaw@glocke_r grate:team*yaw@rostkamm '
@@ -640,7 +645,7 @@ U(id='core:exp_lnd_foundry', de='Kokille', en='Mould', roleDe='Mobile Gießhalle
            newMechanics=['XM1', 'XM2', 'XM3', 'XM4', 'XM5', 'XM8', 'XM9'],
            crush=dict(walls=True, wrecks=True, pushSizeClassMax=3, footfallDamage=None, footfallRadius=None, friendly=False),
            counters=['Energy-Stall (600 E/s Unterhalt, E3) schaltet die Kuppel ab', 'Konzentrierter Direktbeschuss (Stampfe, Fallhammer-Pulk) unter die Kuppel',
-                     'Bomber nach Kuppel-Kollaps (Flak nur 57 DPS)', 'Langsam (1,75) – Hochofen/Konverter treffen sicher'],
+                     'Bomber nach Kuppel-Kollaps (Flak nur 57 DPS)', 'Baut nur im Stand – dann treffen Hochofen und Konverter sicher (2 Konverter-Treffer brechen die Kuppel, der dritte zerstört die Kokille)'],
            compareNote='FA-DPS = Artillerie 750 + Riot 500 + Flak 57,14 (ohne Torpedo 75, Marine Post-MVP)',
            t3Equivalent=dict(unit='core:lnd_t3_bot', faT4='UEL0401', faT3='UEL0303')))
 
@@ -655,7 +660,7 @@ U(id='core:exp_air_gunship', de='Kolkrabe', en='Raven', roleDe='Experimenteller 
            W('core:wpn_raven_aa', 'Flakkamm (Luftabwehr-Raketen)', 150, 2.5, 60, 'lenkflugkörper', salvo=2, mv=30, layers=('air',))],
   speed=8, turn=20, accel=None, sizeClass=0, footprint=[7, 7], vision=46,
   death=dict(ref='core:wpn_raven_crash', damage=5000, radius=8, delayS=3.0, note='Absturz (K12, XM4): trudelt 3 s, Aufschlag wie FA 5000 r8'),
-  special='Schwebt tief (Flughöhe ≈ 12 WU) und langsam (8 WU/s); nur Flugabwehr trifft (K3). Regeneration 70 HP/s. '
+  special='Schwebt tief (Flughöhe ≈ 12 WU) und langsam (8 WU/s); nur Flugabwehr trifft (K3). Landet nicht, Footprint 7×7 nur für die Baustelle. Regeneration 70 HP/s. '
           'Unterhalt 600 E/s (FA-Relation), im Energy-Stall halbe Feuerrate. Konter: Hochrost, Trommelsieb, Turmfalken-Schwärme.',
   hotbuild=('Großguss', 'S'), icon='air_direct_t4',
   parts=P('hull:team@deckscheibe ductfan:team*spin@duese_vl ductfan:team*spin@duese_vr ductfan:team*spin@duese_hl ductfan:team*spin@duese_hr '
@@ -675,10 +680,12 @@ U(id='core:exp_str_arty', de='Konverter', en='Converter', roleDe='Strategische A
   cats=['STRUCTURE', 'ARTILLERY', 'INDIRECTFIRE', 'STRATEGIC', 'EXPERIMENTAL', 'SIZE20'], buildableBy=EXP_BUILD,
   mass=220000, energy=5900000, bt=300000, hp=8000,
   weapons=[W('core:wpn_converter_shell', 'Konverterguss (Schwerstgranate)', 16000, 8.0, 1500, 'ballistisch', minr=150, splash=7, mv=160,
-             extra='XM6: Streuung σ = 1,2 % der Distanz (≈ 12 WU auf 1.000 WU), Flugzeit ≈ 9 s auf 1.000 WU; Friendly Fire (K8)')],
+             extra='XM6: Streuung σ = max(8 WU, 1,2 % der Distanz) (≈ 12 WU auf 1.000 WU), Flugzeit ≈ 9 s auf 1.000 WU, Einschlagwarnung ab Abschuss; Friendly Fire (K8)')],
   footprint=[10, 10], vision=28,
   special='Reichweite 1.500 WU deckt jede MVP-Karte (Setons-Diagonale 1.448 WU); FA 4.000 (bis 81-km-Karten, M14). Einzelschuss und Takt wie FA: '
-          'ein Schuss knackt Schirm II allein, Schirm III nach 2 Treffern, den Mantel nach 6. Keine Death-Weapon (wie FA), Wrack 90 % Mass.',
+          'ein Schuss knackt Schirm II allein, Schirm III nach 2 Treffern, den Mantel nach 6. Streuung mit Untergrenze 8 WU (> Splash 7): auf kurzen Distanzen '
+          'kein Einheiten-Scharfschütze, ein stehender Vogt (12.000 HP) wird mit ≈ 32 % je Schuss getroffen und hört die Einschlagwarnung. '
+          'Baustelle ab 50 % für alle Gegner sichtbar (XM9). Keine Death-Weapon (wie FA), Wrack 90 % Mass.',
   hotbuild=('Großguss', 'W'), icon='struct_arty_t4',
   parts=P('hull@sockel hull:team@randband boom*yaw@drehbuehne boom@wange_l boom@wange_r ladle:team*pitch@konverterbirne '
           'barrel@steilrohr hull@gegengewicht_l hull@gegengewicht_r hull:ceramic@klammer'),
@@ -687,7 +694,8 @@ U(id='core:exp_str_arty', de='Konverter', en='Converter', roleDe='Strategische A
   exp=dict(features=['U21', 'K13', 'K2', 'K4', 'K6', 'K8', 'K10', 'I2', 'I3', 'C15', 'P8', 'P14', 'A21', 'C2'], newMechanics=['XM6', 'XM8', 'XM9'],
            crush=None,
            counters=['Mantel über der Basis (6 Treffer = 40 s bis zum Bruch)', 'Früher Angriff auf die Baustelle (300.000 BT: Sicht-Meldung XM9)',
-                     'Stampfe/Kolkrabe-Vorstoß: 8.000 HP, keine Eigenverteidigung', 'Radar-Jamming (I5, später) verhindert Zielauflösung'],
+                     'Stampfe/Kolkrabe-Vorstoß: 8.000 HP, keine Eigenverteidigung', 'Einheiten weichen dem Warnring aus (Flugzeit ≈ 9 s auf 1.000 WU)',
+                     'Radar-Jamming (I5, später) verhindert Zielauflösung'],
            compareNote='FA-DPS = 16.000 / 8 s; Pulk-DPS/Mass mit Splash 7 wie FA',
            t3Equivalent=dict(unit='core:str_t3_arty', faT4='UEB2401', faT3='UEB2302')))
 
@@ -709,8 +717,9 @@ U(id='core:exp_str_eco', de='Tiefenstich', en='Deep Tap', roleDe='Tiefenzapfwerk
           '(Glutkern), vier Eckschlote (Energy). Liest sich als „Raute + Flamme“ in Riesengröße. Keramik-Klammer am Sockel.',
   exp=dict(features=['E17', 'E1', 'E2', 'E3', 'E4', 'K14', 'K8', 'P14', 'A16', 'C10', 'C2'], newMechanics=['XM4', 'XM7', 'XM8', 'XM9'],
            crush=None,
-           counters=['Nur 5.200 HP: Konverter (1 Treffer), Kolkrabe-Vorstoß, Bomber', 'Todesexplosion 35.000 r25 – nicht neben Werke stellen'],
-           compareNote='keine Waffen; HP/Mass-Vergleich gegen Paragon',
+           counters=['Nur 5.200 HP: Konverter und schon ein Hochofen (5.500) töten ihn mit einem Treffer – Standort > 200 WU hinter der Front oder unter dem Mantel',
+                     'Kolkrabe-Vorstoß, Bomber', 'Todesexplosion 35.000 r25 – nicht neben Werke stellen'],
+           compareNote='keine Waffen; HP/Mass-Vergleich gegen `XAB1401`',
            t3Equivalent=dict(unit='core:str_t3_mex', faT4='XAB1401', faT3='UEB1302')))
 
 U(id='core:exp_str_shield', de='Mantel', en='Mantle', roleDe='Großschild', roleEn='Bastion Shield', tech=4,
@@ -718,19 +727,22 @@ U(id='core:exp_str_shield', de='Mantel', en='Mantle', roleDe='Großschild', role
   faRef='UEB4301', faCross='UEL0401', faRole='T3 Heavy Shield Generator ×≈5 (FA hat kein Schild-Experimental; Relation pro Mass)',
   cats=['STRUCTURE', 'SHIELD', 'DEFENSE', 'EXPERIMENTAL', 'SIZE16'], buildableBy=EXP_BUILD,
   mass=16000, energy=260000, bt=24000, hp=2500,
-  shield=dict(hp=80000, radius=60, regenPerSec=400, regenStartS=1, rechargeS=60, upkeepEnergyPerSec=2000),
+  shield=dict(hp=80000, radius=60, regenPerSec=250, regenStartS=1, rechargeS=90, rechargeFraction=0.25, upkeepEnergyPerSec=2000),
   eco=dict(upkeepEnergyPerSec=2000), weapons=[], footprint=[8, 8], vision=24, toggles=['shield (C17)'],
-  special='Eigene Varkan-Rolle ohne FA-T4-Vorbild: Kuppel Radius 60 (2,25× Fläche von Schirm III) mit 80.000 HP und 400 HP/s Regeneration. '
-          'Ein einzelner Hochofen bricht ihn nie (Regeneration pro Nachladezeit > Einzelschuss), der Konverter nach 6 Treffern. Unterhalt 2.000 E/s: '
-          'ein Energy-Stall (E3) lässt die Kuppel sofort fallen.',
+  special='Eigene Varkan-Rolle ohne FA-T4-Vorbild: Kuppel Radius 60 (2,25× Fläche von Schirm III) mit 80.000 HP und 250 HP/s Regeneration '
+          '(5 Schirm III: 650 HP/s verteilt). Der Konverter bricht sie nach 6 Treffern (40 s), ein einzelner Hochofen nach ≈ 9,5 min, zwei im Wechsel nach ≈ 2,5 min. '
+          'Nach dem Kollaps 90 s offline, dann mit 25 % (20.000) zurück: gestapelte Mäntel verzögern einen Konverter, sperren ihn aber nicht dauerhaft. '
+          'Unterhalt 2.000 E/s: ein Energy-Stall (E3) lässt die Kuppel sofort fallen.',
   hotbuild=('Großguss', 'F'), icon='struct_shield_t4',
   parts=P('hull@sockel hull:team@randband boiler@generator mast@hauptmast ring:team*spin@ring_oben ring*spin@ring_mitte ring@ring_unten '
-          'hull@schuerze hull:ceramic@klammer'),
-  kitbash='Schildturm auf 8×8: dicker Mast mit drei gestaffelten waagerechten Ringen (oberster = größter, Ø ≈ 7 WU, team; Schild-Monopol), '
-          'Generatorkessel am Fuß, Schürze. Höhe ≈ 9 WU. Keramik-Klammer am Sockel, kein Schlot.',
+          'hull:team@schuerze hull:ceramic@klammer'),
+  kitbash='Schildturm auf 8×8: dicker Mast mit drei gestaffelten waagerechten Ringen (oberster = größter, Ø ≈ 8 WU, team; Schild-Monopol), '
+          'Generatorkessel am Fuß, gefaltete Schürze (der „Mantel“, team), vier Strebebögen tragen den unteren Ring. Höhe ≈ 12 WU '
+          '(≈ 2,7× Schirm III). Keramik-Klammer am Sockel, kein Schlot.',
   exp=dict(features=['K10', 'E3', 'C17', 'C15', 'P14', 'U21', 'A16', 'C2'], newMechanics=['XM8', 'XM9'],
            crush=None,
            counters=['Energy-Stall (2.000 E/s)', 'Einheiten laufen unter die Kuppel (Stampfe, Kokille)', 'Konverter + 2 Hochöfen im Takt',
+                     'Nach dem Kollaps kehrt die Kuppel nur mit 25 % zurück (2 Konverter-Treffer)',
                      'Kuppel schützt nicht gegen Todeswaffen innerhalb'],
            compareNote='HP+Schild pro Mass gegen T3-Schildgenerator (FA-Upgradekosten)',
            t3Equivalent=dict(unit='core:str_t3_shield', faT4='UEB4301', faT3='UEB4301')))

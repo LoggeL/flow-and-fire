@@ -10,9 +10,11 @@
  * Guss-Block mit offenem U am Heck und dem Schildring darüber.
  *
  * Aufbau (y = Boden, +Z = Bug, Heck = Ausgang):
- *   hull              – vier Kettenblöcke, Unterwanne, Deck mit Bugfase und Deckplatte (team), U-Portal (Wände mit
- *                       teamfarbenen Kappen, Dach), glühendes Tor + Gießrinne, Heckrampe, zwei Schlote mit Glutkrone,
- *                       Schildmast, Keramik-Klammer
+ *   hull              – vier Kettenblöcke mit Kupfer-Laufradnaben, Unterwanne, Bugramme (Crush, XM2), Deck mit
+ *                       Bugfase, Deckplatte (team) und Kupfer-Scheuerleisten, U-Portal (Wände mit teamfarbenen Kappen,
+ *                       Hallendecke mit drei Sägezahn-Sheds, deren Fenster nach vorn glühen), glühendes Tor, Glutschein
+ *                       an den Portal-Innenwänden, Gießrinne, Heckrampe mit Kupferkufen, zwei Schlote mit Glutkrone,
+ *                       Schildmast, Keramik-Klammer. Glut ≈ 3 % (Glutkern-Band der Flow-Einheiten).
  *   turret_l/_r       – Flankenglocken (team) mit festem Rohr, yaw                                (PartStream 1–2)
  *   ladle_l/_r        – Deckskellen (team) mit Schwenkarm, yawpitch                              (PartStream 3–4)
  *   aa                – Rostkamm (team) mit vier senkrechten Flakrohren, yaw                     (PartStream 5)
@@ -33,7 +35,9 @@ const DECK_Y0 = 1.0;
 const DECK_TOP = 2.2;
 const PLATE_TOP = 2.26;
 const WALL_H = 2.2;
-const RING_Y = 7.4;
+const RING_Y = 7.2;
+/** Mitten der drei Sheds (z) über der Hallendecke. */
+const SHEDS = [-0.23, -1.1, -1.97] as const;
 
 function bell(side: 1 | -1): Shape[] {
   const x = side * 2.55;
@@ -71,6 +75,11 @@ export default defineModel({
         mirrorX(extrude({ profile: TRACK_PROFILE, depth: 1.05, axis: 'x', at: [2.95, 0, 2.25], mat: 'dark', keep: true, tag: 'tracks' })),
         mirrorX(extrude({ profile: TRACK_PROFILE, depth: 1.05, axis: 'x', at: [2.95, 0, -2.25], mat: 'dark', keep: true, tag: 'tracks' })),
         box({ size: [4.6, 0.9, 8.2], at: [0, 0.75, 0], mat: 'dark', tag: 'hull' }),
+        // Laufrad-Naben (Kupfer) außen an den Kettenblöcken
+        ...[3.0, 1.5, -1.5, -3.0].map((z) => mirrorX(cylinder({ radius: 0.34, height: 0.14, axis: 'x', at: [3.52, 0.55, z], segments: 6, caps: 'top', mat: 'copper', maxLod: 0, tag: 'tracks' }))),
+        // Bugramme (Crush, XM2): schräges Räumschild mit Kupferkante unter der Bugfase
+        beveledBox({ size: [6.4, 1.0, 0.7], at: [0, 0.75, 4.55], rot: [-20, 0, 0], bevel: { topFront: 0.2, side: 0.3 }, mat: 'dark', keep: true, tag: 'hull' }),
+        box({ size: [6.0, 0.18, 0.24], at: [0, 0.32, 4.82], mat: 'copper', maxLod: 1, tag: 'hull' }),
         // Deck: 6,8 × 1,2 × 8,8 WU, Bugfase
         beveledBox({
           size: [6.8, DECK_TOP - DECK_Y0, 8.8],
@@ -85,14 +94,20 @@ export default defineModel({
         // U-Portal hinten: zwei Wände (Kappen team) + Dach, offen nach hinten (Ausgang)
         mirrorX(beveledBox({ size: [1.2, WALL_H, 4.4], at: [2.55, DECK_TOP + WALL_H / 2, -2.2], bevel: { top: 0.3 }, mat: 'body', keep: true, tag: 'hull' })),
         mirrorX(quad({ size: [0.62, 3.8], at: [2.55, DECK_TOP + WALL_H + 0.004, -2.2], mat: 'team', maxLod: 1 })),
-        beveledBox({ size: [3.95, 0.45, 2.4], at: [0, DECK_TOP + WALL_H - 0.2, -1.2], bevel: { top: 0.12 }, mat: 'body', keep: true, tag: 'hull' }),
-        box({ size: [3.0, 0.03, 1.6], at: [0, DECK_TOP + WALL_H + 0.04, -1.2], mat: 'team', maxLod: 1 }),
+        beveledBox({ size: [3.95, 0.3, 2.6], at: [0, DECK_TOP + WALL_H - 0.12, -1.1], bevel: { top: 0.06 }, mat: 'body', keep: true, tag: 'hull' }),
+        // Sheddach der Gießhalle: drei Sägezahn-Sheds (Schräge team), die steilen Fensterflächen nach vorn glühen von innen
+        ...SHEDS.map((z) => wedge({ size: [3.7, 0.7, 0.86], at: [0, DECK_TOP + WALL_H + 0.38, z], rot: [0, 180, 0], mat: 'team', maxLod: 1, tag: 'hull' })),
+        ...SHEDS.map((z) => quad({ size: [3.3, 0.6], rot: [90, 0, 0], at: [0, DECK_TOP + WALL_H + 0.33, z + 0.435], mat: 'glow', maxLod: 1 })),
         // Stirnwand der Halle (Portal ist vorn geschlossen, hinten offen = Ausgang)
         beveledBox({ size: [3.95, WALL_H - 0.2, 0.5], at: [0, DECK_TOP + (WALL_H - 0.2) / 2, 0.25], bevel: { topFront: 0.25 }, mat: 'body', keep: true, tag: 'hull' }),
         // Werkhallentor (Glutkern) an der Stirnwand innen + Gießrinne zur Heckrampe
-        quad({ size: [3.3, 1.6], rot: [-90, 0, 0], at: [0, DECK_TOP + 0.9, -0.006], mat: 'glow', keep: true }),
-        quad({ size: [0.6, 3.6], at: [0, DECK_TOP + 0.01, -2.6], mat: 'glow', maxLod: 1 }),
-        wedge({ size: [3.4, DECK_TOP - 0.2, 1.4], at: [0, (DECK_TOP - 0.2) / 2, -5.0], rot: [0, 180, 0], mat: 'body', keep: true, tag: 'hull' }),
+        quad({ size: [3.4, 1.8], rot: [-90, 0, 0], at: [0, DECK_TOP + 0.95, -0.006], mat: 'glow', keep: true }),
+        quad({ size: [1.4, 3.9], at: [0, DECK_TOP + 0.01, -2.3], mat: 'glow', maxLod: 1 }),
+        // Glutschein an den Innenseiten der Portalwände (Halle von innen erleuchtet)
+        mirrorX(quad({ size: [0.65, 4.0], rot: [0, 0, 90], at: [1.944, DECK_TOP + 1.0, -2.2], mat: 'glow', maxLod: 0 })),
+        wedge({ size: [3.4, 1.45, 1.8], at: [0, 0.725, -5.2], rot: [0, 180, 0], mat: 'body', keep: true, tag: 'hull' }),
+        // Rampenkufen (Kupfer) seitlich
+        mirrorX(wedge({ size: [0.2, 1.5, 1.85], at: [1.8, 0.75, -5.2], rot: [0, 180, 0], mat: 'copper', maxLod: 1, tag: 'hull' })),
         // zwei Schlote auf den Portalwänden (FACTORY = Flow), Glutkrone
         mirrorX(cylinder({ radius: 0.42, height: 1.9, at: [2.55, DECK_TOP + WALL_H + 0.95, -3.4], segments: 8, caps: false, mat: 'body', keep: true, tag: 'stack' })),
         mirrorX(cylinder({ radius: 0.36, height: 0.06, at: [2.55, DECK_TOP + WALL_H + 1.88, -3.4], segments: 8, caps: 'top', mat: 'glow', maxLod: 1, tag: 'stack' })),
@@ -103,6 +118,8 @@ export default defineModel({
         mirrorX(cylinder({ radius: 0.2, height: 4.2, axis: 'z', at: [3.25, DECK_TOP + 0.35, -2.2], segments: 6, mat: 'copper', maxLod: 1, tag: 'barrel' })),
         mirrorX(cylinder({ radius: 0.2, height: 2.3, at: [3.25, DECK_TOP + 1.45, -4.2], segments: 6, caps: 'top', mat: 'copper', maxLod: 1, tag: 'barrel' })),
         box({ size: [6.4, 0.3, 0.4], at: [0, DECK_TOP - 0.2, -4.45], mat: 'copper', maxLod: 1, tag: 'hull' }),
+        // Kupfer-Scheuerleisten längs an den Deckflanken
+        mirrorX(box({ size: [0.12, 0.25, 7.6], at: [3.44, DECK_TOP - 0.5, 0], mat: 'copper', maxLod: 0, tag: 'hull' })),
         // Keramik-Klammer an den Deckkanten vorn
         ceramicBracket({ x: 3.05, y: DECK_TOP, z: 1.3, len: 4.8, w: 0.34 }),
       ],
@@ -128,8 +145,8 @@ export default defineModel({
       pivot: [0, RING_Y, -1.2],
       anim: 'spin',
       shapes: [
-        tube({ outer: 4.0, inner: 3.55, height: 0.3, segments: 16, at: [0, RING_Y, -1.2], mat: 'team', keep: true, tag: 'ring' }),
-        radial(box({ size: [3.4, 0.14, 0.24], at: [1.9, 0, 0], mat: 'copper' }), { count: 3, startDeg: 90, at: [0, RING_Y, -1.2], maxLod: 1 }),
+        tube({ outer: 3.7, inner: 3.3, height: 0.32, segments: 16, at: [0, RING_Y, -1.2], mat: 'team', keep: true, tag: 'ring' }),
+        radial(box({ size: [3.1, 0.1, 0.16], at: [1.75, 0, 0], mat: 'copper' }), { count: 3, startDeg: 90, at: [0, RING_Y, -1.2], maxLod: 1 }),
       ],
     },
   ],

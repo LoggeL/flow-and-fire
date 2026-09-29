@@ -60,7 +60,7 @@ def special(u):
             bits.append(f"Death: `{dw['ref'].split(':')[1]}` {n(dw['damage'])}/r{n(dw['radius'],1)} ({dw['note']})")
     if u.get('shield'):
         sh = u['shield']
-        bits.append(f"Schild {n(sh['hp'])} HP, r {n(sh['radius'])}, Regen {n(sh['regenPerSec'])}/s ab {n(sh['regenStartS'])} s nach dem letzten Treffer, Neuaufbau {n(sh['rechargeS'])} s, {n(sh['upkeepEnergyPerSec'])} E/s")
+        bits.append(f"Schild {n(sh['hp'])} HP, r {n(sh['radius'])}, Regen {n(sh['regenPerSec'])}/s ab {n(sh['regenStartS'])} s nach dem letzten Treffer, Neuaufbau {n(sh['rechargeS'])} s" + (f" (danach {n(sh['rechargeFraction'] * 100)} %)" if sh.get('rechargeFraction') else '') + f", {n(sh['upkeepEnergyPerSec'])} E/s")
     e = u['economy']
     eco = []
     if e.get('buildPower'): eco.append(f"BP {n(e['buildPower'])}")
@@ -413,7 +413,7 @@ A('---')
 A('')
 A('## 19. Experimentals (T4, Post-MVP)')
 A('')
-A('> **Nicht Teil des MVP.** U16 (erstes Land-Experimental) ist Post-MVP, U21 (volles Roster, Game-Ender) und E17 (Endgame-Eco) sind „Später“. Die Einträge stehen als vollständige Daten bereit (`tech: 4`, `postMvp: true`, Meilenstein PM1–PM3), damit Modelle, Icons und Balancing-Relationen früh prüfbar sind. Design, Mechaniken und Konter: [`experimentals.md`](experimentals.md). Gleiche Gates wie das MVP gegen die FA-T4-Referenz (±25 % hart, ±15 % Ziel inkl. Produkt/Pulk) plus T3-Äquivalent-Relation (±25 %).')
+A('> **Nicht Teil des MVP.** U16 (erstes Land-Experimental) ist Post-MVP, U21 (volles Roster, Game-Ender) und E17 (Endgame-Eco) sind „Später“. Die Einträge stehen als vollständige Daten bereit (`tech: 4`, `postMvp: true`, Meilenstein PM1–PM3), damit Modelle, Icons und Balancing-Relationen früh prüfbar sind. Design, Mechaniken und Konter: [`experimentals.md`](experimentals.md). Gleiche Gates wie das MVP gegen die FA-T4-Referenz (±25 % hart, ±15 % Ziel inkl. Produkt/Pulk) plus T3-Äquivalent-Relation (±25 %). Review vom 2026-09-29 eingearbeitet (Mantel-Regeneration und -Neuaufbau, Konverter-Streuung, -Warnung und -Signatur, Baustellen- und Pathing-Regeln): [`experimentals.md`](experimentals.md) §10.')
 A('')
 A('**Stammdaten**')
 A('')
@@ -470,7 +470,7 @@ A('')
 eco = [r for r in X['t3Equivalent'] if r.get('eco')]
 for r in eco:
     e = r['eco']
-    A(f"**Tiefenstich als Mass-Quelle:** Deckel {n(e['maxMassPerSec'])} M/s ≙ {n(e['t3MexForMax'],1)} Zapfstellen III (Kette I→III je 5.436 Mass, zusammen {n(e['t3MexCostForMax'])} Mass und {n(round(e['t3MexForMax']))} Spots); Amortisation bei vollem Bedarf {n(e['paybackAtMaxS'])} s (Paragon bei gleichem Verbrauch {n(e['faPaybackAt750S'])} s).")
+    A(f"**Tiefenstich als Mass-Quelle:** Deckel {n(e['maxMassPerSec'])} M/s ≙ {n(e['t3MexForMax'],1)} Zapfstellen III (Kette I→III je 5.436 Mass, zusammen {n(e['t3MexCostForMax'])} Mass und {n(round(e['t3MexForMax']))} Spots); Amortisation bei vollem Bedarf {n(e['paybackAtMaxS'])} s (`XAB1401` bei gleichem Verbrauch {n(e['faPaybackAt750S'])} s).")
     A('')
 A('**Bauzeit mit N Meistern** (Build Power 32 je Meister; Mass-/Energy-Fluss, den die Baustelle dann zieht; FA mit T3-Engineer BP 32,5)')
 A('')
