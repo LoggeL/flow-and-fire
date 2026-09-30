@@ -11,6 +11,9 @@ eigenes `.rtsmap`-Format, aus Quellen per Generator + CLI erzeugt; die MS2-Karte
 mit Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 + 24 Würfel fahren auf der Terrainhöhe
 der deterministischen Sim (Tiefwasser blockiert, Furten passierbar). Hash-Ketten sind bitgleich in Node, Chromium,
 Firefox und WebKit. Details, Abnahme und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
+Vorarbeits-Track REPLAY: eigenes Replay-Format `.rtsreplay` (≈ 92 KB für 30 min 1v1), komprimierte Keyframes, Seek,
+Konverter vom Command-Log sowie die CLI `replay-verify`/`desync-diff`; ein Replay-Viewer im Spiel folgt mit MS11
+(siehe STATUS „TRACK-REPLAY“ und [`docs/status/track-replay.md`](docs/status/track-replay.md)).
 
 ## Schnellstart
 
@@ -54,6 +57,8 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
 | `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/ms2-p2-sim.md` |
+| `pnpm replay:verify <datei>` | `.rtsreplay` oder FAFL-Log headless abspielen und Hash-Trail prüfen (`-- --goldens` über `pnpm --filter @faf/headless replay-verify`: alle Golden-Replays); Exit 0 bitgleich, 1 Abweichung, 2 inkompatibel/Formatfehler |
+| `pnpm replay:diff <a> <b>` | `desync-diff`: erster abweichender Tick zweier Replays/Logs mit Tabelle/Spalte/Entity per Voll-Dump |
 | `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen inkl. Setons-Generator `mapgen-setons.ts` + mapc → `content/maps/*.rtsmap`, deterministisch) |
 | `pnpm assets` | Asset-Pipeline (glTF/meshopt, Karte, `sim.bin`, Manifest) → `content/generated/assets/`; nach `pnpm maps` oder Blueprint-Änderungen ausführen |
 | `pnpm bench:spk4` | SPK4-Render-Benchmark in Chromium, Firefox, WebKit (`-- --quick` = nur Chromium, 3 s) |
@@ -134,11 +139,11 @@ packages/
   fixed/       Q20.12 (Fx/FxSmall), Ang16 + LUT-Trig, isqrt, fxDiv mit Korrektur, rng32, xxHash32, SafeInt
   heap/        Arena (WebAssembly.Memory), Table-DSL, Handles, Slabs, Hash, Snapshot
   protocol/    Command-Codec, Frame-/Event-Layouts, Opcodes (append-only); src/transport/ = Browser-Transport
-  formats/     Chunk-Container (CRC-32), .rtsmap, mapSimHash; scripts/ = mapc (CLI-Import), mapgen, maps
+  formats/     Chunk-Container (CRC-32), .rtsmap, .rtsreplay, deflate-raw (fflate), mapSimHash; scripts/ = mapc, mapgen, maps
   rules/       gemeinsame Regeln (Terrainhöhe, Wassertiefe, Kategorien, Formeln) für Sim, Client, KI
   blueprints/  TypeBox-Schemas, define*(), Compiler → sim.bin / view.json / bundle.json + Hashes
   sim/         World, Systeme, Hash, FrameWriter (rein deterministisch)
-  sim-host/    Worker-Entry (`@faf/sim-host/worker`), Scheduler, CommandSources, Command-Log, Headless-Entry
+  sim-host/    Worker-Entry (`@faf/sim-host/worker`), Scheduler, CommandSources, Command-Log, Headless-Entry; src/replay/ = Keyframes, Konverter, ReplayPlayer/Seek
   render/      WebGL2-RHI, CDLOD-Terrain, Wasser, Decals, Unit-Culling/LOD/Merged-Part, Presets, Context-Loss
   client/      Input/Actions, FA-Kamera, Heightmap-Picking, ClientMap, Asset-Worker, Selection, Command-Builder
   modelkit/    Kitbash-DSL für Einheiten-Modelle (Primitive, Parts, Materialslots, Auto-LODs, GLB-Export), nur Content-Tooling
@@ -153,6 +158,7 @@ tools/
   model-shots/        Playwright-Kontaktabzüge, Silhouettenblätter und Einzelbilder der Modelle
 content/              Blueprints, Karten (`maps/src` → `maps/*.rtsmap`), Modelle (`models/<fraktion>/`), Icons (`icons/`), generierte Artefakte (`generated/`)
 test/e2e/             Playwright-Specs (Root-`playwright.config.ts`)
+test/golden-replays/  Golden-Command-Logs (`logs/*.faflog`) und Golden-Replays (`*.rtsreplay`) der L2-Szenarien
 docs/                 Plan, Entscheidungen, Status (`docs/STATUS.md`, Fragmente in `docs/status/`)
 ```
 

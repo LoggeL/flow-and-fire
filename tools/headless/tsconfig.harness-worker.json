@@ -16,6 +16,7 @@
     { "path": "../../packages/rules" },
     { "path": "../../packages/blueprints" },
     { "path": "../../packages/sim" },
-    { "path": "../../packages/formats" }
+    { "path": "../../packages/formats" },
+    { "path": "../../packages/sim-host" }
   ]
 }

@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@faf/fixed": "workspace:*",
-    "@faf/protocol": "workspace:*"
+    "@faf/protocol": "workspace:*",
+    "fflate": "0.8.3"
   },
   "devDependencies": {
     "@faf/rules": "workspace:*",

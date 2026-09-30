@@ -11,7 +11,14 @@
     "build:wasm": "wat2wasm src/spk5/xxh32.wat -o src/spk5/xxh32.wasm",
     "build:harness": "vite build -c vite.harness.config.ts",
     "test:xengine": "node --import tsx scripts/xengine.ts",
-    "bench": "node --import tsx scripts/bench.ts"
+    "bench": "node --import tsx scripts/bench.ts",
+    "golden-logs": "node --import tsx scripts/golden-logs.ts",
+    "replay-goldens": "node --import tsx scripts/replay-goldens.ts",
+    "replay-verify": "node --import tsx scripts/replay-verify.ts",
+    "desync-diff": "node --import tsx scripts/desync-diff.ts",
+    "replay-size": "node --import tsx scripts/replay-size.ts",
+    "bench:keyframes": "node --expose-gc --import tsx scripts/bench-keyframes.ts",
+    "bench:replay": "node --expose-gc --import tsx scripts/bench-replay.ts"
   },
   "dependencies": {
     "@faf/blueprints": "workspace:*",
@@ -20,7 +27,8 @@
     "@faf/heap": "workspace:*",
     "@faf/protocol": "workspace:*",
     "@faf/rules": "workspace:*",
-    "@faf/sim": "workspace:*"
+    "@faf/sim": "workspace:*",
+    "@faf/sim-host": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

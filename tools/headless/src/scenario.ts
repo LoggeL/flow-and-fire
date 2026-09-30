@@ -273,6 +273,16 @@ export interface RunOptions {
   readonly bpTable?: SimBpTable;
   /** Map files by scenario path (`.rtsmap` bytes or parsed), for scenarios with `map({ path })`. */
   readonly maps?: Readonly<Record<string, Uint8Array | RtsMap>>;
+  /**
+   * Observer of every batch the runner actually passes to `step()` (ticks without commands pass
+   * null and are not reported): called after the envelopes were stamped with `tick`, right
+   * before the step. The buffer belongs to the runner's encoder and is REUSED for the next tick —
+   * copy it (`batch.slice()`) to keep it. Used to record FAFL command logs of scenarios
+   * (replay/scenario-log.ts); it must not change the world.
+   */
+  readonly onBatch?: (tick: number, batch: Uint8Array) => void;
+  /** Called once with the fresh world right after createWorld (before alliances and tick 1). */
+  readonly onWorld?: (world: World) => void;
 }
 
 /**
@@ -297,6 +307,7 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
     armyCount: sc.armyCount,
     map: mapSimData(map),
   });
+  opts.onWorld?.(w);
   for (const [a, b] of sc.alliances) setAlliance(w, a, b, true);
 
   const seqs = new Int32Array(MAX_ARMIES).fill(-1);
@@ -365,7 +376,9 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
       }
       ci++;
     }
-    step(w, enc.count > 0 ? enc.view() : null);
+    const batch = enc.count > 0 ? enc.view() : null;
+    if (batch !== null) opts.onBatch?.(tick, batch);
+    step(w, batch);
     if (lastHashTick(w) === tick) trail.push(lastHash(w));
     while (ai < sc.asserts.length && sc.asserts[ai]!.tick === tick) {
       const a = sc.asserts[ai]!;

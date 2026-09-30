@@ -34,6 +34,8 @@ export default defineConfig(
       'test-results/**',
       'playwright-report/**',
       '**/*.wasm',
+      // Static HTML/JS design mockups (docs, not product code; no module/globals setup).
+      'docs/design/ui-mockups/**',
     ],
   },
   js.configs.recommended,
@@ -104,7 +106,8 @@ export default defineConfig(
           sqrtAllow: ['packages/fixed/src/isqrt.ts'],
           float64Allow: ['packages/heap/src/safeint.ts'],
           // The .rtsmap META reader checks every number with Number.isInteger (num()/isInt()).
-          jsonParseAllow: ['packages/formats/src/rtsmap.ts'],
+          // The .rtsreplay META chunk is canonical JSON; its reader validates every value the same way.
+          jsonParseAllow: ['packages/formats/src/rtsmap.ts', 'packages/formats/src/rtsreplay/meta.ts'],
         },
       ],
     },

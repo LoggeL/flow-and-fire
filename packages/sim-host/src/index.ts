@@ -11,3 +11,4 @@ export * from './core.ts';
 export * from './host.ts';
 export * from './headless.ts';
 export { startSimWorker, type StartSimWorkerOptions, type WorkerScopeLike } from './worker.ts';
+export * from './replay/index.ts';

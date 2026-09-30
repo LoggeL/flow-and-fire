@@ -7,6 +7,7 @@ import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseGolden, type Golden } from '../src/goldens.ts';
+import { GOLDEN_REPLAY_PATHS } from '../src/replay/xengine-job.ts';
 
 export const HEADLESS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const REPO_DIR = resolve(HEADLESS_DIR, '../..');
@@ -25,6 +26,27 @@ export const MAP_PATHS: readonly string[] = ['content/maps/hollow-ridge.rtsmap',
 export function loadMaps(): Record<string, Uint8Array> {
   const out: Record<string, Uint8Array> = {};
   for (const p of MAP_PATHS) out[p] = new Uint8Array(readFileSync(resolve(REPO_DIR, p)));
+  return out;
+}
+
+/** Golden replays (TRACK-REPLAY p6, repo-relative; mirrored as REPLAY_URLS in src/harness/worker-entry.ts). */
+export const REPLAY_PATHS: readonly string[] = GOLDEN_REPLAY_PATHS;
+export const GOLDEN_REPLAYS_DIR = resolve(REPO_DIR, 'test/golden-replays');
+
+/**
+ * Bytes of every golden replay by repo-relative path (JobAssets.replays). A missing file throws
+ * with the regeneration command unless `allowMissing` (then it is left out).
+ */
+export function loadReplays(allowMissing = false): Record<string, Uint8Array> {
+  const out: Record<string, Uint8Array> = {};
+  for (const p of REPLAY_PATHS) {
+    const f = resolve(REPO_DIR, p);
+    if (!existsSync(f)) {
+      if (allowMissing) continue;
+      throw new Error(`golden replay ${p} missing (pnpm --filter @faf/headless replay-goldens -- --update)`);
+    }
+    out[p] = new Uint8Array(readFileSync(f));
+  }
   return out;
 }
 

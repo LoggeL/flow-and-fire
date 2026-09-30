@@ -12,6 +12,7 @@ import type { SeriesResult } from '../src/series.ts';
 const HEADLESS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DIST_DIR = resolve(HEADLESS_DIR, 'dist-harness');
 export const GOLDENS_DIR = resolve(HEADLESS_DIR, 'goldens');
+export const REPO_DIR = resolve(HEADLESS_DIR, '../..');
 /** Raw per-engine outputs (*.tmp.json, git-ignored); the scripts aggregate them. */
 export const RAW_DIR = process.env['FAF_HARNESS_RAW_DIR'] ?? resolve(HEADLESS_DIR, 'results');
 
@@ -28,6 +29,7 @@ const TYPES: Record<string, string> = {
   '.wasm': 'application/wasm',
   '.bin': 'application/octet-stream',
   '.rtsmap': 'application/octet-stream',
+  '.rtsreplay': 'application/octet-stream',
   '.json': 'application/json',
 };
 

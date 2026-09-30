@@ -5,6 +5,7 @@
 import { toHashChain, type HashChain } from './goldens.ts';
 import { failedAsserts, runScenario, type AssertResult } from './scenario.ts';
 import { scenarioByName } from './scenarios.ts';
+import { runReplayVerifyJob, type ReplayVerifyJobResult } from './replay/xengine-job.ts';
 import { runSpk1Bench, type Spk1BenchResult } from './spk1/run.ts';
 import { runSpk5, type Spk5Result } from './spk5/bench.ts';
 import { clockResolution, repsFor, round4, type Clock, type EngineInfo } from './stats.ts';
@@ -15,7 +16,9 @@ export type Job =
   /** `map`: repo-relative .rtsmap path (JobAssets.maps); missing = MS1 test plane. */
   | { readonly kind: 'tickBench'; readonly ticks: number; readonly map?: string }
   | { readonly kind: 'spk1'; readonly ticks: number; readonly rampTicks: number }
-  | { readonly kind: 'spk5'; readonly reps: number };
+  | { readonly kind: 'spk5'; readonly reps: number }
+  /** Golden replay playback (TRACK-REPLAY p6); `replay`: repo-relative .rtsreplay path (JobAssets.replays). */
+  | { readonly kind: 'replayVerify'; readonly replay: string };
 
 /** `measure`: the reported run; `warmup`: only warms the JIT (cheaper settings, result unused). */
 export type RunMode = 'measure' | 'warmup';
@@ -25,6 +28,8 @@ export interface JobAssets {
   readonly xxh32Wasm: Uint8Array;
   /** Scenario/bench maps by repo-relative path (.rtsmap bytes). */
   readonly maps: Readonly<Record<string, Uint8Array>>;
+  /** Golden replays by repo-relative path (.rtsreplay bytes, see GOLDEN_REPLAY_PATHS). */
+  readonly replays: Readonly<Record<string, Uint8Array>>;
 }
 
 /** Unique key of a job for result files and tables (`tickBench-hollow-ridge` for a map bench). */
@@ -32,6 +37,10 @@ export function jobKey(job: Job): string {
   if (job.kind === 'tickBench' && job.map !== undefined) {
     const base = job.map.slice(job.map.lastIndexOf('/') + 1).replace(/\.rtsmap$/, '');
     return `tickBench-${base}`;
+  }
+  if (job.kind === 'replayVerify') {
+    const base = job.replay.slice(job.replay.lastIndexOf('/') + 1).replace(/\.rtsreplay$/, '');
+    return `replay-${base}`;
   }
   return job.kind;
 }
@@ -52,7 +61,11 @@ export type JobResult =
   | HashChainResult
   | ({ readonly kind: 'tickBench' } & TickBenchResult)
   | ({ readonly kind: 'spk1' } & Spk1BenchResult)
-  | ({ readonly kind: 'spk5' } & Spk5Result);
+  | ({ readonly kind: 'spk5' } & Spk5Result)
+  | ReplayVerifyResultOfJob;
+
+/** Result of a `replayVerify` job (warm-ups run the full job too: JIT warm = same code path). */
+export type ReplayVerifyResultOfJob = { readonly kind: 'replayVerify'; readonly replay: string } & ReplayVerifyJobResult;
 
 /** Time resolution targets for the repetition method (see measure.ts). */
 export const TICKBENCH_TARGET_RES_MS = 0.05;
@@ -85,6 +98,11 @@ export async function runJob(job: Job, mode: RunMode, assets: JobAssets, env: Jo
     case 'spk5': {
       const reps = mode === 'warmup' ? 2 : job.reps;
       return { kind: 'spk5', ...(await runSpk5({ wasmBytes: assets.xxh32Wasm, simBin: assets.simBin, clock, reps, clockResolutionMs: mode === 'warmup' ? 0 : res })) };
+    }
+    case 'replayVerify': {
+      const bytes = assets.replays[job.replay];
+      if (bytes === undefined) throw new Error(`replay '${job.replay}' not provided`);
+      return { kind: 'replayVerify', replay: job.replay, ...runReplayVerifyJob(bytes, { simBin: assets.simBin, maps: assets.maps }, clock) };
     }
   }
 }

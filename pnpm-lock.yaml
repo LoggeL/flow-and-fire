@@ -181,6 +181,9 @@ importers:
       '@faf/protocol':
         specifier: workspace:*
         version: link:../protocol
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
     devDependencies:
       '@faf/rules':
         specifier: workspace:*
@@ -351,6 +354,9 @@ importers:
       '@faf/sim':
         specifier: workspace:*
         version: link:../../packages/sim
+      '@faf/sim-host':
+        specifier: workspace:*
+        version: link:../../packages/sim-host
     devDependencies:
       '@playwright/test':
         specifier: ^1.63.0

@@ -623,3 +623,105 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## TRACK-REPLAY – Replay-Container, Keyframes, Seek (Vorarbeit MS11/N1, S10)
+
+Paralleler Vorarbeits-Track (Branch `track-replay`, kein Meilenstein aus PLAN §5.2), Stand 2026-09-30: **alle 13
+Abnahmepunkte aus `docs/plans/TRACK-REPLAY.json` erfüllt**, Review-Befunde (9) behoben. Ausführliche Doku (Format und
+Bytelayout, Seek-Algorithmus, CLI-Referenz mit Beispielausgaben, Messwerte, Abweichungen):
+[`docs/status/track-replay.md`](status/track-replay.md), Paket-Fragmente p0–p6 unter
+[`docs/status/track-replay/`](status/track-replay/). Messwerte lokal gemessen, Apple M5 Pro, Node 24.18 (DECISIONS 5).
+
+**Feature-IDs (Vorarbeit, nicht abgeschlossen):** **N1** Replays (Container, Keyframes, Seek, Konverter,
+Verifikation – Viewer/Replay-Browser in `apps/game` folgt in MS11), **S10** Save/Load (Container- und Keyframe-Codec
+wiederverwendbar), Zuarbeit **N3**/**N10** (Desync-Diagnose `desync-diff`, Replay-Validierung `replay-verify`).
+
+Geliefert:
+- `@faf/formats`: synchroner Deflate-Codec (`deflate.ts`, fflate 0.8.3 kanonisch, Längen-/Bomben-Schutz) und
+  `.rtsreplay` (`src/rtsreplay/**`): Magic `RTSR`, HEAD/GAME/CMDS (600-Tick-Blöcke)/HASH/MARK/META, Reader, Writer,
+  Builder, toleranter Kopf-Leser `readRtsReplayHead`, Versionierung je Chunk, unbekannte Chunks byte-exakt erhalten.
+- `@faf/sim-host` (`src/replay/**`, bestehende Dateien nur um eine Export-Zeile ergänzt): `CompressedKeyframeStore`
+  (memcpy + deflate-raw, 128-MiB-Budget, nativer `CompressionStream`-Pfad), Sub-Hashes je Regel-Region,
+  Konverter FAFL v1/v2 → `.rtsreplay` (Crash-Logs → Truncated), `RtsReplaySource`, `ReplayPlayer` (Seek,
+  `attach`/`observeTick`), `ReplayVerifier`, OPFS-Export.
+- `tools/headless`: CLI `replay-verify`, `desync-diff`, `replay-size`, `golden-logs`, `replay-goldens`,
+  `bench:keyframes`, `bench:replay`; synthetischer 30-min-1v1-Strom, 30-min-Langpartie, Voll-Dump `.rtsdump` +
+  Dump-Diff, tickgenaue Divergenzsuche; Replay-Jobs im Cross-Engine-Harness.
+- `test/golden-replays/`: 5 Golden-Logs (`.faflog`) + 5 Golden-Replays (`.rtsreplay`, zusammen 11.688 B).
+
+### Abnahme TRACK-REPLAY
+
+| # | Kriterium | Status | Messwert / Beleg |
+|---|---|---|---|
+| 1 | Container nach §3.11, Reader/Writer/Builder, Versionierung, unbekannte Chunks | ✅ | CMDS per Range-Coder statt Varint (Abw. 2); `packages/formats/test/rtsreplay.test.ts` |
+| 2 | Roundtrip bytegleich (≥ 1.000 Fälle + Golden-Replays), Batches inkl. Tick-Stempel | ✅ | 1.000 Zufalls-Replays, 5/5 Goldens `rewrite` bytegleich |
+| 3 | Fuzz ≥ 10.000 Mutationen → nur `FormatError`/gültig, keine Allokation > 16 MiB | ✅ | 16.843 Mutationen (+ einmalig 210.000 CMDS); `rtsreplay-fuzz.test.ts` |
+| 4 | Größen-Gate 30 min 1v1: CMDS ≤ 100 KB, gesamt ≤ 250 KB | ✅ | synthetisch 2 × 120 APM: 80.416 B / 91.924 B; Langpartie 80.624 B; 2 × 200 APM (nur Bericht) 123.576 / 135.088 B |
+| 5 | Komprimierte Keyframes alle 600 Ticks, Budget ≤ 128 MiB, Restore == Direktlauf, `bench:keyframes` | ✅ | 1.000 Einheiten ≈ 42 KB (2,85 % der Arena), Capture 6,3–7,4 ms, nativ blockierend 0,05–0,13 ms, Restore 1,1–2,0 ms; 3 h/2.000 Einheiten ≈ 15 MiB |
+| 6 | Seek == Direktlauf; Rückwärts-Seek p95 ≤ 2 s; headless ≥ 20x | ✅ | p95 50–58 ms, Max 55–88 ms; 747–1.142x Echtzeit (kalt 1.064–1.114x) |
+| 7 | Konverter FAFL v1/v2, Sub-Hashes, Crash-Logs → Truncated, Taint | ✅ | 5/5 Golden-Logs verifiziert, 50 Zufalls-Schnitte; `replay-convert.test.ts`, `replay-opfs.test.ts` |
+| 8 | Erste Abweichung mit Tick + Tabelle; `ReplayCompatError` vor Tick 1 inkl. buildHash | ✅ | `replay-player.test.ts` (Divergenz exakt bei 1.100, Tabellen `units`/`movers`) |
+| 9 | CLI `replay-verify` (0/1/2), `desync-diff` (erster Tick exakt, Tabelle/Spalte/Entity, Dump) | ✅ | zusätzlich `desync-diff` Exit 3; Perturbation Tick 700 exakt, Command-Änderung bei 1.103 exakt |
+| 10 | Golden-Replays + -Logs für alle 5 L2-Goldens, Frische, bestehende Goldens bitgleich | ✅ | `goldens`/`golden-logs`/`replay-goldens` grün, `replay-verify -- --goldens` 5/5 (233–2.550x) |
+| 11 | Cross-Engine Golden-Replays in Node/Chromium/Firefox/WebKit inkl. Rückwärts-Seek | ✅ | 100 Hash-Ketten + 100 Replay-Läufe bitgleich inkl. Mid-Voll-Hash; 4 statt 5 Engines wie projektweit (Abw. 9) |
+| 12 | Grenzen: sim/nav/render/client/game unberührt, sim-host nur neue Dateien + Export | ✅ | `git status` der Tabu-Pakete leer, sim-host-Diff nur `src/index.ts` |
+| 13 | Doku `docs/status/track-replay.md` + STATUS-Abschnitt | ✅ | dieser Abschnitt |
+
+Gesamtverifikation (über `tools/heavy`): `pnpm typecheck` ✓, `pnpm lint` ✓ (dep-cruiser 464 Module ohne Verstoß),
+`pnpm test` ✓ 115 Dateien / 1.143 Tests; nach den Review-Korrekturen erneut Vitest formats + sim-host + headless
+39 Dateien / 365 Tests ✓, `pnpm test:xengine` ✓, `replay-verify -- --goldens` ✓, Golden-Replays unverändert bytegleich.
+
+### Abweichungen vom Plan (Kurzfassung, Details in `track-replay.md`)
+
+1. Worktree liegt unter `flow-and-fire/.worktrees/faf-replay` statt `/Users/logge/Documents/Projects/faf-replay`.
+2. CMDS-Rohkodierung per ganzzahligem adaptivem Range-Coder statt Varint-Strom (Varint + deflate ≈ 134–146 KB,
+   Gate verfehlt); Blockkopf, 600-Tick-Blöcke und deflate-raw (codec 1, nativ lesbar) bleiben.
+3. Keyframe-Standard-Level 1 statt 6 (≤ 1 % größer, 29–44 % schneller); Replay-Datei bleibt Level 6.
+4. Keyframe-Restore alloziert einen Puffer je Restore (kein Scratch; nur beim Seek).
+5. Additive Schnittstellen-Zusätze (u. a. `rtsReplayToInput`, `ReplayDivergence.kind`, `ReplayPlayer.attach`,
+   `ReplayVerifier`, `readRtsReplayHead`, Kompatibilitätsgründe `format`/`protocol`).
+6. `desync-diff` Exit 3 (nur Aufnahmen weichen ab = Engine-/Build-Desync).
+7. `simBuild` fremder FAFL-Logs über `KNOWN_SIM_BUILDS` rekonstruiert.
+8. Golden-Logs ohne Allianzen (FAFL kann `ScenarioBuilder.ally` nicht abbilden).
+9. Cross-Engine mit 4 statt 5 Engines (projektweit seit MS1).
+10. ESLint ignoriert `docs/design/ui-mockups/**` (statische Mockups machten `pnpm lint` schon vorher rot).
+11. `META.endTick` nur beschreibend; Wiedergabeende aus dem Inhalt; `ReplayPlayer.sim` ist `HeadlessSim | null`;
+    `addHashListener` als Übergang, weil `core.ts` tabu war.
+
+### Offene Punkte
+
+- **Merge mit MS3 (SIM_BUILD-Bump):** Golden-Prüfungen schlagen absichtlich fehl, bis in dieser Reihenfolge neu
+  erzeugt ist: `goldens -- --update` → `golden-logs -- --update` → `replay-goldens -- --update`; neuen Build an
+  `KNOWN_SIM_BUILDS` anhängen; bei neuen Regel-Regionen `SYNTHETIC_RULE_REGION_NAMES` nachziehen. Möglicher
+  Konflikt in `eslint.config.js` (Mockup-Ignore).
+- **MS11 (N1):** Viewer/Replay-Browser in `apps/game` (OPFS-Liste, Download, Seek-Leiste, Perspektive),
+  `/b/<buildHash>/`-Weiterleitung und Hosting alter Builds, Wiedergabe ≥ 5x im Browser mit Rendering messen
+  (Worker ohne Rendering ≈ 250–330x), Tab-Kill-E2E, Recorder schreibt END (sonst ist jeder OPFS-Export Truncated),
+  Hash-Kadenz 50 im Release, aiTimeout-Marks aus der KI, Sub-Hashes live beim Aufnehmen, Konsolidierung der
+  Doppelimplementierungen (`KeyframeStore`/`SimCore.seek`/`replayLog` → `CompressedKeyframeStore`/`ReplayPlayer`,
+  `onHash` als Listener-Liste, `ctl 'seek'` im Worker-Protokoll), `desync-diff` im Browser.
+- **Später:** Langpartie auf echte Ops statt Cheats umstellen (ab MS4–MS6) und Größe neu messen; Keyframes mit
+  MS3+-State neu messen; nativer Kompressionspfad im Browser-Worker messen.
+- **S10:** Savegame = HEAD/GAME + komprimierter Session-Snapshot (+ optional CMDS); Zeitlinie verzweigen
+  (`discardAfter`) ist S10-Arbeit.
+
+### Starten und prüfen
+
+Replay-Funktionen sind Bibliothek + CLI; im Spiel (`pnpm dev`) gibt es noch keinen Replay-Viewer (MS11). Im Browser
+laufen die Replays über den Cross-Engine-Harness (`pnpm test:xengine`, Playwright-Worker in Chromium/Firefox/WebKit).
+
+```sh
+T=/Users/logge/Documents/Projects/flow-and-fire/tools/heavy
+$T pnpm --filter @faf/headless replay-verify -- --goldens          # 5 Golden-Replays abspielen, Hash-Trail prüfen
+$T pnpm --filter @faf/headless replay-verify -- <datei.rtsreplay|.faflog> [--json]
+$T pnpm --filter @faf/headless desync-diff -- <a> <b> [--dumps <ordner>]   # erster abweichender Tick + Tabelle/Spalte/Entity
+$T pnpm --filter @faf/headless replay-size -- --long               # Größen-Gate
+$T pnpm --filter @faf/headless bench:replay -- --quick             # Wiedergabe x Echtzeit, Rückwärts-Seek
+$T pnpm --filter @faf/headless bench:keyframes -- --quick          # Keyframe-Kompression
+$T pnpm --filter @faf/headless goldens && $T pnpm --filter @faf/headless golden-logs && $T pnpm --filter @faf/headless replay-goldens
+$T pnpm test:xengine                                               # Node + Chromium/Firefox/WebKit
+```
+
+Root-Kurzformen: `pnpm replay:verify <datei>`, `pnpm replay:diff <a> <b>`. Eigene Aufnahme aus dem Spiel: `pnpm dev`,
+Dev-Konsole (F1) → `export` lädt das FAFL-Command-Log herunter; `replay-verify` konvertiert es automatisch nach
+`.rtsreplay` und prüft es (relative Pfade gelten ab dem Aufrufverzeichnis).

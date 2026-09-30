@@ -1,7 +1,8 @@
 /**
- * Error type of all binary format readers/writers (container, .rtsmap). Carries a machine-readable
- * code, the 4CC of the chunk the problem was found in (null = file header / whole file) and the
- * byte offset in the input (-1 = not position related, e.g. a semantic validation of a value).
+ * Error type of all binary format readers/writers (container, .rtsmap, .rtsreplay, deflate codec).
+ * Carries a machine-readable code, the 4CC of the chunk the problem was found in (null = file
+ * header / whole file) and the byte offset in the input (-1 = not position related, e.g. a
+ * semantic validation of a value).
  */
 
 export type FormatErrorCode =
@@ -20,7 +21,10 @@ export type FormatErrorCode =
   | 'chunk-order'
   | 'bad-json'
   | 'non-canonical'
-  | 'bad-value';
+  | 'bad-value'
+  | 'bad-compression'
+  | 'too-large'
+  | 'unsupported-version';
 
 export class FormatError extends Error {
   readonly code: FormatErrorCode;
