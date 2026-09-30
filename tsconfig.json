@@ -14,6 +14,7 @@
     { "path": "packages/modelkit" },
     { "path": "apps/game" },
     { "path": "apps/model-viewer" },
+    { "path": "apps/marker-editor" },
     { "path": "tools/headless" },
     { "path": "tools/headless/tsconfig.harness.json" },
     { "path": "tools/headless/tsconfig.harness-worker.json" },

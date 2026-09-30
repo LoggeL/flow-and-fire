@@ -211,3 +211,60 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track TRACK-EDITOR (Marker-Editor, M12 vorgezogen)
+
+Nummerierung `TE-n`, damit parallele Tracks nicht kollidieren. Details: `docs/status/track-editor.md`.
+
+- **TE-1 Prop-Felder als Kartenchunk `PFLD`:** optional, zwischen `PROP` und `PREV`; Felder (Kreis/Polygon, Art
+  tree/rock/wreck, 1–16 Blueprint-IDs mit Gewicht, Dichte je 1024 WU², u32-Seed, Skalierung ‰, max. Neigung ‰, dryOnly,
+  Reclaim Masse/Energie in Milli je Prop). Fehlt der Chunk, bleibt die Datei bytegleich. Zusatzgrenzen: 256 Felder,
+  64 Polygonpunkte, `MAP_MAX_FIELD_CELLS = 2^21`, Props gesamt ≤ `MAP_MAX_PROPS`.
+- **TE-2 Hash-Regel und Algo-Version (Review-Korrektur):** Die Version des Expansionsverfahrens steht **in der
+  Datei** (PFLD-Kopf `u16 algoVersion | u16 fieldCount`, im Modell `RtsMap.propFieldAlgo`), nicht nur als
+  Code-Konstante. Der Leser kennt die Liste `PROPFIELD_ALGO_VERSIONS` und lehnt andere Versionen ab (`bad-value`);
+  die Expansion wählt das Verfahren nach der gespeicherten Version; neue Felder bekommen `PROPFIELD_ALGO_VERSION`.
+  Ein geändertes Verfahren wird eine **neue** Version, alte Versionen bleiben implementiert – vorhandene Karten
+  expandieren dadurch nie stillschweigend anders. `mapSimBytes` hängt nur bei nicht leeren Feldern
+  `'PFLD' | propFieldsSimBytes` an (PFLD-Layout inkl. gespeicherter Version, ohne Namen); der Feldname ist hash-neutral.
+  Algo v1 (globales Zellgitter `isqrt(2^34/Dichte)`, `rng32`-Kandidaten, Wassertest, Zellneigung nach TE-7) liegt in
+  `@faf/formats` unter dem Determinismus-Lint. Der Editor behält die Version der geöffneten Karte bei jeder Änderung bei.
+- **TE-3 three.js im Editor statt `packages/render`:** Tool-Code nach PLAN §3.2; unabhängig vom parallel umgebauten
+  Spiel-Renderer, eigene Overlays und exaktes Picking gegen `sampleHeightRaw`. depcruise erlaubt `apps/marker-editor/src`
+  nur formats, fixed, rules, protocol, three, preact, @preact/signals.
+- **TE-4 Validierungsschwellen:** Spot-Rand 12 WU (DECISIONS 29), Start-Rand 16 WU; Spot flach: > 0,5 WU Höhenunterschied
+  im Radius 1,5 WU = Fehler, > 0,1 WU im Radius 3 WU = Warnung; Spot-Abstand < 2 WU Fehler / < 4 WU Warnung; Spot–Start
+  < 4 WU Fehler; Start–Start < 48 WU Fehler / < 96 WU Warnung; Bauplatz ≥ 50 % passierbare Zellen im Radius 8 WU;
+  Erreichbarkeit über die Land-Passierbarkeit des Spiels (TE-7, Größenklasse 1); Feld-Props frei ≥ 2 WU um Spots,
+  ≥ 8 WU um Starts. Die vier bestehenden Karten liefern damit 0 errors.
+- **TE-5 Editor-E2E nicht in `ci:local` bis zum Merge:** `pnpm test:e2e:editor` läuft separat (eigener Preview-Server,
+  Port `FAF_E2E_PORT`/4783); der Merge-Schritt ergänzt `ci:local`.
+- **TE-6 Prop-Blueprints und Reclaim-Defaults sind Platzhalter:** Editor-Template referenziert `core:tree_01`,
+  `core:rock_01`, `core:wreck_01` (Baum 25 E, Fels 10 M, Wrack 30 M je Prop, Dichte 64, Neigung 600 ‰, dryOnly);
+  Blueprints und Balancing folgen in MS8/E8.
+- **TE-7 Eine Land-Passierbarkeit für Nav, Editor und Prop-Felder (Review-Korrektur):** Die Zellregel steht jetzt in
+  `@faf/rules` (`terrain.ts`, additiv): `LAND_MAX_CELL_SLOPE_RAW = 3072` (0,75), `landCellSlopeRaw` (max − min der
+  4 Eckhöhen einer 1-WU-Zelle) und `isLandCellBlocked` (Kartenrand, Neigung, Tiefwasser in Zellmitte) – identisch zu
+  `NAV_LAND_MAX_SLOPE_RAW`/`cellSlopeRaw`/`terrainCell` der MS3-Nav. Der Editor rechnet Erreichbarkeit auf diesen
+  Zellen mit Clearance je Größenklasse und 8-Nachbarschaft ohne Eckenschneiden wie die Nav; die Prop-Feld-Expansion
+  prüft `maxSlope` gegen dieselbe Zellneigung (vorher drei Varianten: Editor-Gradient 0,6, Nav-Zelle 0,75,
+  Expansions-Zentraldifferenz). Der Editor importiert `@faf/nav` weiterhin nicht (Regel `marker-editor-deps`
+  unverändert); `rules` ist der gemeinsame Ort. Paritätstest `apps/marker-editor/test/validate/nav-parity.test.ts`
+  vergleicht Passierbarkeit, Clearance und Komponentenlabels aller 3 Klassen auf den 4 Karten mit der Nav
+  (über `FAF_NAV_SRC` gegen den MS3-Worktree: 0 Abweichungen; nach dem Merge automatisch gegen `packages/nav`).
+  Übergabe an den Merge: `packages/nav/src/static.ts` soll `landCellSlopeRaw`/`LAND_MAX_CELL_SLOPE_RAW` aus `rules`
+  verwenden statt eigener Kopien.
+- **TE-8 Marker gehören dem Editor, Terrain dem Generator (Review-Korrektur):** `markers.json` bleibt Ausgabe der
+  Generatoren (`mapgen*.ts` schreiben sie bei jedem `pnpm maps` neu). Der Editor exportiert zusätzlich
+  **`editor.json`** (Starts, Spots in Kartenreihenfolge, Prop-Felder, `propFieldAlgo`) für
+  `content/maps/src/<name>/editor.json`; kein Skript schreibt diese Datei. `mapc` (`compileMapSource`, `--overlay`)
+  ersetzt damit Starts/Spots/Felder aus `markers.json` vor dem Kompilieren. Editor-Änderungen überstehen so jede
+  Regeneration. Dazu kann `markers.json` Spots jetzt optional als geordnete Liste `spots: [{kind, x, z}]` statt
+  `mass`/`hydro` führen (additiv).
+- **TE-9 Test-Hook ohne eigene SHA-256:** `window.__editor.exportHash()` liefert xxHash32 (`@faf/fixed`) der
+  Export-Bytes; die zweite SHA-256-Implementierung und die Demo-Seiten (`overlay-demo.html`, `ui-preview.html`) sind
+  entfernt, `vite build` baut nur noch `index.html`.
+- **TE-10 Buchstabenkürzel nach Zeichen, nicht nach Tastenposition (Review-Korrektur):** Z/Y/S/O/F/G im Editor
+  werden über `KeyboardEvent.key` zugeordnet, `code` ist nur Rückfall für nicht-lateinische Layouts. Auf QWERTZ
+  (Taste „Z“ meldet `code = 'KeyY'`) macht Strg/⌘+Z damit rückgängig statt wiederherzustellen. Ziffern, Entf, Esc,
+  Enter bleiben positionsbasiert (`code`).

@@ -623,3 +623,91 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Vorarbeits-Track TRACK-EDITOR (M12 vorgezogen)
+
+Stand 2026-09-30 · Branch `track-editor` (Worktree `flow-and-fire/.worktrees/faf-editor`, Basis `2fc956c`) ·
+Pakete P0–P7 + Review-Korrekturen. Kein Meilenstein aus PLAN §5.2, sondern ein paralleler Vorarbeits-Track zu MS3.
+Messwerte lokal auf Apple M5 Pro (Node 24.18, Playwright headless 1280×720), kein Referenz-Laptop/GPU-Runner
+(DECISIONS 5). Ausführlicher Bericht mit PFLD-Spezifikation, Validierungsregeln, Benchmarks und Fragmenten:
+[status/track-editor.md](status/track-editor.md); Entscheidungen: DECISIONS **TE-1 bis TE-10**.
+
+**Ergebnis:** **Marker-Editor `apps/marker-editor`** (Vite, three.js, Preact + `@preact/signals`) zum Laden/Speichern
+von `.rtsmap` – Terrain-Ansicht (Splat-Farben, Wasser, Licht, 32-WU-Raster), Startpositionen, Mass-/Hydro-Spots,
+**Prop-Felder** (Kreis/Polygon mit Art, gewichteten Blueprint-IDs, Dichte, Seed, Skalierung, max. Neigung, dryOnly,
+Reclaim Masse/Energie), Symmetrie (Punkt, Achse X/Z, Diagonale, Gegendiagonale; „Symmetrisieren“ als ein Undo-Schritt
+und Live-Symmetrie), Validierung mit festen Codes und klickbarer Liste, Undo/Redo (Limit 500, Drag = ein Schritt),
+Export `.rtsmap`, `markers.json` und `editor.json`. Das Kartenformat ist additiv um den optionalen Chunk **`PFLD`**
+erweitert (deterministische Integer-Expansion, Algo-Version in der Datei); bestehende Karten bleiben bytegleich,
+mapSimHash-Goldens unverändert (hollow-ridge `0x90ec94f0`, tessera `0x22cb60a8`, braidwater `0xeeaec694`,
+setons `0x52eccf92`).
+
+**Umgesetzte Feature-IDs:** **M12** (Marker-Editor, vollständig bis auf die Sim-Anbindung der Props);
+**E8** nur vorbereitet (Datenformat `PFLD` + Expansion in `@faf/formats`; Sim-/Render-Anbindung und Reclaim folgen in MS8).
+
+### Abnahme TRACK-EDITOR
+
+| # | Kriterium | Status | Messwert / Beleg |
+|---|---|---|---|
+| 1 | Editor baut und läuft; Laden über Auswahl, `?map=`, Datei-Dialog, Drag & Drop; Terrain-Ansicht | ✅ | Build grün; `view.spec.ts`, `files.spec.ts` (filechooser, `Strg/⌘+O`, Drop, Endungsfilter) in 3 Browsern; Setons laden bis erster Frame p50 66–71 ms (chromium), 107–109 ms (firefox), 94 ms (webkit) |
+| 2 | Bestehende Karten (setons, tessera, braidwater, hollow-ridge) unverändert bytegleich gespeichert | ✅ | Node (`document.test.ts`, `legacy-maps.test.ts`) und Browser-Download in chromium/firefox/webkit (`roundtrip.spec.ts`, Bytevergleich mit `content/maps/*.rtsmap`) |
+| 3 | Editor → Datei → Spiel-Loader → Datei bytegleich; mapSimHash Editor == Node == Loader | ✅ | `roundtrip-game.test.ts` (`ClientMap.fromBytes`, `resolveMap`, `SimCore`); `edit.spec.ts` prüft den Browser-Download einer bearbeiteten Karte in Node |
+| 4 | `PFLD` additiv, abwärtskompatibel; Goldens unverändert; `pnpm maps` idempotent; Name hash-neutral | ✅ | `packages/formats/test/{propfields,legacy-maps,rtsmap,mapc}.test.ts`; `pnpm maps && git diff --exit-code -- content/maps` leer; Algo-Version in der Datei, unbekannte Versionen abgelehnt |
+| 5 | Expansion integer-only, deterministisch, Golden, Anzahl ±15 % | ✅ | Golden 380 Props / `0x1cedb935`; fast-check-Roundtrip (150 Läufe); `sim/determinism` grün; 30k Props p50 7,8–8,5 ms, 65k p50 16,6–17,7 ms |
+| 6 | Setzen/Verschieben/Löschen aller Markerarten und Felder (inkl. Vertex/Radius) mit echten Mausgesten | ✅ | `edit.spec.ts` + `gestures.spec.ts` (je Geste genau ein Undo-Schritt, 3 Browser); Spot-Drag p50 0,5–0,6 ms je Mausbewegung |
+| 7 | Symmetrie-Werkzeuge (Punkt/Achsen/Diagonalen), Symmetrisieren = 1 Undo-Schritt, Live-Symmetrie | ✅ | `symmetry.test.ts` (Involution, 400 Zufallsläufe); Setons/Tessera exakt punktsymmetrisch, Symmetrisieren ändert nichts; `edit.spec.ts` |
+| 8 | Undo/Redo jeder Operation, Tastatur (inkl. QWERTZ), Undo bis 0 = Original | ✅ | Property-Tests (250 History-, 200 Store-Läufe); `keymap.test.ts` (QWERTZ/AZERTY/Dvorak/kyrillisch); E2E 26× `Strg+Z` → Original-Bytes |
+| 9 | Validierung: Spots auf flachem Land, Abstände, Erreichbarkeit über Neigung; 0 errors auf den 4 Karten | ✅ | 56 Validierungstests; `validation.spec.ts`; Terrain-Analyse Setons p50 11,1–11,7 ms (Ziel < 150), Validierung je Änderung p50 0,32–0,38 ms (Ziel < 5); Passierbarkeit = MS3-Nav (Paritätstest 0 Abweichungen) |
+| 10 | Export `.rtsmap` / `markers.json` / `editor.json`; mapc-Compile ergibt dieselben Marker/Felder | ✅ | `markers-json.test.ts` (compileMap bytegleich für alle 4 Karten), `editor-overlay.test.ts` (unverändert bytegleich, bearbeitet bis auf `PREV` gleich, Fixpunkt) |
+| 11 | Playwright-E2E (Port 4783, workers 1) in 3 Browsern, ohne Konsolenfehler; Screenshots geprüft | ⚠️ | 45/45 grün in zwei aufeinanderfolgenden Läufen (1,5–1,7 min); Chromium-Download-Roundtrip nur stabil mit Wiederholungs-Helfer `downloadVia()` (Abweichung 3 unten); 4 Screenshots in `docs/status/track-editor/` |
+| 12 | Benchmarks dokumentiert | ✅ | `pnpm --filter @faf/formats bench`, `pnpm --filter @faf/marker-editor bench`, `perf.spec.ts` (Tabellen im Bericht) |
+| 13 | Keine Änderungen in sim/nav/render/client/apps/game/content/maps; depcruise-Regel für den Editor | ✅ | `git diff --exit-code 2fc956c -- …` leer; depcruise 0 Verstöße (531 Module) |
+| 14 | Repo-weit grün: install, typecheck, lint, test | ✅ | `pnpm install --frozen-lockfile`, `tools/heavy pnpm typecheck`, `tools/heavy pnpm lint`, `tools/heavy pnpm test`: 126 Dateien / 1.287 Tests grün, 1 Datei (4 Tests) bewusst übersprungen (`nav-parity`, siehe offene Punkte) |
+| 15 | Doku | ✅ | dieser Abschnitt, `docs/status/track-editor.md` + Fragmente P0–P7, DECISIONS TE-1 bis TE-10, README |
+
+### Abweichungen vom Plan
+
+1. **Worktree-Pfad:** Die Aufträge nennen `/Users/logge/Documents/Projects/faf-editor`; der Worktree des Branches liegt
+   unter `/Users/logge/Documents/Projects/flow-and-fire/.worktrees/faf-editor`.
+2. **`packages/rules/src/terrain.ts` additiv erweitert** (`LAND_MAX_CELL_SLOPE_RAW`, `landCellSlopeRaw`,
+   `isLandCellBlocked`, TE-7): eine Land-Passierbarkeit für Nav, Editor-Validierung und Prop-Expansion.
+3. **E2E-Download-Wiederholung in Chromium:** headless Chromium verwirft gelegentlich einen von schnell
+   aufeinanderfolgenden Downloads (kein App-Fehler); `downloadVia()` klickt nach 5 s erneut (max. 3 Versuche,
+   Annotation `download-retry`).
+4. **`editor.json`-Overlay** (TE-8): Marker gehören dem Editor, Terrain dem Generator; mapc wendet
+   `content/maps/src/<name>/editor.json` an, damit `pnpm maps` Editor-Änderungen nicht überschreibt.
+5. **Zusatzgrenze `MAP_MAX_FIELD_CELLS = 2^21`**, neues Modul `src/mapprop.ts` in `@faf/formats` (Zyklusfreiheit),
+   Zusatzcode `field-invalid`; `asymmetric` prüft nur Starts/Spots.
+6. **`markers.json`** listet Mass- vor Hydro-Spots (mapc-Format); gemischte Reihenfolge bleibt im Binärexport und in
+   der optionalen geordneten `spots`-Liste erhalten.
+7. **ESLint ignoriert `docs/design/**`** (statische Mockups ließen `pnpm lint` schon auf der Basis scheitern);
+   depcruise ignoriert nur noch die eigenen `.d.ts`-Dateien.
+8. **Demo-Seiten entfernt**; der Test-Hook `exportHash()` nutzt xxHash32 aus `@faf/fixed` statt eigener SHA-256 (TE-9).
+
+### Offene Punkte für spätere Meilensteine
+
+- **Merge:** `ci:local` um `pnpm test:e2e:editor` ergänzen (TE-5); `packages/nav/src/static.ts` auf die Zellregel aus
+  `@faf/rules` umstellen, dann läuft `apps/marker-editor/test/validate/nav-parity.test.ts` ohne `FAF_NAV_SRC` mit
+  (gegen den MS3-Worktree heute 4/4 grün).
+- **MS8 (E8):** expandierte Props in `mapSimData`/Sim-Tabelle übernehmen, Prop-Blueprints `core:tree_01/02`,
+  `core:rock_01/02`, `core:wreck_01` anlegen, Reclaim-/Dichte-Defaults balancieren (TE-6), Instanced-Props im
+  Spiel-Renderer; exakt gespiegelte Expansion als Algo-Version 2.
+- **Editor-Komfort:** Layer-Sichtbarkeit des Overlays in der UI, Undo/Redo-Labels als Tooltip, Befundliste > 300
+  gruppieren, Marker-Plaketten batchen (570 Draw Calls auf Setons), Einfügen eines Vertex in einem Polygon, das sein
+  eigener Spiegelzwilling ist, spiegeln.
+- **Validierungsschwellen** (Start-Plattform 50 %, Flachheit) nach den ersten handgebauten Karten nachjustieren.
+- Ursache des Chromium-Download-Verlusts im E2E ungeklärt (nur Testumgebung).
+
+### Starten und Testen
+
+```sh
+pnpm editor                                         # http://localhost:5220/?map=setons (Strg+C beendet)
+pnpm --filter @faf/marker-editor build              # Produktions-Build nach apps/marker-editor/dist
+pnpm vitest run packages/formats apps/marker-editor # Unit-/Komponententests des Tracks
+FAF_E2E_PORT=4783 tools/heavy pnpm test:e2e:editor  # Playwright, 3 Browser, 45 Tests
+tools/heavy pnpm --filter @faf/formats bench        # bzw. @faf/marker-editor bench
+```
+
+Bedienung: Werkzeuge `1`–`7`, Linksklick setzt, Ziehen verschiebt, `Entf` löscht, `Strg/⌘+Z` / `Strg/⌘+Umschalt+Z`,
+`Strg/⌘+S` speichert (Download), `Strg/⌘+O` öffnet, `?` zeigt die Hilfe. Prop-Felder für bestehende Karten über
+„editor.json“ exportieren und unter `content/maps/src/<name>/editor.json` ablegen, danach `pnpm maps`.

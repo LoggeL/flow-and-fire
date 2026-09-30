@@ -25,7 +25,9 @@
     "sfx:preview": "pnpm --filter @faf/sfx run preview",
     "models": "tsx packages/modelkit/scripts/models.ts",
     "models:shots": "pnpm --filter @faf/model-shots run shots",
-    "models:viewer": "pnpm --filter @faf/model-viewer dev"
+    "models:viewer": "pnpm --filter @faf/model-viewer dev",
+    "editor": "pnpm --filter @faf/marker-editor dev",
+    "test:e2e:editor": "pnpm --filter @faf/marker-editor build && playwright test -c apps/marker-editor/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

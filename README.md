@@ -12,6 +12,11 @@ mit Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 
 der deterministischen Sim (Tiefwasser blockiert, Furten passierbar). Hash-Ketten sind bitgleich in Node, Chromium,
 Firefox und WebKit. Details, Abnahme und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
 
+Zusätzlich gibt es den **Marker-Editor** (`apps/marker-editor`, Vorarbeits-Track TRACK-EDITOR, Feature M12): Karten
+(`.rtsmap`) laden, Startpositionen, Mass-/Hydro-Spots und Prop-Felder setzen, Symmetrie-Werkzeuge, Validierung,
+Undo/Redo und Export – `pnpm editor`, dann http://localhost:5220/?map=setons. Details:
+[`docs/status/track-editor.md`](docs/status/track-editor.md).
+
 ## Schnellstart
 
 ```sh
@@ -32,7 +37,8 @@ Karte), `?assets=raw`, `?cubes=<n>` (eigene Würfel am eigenen Start), `?enemy=<
 `?transport=sab|transfer`, `?autostart=0`. Ohne Pathing (MS3) fahren Einheiten geradeaus: auf Setons führt Mid ↔ Mid
 direkt über die Landbrücke, andere Ziele brauchen Wegpunkte um die Seen.
 
-Testen: `pnpm typecheck && pnpm lint && pnpm test`; Cross-Engine `pnpm test:xengine`; Browser-E2E `pnpm test:e2e`;
+Testen: `pnpm typecheck && pnpm lint && pnpm test`; Cross-Engine `pnpm test:xengine`; Browser-E2E `pnpm test:e2e`
+(Editor: `FAF_E2E_PORT=4783 pnpm test:e2e:editor`);
 alles nacheinander `pnpm ci:local`.
 
 ## Voraussetzungen
@@ -51,7 +57,9 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm typecheck` | `tsc -b` (Project References) + Typcheck aller Tests/Benches/Skripte (`tsconfig.tests.json`) |
 | `pnpm lint` | ESLint (inkl. `sim/determinism`) mit `--max-warnings 0` + dependency-cruiser |
 | `pnpm test` | Vitest (Root-Config, forks, max. 4 Worker, `--expose-gc`) |
+| `pnpm editor` | Marker-Editor im Vite-Dev-Server (`apps/marker-editor`, http://localhost:5220, weicht bei Belegung aus) |
 | `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated |
+| `pnpm test:e2e:editor` | Editor-Build + Playwright (chromium, firefox, webkit; 1 Worker) auf Port `FAF_E2E_PORT` (Standard 4783); noch nicht in `ci:local` |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
 | `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/ms2-p2-sim.md` |
 | `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen inkl. Setons-Generator `mapgen-setons.ts` + mapc → `content/maps/*.rtsmap`, deterministisch) |
@@ -134,7 +142,7 @@ packages/
   fixed/       Q20.12 (Fx/FxSmall), Ang16 + LUT-Trig, isqrt, fxDiv mit Korrektur, rng32, xxHash32, SafeInt
   heap/        Arena (WebAssembly.Memory), Table-DSL, Handles, Slabs, Hash, Snapshot
   protocol/    Command-Codec, Frame-/Event-Layouts, Opcodes (append-only); src/transport/ = Browser-Transport
-  formats/     Chunk-Container (CRC-32), .rtsmap, mapSimHash; scripts/ = mapc (CLI-Import), mapgen, maps
+  formats/     Chunk-Container (CRC-32), .rtsmap (inkl. Prop-Felder PFLD + Expansion), mapSimHash; scripts/ = mapc (CLI-Import, editor.json-Overlay), mapgen, maps
   rules/       gemeinsame Regeln (Terrainhöhe, Wassertiefe, Kategorien, Formeln) für Sim, Client, KI
   blueprints/  TypeBox-Schemas, define*(), Compiler → sim.bin / view.json / bundle.json + Hashes
   sim/         World, Systeme, Hash, FrameWriter (rein deterministisch)
@@ -145,6 +153,7 @@ packages/
 apps/
   game/        Vite-App (Spiel, Dev-Konsole), scripts/serve.mjs (statischer Server für E2E/Hosting-Test)
   model-viewer/ Model-Viewer (three.js, nur Tool): Galerie, Einzelansicht, Größenvergleich, Icons
+  marker-editor/ Marker-Editor (three.js + Preact, nur Tool): Starts, Spots, Prop-Felder, Symmetrie, Validierung, Export
 tools/
   eslint-plugin-sim/  eigene ESLint-Regel `sim/determinism`
   headless/           Node-Runner, Browser-Harness (Playwright-Worker), Benchmarks, Replay-Verify

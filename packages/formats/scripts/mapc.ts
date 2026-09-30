@@ -3,20 +3,32 @@
  * until MS8).
  *
  *   pnpm --filter @faf/formats mapc -- --heightmap <file.png|.pgm|.r16> --markers <markers.json>
- *        --out <file.rtsmap> [--splat a.png[,b.png]] [--preview]
+ *        --out <file.rtsmap> [--splat a.png[,b.png]] [--overlay editor.json] [--preview]
  *
  * markers.json uses world units (decimals, human-readable):
  *   { "version": 1, "name": "…", "sizeWu": 512,
  *     "heightScale": <WU per height step> | "heightScaleRaw": <Fx raw per step, 1..32>,
  *     "waterLevel": <WU> | null,
  *     "starts": [{ "army": 0, "x": …, "z": … }], "mass": [{ "x", "z" }], "hydro": [{ "x", "z" }],
+ *     (or instead of mass/hydro: "spots": [{ "kind": "mass"|"hydro", "x", "z" }] in map order),
  *     "props": [{ "id": "core:rock_01", "x", "z", "yawDeg"?, "scale"? }],
  *     "light"?: { "azimuthDeg", "elevationDeg", "sun": [r,g,b], "ambient": [r,g,b] },
- *     "strata"?: [{ "name", "color": [r,g,b] }] }
+ *     "strata"?: [{ "name", "color": [r,g,b] }],
+ *     "propFields"?: [{ "name", "kind": "tree"|"rock"|"wreck",
+ *                       "shape": { "circle": { "x", "z", "r" } } | { "polygon": [[x, z], …] },
+ *                       "entries": [{ "id": "core:tree_01", "weight": 1..65535 }],
+ *                       "density": <props per 1024 WU², integer 1..4096>, "seed": <u32>,
+ *                       "scale"?: [min, max] (default [1, 1]), "maxSlope"?: <rise/run, 0 = any>,
+ *                       "dryOnly"?: bool, "reclaimMass"?: <mass>, "reclaimEnergy"?: <energy> }],
+ *     "propFieldAlgo"?: <expansion algorithm version, default PROPFIELD_ALGO_VERSION> }
+ *   Without "propFields" the map has no PFLD chunk (output byte-identical to earlier mapc). The
+ *   marker editor always writes "propFieldAlgo" next to "propFields", so a later algorithm version
+ *   never silently changes the forests of an existing map.
  *
  * Unit conversion happens exactly once, here: WU → Fx raw = Math.round(v·4096); yawDeg → Ang16 =
  * Math.round(yawDeg·65536/360) mod 65536; scale → scalePermille = Math.round(scale·1000);
- * heightScale → heightScaleRaw = Math.round(heightScale·4096). Everything after this point
+ * heightScale → heightScaleRaw = Math.round(heightScale·4096); prop field scale / maxSlope /
+ * reclaimMass / reclaimEnergy → ·1000 rounded (permille / milli). Everything after this point
  * (the .rtsmap, the sim) is integer-only.
  */
 
@@ -28,8 +40,15 @@ import {
   createRtsMap,
   DEFAULT_MAP_LIGHT,
   FormatError,
+  PROP_ID_RE,
+  PROPFIELD_ALGO_VERSIONS,
   writeRtsMap,
   type MapLight,
+  type MapPoint,
+  type MapPropField,
+  type PropFieldEntry,
+  type PropFieldKind,
+  type PropFieldShape,
   type MapPreview,
   type MapProp,
   type MapSplatRaw,
@@ -121,7 +140,7 @@ export function compileMap(input: CompileInput): RtsMap {
   if (!isObj(m)) throw new MapcError([`${source}: markers must be a JSON object`]);
   checkKeys(
     m,
-    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'props', 'light', 'strata'],
+    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'spots', 'props', 'light', 'strata', 'propFields', 'propFieldAlgo'],
     'markers',
     pr,
   );
@@ -214,12 +233,28 @@ export function compileMap(input: CompileInput): RtsMap {
   starts.sort((a, b) => a.army - b.army);
 
   const spots: MapSpot[] = [];
-  for (const kind of ['mass', 'hydro'] as const) {
-    list(kind).forEach((s, i) => {
-      if (isObj(s)) checkKeys(s, ['x', 'z'], `${kind}[${i}]`, pr);
-      const p = point(s, `${kind}[${i}]`, true);
+  if (m['spots'] !== undefined) {
+    // Ordered alternative to mass/hydro (keeps an interleaved order, e.g. from the marker editor).
+    if (m['mass'] !== undefined || m['hydro'] !== undefined) pr.add("give either 'spots' or 'mass'/'hydro', not both");
+    list('spots').forEach((s, i) => {
+      const where = `spots[${i}]`;
+      if (isObj(s)) checkKeys(s, ['kind', 'x', 'z'], where, pr);
+      const kind = isObj(s) ? s['kind'] : undefined;
+      if (kind !== 'mass' && kind !== 'hydro') {
+        pr.add(`${where}.kind must be 'mass' or 'hydro'`);
+        return;
+      }
+      const p = point(s, where, true);
       if (p !== null) spots.push({ kind, x: p.x, z: p.z });
     });
+  } else {
+    for (const kind of ['mass', 'hydro'] as const) {
+      list(kind).forEach((s, i) => {
+        if (isObj(s)) checkKeys(s, ['x', 'z'], `${kind}[${i}]`, pr);
+        const p = point(s, `${kind}[${i}]`, true);
+        if (p !== null) spots.push({ kind, x: p.x, z: p.z });
+      });
+    }
   }
 
   const props: MapProp[] = [];
@@ -231,7 +266,7 @@ export function compileMap(input: CompileInput): RtsMap {
     }
     checkKeys(s, ['id', 'x', 'z', 'yawDeg', 'scale'], where, pr);
     const id = s['id'];
-    if (typeof id !== 'string' || !/^[a-z0-9_]+:[a-z0-9_./-]+$/.test(id)) {
+    if (typeof id !== 'string' || !PROP_ID_RE.test(id)) {
       pr.add(`${where}.id must be a namespace id like 'core:rock_01'`);
       return;
     }
@@ -269,6 +304,16 @@ export function compileMap(input: CompileInput): RtsMap {
     strata.push({ name: s['name'], color: rgbOf(s['color'], `strata[${i}].color`, pr) });
   });
 
+  const propFields = m['propFields'] === undefined ? undefined : parsePropFields(list('propFields'), maxRaw, pr);
+  const algoIn = m['propFieldAlgo'];
+  let propFieldAlgo: number | undefined;
+  if (algoIn !== undefined) {
+    if (propFields === undefined) pr.add('markers.propFieldAlgo requires markers.propFields');
+    else if (typeof algoIn !== 'number' || !PROPFIELD_ALGO_VERSIONS.includes(algoIn)) {
+      pr.add(`markers.propFieldAlgo must be one of ${PROPFIELD_ALGO_VERSIONS.join(', ')}, got ${JSON.stringify(algoIn)}`);
+    } else propFieldAlgo = algoIn;
+  }
+
   let splat: MapSplatRaw | null = null;
   const splatPngs = input.splatPngs ?? [];
   if (splatPngs.length > 0) {
@@ -301,12 +346,135 @@ export function compileMap(input: CompileInput): RtsMap {
       light,
       strata,
       splat,
+      ...(propFields === undefined ? {} : { propFields }),
+      ...(propFieldAlgo === undefined ? {} : { propFieldAlgo }),
     });
     return input.preview === true ? { ...base, preview: renderPreview(base, PREVIEW_SIZE) } : base;
   } catch (e) {
     if (e instanceof FormatError) throw new MapcError([`${source}: ${e.message}`]);
     throw e;
   }
+}
+
+/** markers.json "propFields" → MapPropField[] (WU → Fx raw, decimals → permille / milli). */
+function parsePropFields(list: readonly unknown[], maxRaw: number, pr: Problems): MapPropField[] {
+  const out: MapPropField[] = [];
+  const milli = (v: unknown, where: string, dflt: number, max: number): number => {
+    if (v === undefined) return dflt;
+    if (!finite(v) || v < 0 || Math.round(v * 1000) > max) {
+      pr.add(`${where} must be a number in 0..${max / 1000}`);
+      return dflt;
+    }
+    return Math.round(v * 1000) + 0;
+  };
+  const coord = (v: unknown, where: string): number | null => {
+    if (!finite(v)) {
+      pr.add(`${where} must be a number (WU)`);
+      return null;
+    }
+    const r = wuToRaw(v);
+    if (r < 0 || r > maxRaw) {
+      pr.add(`${where} = ${v} lies outside the map (0..${maxRaw / 4096} WU)`);
+      return null;
+    }
+    return r;
+  };
+  list.forEach((f, i) => {
+    const where = `propFields[${i}]`;
+    if (!isObj(f)) {
+      pr.add(`${where} must be an object`);
+      return;
+    }
+    checkKeys(f, ['name', 'kind', 'shape', 'entries', 'density', 'seed', 'scale', 'maxSlope', 'dryOnly', 'reclaimMass', 'reclaimEnergy'], where, pr);
+    const name = f['name'];
+    if (typeof name !== 'string' || name.length === 0) pr.add(`${where}.name must be a non-empty string`);
+    const kind = f['kind'];
+    if (kind !== 'tree' && kind !== 'rock' && kind !== 'wreck') pr.add(`${where}.kind must be 'tree', 'rock' or 'wreck'`);
+
+    let shape: PropFieldShape | null = null;
+    const sh = f['shape'];
+    if (isObj(sh) && Object.keys(sh).length === 1 && isObj(sh['circle'])) {
+      const c = sh['circle'];
+      checkKeys(c, ['x', 'z', 'r'], `${where}.shape.circle`, pr);
+      const x = coord(c['x'], `${where}.shape.circle.x`);
+      const z = coord(c['z'], `${where}.shape.circle.z`);
+      const r = finite(c['r']) && c['r'] > 0 ? wuToRaw(c['r']) : null;
+      if (r === null) pr.add(`${where}.shape.circle.r must be a positive number (WU)`);
+      if (x !== null && z !== null && r !== null) shape = { kind: 'circle', x, z, r };
+    } else if (isObj(sh) && Object.keys(sh).length === 1 && Array.isArray(sh['polygon'])) {
+      const points: MapPoint[] = [];
+      let ok = true;
+      (sh['polygon'] as unknown[]).forEach((pt, k) => {
+        if (!Array.isArray(pt) || pt.length !== 2) {
+          pr.add(`${where}.shape.polygon[${k}] must be [x, z] (WU)`);
+          ok = false;
+          return;
+        }
+        const x = coord(pt[0], `${where}.shape.polygon[${k}][0]`);
+        const z = coord(pt[1], `${where}.shape.polygon[${k}][1]`);
+        if (x === null || z === null) ok = false;
+        else points.push({ x, z });
+      });
+      if (ok) shape = { kind: 'polygon', points };
+    } else {
+      pr.add(`${where}.shape must be { "circle": { x, z, r } } or { "polygon": [[x, z], …] }`);
+    }
+
+    const entries: PropFieldEntry[] = [];
+    const es = f['entries'];
+    if (!Array.isArray(es) || es.length === 0) pr.add(`${where}.entries must be a non-empty array`);
+    else {
+      es.forEach((e, k) => {
+        const ew = `${where}.entries[${k}]`;
+        if (!isObj(e)) {
+          pr.add(`${ew} must be an object`);
+          return;
+        }
+        checkKeys(e, ['id', 'weight'], ew, pr);
+        const id = e['id'];
+        const weight = e['weight'] ?? 1;
+        if (typeof id !== 'string' || !PROP_ID_RE.test(id)) pr.add(`${ew}.id must be a namespace id like 'core:tree_01'`);
+        else if (!Number.isInteger(weight) || (weight as number) < 1 || (weight as number) > 65535) pr.add(`${ew}.weight must be an integer 1..65535`);
+        else entries.push({ id, weight: weight as number });
+      });
+    }
+    const density = f['density'];
+    if (!Number.isInteger(density) || (density as number) < 1 || (density as number) > 4096) pr.add(`${where}.density must be an integer 1..4096 (props per 1024 WU²)`);
+    const seed = f['seed'];
+    if (!Number.isInteger(seed) || (seed as number) < 0 || (seed as number) > 0xffffffff) pr.add(`${where}.seed must be an integer 0..4294967295`);
+    let scaleMin = 1000;
+    let scaleMax = 1000;
+    const sc = f['scale'];
+    if (sc !== undefined) {
+      if (!Array.isArray(sc) || sc.length !== 2) pr.add(`${where}.scale must be [min, max]`);
+      else {
+        scaleMin = milli(sc[0], `${where}.scale[0]`, 1000, 65535);
+        scaleMax = milli(sc[1], `${where}.scale[1]`, 1000, 65535);
+        if (scaleMin < 1 || scaleMin > scaleMax) pr.add(`${where}.scale must satisfy 0.001 <= min <= max`);
+      }
+    }
+    const dryOnly = f['dryOnly'] ?? false;
+    if (typeof dryOnly !== 'boolean') pr.add(`${where}.dryOnly must be a boolean`);
+    const maxSlopePermille = milli(f['maxSlope'], `${where}.maxSlope`, 0, 65535);
+    const reclaimMassMilli = milli(f['reclaimMass'], `${where}.reclaimMass`, 0, 0xffffffff);
+    const reclaimEnergyMilli = milli(f['reclaimEnergy'], `${where}.reclaimEnergy`, 0, 0xffffffff);
+    if (shape === null) return;
+    out.push({
+      name: name as string,
+      kind: kind as PropFieldKind,
+      shape,
+      entries,
+      densityPerKWu2: density as number,
+      seed: seed as number,
+      scaleMinPermille: scaleMin,
+      scaleMaxPermille: scaleMax,
+      maxSlopePermille,
+      dryOnly: dryOnly === true,
+      reclaimMassMilli,
+      reclaimEnergyMilli,
+    });
+  });
+  return out;
 }
 
 const RAMP: readonly (readonly [number, number, number])[] = [
@@ -396,20 +564,65 @@ export function renderPreview(map: RtsMap, size: number): MapPreview {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Map source directories (content/maps/src/<name>/): heightmap.{png,pgm,r16}, markers.json and
-// optional splat-0.png / splat-1.png. Output: content/maps/<name>.rtsmap with a preview.
+// Map source directories (content/maps/src/<name>/): heightmap.{png,pgm,r16}, markers.json,
+// optional splat-0.png / splat-1.png and an optional editor.json. Output:
+// content/maps/<name>.rtsmap with a preview.
+//
+// Ownership of the markers (TRACK-EDITOR, DECISIONS): markers.json belongs to its producer (the
+// procedural generators in mapgen*.ts rewrite it on every `pnpm maps`); editor.json belongs to the
+// marker editor ("editor.json" export) and is never written by a script. If editor.json exists,
+// its starts, spots and prop fields replace those of markers.json before the map is compiled, so
+// edits made in the editor survive regeneration. Everything else (name, terrain, water, light,
+// strata, props, splat) keeps coming from the generator.
+
+/** File name of the marker editor's overlay in a map source directory. */
+export const EDITOR_OVERLAY_FILE = 'editor.json';
+
+/** Keys of markers.json that an editor overlay owns (all of them are replaced, absent ⇒ removed). */
+const OVERLAY_OWNED_KEYS = ['starts', 'mass', 'hydro', 'spots', 'propFields', 'propFieldAlgo'] as const;
+
+/**
+ * editor.json (written by the marker editor, format version 1):
+ *   { "version": 1, "editorOverlay": 1, "name": <map name>, "sizeWu": <int>,
+ *     "starts": [{ "army", "x", "z" }], "spots": [{ "kind", "x", "z" }],
+ *     "propFields"?: [ as in markers.json ], "propFieldAlgo"?: <int> }
+ * "name" and "sizeWu" must match markers.json (guards against an overlay of another map). Returns
+ * the markers object with the owned keys replaced. Throws MapcError.
+ */
+export function applyEditorOverlay(markers: unknown, overlay: unknown, source = EDITOR_OVERLAY_FILE): unknown {
+  const pr = new Problems(source);
+  if (!isObj(overlay)) throw new MapcError([`${source}: must be a JSON object`]);
+  if (!isObj(markers)) throw new MapcError([`${source}: markers.json must be a JSON object`]);
+  checkKeys(overlay, ['version', 'editorOverlay', 'name', 'sizeWu', 'starts', 'spots', 'propFields', 'propFieldAlgo'], 'editor overlay', pr);
+  if (overlay['version'] !== 1 || overlay['editorOverlay'] !== 1) pr.add('version and editorOverlay must be 1');
+  if (overlay['name'] !== markers['name']) pr.add(`name ${JSON.stringify(overlay['name'])} does not match markers.json (${JSON.stringify(markers['name'])})`);
+  if (overlay['sizeWu'] !== markers['sizeWu']) pr.add(`sizeWu ${JSON.stringify(overlay['sizeWu'])} does not match markers.json (${JSON.stringify(markers['sizeWu'])})`);
+  if (!Array.isArray(overlay['starts'])) pr.add('starts must be an array');
+  if (!Array.isArray(overlay['spots'])) pr.add('spots must be an array');
+  pr.throwIfAny();
+  const out: Obj = {};
+  for (const [k, v] of Object.entries(markers)) if (!(OVERLAY_OWNED_KEYS as readonly string[]).includes(k)) out[k] = v;
+  out['starts'] = overlay['starts'];
+  out['spots'] = overlay['spots'];
+  if (overlay['propFields'] !== undefined) out['propFields'] = overlay['propFields'];
+  if (overlay['propFieldAlgo'] !== undefined) out['propFieldAlgo'] = overlay['propFieldAlgo'];
+  return out;
+}
 
 export interface MapSourceFiles {
   readonly heightmap: string;
   readonly markers: string;
   readonly splat: readonly string[];
+  /** editor.json if present. */
+  readonly overlay: string | null;
 }
 
 export function mapSourceFiles(dir: string): MapSourceFiles {
   const hms = ['heightmap.png', 'heightmap.pgm', 'heightmap.r16'].filter((f) => existsSync(join(dir, f)));
   if (hms.length !== 1) throw new MapcError([`${dir}: expected exactly one heightmap.{png,pgm,r16}, found ${hms.length}`]);
   const splat = ['splat-0.png', 'splat-1.png'].filter((f) => existsSync(join(dir, f))).map((f) => join(dir, f));
-  return { heightmap: join(dir, hms[0]!), markers: join(dir, 'markers.json'), splat };
+  const overlay = join(dir, EDITOR_OVERLAY_FILE);
+  return { heightmap: join(dir, hms[0]!), markers: join(dir, 'markers.json'), splat, overlay: existsSync(overlay) ? overlay : null };
 }
 
 export interface MapcOptions {
@@ -417,16 +630,22 @@ export interface MapcOptions {
   readonly markers: string;
   readonly splat?: readonly string[];
   readonly preview?: boolean;
+  /** Marker editor overlay (editor.json) applied on top of the markers. */
+  readonly overlay?: string | null;
+}
+
+function readJson(path: string): unknown {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch (e) {
+    throw new MapcError([`${path}: not valid JSON (${(e as Error).message})`]);
+  }
 }
 
 /** Reads the input files and compiles them to .rtsmap bytes. */
 export function mapcFiles(o: MapcOptions): { map: RtsMap; bytes: Uint8Array } {
-  let markers: unknown;
-  try {
-    markers = JSON.parse(readFileSync(o.markers, 'utf8'));
-  } catch (e) {
-    throw new MapcError([`${o.markers}: not valid JSON (${(e as Error).message})`]);
-  }
+  let markers = readJson(o.markers);
+  if (o.overlay != null) markers = applyEditorOverlay(markers, readJson(o.overlay), o.overlay);
   const map = compileMap({
     heightmap: readHeightmap(o.heightmap),
     markers,
@@ -440,7 +659,7 @@ export function mapcFiles(o: MapcOptions): { map: RtsMap; bytes: Uint8Array } {
 /** Compiles content/maps/src/<name> (convention above, always with preview). */
 export function compileMapSource(dir: string): { map: RtsMap; bytes: Uint8Array } {
   const f = mapSourceFiles(dir);
-  return mapcFiles({ heightmap: f.heightmap, markers: f.markers, splat: f.splat, preview: true });
+  return mapcFiles({ heightmap: f.heightmap, markers: f.markers, splat: f.splat, preview: true, overlay: f.overlay });
 }
 
 /** Names of all map source directories under content/maps/src. */
@@ -468,7 +687,7 @@ export function compileAllMapSources(log: (msg: string) => void = () => {}): str
 // ---------------------------------------------------------------------------------------------
 // CLI
 
-function parseArgs(argv: readonly string[]): { heightmap: string; markers: string; out: string; splat: string[]; preview: boolean } {
+function parseArgs(argv: readonly string[]): { heightmap: string; markers: string; out: string; splat: string[]; preview: boolean; overlay: string | null } {
   const base = process.env['INIT_CWD'] ?? process.cwd();
   const abs = (p: string): string => (isAbsolute(p) ? p : resolve(base, p));
   let heightmap = '';
@@ -476,6 +695,7 @@ function parseArgs(argv: readonly string[]): { heightmap: string; markers: strin
   let out = '';
   let splat: string[] = [];
   let preview = false;
+  let overlay: string | null = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = (): string => {
@@ -489,13 +709,14 @@ function parseArgs(argv: readonly string[]): { heightmap: string; markers: strin
     else if (a === '--out') out = abs(next());
     else if (a === '--splat') splat = next().split(',').filter((s) => s.length > 0).map(abs);
     else if (a === '--preview') preview = true;
+    else if (a === '--overlay') overlay = abs(next());
     else throw new MapcError([`unknown argument '${a}'`]);
   }
   const missing = [heightmap === '' && '--heightmap', markers === '' && '--markers', out === '' && '--out'].filter((x) => x !== false);
   if (missing.length > 0) {
-    throw new MapcError([`missing ${missing.join(', ')}; usage: mapc --heightmap <file> --markers <markers.json> --out <file.rtsmap> [--splat a.png,b.png] [--preview]`]);
+    throw new MapcError([`missing ${missing.join(', ')}; usage: mapc --heightmap <file> --markers <markers.json> --out <file.rtsmap> [--splat a.png,b.png] [--overlay editor.json] [--preview]`]);
   }
-  return { heightmap, markers, out, splat, preview };
+  return { heightmap, markers, out, splat, preview, overlay };
 }
 
 function main(): void {

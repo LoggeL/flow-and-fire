@@ -34,6 +34,8 @@ export default defineConfig(
       'test-results/**',
       'playwright-report/**',
       '**/*.wasm',
+      // Static HTML/JS design mockups (docs, not project code; browser scripts without module setup).
+      'docs/design/**',
     ],
   },
   js.configs.recommended,
@@ -78,14 +80,20 @@ export default defineConfig(
       '**/*.mjs',
       '**/scripts/**/*.{ts,js}',
       '**/bench/**/*.ts',
-      '**/test/**/*.ts',
+      '**/test/**/*.{ts,tsx}',
       'test/**/*.ts',
       'tools/**/*.{js,ts}',
       'tools/assets-pipeline/**/*.{js,mjs,ts}',
       'apps/*/vite.config.ts',
+      'apps/*/playwright.config.ts',
       'packages/*/vite.config.ts',
     ],
     languageOptions: { globals: { ...globals.node } },
+  },
+  // Component tests of the apps (happy-dom environment): browser and Node globals.
+  {
+    files: ['apps/*/test/**/*.tsx'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   {
     files: ['**/*.cjs'],

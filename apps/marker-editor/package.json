@@ -1,0 +1,35 @@
+{
+  "name": "@faf/marker-editor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Marker-Editor (M12): Startpositionen, Mass-/Hydro-Spots und Prop-Felder auf .rtsmap-Karten setzen (three.js, nur Tool)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview --strictPort",
+    "bench": "node --import tsx bench/validate.bench.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "@faf/rules": "workspace:*",
+    "@preact/signals": "^2.11.2",
+    "preact": "^10.29.8",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@faf/client": "workspace:*",
+    "@faf/sim-host": "workspace:*",
+    "@playwright/test": "^1.63.0",
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^24.19.0",
+    "@types/three": "^0.186.0",
+    "fast-check": "^4.10.2",
+    "happy-dom": "^20.0.0",
+    "tsx": "^4.23.15",
+    "vite": "^8.3.1"
+  }
+}

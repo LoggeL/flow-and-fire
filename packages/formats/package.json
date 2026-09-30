@@ -9,7 +9,8 @@
   "scripts": {
     "mapc": "node --import tsx scripts/mapc.ts",
     "mapgen": "node --import tsx scripts/mapgen.ts",
-    "maps": "node --import tsx scripts/maps.ts"
+    "maps": "node --import tsx scripts/maps.ts",
+    "bench": "node --import tsx bench/propfields.bench.ts"
   },
   "dependencies": {
     "@faf/fixed": "workspace:*",

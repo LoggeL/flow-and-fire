@@ -37,6 +37,9 @@ function onlyWorkspaceDeps(name, from, allowed, extraPathNot = []) {
  * The sim may use the blueprints package only through its sim.bin contract module
  * (PLAN §3.2 "blueprints-Typen"): never the compiler, TypeBox schemas or the view data.
  */
+/** npm packages the marker editor may use (plus their pnpm store paths and type packages). */
+const MARKER_EDITOR_NPM = 'node_modules/(@types/three|three|preact|@preact/signals|@preact/signals-core)/';
+
 const SIM_BLUEPRINTS = ['^packages/blueprints/src/simbin\\.ts$', '^@faf/blueprints/simbin$'];
 
 module.exports = {
@@ -72,6 +75,24 @@ module.exports = {
     // Kitbash DSL: pure TypeScript, independent of render/sim (only @gltf-transform/core from npm).
     onlyWorkspaceDeps('modelkit-is-leaf', 'modelkit', []),
     onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
+    {
+      name: 'marker-editor-deps',
+      severity: 'error',
+      comment:
+        'apps/marker-editor/src (M12, tool) may only import the workspace packages formats, fixed, rules, protocol – never sim, sim-host, client, render or nav.',
+      from: { path: '^apps/marker-editor/src/' },
+      to: { path: WS, pathNot: ['^apps/marker-editor/', pkgTarget(['formats', 'fixed', 'rules', 'protocol'])] },
+    },
+    {
+      name: 'marker-editor-npm-deps',
+      severity: 'error',
+      comment: 'apps/marker-editor/src uses from npm only three, preact and @preact/signals (three.js is allowed in tools, PLAN §2).',
+      from: { path: '^apps/marker-editor/src/' },
+      to: {
+        dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-no-pkg', 'npm-unknown'],
+        pathNot: [MARKER_EDITOR_NPM, '^(packages|apps|tools)/'],
+      },
+    },
     {
       name: 'render-npm-deps',
       severity: 'error',
@@ -125,7 +146,9 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     exclude: {
-      path: ['(^|/)dist/', '(^|/)dist-harness/', '^test-results/', '^playwright-report/', '\\.d\\.ts$'],
+      // Workspace declaration files only: npm packages whose `exports` list `types` first resolve to
+      // their .d.ts, and excluding those would hide the import from the npm rules.
+      path: ['(^|/)dist/', '(^|/)dist-harness/', '^test-results/', '^playwright-report/', '^(packages|apps|tools|content|test)/.*\\.d\\.ts$'],
     },
     tsPreCompilationDeps: true,
     combinedDependencies: false,

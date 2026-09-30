@@ -1,0 +1,758 @@
+/*
+ * Marker editor panels (TRACK-EDITOR P6). Dark tool design; all classes are prefixed "me-".
+ * Layout: top bar and status bar span the window, the left column (tools, symmetry) and the right
+ * column (properties, validation) sit between them; the map in the middle stays free.
+ */
+
+:root {
+  --me-bg: rgba(15, 19, 26, 0.94);
+  --me-bg-solid: #0f131a;
+  --me-bg-raised: #1a212c;
+  --me-bg-input: #0b0e13;
+  --me-border: #2b3544;
+  --me-border-strong: #3d4a5c;
+  --me-text: #dde3ea;
+  --me-muted: #8c98a8;
+  --me-accent: #4ea4ff;
+  --me-accent-bg: rgba(78, 164, 255, 0.18);
+  --me-error: #ff6f61;
+  --me-warning: #f3b73f;
+  --me-info: #62b3ff;
+  --me-ok: #6fd08c;
+  --me-mass: #b6e35a;
+  --me-hydro: #52d6e8;
+  --me-energy: #ffd35c;
+  --me-top-h: 44px;
+  --me-status-h: 28px;
+  --me-gap: 8px;
+  --me-left-w: 208px;
+  --me-right-w: 324px;
+  --me-radius: 6px;
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --me-left-w: 224px;
+    --me-right-w: 372px;
+  }
+}
+
+.me-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--me-text);
+  font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  user-select: none;
+}
+
+.me-ui input,
+.me-ui select,
+.me-ui button {
+  font: inherit;
+  color: inherit;
+}
+
+.me-ui kbd,
+.me-kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 5px;
+  border: 1px solid var(--me-border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--me-bg-input);
+  color: var(--me-muted);
+  font: 11px/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- top bar */
+
+.me-topbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--me-top-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  background: var(--me-bg);
+  border-bottom: 1px solid var(--me-border);
+  pointer-events: auto;
+}
+
+.me-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.me-brand-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #ff8a3d, #4ea4ff);
+}
+
+.me-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.me-group-end {
+  margin-left: auto;
+}
+
+.me-file {
+  flex: 1 1 auto;
+  min-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--me-muted);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+}
+
+.me-dirty-mark {
+  margin-left: 2px;
+  color: var(--me-warning);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.me-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--me-border-strong);
+  border-radius: var(--me-radius);
+  background: var(--me-bg-raised);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.me-btn:hover:not(:disabled) {
+  border-color: var(--me-accent);
+}
+
+.me-btn:focus-visible,
+.me-tool:focus-visible,
+.me-issue:focus-visible,
+.me-counter:focus-visible,
+.me-select:focus-visible,
+.me-input:focus-visible {
+  outline: 2px solid var(--me-accent);
+  outline-offset: 1px;
+}
+
+.me-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.me-btn.me-active {
+  background: var(--me-accent-bg);
+  border-color: var(--me-accent);
+}
+
+.me-btn-primary {
+  background: #1d4f86;
+  border-color: #2f6fb5;
+}
+
+.me-btn-block {
+  width: 100%;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+
+.me-btn-small {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.me-badge {
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--me-bg-input);
+  color: var(--me-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.me-select,
+.me-input {
+  height: 26px;
+  box-sizing: border-box;
+  border: 1px solid var(--me-border-strong);
+  border-radius: 4px;
+  background: var(--me-bg-input);
+  padding: 0 6px;
+  min-width: 0;
+}
+
+.me-map-select {
+  width: 170px;
+}
+
+.me-input {
+  width: 100%;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  user-select: text;
+}
+
+.me-input.me-invalid {
+  border-color: var(--me-error);
+  background: rgba(255, 111, 97, 0.12);
+  color: #ffd0cb;
+}
+
+.me-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+.me-check input {
+  margin: 0;
+  accent-color: var(--me-accent);
+}
+
+/* ---------------------------------------------------------------- columns and panels */
+
+.me-col {
+  position: absolute;
+  top: calc(var(--me-top-h) + var(--me-gap));
+  bottom: calc(var(--me-status-h) + var(--me-gap));
+  display: flex;
+  flex-direction: column;
+  gap: var(--me-gap);
+  pointer-events: none;
+}
+
+.me-col-left {
+  left: var(--me-gap);
+  width: var(--me-left-w);
+  overflow-y: auto;
+}
+
+.me-col-right {
+  right: var(--me-gap);
+  width: var(--me-right-w);
+}
+
+.me-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--me-bg);
+  border: 1px solid var(--me-border);
+  border-radius: var(--me-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.me-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--me-border);
+}
+
+.me-panel-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--me-muted);
+}
+
+.me-panel-body {
+  padding: 8px 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* The properties panel has priority; the validation list keeps at least its head and ~2 rows. */
+.me-properties {
+  flex: 0 1 auto;
+  max-height: calc(100% - 132px - var(--me-gap));
+}
+
+.me-validation {
+  flex: 1 1 132px;
+  min-height: 132px;
+}
+
+.me-hint,
+.me-note {
+  margin: 6px 0 0;
+  color: var(--me-muted);
+  font-size: 12px;
+}
+
+.me-empty {
+  margin: 4px 0;
+  color: var(--me-muted);
+}
+
+.me-ok {
+  color: var(--me-ok);
+}
+
+/* ---------------------------------------------------------------- tools */
+
+.me-tool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.me-tool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--me-radius);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.me-tool:hover {
+  background: var(--me-bg-raised);
+}
+
+.me-tool.me-active {
+  background: var(--me-accent-bg);
+  border-color: var(--me-accent);
+  color: #fff;
+}
+
+.me-tool-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.me-tool-start .me-tool-icon {
+  color: #ff9d4a;
+}
+
+.me-tool-mass .me-tool-icon {
+  color: var(--me-mass);
+}
+
+.me-tool-hydro .me-tool-icon {
+  color: var(--me-hydro);
+}
+
+.me-tool-fieldCircle .me-tool-icon,
+.me-tool-fieldPolygon .me-tool-icon {
+  color: #7fd67a;
+}
+
+.me-tool-delete .me-tool-icon {
+  color: var(--me-error);
+}
+
+.me-tool-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- rows */
+
+.me-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  column-gap: 8px;
+  margin: 3px 0;
+}
+
+.me-row .me-select {
+  width: 100%;
+}
+
+.me-row-wide {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 3px;
+}
+
+.me-row-label {
+  color: var(--me-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.me-row-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.me-row-value {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+.me-suffix {
+  width: 12px;
+  color: var(--me-muted);
+  font-size: 11px;
+}
+
+.me-error {
+  grid-column: 1 / -1;
+  color: var(--me-error);
+  font-size: 11.5px;
+}
+
+.me-subhead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.me-subhead-note {
+  color: var(--me-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.me-seed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.me-seed .me-row {
+  grid-column: 1;
+}
+
+.me-vertex {
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--me-border);
+}
+
+.me-stats {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--me-border);
+}
+
+/* Statistics: the label keeps its natural width, the (long) reclaim sums stay on one line. */
+.me-stats .me-row {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.me-stats .me-row-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.me-summary {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.me-mass {
+  color: var(--me-mass);
+}
+
+.me-hydro {
+  color: var(--me-hydro);
+}
+
+.me-energy {
+  color: var(--me-energy);
+}
+
+.me-spot-kind {
+  font-weight: 600;
+}
+
+.me-spot-mass {
+  color: var(--me-mass);
+}
+
+.me-spot-hydro {
+  color: var(--me-hydro);
+}
+
+/* ---------------------------------------------------------------- validation */
+
+.me-counters {
+  display: flex;
+  gap: 4px;
+}
+
+.me-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--me-border-strong);
+  border-radius: 11px;
+  background: var(--me-bg-input);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.me-counter.me-off {
+  opacity: 0.4;
+}
+
+.me-sev-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--me-muted);
+}
+
+.me-sev-error .me-sev-dot {
+  background: var(--me-error);
+}
+
+.me-sev-warning .me-sev-dot {
+  background: var(--me-warning);
+}
+
+.me-sev-info .me-sev-dot {
+  background: var(--me-info);
+}
+
+.me-issues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.me-issue {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 7px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.me-issue:hover {
+  background: var(--me-bg-raised);
+}
+
+.me-issue.me-active {
+  border-color: var(--me-accent);
+  background: var(--me-accent-bg);
+}
+
+.me-issue-text {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.me-issue-pos {
+  color: var(--me-muted);
+  font: 11px ui-monospace, 'SF Mono', Menlo, monospace;
+  white-space: nowrap;
+}
+
+.me-sev-error .me-issue-text {
+  color: #ffc1bb;
+}
+
+.me-more {
+  padding: 4px 6px;
+  color: var(--me-muted);
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- status bar */
+
+.me-statusbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--me-status-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 10px;
+  background: var(--me-bg);
+  border-top: 1px solid var(--me-border);
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.me-stat {
+  color: var(--me-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.me-cursor {
+  min-width: 150px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--me-text);
+}
+
+.me-status-msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.me-dirty {
+  color: var(--me-muted);
+  white-space: nowrap;
+}
+
+.me-dirty.me-is-dirty {
+  color: var(--me-warning);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- help overlay */
+
+.me-help-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 8, 12, 0.6);
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.me-help {
+  width: min(980px, calc(100vw - 48px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 14px 18px 16px;
+  background: var(--me-bg-solid);
+  border: 1px solid var(--me-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  user-select: text;
+}
+
+.me-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.me-help-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.me-help h3 {
+  margin: 12px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--me-muted);
+}
+
+.me-help-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.me-help-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.me-help-table th {
+  width: 1%;
+  padding: 3px 10px 3px 0;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.me-help-table td {
+  padding: 3px 0;
+  font-size: 12.5px;
+}
+
+/* Low windows (e.g. 1280x720): denser property rows so a prop field fits with little scrolling. */
+@media (max-height: 820px) {
+  .me-row {
+    margin: 2px 0;
+  }
+
+  .me-row .me-select,
+  .me-row .me-input {
+    height: 24px;
+  }
+
+  .me-panel-body {
+    padding: 6px 10px;
+  }
+
+  .me-subhead {
+    margin-bottom: 4px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .me-help-cols {
+    grid-template-columns: 1fr;
+  }
+}
