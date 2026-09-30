@@ -71,7 +71,16 @@ module.exports = {
     onlyWorkspaceDeps('render-deps', 'render', ['protocol', 'fixed']),
     // Kitbash DSL: pure TypeScript, independent of render/sim (only @gltf-transform/core from npm).
     onlyWorkspaceDeps('modelkit-is-leaf', 'modelkit', []),
-    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
+    // Web Audio engine (TRACK-AUDIOENG): presentation leaf package, integrated by client in MS5.
+    onlyWorkspaceDeps('audio-is-leaf', 'audio', []),
+    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed', 'audio']),
+    {
+      name: 'audio-npm-deps',
+      severity: 'error',
+      comment: 'audio only depends on opus-decoder from npm (WASM fallback of the decode chain, dynamically imported).',
+      from: { path: '^packages/audio/src/' },
+      to: { dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-no-pkg', 'npm-unknown'], pathNot: ['/opus-decoder/', '^(packages|apps|tools)/'] },
+    },
     {
       name: 'render-npm-deps',
       severity: 'error',
@@ -89,8 +98,8 @@ module.exports = {
     {
       name: 'presentation-never-imports-sim',
       severity: 'error',
-      comment: 'render/client/ai never import sim or sim-host (they only see frames/perception).',
-      from: { path: '^packages/(render|client|ai)/' },
+      comment: 'render/client/ai/audio never import sim or sim-host (they only see frames/perception).',
+      from: { path: '^packages/(render|client|ai|audio)/' },
       to: { path: pkgTarget(['sim', 'sim-host']) },
     },
     {
@@ -103,9 +112,9 @@ module.exports = {
     {
       name: 'sim-never-imports-presentation',
       severity: 'error',
-      comment: 'Simulation packages never import render/client/ai/sim-host.',
+      comment: 'Simulation packages never import render/client/ai/audio/sim-host.',
       from: { path: '^packages/(fixed|heap|protocol|rules|formats|blueprints|nav|sim)/src/' },
-      to: { path: pkgTarget(['render', 'client', 'ai', 'sim-host']) },
+      to: { path: pkgTarget(['render', 'client', 'ai', 'audio', 'sim-host']) },
     },
     {
       name: 'not-to-unresolvable',
@@ -125,7 +134,9 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     exclude: {
-      path: ['(^|/)dist/', '(^|/)dist-harness/', '^test-results/', '^playwright-report/', '\\.d\\.ts$'],
+      // Only the repo's own declaration files: a typed npm package resolves to its .d.ts (types
+      // condition), and excluding those would hide npm edges from the *-npm-deps rules.
+      path: ['(^|/)dist/', '(^|/)dist-harness/', '^test-results/', '^playwright-report/', '^(packages|apps|tools)/.*\\.d\\.ts$'],
     },
     tsPreCompilationDeps: true,
     combinedDependencies: false,

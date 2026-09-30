@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flow &amp; Fire – Audio-Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        --bg: #15130f;
+        --panel: #1d1a15;
+        --line: #3a342a;
+        --text: #e8e0d0;
+        --dim: #a39a88;
+        --accent: #f0a040;
+        --ok: #7fd48a;
+        --warn: #ffb45a;
+        --bad: #ff7a5c;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+      body { display: grid; grid-template-columns: 1fr 360px; height: 100vh; overflow: hidden; font-size: 12px; }
+      #view-wrap { position: relative; min-width: 0; }
+      #view { width: 100%; height: 100%; display: block; cursor: crosshair; outline: none; }
+      #help { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.45); padding: 6px 8px; border-radius: 4px; color: var(--dim); line-height: 1.5; pointer-events: none; }
+      #hud { overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 8px 10px 24px; }
+      #hud h2 { font-size: 12px; margin: 12px 0 4px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+      #hud h2:first-child { margin-top: 0; }
+      .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 3px 0; }
+      .kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; }
+      .kv dt { color: var(--dim); }
+      .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+      table { border-collapse: collapse; width: 100%; }
+      td, th { padding: 1px 4px; text-align: left; border-bottom: 1px solid var(--line); font-weight: normal; }
+      th { color: var(--dim); }
+      td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+      .bar { position: relative; height: 10px; background: #2a261f; border-radius: 2px; overflow: hidden; }
+      .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ok); }
+      .bar > b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--warn); }
+      .bar.full > i { background: var(--warn); }
+      .cat { display: grid; grid-template-columns: 70px 1fr 44px; gap: 6px; align-items: center; margin: 1px 0; }
+      .cat span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+      button, select, input[type=number] { background: #2a261f; color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: 3px 7px; font: inherit; }
+      button:hover { border-color: var(--accent); }
+      input[type=number] { width: 70px; }
+      .slider { display: grid; grid-template-columns: 70px 1fr 36px; gap: 6px; align-items: center; }
+      .slider output { text-align: right; font-variant-numeric: tabular-nums; }
+      #alert-list { list-style: none; padding: 0; margin: 0; }
+      #alert-list li { display: flex; justify-content: space-between; gap: 6px; padding: 2px 0; border-bottom: 1px solid var(--line); align-items: center; }
+      #alert-list li small { color: var(--dim); }
+      .state-running { color: var(--ok); }
+      .state-locked, .state-suspended { color: var(--warn); }
+      .state-closed { color: var(--bad); }
+      .err { color: var(--bad); }
+      #unlock-overlay {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px;
+        background: rgba(10, 9, 7, .72); font-size: 22px; cursor: pointer; z-index: 10; user-select: none;
+      }
+      #unlock-overlay small { font-size: 13px; color: var(--dim); }
+      #unlock-overlay[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="view-wrap">
+      <canvas id="view" tabindex="0" aria-label="Schlachtfeld"></canvas>
+      <div id="help">
+        WASD/Pfeile oder Ziehen: Kamera schieben · Mausrad: Zoom · Q/E: drehen<br />
+        Leertaste: zum letzten Alert springen · Rechtsklick: Bewegungsbefehl mit Quittung
+      </div>
+    </div>
+    <aside id="hud">
+      <h2>Engine</h2>
+      <dl class="kv">
+        <dt>Zustand</dt><dd id="st-state">–</dd>
+        <dt>Kontext</dt><dd id="st-context">–</dd>
+        <dt>Laden</dt><dd id="st-load">Manifest …</dd>
+        <dt>Dekodiert</dt><dd id="st-decoded">–</dd>
+        <dt>Dekodierpfade</dt><dd id="st-paths">–</dd>
+        <dt>Latenz</dt><dd id="st-latency">–</dd>
+        <dt>Timer</dt><dd id="st-timer">–</dd>
+      </dl>
+
+      <h2>Gefecht</h2>
+      <div class="row">
+        <button id="btn-start" type="button">Start</button>
+        <label>Schüsse/s <input id="in-shots" type="number" min="0" max="2000" step="10" /></label>
+        <label>Tempo <select id="in-speed">
+          <option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1">1×</option>
+          <option value="1.5">1,5×</option><option value="2">2×</option><option value="3">3×</option>
+        </select></label>
+        <label>Seed <input id="in-seed" type="number" min="0" step="1" /></label>
+      </div>
+      <dl class="kv">
+        <dt>Simzeit</dt><dd id="sc-time">–</dd>
+        <dt>Ereignisse</dt><dd id="sc-events">–</dd>
+        <dt>Einheiten</dt><dd id="sc-units">–</dd>
+      </dl>
+      <div class="row">
+        <button id="btn-ack" type="button">Klick-Quittung</button>
+        <span id="ack-info">–</span>
+      </div>
+
+      <h2>Stimmen</h2>
+      <div class="cat"><span>gesamt</span><div class="bar" id="bar-total"><i></i><b></b></div><span id="voices-total">0/32</span></div>
+      <div id="cat-bars"></div>
+      <dl class="kv"><dt>Tails</dt><dd id="voices-tails">0</dd><dt>Spitze</dt><dd id="voices-peak">0</dd></dl>
+
+      <h2>Zähler</h2>
+      <table>
+        <thead><tr><th></th><th class="n">/s</th><th class="n">gesamt</th></tr></thead>
+        <tbody id="counters"></tbody>
+      </table>
+
+      <h2>Main-JS (ms/Frame)</h2>
+      <table>
+        <thead><tr><th></th><th class="n">p50</th><th class="n">p95</th><th class="n">p99</th><th class="n">max</th></tr></thead>
+        <tbody id="timing"></tbody>
+      </table>
+
+      <h2>Mixer</h2>
+      <div id="sliders"></div>
+      <div class="row">
+        <label><input id="in-muted" type="checkbox" /> stumm</label>
+        <label><input id="in-mute-hidden" type="checkbox" /> stumm bei verborgenem Tab</label>
+      </div>
+
+      <h2>Alerts</h2>
+      <ul id="alert-list"></ul>
+    </aside>
+    <div id="unlock-overlay" role="button" tabindex="0">
+      Klicken zum Aktivieren des Tons
+      <small id="unlock-hint">Der Browser startet Audio erst nach einer Nutzergeste.</small>
+    </div>
+    <script type="module" src="./src/demo/main.ts"></script>
+  </body>
+</html>

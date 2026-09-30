@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "kinds": {
+    "weaponFire": { "route": "sfx" },
+    "projectileImpact": { "route": "sfx" },
+    "unitDeath": { "route": "sfx" },
+    "commanderDeath": { "route": "sfx" },
+    "wreckDestroyed": { "route": "sfx", "sound": "exp_wreck" },
+    "buildStart": { "route": "sfx", "sound": "bld_start" },
+    "buildComplete": { "route": "sfx", "sound": "bld_complete", "then": { "sound": "sig_bell_small", "delayMs": 350 } },
+    "upgradeComplete": { "route": "sfx", "sound": "sig_bell_mid", "alert": "alt_factory_upgraded" },
+    "reclaimStart": { "route": "ignore" },
+    "reclaimComplete": { "route": "sfx", "sound": "rcl_complete" },
+    "factoryRollOff": { "route": "sfx", "sound": "fac_rolloff" },
+    "unitRollOff": { "route": "ignore" },
+    "shieldHit": { "route": "sfx", "sound": "shd_hit" },
+    "shieldCollapse": { "route": "sfx", "sound": "shd_collapse" },
+    "shieldRestore": { "route": "sfx", "sound": "shd_up" },
+    "overchargeFire": { "route": "sfx", "sound": "wpn_reeve_tapshot_fire" },
+    "tapshot": { "route": "sfx", "sound": "imp_missile", "gainDb": 3, "rate": 0.8 },
+    "radarContact": { "route": "sfx", "sound": "int_contact_new" },
+    "massStall": { "route": "alert", "sound": "alt_mass_stall" },
+    "energyStall": { "route": "sfx", "sound": "eco_flow_stall", "spatial": false, "alert": "alt_energy_stall" },
+    "alert": { "route": "alert" }
+  },
+  "weapons": {
+    "core:wpn_cannon_t1": { "sound": "wpn_cannon_t1_fire", "impact": "shell" },
+    "core:wpn_bolt_cannon_t1": { "sound": "wpn_cannon_t1_fire", "rate": 0.92, "impact": "shell" },
+    "core:wpn_reeve_cannon": { "sound": "wpn_reeve_cannon_fire", "impact": "shell" },
+    "core:wpn_reeve_tapshot": { "sound": "wpn_reeve_tapshot_fire", "impact": "missile" },
+    "core:wpn_mg_t1": { "sound": "wpn_mg_t1_fire", "impact": "bullet" },
+    "core:wpn_spark_mg_t1": { "sound": "wpn_mg_t1_fire", "rate": 1.2, "gainDb": -3, "impact": "bullet" },
+    "core:wpn_slag_mortar_t1": { "sound": "wpn_slag_mortar_t1_fire", "impact": "slag" },
+    "core:wpn_aa_repeater_t1": { "sound": "wpn_aa_repeater_t1_fire", "impact": "flak" },
+    "core:wpn_grate_aa_t1": { "sound": "wpn_aa_repeater_t1_fire", "impact": "flak" },
+    "core:wpn_cannon_t2": { "sound": "wpn_cannon_t2_fire", "impact": "shell" },
+    "core:wpn_bolt_cannon_t2": { "sound": "wpn_cannon_t2_fire", "rate": 0.92, "impact": "shell" },
+    "core:wpn_runner_missile_t2": { "sound": "wpn_missile_fire", "impact": "missile" },
+    "core:wpn_high_grate_sam_t3": { "sound": "wpn_missile_fire", "impact": "flak" },
+    "core:wpn_flak_t2": { "sound": "wpn_flak_t2_fire", "impact": "flak" },
+    "core:wpn_grate_flak_t2": { "sound": "wpn_flak_t2_fire", "impact": "flak" },
+    "core:wpn_crucible_shell_t2": { "sound": "wpn_crucible_shell_t2_fire", "impact": "slag" },
+    "core:wpn_gatling_t2": {
+      "sound": "wpn_mg_t1_fire",
+      "rate": 0.85,
+      "impact": "bullet",
+      "burst": { "loop": "wpn_gatling_t2_loop", "spin": "wpn_gatling_t2_spin", "holdMs": 250 }
+    },
+    "core:wpn_cannon_t3": { "sound": "wpn_cannon_t3_fire", "impact": "shell" },
+    "core:wpn_scriber_rail_t3": { "sound": "wpn_scriber_rail_t3_fire", "impact": "rail" },
+    "core:wpn_pour_shell_t3": { "sound": "wpn_pour_shell_t3_fire", "impact": "slag" },
+    "core:wpn_furnace_shell_t3": { "sound": "wpn_furnace_shell_t3_fire", "impact": "slag" },
+    "core:wpn_aa_drum_t3": { "sound": "wpn_aa_drum_t3_fire", "impact": "flak" },
+    "core:wpn_kestrel_gun_t1": { "sound": "wpn_air_gun_fire", "impact": "bullet" },
+    "core:wpn_magpie_gun_t2": { "sound": "wpn_air_gun_fire", "rate": 0.9, "impact": "bullet" },
+    "core:wpn_crow_gun_t2": { "sound": "wpn_crow_gun_t2_fire", "impact": "shell" },
+    "core:wpn_slag_bomb_t1": { "sound": "wpn_bomb_release", "impact": "bomb" },
+    "core:wpn_magpie_bomb_t2": { "sound": "wpn_bomb_release", "impact": "bomb" }
+  },
+  "weaponDefault": null,
+  "impacts": {
+    "defaultFamily": "shell",
+    "families": {
+      "shell": {
+        "ground": "imp_shell_ground",
+        "metal": "imp_shell_metal",
+        "water": { "sound": "imp_shell_ground", "gainDb": -6, "rate": 0.8 },
+        "shield": null,
+        "structure": "imp_structure_metal"
+      },
+      "bullet": {
+        "ground": "imp_bullet_ground",
+        "metal": "imp_bullet_metal",
+        "water": { "sound": "imp_bullet_ground", "gainDb": -6, "rate": 0.8 },
+        "shield": null,
+        "structure": "imp_bullet_metal"
+      },
+      "slag": { "ground": "imp_slag_splash", "shield": null },
+      "missile": { "ground": "imp_missile", "shield": null },
+      "flak": { "ground": "imp_flak_burst", "shield": null },
+      "bomb": { "ground": "imp_bomb", "shield": null },
+      "rail": {
+        "ground": "imp_shell_ground",
+        "metal": "imp_rail",
+        "water": { "sound": "imp_shell_ground", "gainDb": -6, "rate": 0.8 },
+        "shield": null,
+        "structure": "imp_rail"
+      }
+    }
+  },
+  "deaths": {
+    "small": "exp_small",
+    "medium": "exp_medium",
+    "large": "exp_large",
+    "huge": { "sound": "exp_large", "gainDb": 3, "rate": 0.85 }
+  },
+  "airDeath": "exp_air_crash",
+  "structureCollapse": { "sound": "exp_structure_collapse", "minSizeClass": 1, "delayMs": 600 },
+  "commanderDeath": "exp_commander",
+  "alerts": {
+    "alt_gong": { "sound": "alt_gong" },
+    "alt_commander_danger": { "sound": "alt_commander_danger", "radiusWu": 32 },
+    "alt_unit_attacked": { "sound": "alt_unit_attacked", "radiusWu": 48 },
+    "alt_base_attacked": { "sound": "alt_base_attacked", "radiusWu": 64 },
+    "alt_mass_stall": { "sound": "alt_mass_stall" },
+    "alt_energy_stall": { "sound": "alt_energy_stall" },
+    "alt_build_complete": { "sound": "alt_build_complete", "radiusWu": 48 },
+    "alt_factory_upgraded": { "sound": "alt_factory_upgraded", "radiusWu": 48 },
+    "alt_enemy_commander_spotted": { "sound": "alt_enemy_commander_spotted", "radiusWu": 96 },
+    "alt_enemy_air": { "sound": "alt_enemy_air", "radiusWu": 96 },
+    "alt_storage_full": { "sound": "alt_storage_full" }
+  }
+}

@@ -211,3 +211,59 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track TRACK-AUDIOENG (`@faf/audio`)
+
+Details, Messwerte und Belege: `docs/status/track-audioeng.md` und die Fragmente `docs/status/audioeng-*.md`.
+Die Nummerierung setzt die globale Liste (1–29) fort.
+
+30. **Audio als eigenes Blatt-Paket `@faf/audio` statt als Teil von `packages/client`.** PLAN §2 führt Audio unter
+    `client`; die Engine entstand parallel zu MS3 als Vorarbeit und darf `client` nicht anfassen. Als Blatt-Paket
+    (keine Workspace-Abhängigkeiten, npm nur `opus-decoder`) ist sie isoliert testbar (Fake-AudioContext, Browser-
+    Demo) und von `client`/`apps/game` in MS5 einfach einzubinden. dependency-cruiser erzwingt `audio-is-leaf`,
+    `audio-npm-deps`, `presentation-never-imports-sim` und `sim-never-imports-presentation` (inkl. `audio`).
+31. **Manifest-Bus `voice` wird auf den Mixer-Bus `alerts` abgebildet.** Quittungen und Alerts teilen sich einen
+    Regler „Alerts“ (Settings-UI: master/sfx/ui/alerts/music/ambience); `voice` bleibt im Manifest für spätere
+    Sprachzeilen reserviert. Lautstärkekurve `gain = v²` (monoton, 0 → Stille ohne Sonderfall), Änderungen als
+    Rampen (τ 15 ms), Mute-Quellen Nutzer/verborgener Tab/System getrennt.
+32. **Loop-Punkte werden in Sekunden gesetzt** (`loop.startS/endS` → `loopStart/loopEnd`), nicht als Samples. Web
+    Audio erwartet Sekunden; so bleiben sie auch für resampelte Puffer (44,1-kHz-Kontext, nativer Dekodierpfad)
+    richtig – im Browser belegt (Naht 1,03–1,04 × Median bei 44,1 kHz, 1,38 × bei 48 kHz).
+33. **Dekodier-Fallbackkette native → WebCodecs → WASM (`opus-decoder`).** `decodeAudioData` genügt heute in
+    Chromium, Firefox und WebKit; WebCodecs (`AudioDecoder` + eigener WebM-Demuxer) und WASM decken Browser ohne
+    Opus/WebM-Unterstützung ab. `opus-decoder` wird nur per dynamischem Import geladen (eigener Chunk, WASM
+    eingebettet, kein Extra-Asset). Einmalige Fähigkeitsprobe je Kontext; ein Dekodierfehler schaltet nur den
+    betroffenen Sound stumm. `parseManifest` verlangt `sampleRate 48000`.
+34. **Stealing- und Tail-Regel.** Höhere Priorität verdrängt die leiseste Stimme streng niedrigerer Priorität (nie
+    umgekehrt; Loops nur durch streng höhere Priorität); Sound-/Kategorie-Limits stehlen innerhalb gleicher
+    Priorität nur, wenn der neue Sound mindestens so laut ist. Gestohlene Stimmen geben ihren Platz sofort frei und
+    blenden in 8 ms aus; diese Tails zählen nicht zu den 32 Stimmen, sind aber auf 8 begrenzt (ist das Budget voll,
+    wird der älteste Tail hart geschnitten) – höchstens 40 klingende Quellen. Culling vor der Stimmenvergabe
+    (auch nicht räumliche Anfragen unter −48 dB).
+35. **Alert-Orts-Ausnahme.** Das Wiederholintervall je Alert (Manifest `cooldownMs`, überschreibbar per Event-Map)
+    verwaltet allein die Alert-Queue: Derselbe Alert wird im Intervall trotzdem angesagt, wenn er einen Ort hat,
+    ≥ 1,5 s seit der letzten Annahme vergangen sind und er > 48 WU (bzw. `radiusWu`) von allen noch gültigen Orten
+    dieses Alerts entfernt ist. Der Sound-Cooldown des Voice-Managers ist für Kategorie `alert` daher aus (sonst
+    würde die Ausnahme stumm verworfen); die Queue garantiert ohnehin genau eine Alert-Stimme.
+36. **Perf-Gate der Audio-Engine nur mit `FAF_AUDIO_PERF_GATE=1`** (Anwendung von DECISIONS 16). Node-Benchmark und
+    Browser-E2E/-Messung melden Main-JS p95 gegen 0,5 ms; hart geprüft (Exit-Code/Test rot) wird nur mit der
+    Umgebungsvariable. Werte „lokal gemessen“ auf Apple M5 Pro (DECISIONS 5).
+37. **Master-Limiter mit Makeup-Kompensation und Sicherheits-Clip.** Der `DynamicsCompressorNode` addiert laut
+    Spec automatisch `(1/fullRangeGain)^0,6` (+1,71 dB bei −3 dB/Ratio 20); 32 laute Stimmen erreichten dadurch
+    Peak 1,17 in Chromium/WebKit. Der Mixer hängt einen festen Gain von −1,71 dB und einen WaveShaper-Clip (±1)
+    an den Limiter: Peak 0,963 (Chromium/WebKit) bzw. 0,729 (Firefox), schon ohne Clip ≤ 1,0.
+38. **Zuordnung Waffe → Sound als Default-JSON im Audio-Paket, View-Daten legen sich darüber.** `docs/design/audio.md`
+    §6 sieht den Sound-Schlüssel je Waffe in den View-Daten; bis MS5 existiert keine View-Daten-Pipeline für Sounds,
+    daher liegt die Zuordnung (`core:wpn_*` → Sound + Alias-Rate/Gain + Einschlag-Familie) in
+    `packages/audio/src/events/default-event-map.json`. Damit eine neue Waffe/Fraktion reine Blueprint-Daten bleibt
+    (PLAN §3.1), ersetzt die Engine-Option `weaponSounds` die Map nicht, sondern legt Einträge darüber
+    (`withWeaponSounds`). Der Router löst mit **einer** Fraktion (Zuschauer) auf; Events tragen keinen
+    Fraktionsbezug. Für eine zweite Fraktion (post-MVP) kommt die Fraktion je Event aus `visual` (Callback
+    `visualFaction`, Caches je Fraktion) – nicht aus einer globalen Engine-Fraktion.
+39. **Kodierung der Event-Felder gehört in `@faf/protocol`, Audio bekommt sie injiziert.** Die `aux`-Enums,
+    Flag-Bits und Alert-Indizes in `packages/audio/src/events/kinds.ts` sind nur die vorläufige Audio-Kodierung
+    (Demo, Tests). TRACK-RENDERFX nutzt für dieselben Events andere Klassen; die Sim kann nur eine Kodierung
+    senden. In MS5 legt `@faf/protocol` die Kodierung append-only fest; der Client übersetzt sie per `EventCodec`
+    (`impactSurface`, `alertIndex`, `unlocatedMask`, `visualDeathProfile`). Präsentationsklassen (Todes-Größe,
+    Luft/Gebäude) sendet die Sim nicht: sie kommen clientseitig aus den View-Daten je `visual` (= Blueprint-Sim-ID),
+    damit klangliche Umstufungen weder `sim.bin`/`bpSimHash` noch Replays berühren (PLAN §3.1).

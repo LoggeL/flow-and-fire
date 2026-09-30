@@ -34,6 +34,8 @@ export default defineConfig(
       'test-results/**',
       'playwright-report/**',
       '**/*.wasm',
+      // Static HTML/JS design mockups (docs, not project code; screenshot tool included).
+      'docs/design/ui-mockups/**',
     ],
   },
   js.configs.recommended,
@@ -59,6 +61,7 @@ export default defineConfig(
     files: [
       'packages/render/**/*.ts',
       'packages/client/**/*.{ts,tsx}',
+      'packages/audio/src/**/*.ts',
       'apps/**/src/**/*.{ts,tsx}',
       'tools/headless/src/harness/page/**/*.ts',
       'tools/render-bench/{src,page}/**/*.ts',
@@ -83,6 +86,8 @@ export default defineConfig(
       'tools/**/*.{js,ts}',
       'tools/assets-pipeline/**/*.{js,mjs,ts}',
       'apps/*/vite.config.ts',
+      'apps/*/playwright.config.ts',
+      'apps/*/audio-assets.ts',
       'packages/*/vite.config.ts',
     ],
     languageOptions: { globals: { ...globals.node } },

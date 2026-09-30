@@ -623,3 +623,88 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Vorarbeits-Track TRACK-AUDIOENG (`@faf/audio`, 2026-09-30)
+
+Kein Meilenstein aus PLAN §5.2, sondern Vorarbeit für P7/P8 (Integration in MS5) auf Branch `track-audioeng`
+(Worktree `flow-and-fire/.worktrees/faf-audioeng`; der im Plan genannte Pfad `Projects/faf-audioeng` existiert nicht).
+`packages/sim|nav|render|client|protocol` und `apps/game` sind unverändert. **Vollständiger Stand, API, Messwerte,
+Abnahme-Belege und Integrationsschritte: [`docs/status/track-audioeng.md`](status/track-audioeng.md)**; Plan
+`docs/plans/TRACK-AUDIOENG.json`, Fragmente `docs/status/audioeng-{a0,a1,b1,b2,b3,c1,c2,d1}.md`.
+
+**Neu:** Blatt-Paket `packages/audio` (`@faf/audio`, einzige npm-Abhängigkeit `opus-decoder`, dynamisch als eigener
+Chunk) und Demo `apps/audio-demo` (Gefecht mit 200 Schüssen/s, RTS-Kamera, HUD, Browser-Tests mit echtem
+OfflineAudioContext). Module: `mixer`, `settings`, `voices`, `catalog`, `loader`, `unlock`, `spatial`, `alerts`,
+`router`, `events`, `decode`, `engine` (`createAudioEngine`).
+
+### Umgesetzte Feature-IDs
+
+| ID | Umfang in diesem Track | Rest |
+|---|---|---|
+| P7 Positions-Audio & SFX | Engine vollständig: Mixer, Voice-Limiting je Sound/Kategorie/global, Pan + Dämpfung nach Kamera/Zoom, Event→Sound-Daten, Lade-/Dekodierkette | Einbindung ins Spiel (MS5) |
+| P8 Warn-Ansagen & Alerts | Alert-Queue (Priorität, Intervall, Orts-Ausnahme, Verfall), Verlauf, Sprung-zum-Ort-Callback | Sim-Events für Alerts, Kamera-Flug im Spiel (MS5+) |
+| P9 (nur Audio-Teil) | Settings-Modell: 6 Lautstärken, Mute, Mute bei verborgenem Tab, Persistenz | Settings-UI, GPU-Autodetect (P9-Meilenstein) |
+
+### Abnahme (15 Kriterien aus `docs/plans/TRACK-AUDIOENG.json`)
+
+| # | Kriterium | Status | Messwert / Beleg |
+|---|---|---|---|
+| 1 | Blatt-Paket, nur `opus-decoder`, depcruise-Regeln, Tabu-Pfade unverändert | ✅ | `pnpm lint` (523 Module, keine Verstöße), Negativtest `audio-npm-deps`; `git status` der Tabu-Pfade leer |
+| 2 | Mixer: 6 Busse, Kurve, Rampen, Persistenz, Mute/Tab-Mute, Ducking, Limiter ≤ 1,0 | ✅ | Limiter-Peak bei 32 lauten Stimmen 0,963 (Chromium/WebKit) / 0,729 (Firefox), echter OfflineAudioContext |
+| 3 | Voice-Manager: ≤ 32, Limits, Priorität/Stealing, Cooldown, Varianten ±3 %, Steal-Fade, Tails | ✅ | Property-Test 10 × 1 000, Gefecht-200/400 je Frame geprüft; Browser 32/32 im Ack-Test, Steal-Fade 8 ms, ≤ 8 Tails |
+| 4 | Loops mit Loop-Punkten, nahtlos (auch 44,1 kHz), keyed Loops | ✅ | Naht 1,38 × Median (48 kHz), 1,03–1,04 × (44,1 kHz), Korrelation 1,0 in 3 Engines |
+| 5 | Lookup `<fraktion>:` → `common:`, 101 IDs zugeordnet, 17 MS5-Sounds, 27 Waffen-Refs | ✅ | Coverage-Test (59 sim / 40 client / 2 zurückgestellt), alle 55 MS5-Varianten dekodiert |
+| 6 | Event-Map als validierte JSON-Daten, FrameReader-Kontrakt, subTick, Aggregation, allokationsarm | ✅ | Typ- + Laufzeittest gegen echten `FrameReader`; Router ≈ 80–95 KB alloziert je 100 000 Events (vorher 2,7 MB) |
+| 7 | Räumlich: Pan, Distanz-/Zoom-Dämpfung je Profil, Culling vor Stimmenvergabe | ✅ | Pan ±9,76 dB (auch gedreht) in 3 Engines; 5 000 Property-Läufe |
+| 8 | Alert-Queue mit Priorität, Orts-Ausnahme, Verlauf, Sprung-zum-Ort | ✅ | 15 Unit-Tests; E2E Leertaste → Kamera auf Alert-Ort in 3 Engines |
+| 9 | Lade-/Dekodierpipeline native → WebCodecs → WASM, ≤ 6 parallel, Lazy, Fehler isoliert | ✅ | 3 Engines nativ; erzwungen WebCodecs/WASM sample-exakt; Firefox nativ 1 Sample kürzer (Toleranz) |
+| 10 | Autoplay-Unlock, Re-Lock, gesperrte Events verworfen | ✅ | E2E prüft `locked` hart; 193–221 `locked`-Drops vor dem Klick, keine Nachholung |
+| 11 | Ack/UI synchron auch bei vollem Pool, ≤ 1 Frame | ✅ | 32/32 belegt → 2 × `start(0)` im Klick-Handler, Handler 0,16–0,34 ms |
+| 12 | Demo Gefecht-200 + HUD, E2E grün in 3 Engines, keine Konsolenfehler | ✅ | E2E 27/27 (Port 4583, workers 1), Screenshot-Prüfung |
+| 13 | Main-JS p95 ≤ 0,5 ms bei Gefecht-200 (Node + 3 Browser) | ✅ (lokal, M5 Pro) | Node 0,0066–0,0078 ms; Chromium 0,155–0,275, Firefox 0,140–0,260, WebKit 0,140–0,180 ms (je 6 Läufe) |
+| 14 | Vitest mit Fake-AudioContext + OfflineAudioContext-Tests; typecheck/lint/test gesamt grün | ✅ | 33 Dateien / 340 Tests (audio + demo); `pnpm test` 130 Dateien / 1 285 Tests; Demo-E2E im Root-`test:e2e` |
+| 15 | Doku (track-audioeng.md, STATUS, DECISIONS, audio.md §6) | ✅ | dieser Abschnitt, DECISIONS 30–39 |
+
+Weitere Messwerte: Speicher dekodiert 78,8 MiB (alle 101 Sounds / 246 Varianten), 9,74 MiB MS5-Satz; Demo-Build
+Main-JS 33,85 kB; Engine-Leck-Test ≈ 30 KB gehalten über 20 000 Frames.
+
+### Abweichungen vom Plan (Details track-audioeng.md §9, DECISIONS 30–39)
+
+- Eigenes Paket `@faf/audio` statt Audio-Teil von `packages/client` (D30); Bus `voice` → `alerts`, Lautstärkekurve v²,
+  Mute-Quellen (D31); Loop-Punkte in Sekunden (D32); Dekodier-Fallbackkette mit `opus-decoder` (D33).
+- Steal-Fade 8 ms, Tail-Budget 8 (D34); Alert-Cooldown nur in der Queue (D35); Perf-Gate nur mit `FAF_AUDIO_PERF_GATE=1` (D36).
+- Limiter mit Makeup-Kompensation −1,71 dB + harter Clip, sonst Peak 1,17 in Chromium/WebKit (D37).
+- Waffe → Sound als Default-JSON im Audio-Paket, überschreibbar per `weaponSounds` (D38); Feldkodierung `aux`/`flags`
+  per `EventCodec` injizierbar, Todesklasse aus View-Daten je `visual` (D39).
+- Event-Map-Schema verfeinert (Familie × Oberfläche, Größenklassen, `then`, Zusatz-Alert, Burst), zwei zusätzliche
+  Kinds (`wreckDestroyed`, `upgradeComplete`); `commanderDeath` kartenweit ohne Position.
+- Root-Konfiguration additiv angepasst (tsconfig-References, ESLint, depcruise inkl. Exclude nur repo-eigener `.d.ts`,
+  `.gitignore`, Lockfile, `test:e2e` → `test:e2e:audio`); ESLint ignoriert `docs/design/ui-mockups/**`.
+  `@faf/protocol` ist nur devDependency (Kontrakt-Tests).
+
+### Offene Punkte für spätere Meilensteine
+
+- **MS5 (Integration, track-audioeng.md §11):** `@faf/audio` in `apps/game`/`client` einbinden, `FrameReader` als
+  `AudioEventSource`, 21 Event-Kinds append-only in `@faf/protocol` (MS5: weaponFire, projectileImpact, unitDeath,
+  commanderDeath, buildComplete, reclaimStart), `visualName` aus `view.json`, Assets per `fafAudioAssets` bzw.
+  Assets-Pipeline, Kamera → `setListener`, Ack aus dem Command-Builder, Unlock am ersten Klick.
+- **Integrationsrisiko TRACK-RENDERFX:** andere Tod-/Einschlag-Klassen als die vorläufige Audio-Kodierung; die
+  Kodierung muss in MS5 gemeinsam in `@faf/protocol` festgelegt werden.
+- P9: Settings-UI. MS9: `sig_bell_deep`. MS14: Gatling-Burst-Loop (bis dahin Einzelschuss-Fallback).
+- Post-MVP: Fraktion je Event (`visualFaction`), automatisches Entladen dekodierter Puffer (LRU), WASM-Dekodierung im
+  Worker, Wasser-Einschlagsounds (heute Boden −6 dB), `mov_hover_loop`.
+- Sporadische Einzel-Frame-Ausreißer (bis 25,6 ms Chromium bei 400/s, GC/headless) – p95/p99 im Budget.
+
+### Starten und prüfen
+
+```sh
+pnpm install
+pnpm --filter @faf/audio-demo dev          # http://localhost:5583 – Overlay klicken (Unlock), Gefecht läuft; Strg+C beendet
+                                           # ?shots=400&zoom=90&seed=1; WASD/Ziehen = Pan, Rad = Zoom, Q/E = Drehen,
+                                           # Leertaste = Sprung zum letzten Alert, Rechtsklick = Bewegungs-Ack
+                                           # offline.html?run=all – echte Web-Audio-Prüfungen im Browser
+pnpm exec vitest run packages/audio apps/audio-demo
+tools/heavy pnpm --filter @faf/audio bench                                   # Node „Gefecht-200/400“
+FAF_E2E_PORT=4583 tools/heavy pnpm --filter @faf/audio-demo test:e2e         # Chromium/Firefox/WebKit
+FAF_E2E_PORT=4583 tools/heavy pnpm --filter @faf/audio-demo bench:browser    # Browser-Messung
+```

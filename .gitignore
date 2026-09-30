@@ -30,6 +30,7 @@ bench-results/
 tools/headless/results/*.json
 packages/*/bench/results/*.json
 tools/render-bench/results/*.json
+apps/*/results/*.json
 *.bench.tmp.*
 *.cpuprofile
 *.heapsnapshot

@@ -11,6 +11,9 @@ eigenes `.rtsmap`-Format, aus Quellen per Generator + CLI erzeugt; die MS2-Karte
 mit Heightmap-Terrain, Wasser, Mass-/Hydro-Spots und FA-typischer Kamera; 1.000 + 24 Würfel fahren auf der Terrainhöhe
 der deterministischen Sim (Tiefwasser blockiert, Furten passierbar). Hash-Ketten sind bitgleich in Node, Chromium,
 Firefox und WebKit. Details, Abnahme und Messwerte: [`docs/STATUS.md`](docs/STATUS.md).
+Vorarbeit für MS5: die Audio-Engine `@faf/audio` (Mixer, 32 Stimmen mit Limits/Stealing, Positions-Audio nach Kamera,
+Alerts mit Sprung zum Ort) steht mit eigener Demo (`apps/audio-demo`), ist aber noch nicht ins Spiel eingebunden –
+siehe „Audio-Engine ausprobieren“.
 
 ## Schnellstart
 
@@ -51,7 +54,7 @@ alles nacheinander `pnpm ci:local`.
 | `pnpm typecheck` | `tsc -b` (Project References) + Typcheck aller Tests/Benches/Skripte (`tsconfig.tests.json`) |
 | `pnpm lint` | ESLint (inkl. `sim/determinism`) mit `--max-warnings 0` + dependency-cruiser |
 | `pnpm test` | Vitest (Root-Config, forks, max. 4 Worker, `--expose-gc`) |
-| `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated |
+| `pnpm test:e2e` | `pnpm build` + Playwright (chromium, firefox, webkit; 1 Worker) gegen Port 4183 (COOP/COEP) und 4184 (ohne), verschiebbar mit `FAF_E2E_PORT`; ms-Grenzen nur mit `FAF_PERF_GATE=1` gegated; danach `pnpm test:e2e:audio` (Audio-Demo, Port 4583) |
 | `pnpm test:xengine` | `test:xengine`-Skripte aller Pakete (Cross-Engine-Hash-Ketten) |
 | `pnpm bench` | `bench`-Skripte aller Pakete (L6); Ergebnisse lokal und git-ignoriert (`bench-results/`, `tools/headless/results/`, `packages/sim-host/bench/results/`); `pnpm bench -- --update-docs` aktualisiert die Tabellen in `docs/status/ms2-p2-sim.md` |
 | `pnpm maps` | Karten aus `content/maps/src` erzeugen (mapgen inkl. Setons-Generator `mapgen-setons.ts` + mapc → `content/maps/*.rtsmap`, deterministisch) |
@@ -88,6 +91,22 @@ pnpm sfx:analyze content/audio/dist/varkan/wpn_cannon_t1_fire.v0.wav   # Einzelm
 
 Liste aller Sounds: [`content/audio/SOUNDLIST.md`](content/audio/SOUNDLIST.md), Konzept und Integrationsplan:
 [`docs/design/audio.md`](docs/design/audio.md), Werkzeug: [`tools/sfx/README.md`](tools/sfx/README.md).
+
+## Audio-Engine ausprobieren
+
+`@faf/audio` (TRACK-AUDIOENG, Stand und Messwerte: [`docs/status/track-audioeng.md`](docs/status/track-audioeng.md))
+hat eine eigene Demo mit einem Gefecht (200 Schüsse/s):
+
+```sh
+pnpm --filter @faf/audio-demo dev   # http://localhost:5583/ – Overlay anklicken (entsperrt den Ton); mit Strg+C beenden
+```
+
+WASD/Ziehen = Pan, Mausrad = Zoom, Q/E = Drehen, Leertaste = Sprung zum letzten Alert, Rechtsklick = Bewegungs-Ack.
+URL-Parameter `?shots=400&seed=1&zoom=90&autostart=1`. `offline.html?run=all` führt die Web-Audio-Prüfungen
+(Dekodieren, Pan, Bus, Limiter, Loop, Limits) mit echtem OfflineAudioContext aus. Tests:
+`pnpm exec vitest run packages/audio apps/audio-demo`; Browser-E2E `FAF_E2E_PORT=4583 pnpm --filter @faf/audio-demo test:e2e`
+(auch Teil von `pnpm test:e2e`); Benchmarks `pnpm --filter @faf/audio bench` und
+`pnpm --filter @faf/audio-demo bench:browser`. API und Einbindung: [`packages/audio/README.md`](packages/audio/README.md).
 
 ## Modelle ansehen
 
@@ -141,9 +160,11 @@ packages/
   sim-host/    Worker-Entry (`@faf/sim-host/worker`), Scheduler, CommandSources, Command-Log, Headless-Entry
   render/      WebGL2-RHI, CDLOD-Terrain, Wasser, Decals, Unit-Culling/LOD/Merged-Part, Presets, Context-Loss
   client/      Input/Actions, FA-Kamera, Heightmap-Picking, ClientMap, Asset-Worker, Selection, Command-Builder
+  audio/       Web-Audio-Engine (Mixer, Voice-Manager, Positions-Audio, Alerts, Event→Sound-Daten, Dekodierkette), Blatt-Paket
   modelkit/    Kitbash-DSL für Einheiten-Modelle (Primitive, Parts, Materialslots, Auto-LODs, GLB-Export), nur Content-Tooling
 apps/
   game/        Vite-App (Spiel, Dev-Konsole), scripts/serve.mjs (statischer Server für E2E/Hosting-Test)
+  audio-demo/  Demo und Browser-Testbett von @faf/audio (Gefecht 200 Schüsse/s, OfflineAudioContext-Tests)
   model-viewer/ Model-Viewer (three.js, nur Tool): Galerie, Einzelansicht, Größenvergleich, Icons
 tools/
   eslint-plugin-sim/  eigene ESLint-Regel `sim/determinism`
@@ -162,7 +183,7 @@ Erlaubte Abhängigkeiten (dependency-cruiser, PLAN §3.2): `fixed` ist Blatt; `h
 `sim-host` → `sim`, `formats` und deren Abhängigkeiten (+ `ai`); `render` → `protocol`, `fixed`, `gl-matrix`;
 `render-bench` importiert nie `sim`;
 `client` → `render`, `protocol`, `rules`, `formats`, `blueprints`, `fixed`; nur `apps/*` importieren `client`;
-`render`/`client`/`ai` importieren nie `sim`/`sim-host`; keine Zyklen; keine relativen Imports in fremde Pakete.
+`audio` ist Blatt (nur `opus-decoder`), `client` darf `audio` nutzen; `render`/`client`/`ai`/`audio` importieren nie `sim`/`sim-host`; keine Zyklen; keine relativen Imports in fremde Pakete.
 
 ## Konventionen
 
