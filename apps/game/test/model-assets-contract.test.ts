@@ -19,8 +19,8 @@ import { writeCompressedGlb, writeRawGlb } from '../../../tools/assets-pipeline/
 describe('existing Varkan art in the real Game asset contracts', () => {
   it('compiles only live references, preserves source scale/parts/LODs, and changes no sim bytes', async () => {
     const content = await compileContent({ includeTest: false });
-    // Explicitly versioned engineering/armor content; model generation must preserve these bytes.
-    expect(content.simHash).toBe(0x8321662b);
+    // Explicit commander and T1/T2/T3 extractor content; model generation must preserve these bytes.
+    expect(content.simHash).toBe(0x026c51c8);
     expect(content.simBin).toEqual(new Uint8Array(await readFile(join(REPO_ROOT, 'content/generated/sim.bin'))));
     for (const [id, unit] of Object.entries(LIVE_VARKAN_MODELS)) {
       expect(content.view.visuals.find(v => v.id === id)?.mesh, id).toBe(`units/varkan/${unit}`);
@@ -28,7 +28,7 @@ describe('existing Varkan art in the real Game asset contracts', () => {
     const refs = content.view.visuals.flatMap(v => v.mesh === undefined ? [] : [v.mesh]);
     const models = await referencedModels(refs, REPO_ROOT, new Map([['units/varkan/str_t1_fac_land', [5, 5]]]));
     expect(models.map(m => m.id).sort()).toEqual([...new Set(refs)].sort());
-    expect(models).toHaveLength(12);
+    expect(models).toHaveLength(14);
     expect(models.find(m => m.id === 'units/cube_bot')).toEqual(cubeBot());
     const faction = await loadFaction('varkan');
     for (const model of models.filter(m => m.forward === '+z')) {

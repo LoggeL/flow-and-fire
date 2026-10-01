@@ -1,5 +1,10 @@
 # Goal: spielbares Flow & Fire weiterbauen und ausliefern
 
+Status: abgeschlossen am 1. Oktober 2026. Die sieben begonnenen Tracks sind integriert,
+die zuletzt gemeldeten Spielprobleme sind behoben und auf der HomeBox ausgeliefert.
+Der [Abschlussbericht](integration-completion.md) trennt geprüfte Funktionen und
+verbleibende Zeitgrenzen. Es gibt keine automatisch weiterlaufende Experimentreihe.
+
 ## Verbindliche Ausrichtung
 
 Flow & Fire wird als spielbare RTS-Entwicklungsversion im gemeinsamen Projektordner
@@ -24,11 +29,10 @@ Commit, Push und Updates dieses Projekts sind vom Nutzer beauftragt.
 5. Diese Korrekturen im tatsächlichen Spiel prüfen und als zusammenhängendes Update auf
    der HomeBox bereitstellen.
 
-Dieser Schritt ist abgeschlossen, wenn die betroffenen Sim-/HUD-Verträge bestehen,
-die drei Browser-Engines die Spielabläufe bestätigen, der neue Container gesund ist und
-die echte alte Aufnahme weiterhin unverändert geöffnet, gesucht, abgespielt und
-exportiert werden kann. Die automatisierten Prüfungen bleiben stumm. Danach wird das
-ausgelieferte Ergebnis mit den noch offenen Einschränkungen gemeldet.
+Dieser Schritt ist abgeschlossen: Die betroffenen Sim-/HUD-Verträge bestehen,
+die drei Browser-Engines bestätigen die Spielabläufe, der neue Container ist gesund und
+die echte alte Aufnahme lässt sich weiterhin unverändert öffnen, suchen, abspielen und
+exportieren. Die automatisierten Browserprüfungen liefen ohne Lautsprecherausgabe.
 
 ## Arbeitsweise für weitere Schritte
 

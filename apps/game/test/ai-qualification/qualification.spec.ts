@@ -41,7 +41,7 @@ async function run(page:Page,request:RunRequest){
 async function receipt(info:TestInfo,name:string,data:unknown){await info.attach(name,{body:Buffer.from(JSON.stringify(data,null,2)),contentType:'application/json'});}
 function nativeGate(result:QualificationResult,mode:Mode,worker=true){
   expect(result.error).toBeNull();expect(result.tick).toBe(result.target);expect(result.mode).toBe(mode);
-  expect(result.simBuild).toBe('faf-sim/ms6.1-upgrades');expect(result.simHash).toBe(0x8321662b);
+  expect(result.simBuild).toBe('faf-sim/ms6.2-economy-upgrades');expect(result.simHash).toBe(0x026c51c8);
   expect(result.mapName.toLowerCase()).toBe('setons');expect(result.seed).toBe(7);expect(result.speed).toBe(3);
   expect(result.tickUs).toHaveLength(result.target);
   expect(result.tickUs.every(value=>Number.isFinite(value)&&value>=0)).toBe(true);
