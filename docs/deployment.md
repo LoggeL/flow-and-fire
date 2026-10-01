@@ -38,7 +38,7 @@ Die `.env` wird von Compose gelesen und gehört zur lokalen Deployment-Konfigura
 
 ## Auf HomeBox bereitstellen
 
-Das Spiel läuft unter [faf.logge.top](https://faf.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. `flow-and-fire.logge.top` bleibt als Alias erhalten. Build `7fc3bcf2cc72` ist öffentlich geprüft: Spielstart, Upgrade-Abbruch, vollständiger Fabrikbau und Produktion, Aufgeben im Pausemodus, Ergebnisstatistik sowie neue und historische Replays. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Details stehen in der [Deployment-Abnahme](status/deployment-2026-10-01.md). Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
+Das Spiel läuft unter [faf.logge.top](https://faf.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. `flow-and-fire.logge.top` bleibt als Alias erhalten. Build `6753e2636876` enthält das neue Forged-Alliance-HUD und ist öffentlich geprüft: 24 Layoutprüfungen an vier Fenstergrößen, Spielstart, Upgrade-Abbruch, vollständiger Fabrikbau und Produktion, Mehrfachauswahl, Aufgeben im Pausemodus, Ergebnisstatistik und Replay-Wiedergabe. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Details stehen im [HUD-Liefernachweis](design/supcom-ui-2026-10-01/README.md); die [erste Deployment-Abnahme](status/deployment-2026-10-01.md) hält die historische Replay-Prüfung fest. Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
 
 Für einen neuen Checkout auf HomeBox:
 

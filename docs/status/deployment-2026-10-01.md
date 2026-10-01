@@ -1,5 +1,10 @@
 # HomeBox-Lieferung am 1. Oktober 2026
 
+Dieser Nachweis beschreibt die erste Opus-Lieferung. Das anschließend ausgelieferte
+HUD-Update läuft als Build `6753e2636876`; seine eigenen öffentlichen Nachweise stehen
+im [HUD-Bericht](../design/supcom-ui-2026-10-01/README.md). Die hier genannten Builds
+bleiben im Archiv erhalten.
+
 Die Opus-Änderungen sind veröffentlicht und auf der HomeBox ausgeliefert:
 [faf.logge.top](https://faf.logge.top/?menu=1). Die bisherige Adresse bleibt als Alias erhalten.
 

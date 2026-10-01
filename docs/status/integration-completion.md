@@ -5,7 +5,7 @@ spielbare Entwicklungsversion läuft auf der HomeBox:
 [Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
-und Bedienung. Der ausgelieferte Spielbuild ist `7fc3bcf2cc72`, Sim-Version
+und Bedienung. Der ausgelieferte Spielbuild ist `6753e2636876`, Sim-Version
 `faf-sim/ms6.3-factory-tiers-radar`. Die ältere Adresse bleibt als Alias erreichbar.
 
 ## Umgesetzter Umfang
@@ -38,6 +38,11 @@ Das Opus-Review ist umgesetzt: lesbarere Menüs und Bauglyphen, weicheres Sichtf
 Ergebnisstatistik, Replay-Suche und lokale Anzeigenamen. Fabriken lassen sich bis T3
 ausbauen; Geschützturm und Radar sind im normalen Bauangebot vorhanden. Auch eine
 pausierte Partie kann nach Bestätigung aufgegeben werden.
+
+Die anschließende [HUD-Anpassung an die Forged-Alliance-Screens](../design/supcom-ui-2026-10-01/README.md)
+ist ebenfalls ausgeliefert: Stahlrahmen, horizontale Bauliste mit Bildern der echten Modelle,
+Auswahl über Befehlen und kompakte Fabriksteuerung. Im öffentlichen Build bestehen
+24 Layoutprüfungen an vier Fenstergrößen und die tatsächlichen Spiel-/Replay-Abläufe.
 
 ## Nachweise und ihre Grenzen
 

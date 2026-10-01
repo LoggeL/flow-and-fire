@@ -39,3 +39,16 @@ sein Abschluss, `browser/receipt.json`, die PNGs und die Playwright-Ergebnisse.
 Firefox und WebKit wurden für diese UI-Lieferung nicht erneut qualifiziert. Die
 Spielregeln und Sim-Identität bleiben unverändert; alte Builds werden beim Docker-Update
 im Replay-Archiv erhalten.
+
+## Öffentliche Lieferung
+
+Build `6753e2636876` (Quellstand `6753e2636876eff482a20501d8c94c152146430a`) läuft als
+`flow-and-fire:6753e2636876` auf der HomeBox unter [faf.logge.top](https://faf.logge.top/?menu=1).
+Der Container ist gesund und hat null Neustarts. Derselbe native Ablauf bestand
+öffentlich erneut mit 24 Layoutprüfungen und 33 Screens, ohne Seiten-/HTTP-Fehler
+oder Lautsprecherverbindungen. Das neue Replay ist bei Tick 100 sauber.
+Beleg: `test-results/supcom-ui-20261001/public/receipt.json`.
+
+Die frühere Adresse bleibt als Alias erhalten. Der archivierte vorherige Build
+`7fc3bcf2cc72` liefert seine ursprünglichen Replay-Fähigkeiten mit HTTP 200.
+README und Vorher-/Nachher-Vergleich verwenden den öffentlichen Screenshot dieser Lieferung.
