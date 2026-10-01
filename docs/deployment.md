@@ -38,7 +38,7 @@ Die `.env` wird von Compose gelesen und gehört zur lokalen Deployment-Konfigura
 
 ## Auf HomeBox bereitstellen
 
-Das Spiel läuft unter [faf.logge.top](https://faf.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. Der öffentliche Browserstart ist geprüft: Gefecht gegen Normal-KI, Commander-Auswahl und Bewegung, Fabrik-Baumodus und Ressourcen-HUD ohne Lade- oder Laufzeitfehler. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
+Das Spiel läuft unter [faf.logge.top](https://faf.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. `flow-and-fire.logge.top` bleibt als Alias erhalten. Build `7fc3bcf2cc72` ist öffentlich geprüft: Spielstart, Upgrade-Abbruch, vollständiger Fabrikbau und Produktion, Aufgeben im Pausemodus, Ergebnisstatistik sowie neue und historische Replays. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Details stehen in der [Deployment-Abnahme](status/deployment-2026-10-01.md). Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
 
 Für einen neuen Checkout auf HomeBox:
 

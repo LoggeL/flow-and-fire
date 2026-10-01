@@ -1,8 +1,9 @@
 # Opus-Fixes 2026-10-01
 
-Stand: lokaler Arbeitsbaum auf Basis `c576c5c`, nicht committet, nicht deployt. Diese Datei hält nur
-Ergebnisse fest, die lokal geprüft wurden; Belege liegen unter `test-results/opus-implementation-20261001/`.
-Eine Deployment-Abnahme ist damit nicht erfolgt.
+Stand: Opus-Implementierung in `adca9838712b`, ergänzt um den Aufgeben-Fix in `7fc3bcf2cc72`.
+Der Build `7fc3bcf2cc72` läuft als gesunder Docker-Container auf der HomeBox unter
+[faf.logge.top](https://faf.logge.top/?menu=1). Die bisherige Adresse bleibt als Alias erreichbar.
+Lokale Originalbelege liegen unter `test-results/opus-implementation-20261001/`.
 
 ## Prüfungen (seriell, Abschlussstand)
 
@@ -14,6 +15,13 @@ Eine Deployment-Abnahme ist damit nicht erfolgt.
 | Originalaufnahme `current-public-match.rtsreplay` gegen ms6.2 (vor Identitätswechsel) | 255 Regel-Hashes, 25 Tabellen-Hashes, 0 Abweichungen (`public-replay-verify.json`) |
 | Originalaufnahme gegen ms6.3 | wird nicht abgespielt, sondern mit `ReplayCompatError` auf `/b/48ecd86e71a1/` verwiesen; SHA-256 `bb448a40…` unverändert (`public-replay-route.json`) |
 | Stumme Browserbelege (Chromium, `installSilentOutput`/`assertSilentOutput` vor jeder Navigation) | `screens/*.png`, `shots-manifest.json`, `motion.json` |
+| Delivery-Prüfung nach Integration | Typprüfung und Lint bestanden; 35 betroffene Tests sowie 8 Release-Archiv-Tests bestanden |
+| Öffentlicher Build `7fc3bcf2cc72` | Spielstart, Upgrade-Abbruch, vollständiger Fabrikbau, Rally/Produktion, Aufgeben aus Pause, Statistik und neue Replay-Wiedergabe bestanden |
+| Historisches Replay auf `faf.logge.top` | Originalbuild `48ecd86e71a1` geladen, Hashes an Tick 600, 100 und 2500 stimmen überein |
+
+Die öffentliche Chromium-Prüfung hat zehn Screens, keine Seitenfehler, keine fehlgeschlagenen HTTP-Antworten
+und keine Lautsprecherverbindungen. Beleg: `deployment/receipt.json`; Details:
+[Deployment-Abnahme](deployment-2026-10-01.md).
 
 Nicht gelaufen: die Playwright-Specs unter `test/e2e`, Firefox/WebKit, Timing-Gates, lange KI-/GPU-Kampagnen.
 
@@ -48,6 +56,8 @@ Nicht gelaufen: die Playwright-Specs unter `test/e2e`, Firefox/WebKit, Timing-Ga
   „wird abgeschlossen“, „nicht erfasst“ oder „teilweise“ gekennzeichnet. Im laufenden HUD keine Feinddaten.
 - Letzte Partie im Hauptmenü, Revanche, „Replay ansehen“ öffnet die beendete Partie.
 - Gefundener Fehler: der Worker-Link verwarf die neue Nachricht; behoben, mit Test.
+- Beim Aufgeben wird die Simulation nach dem Selbstzerstörungsbefehl fortgesetzt. So kann auch eine
+  pausierte Partie enden; die Bestätigung bleibt erforderlich.
 - Belege: `match-stats.test.ts`, `score.test.ts`, Screens `p3-*`.
 
 ## 4 Setup, Menüs, Settings, Texte
@@ -87,14 +97,13 @@ Nicht gelaufen: die Playwright-Specs unter `test/e2e`, Firefox/WebKit, Timing-Ga
 
 ## Grenzen und offene Punkte
 
-- Die Existenz von `/b/48ecd86e71a1/` auf dem Server wurde nicht geprüft; geprüft ist nur der Verweis.
-  Neue Partien sind mit ms6.2-Clients nicht abspielbar (gewollter Identitätswechsel).
+- Der ursprüngliche Build `/b/48ecd86e71a1/` bleibt im persistenten Archiv erhalten. Neue Partien sind mit
+  ms6.2-Clients nicht abspielbar (gewollter Identitätswechsel).
 - Radar-Blips übertragen im Frame den Blueprint-Index (für den Culling-Radius). Das HUD zeigt nichts davon,
   im Datenstrom ist der Typ aber lesbar.
 - Werte für Geschützturm (1350 HP, 240 M/2000 E, Waffe Reichweite 24, 45 Schaden, 1,2 s) und Radar (200 HP)
   sind gesetzt, nicht balanciert; einzelne Namen/Werte weichen vom Roster-Dokument ab.
-- `packages/sim/test/zz-debug.test.ts` enthält einen echten PD-Zielprioritätstest, sollte aber umbenannt
-  werden (Löschen/Umbenennen war in dieser Sitzung nicht möglich).
+- Der PD-Zielprioritätstest heißt jetzt `packages/sim/test/pd-target-priority.test.ts` und besteht.
 - `screens/p2-failure.png`, `p3-failure.png`, `p5-failure.png` sind Fehlbilder früherer Läufe.
 - Playwright-E2E nicht ausgeführt; Bildbelege nur in Chromium.
 - Keine Timing-Aussagen: keine Gates, keine Frame-Budget-Messung.

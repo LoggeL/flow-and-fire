@@ -5,8 +5,8 @@ spielbare Entwicklungsversion läuft auf der HomeBox:
 [Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
-und Bedienung. Der ausgelieferte Spielbuild ist `48ecd86e71a1`, Sim-Version
-`faf-sim/ms6.2-economy-upgrades`.
+und Bedienung. Der ausgelieferte Spielbuild ist `7fc3bcf2cc72`, Sim-Version
+`faf-sim/ms6.3-factory-tiers-radar`. Die ältere Adresse bleibt als Alias erreichbar.
 
 ## Umgesetzter Umfang
 
@@ -16,7 +16,7 @@ und Bedienung. Der ausgelieferte Spielbuild ist `48ecd86e71a1`, Sim-Version
 | KI | Wahrnehmung und Commands aus der echten Simulation, Browser-Worker und Scheduler, Inline-Ausführung und deterministische Befehlswiedergabe |
 | Audio | Spielereignisse und Klickbestätigung im laufenden Spiel, Session-Abbau vor einem historischen Replay |
 | Editor | Karten- und Markerwerkzeuge im gemeinsamen Workspace; Originalkarten und Archive bleiben erhalten |
-| HUD | Echte Spielzustände und Commands, Mehrfachauswahl, Shift-Ziehbau, Fabrik-Rally, bezahlte ACU- und Extraktor-Upgrades |
+| HUD | Echte Spielzustände und Commands, Mehrfachauswahl, Shift-Ziehbau, Fabrik-Rally, bezahlte ACU-, Extraktor- und Fabrik-Upgrades, Ergebnisstatistik |
 | Darstellung/FX | Modelle mit artikulierten Teilen und Gehbewegung, Projektile, Baubeams, Kampf- und Todesereignisse, Render-Passes |
 | Replay | Aufnahmebibliothek, Player, Seek, Export, historische Builds und tatsächliche OPFS-Wiederherstellung nach Tab-Abbruch |
 
@@ -34,9 +34,23 @@ danach `TogglePause(false)`; generischer Stop bleibt unverändert. Vertrag:
 `apps/game/test/upgrade-cancel-resume.test.ts`. Siehe
 [Fixes vom 1. Oktober](opus-fixes-2026-10-01.md).
 
+Das Opus-Review ist umgesetzt: lesbarere Menüs und Bauglyphen, weicheres Sichtfeld,
+Ergebnisstatistik, Replay-Suche und lokale Anzeigenamen. Fabriken lassen sich bis T3
+ausbauen; Geschützturm und Radar sind im normalen Bauangebot vorhanden. Auch eine
+pausierte Partie kann nach Bestätigung aufgegeben werden.
+
 ## Nachweise und ihre Grenzen
 
-Die letzte Spielkorrektur hat 96 betroffene Verträge, 60 Hash-/Replay-Golden-Verträge
+Nach dem Opus-Review bestehen die lokale Suite mit 3339 Tests, Typprüfung und Lint.
+Für die Lieferung wurden 35 betroffene Verträge und acht Archivtests erneut geprüft.
+Der öffentliche Build `7fc3bcf2cc72` besteht den tatsächlichen Chromium-Ablauf: Start,
+pausierten Ausbau abbrechen, danach Fabrik fertigstellen und einen Ingenieur produzieren,
+im Pausemodus aufgeben, Ergebnisstatistik öffnen und das neue Replay prüfen. Eine alte
+Aufnahme lädt den Originalbuild `48ecd86e71a1`; drei Vorwärts-/Rückwärts-Seeks stimmen
+mit ihren aufgezeichneten Regel-Hashes überein. Der Container ist gesund und hat keine
+Neustarts. Siehe [Deployment-Abnahme](deployment-2026-10-01.md).
+
+Die frühere ms6.2-Spielkorrektur hat 96 betroffene Verträge, 60 Hash-/Replay-Golden-Verträge
 sowie sechs tatsächliche Rally-/Extraktor-Spielabläufe in Chromium, Firefox und WebKit
 bestanden. Drei weitere Browserprüfungen öffnen eine unveränderte alte Aufnahme nach
 dem Docker-Update, suchen vorwärts und rückwärts, spielen sie ab und exportieren
@@ -47,8 +61,9 @@ Die früheren Abnahmen enthalten 24 UI-Fälle, drei Audio-Fälle, sechs echte Ka
 Kontextfälle und eine zehnminütige Aufnahme mit tatsächlichem Tab-Abbruch und
 OPFS-Wiederherstellung. Ihre jeweiligen Builds und Fehler bleiben in der
 [Integrationshistorie](integration-history.md) und den lokalen Originalbelegen erhalten.
-Diese früheren Prüfungen werden nicht als erneute vollständige Abnahme von ms6.2
-ausgegeben. Automatisierte Browserprüfungen verwenden vor der Navigation eine
+Diese früheren Prüfungen werden nicht als erneute vollständige Abnahme von ms6.3
+ausgegeben. Firefox, WebKit und Performance-Gates wurden für die Opus-Lieferung
+nicht erneut ausgeführt. Automatisierte Browserprüfungen verwenden vor der Navigation eine
 Hardware-Audiosperre; Lautsprecher werden dabei nicht verbunden.
 
 Zum Abschluss wurden zwei veraltete Test-Erwartungen auf die tatsächliche ms6.2-
