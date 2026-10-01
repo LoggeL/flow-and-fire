@@ -43,20 +43,26 @@ async function compactScreenshots(page: Page, info: TestInfo, state: string, han
       commands = await page.locator('.live-command-context').boundingBox();
       expect(bounds).not.toBeNull(); expect(commands).not.toBeNull();
       expect(commands!.x).toBeLessThanOrEqual(16);
-      expect(commands!.width).toBeLessThanOrEqual(448);
+      const orders = await page.getByTestId('order-bar').boundingBox();
+      expect(orders).not.toBeNull();
+      expect(orders!.width).toBeLessThanOrEqual(380);
       const cardPage = await page.getByTestId('hud').getAttribute('data-card-page');
       if (cardPage === 'orders') expect(commands!.width).toBeLessThanOrEqual(380);
-      const hasEnhancements = await page.getByTestId('commander-upgrades').isVisible();
-      expect(commands!.height).toBeLessThanOrEqual(hasEnhancements ? 380 : cardPage === 'orders' ? 128 : 300);
+      else {
+        const strip = await page.getByTestId('command-card').boundingBox();
+        expect(strip).not.toBeNull();
+        expect(strip!.x).toBeGreaterThanOrEqual(orders!.x + orders!.width);
+        expect(strip!.x + strip!.width).toBeGreaterThanOrEqual(viewport.width - 20);
+      }
+      expect(commands!.height).toBeLessThanOrEqual(100);
       expect(commands!.y + commands!.height).toBeGreaterThanOrEqual(viewport.height - 20);
-      expect(bounds!.x).toBeGreaterThanOrEqual(commands!.x + commands!.width);
-      expect(bounds!.x - (commands!.x + commands!.width)).toBeLessThanOrEqual(32);
-      expect(bounds!.width).toBeLessThanOrEqual(280);
+      expect(Math.abs(bounds!.x - orders!.x)).toBeLessThanOrEqual(2);
+      expect(bounds!.width).toBeLessThanOrEqual(380);
       expect(bounds!.width).toBeGreaterThanOrEqual(160);
-      const maxSelectionHeight = 200;
+      const maxSelectionHeight = 140;
       expect(bounds!.height).toBeLessThanOrEqual(maxSelectionHeight);
       expect(bounds!.y).toBeGreaterThanOrEqual(viewport.height - maxSelectionHeight - 20);
-      expect(bounds!.y + bounds!.height).toBeGreaterThanOrEqual(viewport.height - 20);
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(orders!.y);
       expect(commands!.x + commands!.width).toBeLessThanOrEqual(viewport.width);
       expect(commands!.y + commands!.height).toBeLessThanOrEqual(viewport.height);
     }
@@ -80,7 +86,8 @@ async function compactScreenshots(page: Page, info: TestInfo, state: string, han
       bottomMiddle: document.elementFromPoint(width / 2, height - 20)?.id === 'game-canvas',
       bottomRight: document.elementFromPoint(width - 20, height - 20)?.id === 'game-canvas',
     }), viewport);
-    expect(clearWorld, 'battlefield center, bottom middle and bottom right receive native canvas interaction').toEqual({ center: true, bottomMiddle: true, bottomRight: true });
+    const hasBuildStrip = await page.getByTestId('command-card').isVisible();
+    expect(clearWorld, 'battlefield stays interactive above the dock; the build strip receives bottom-row interaction').toEqual({ center: true, bottomMiddle: !hasBuildStrip, bottomRight: !hasBuildStrip });
     const projectedUnits = await page.evaluate(ids => ids.map(handle => ({ handle, pixel: window.__faf!.unitScreenPos(handle) })), handles);
     for (const unit of projectedUnits) {
       expect(unit.pixel, `real unit ${unit.handle} is visible in the ${state} screenshot`).not.toBeNull();

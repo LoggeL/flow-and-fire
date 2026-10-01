@@ -12,6 +12,8 @@ export interface ThumbOptions {
   readonly silhouette?: boolean;
   readonly azimuth?: number;
   readonly elevation?: number;
+  /** HUD build buttons use a dark terrain-colored backdrop instead of the gallery grey. */
+  readonly background?: string;
 }
 
 export async function thumbnail(meta: ModelMeta, o: ThumbOptions = {}): Promise<string> {
@@ -24,7 +26,7 @@ export async function thumbnail(meta: ModelMeta, o: ThumbOptions = {}): Promise<
   view.setTeam(o.team ?? '#2F6FD0');
   view.setSilhouette(o.silhouette === true);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(o.silhouette === true ? BG_SILHOUETTE : BG_COLOR);
+  scene.background = new THREE.Color(o.background ?? (o.silhouette === true ? BG_SILHOUETTE : BG_COLOR));
   scene.add(view.group);
   const cam = new THREE.PerspectiveCamera(30, 1, 0.01, 1000);
   const { center, radius } = boundsSphere(meta);

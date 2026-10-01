@@ -32,6 +32,7 @@ export async function startHumanAiSkirmish(page: Page): Promise<number> {
   await expect(speed).toHaveValue('3');
   await setup.getByRole('button', { name: 'Gefecht starten', exact: true }).click();
   await page.waitForFunction(() => document.documentElement.dataset['ready'] === '1' && window.__faf?.ready && window.__faf.tick >= 1, null, { timeout: 60_000 });
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 60_000 });
   await expect(page.getByTestId('live-hud')).toHaveAttribute('data-screen', 'game');
   await expect.poll(() => page.evaluate(() => (window.__faf!.hostStatus() as { speed: number } | null)?.speed)).toBe(3);
   const state = await page.evaluate(() => ({ own: window.__faf!.ownHandles(), tainted: window.__faf!.tainted, simHash: window.__faf!.simHash }));

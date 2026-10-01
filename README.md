@@ -22,7 +22,7 @@ Aktuell enthalten:
 - Masse- und Energiewirtschaft, Gebäudeplatzierung, Baureihen, Fabrikwarteschlangen und Wiederholproduktion; bezahlter Ausbau von Extraktoren und Landwerken bis T3.
 - Commander, Pioniere, Späher, Panzer und Artillerie; bezahlte Engineering- und Panzerungsupgrades für den ACU.
 - Vorerkundetes Gelände, Nebel des Krieges, Radar, Geschütztürme, Strategic Zoom, Mehrfachauswahl, Kontrollgruppen und kontextabhängige Rechtsklickbefehle.
-- Kompaktes HUD mit Einheitenicons, Ressourcenfluss, Meldungen und deutschen sowie englischen Menüs.
+- HUD nach der Forged-Alliance-Referenz: Stahlrahmen, kompakte Ressourcenanzeigen, horizontale Bauliste mit Bildern der echten Modelle, Mehrfachauswahl und deutsche sowie englische Menüs.
 - Ergebnisstatistik, Spielsound und Replay-Bibliothek mit Import, Export, Suche, Umbenennen, Zeitnavigation und Wiedergabetempo. Lokale Aufnahmen hängen von den Speicherfunktionen des Browsers ab.
 
 ## Schnellstart mit Docker

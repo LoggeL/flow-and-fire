@@ -1,0 +1,7 @@
+.live-hud .live-game-presentation .card__grid .live-build-portrait {
+  position:absolute;left:3px;right:3px;top:3px;width:calc(100% - 6px);height:calc(100% - 21px);
+  transform:none;overflow:hidden;pointer-events:none;filter:none;
+}
+.live-build-portrait img {display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.25);}
+.live-build-portrait-tier {position:absolute;right:2px;top:2px;display:flex;gap:2px;}
+.live-build-portrait-tier i {width:3px;height:5px;background:#e5f6f7;box-shadow:0 1px 2px #000;}

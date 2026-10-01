@@ -1,0 +1,284 @@
+/*
+ * In-game HUD after the Forged Alliance reference (test-results/supcom-ui-20261001): machined steel frames with
+ * clipped corners, graphite faces and an icy inner rim. Geometry is plain CSS; gunmetal-v1.png only adds surface grain.
+ * One shared frame mechanism (.sc-frame plus the package panels listed below) draws the rim in ::before and the face
+ * in ::after, so the framed element itself is never clipped and popovers can leave it.
+ */
+.live-game-presentation {
+  --iron-950:#0c1013;--iron-900:#11161a;--iron-850:#192026;--iron-800:#212930;--iron-750:#2a333b;--iron-700:#36414a;--iron-600:#4a5762;
+  --surface-0:rgba(14,18,22,.88);--surface-1:rgba(18,23,28,.94);--surface-2:rgba(8,11,14,.9);
+  --surface-3:#26313a;--surface-hover:#1f2d38;--surface-select:#15314a;--surface-press:#0e2233;
+  --line:#5f6d78;--line-strong:#b9c6cf;--line-copper:#93a7b6;
+  --copper-700:#6f8597;--copper-500:#a9cde6;--copper-300:#d3ebf9;
+  --ember-900:#0f2738;--ember-800:#1c4562;--ember-600:#5fb4e6;--ember-500:#7fd0ff;
+  --ember-300:#bfe8ff;--ember-100:#e6f6ff;--text-on-ember:#061521;
+  --text-hi:#eef4f8;--text:#d0dbe3;--text-mid:#a9b7c2;--text-lo:#8b9ba7;
+  --mass:#b4e83a;--mass-dim:#5b7a1d;--energy:#ffd23a;--energy-dim:#8a6c12;
+  --hud-top-h:2.4rem;--cell-gap:.3rem;
+  --sc-frame:4px;--sc-cut:.6rem;
+  --sc-steel:linear-gradient(180deg,#e3e9ed 0,#a3aeb6 7%,#69747d 30%,#3e464d 55%,#66717a 80%,#b2bcc3 95%,#dfe6ea 100%);
+  --sc-steel-hot:linear-gradient(180deg,#f2fbff 0,#a8dcfb 30%,#4f95c2 60%,#9fd6f7 100%);
+  --sc-joint:#161b20;--sc-ice:#a6e1ff;--sc-ice-soft:rgba(140,205,250,.38);--sc-face:#12171c;
+  --dock-left:22.5rem;
+  font-family:Arial,"Helvetica Neue",sans-serif;
+}
+
+/* ---------- Shared steel frame ---------- */
+.live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools) {
+  --c:var(--sc-cut);
+  position:relative;isolation:isolate;background:none;clip-path:none;box-shadow:none;border:0;
+}
+.live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)>* {position:relative;z-index:1;}
+.live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)::before {
+  content:"";display:block;position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--c) + .5rem) top 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--c) + .5rem) top 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--c) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--c) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(90deg,rgba(255,255,255,.2),transparent 1.2rem,transparent calc(100% - 1.2rem),rgba(255,255,255,.16)),
+    var(--sc-steel);
+  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c));
+}
+/* Face inset by the rim width; the inner chamfer is c - 0.59 * rim so both diagonals stay parallel. */
+.live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)::after {
+  --ci:max(2px,calc(var(--c) - var(--sc-frame) * .59));
+  content:"";display:block;position:absolute;inset:var(--sc-frame);z-index:0;pointer-events:none;
+  background:
+    linear-gradient(135deg,transparent 50%,var(--sc-ice) 50%,var(--sc-ice) calc(50% + 1.2px),transparent calc(50% + 1.2px)) left top/var(--ci) var(--ci) no-repeat,
+    linear-gradient(45deg,transparent calc(50% - 1.2px),var(--sc-ice) calc(50% - 1.2px),var(--sc-ice) 50%,transparent 50%) right top/var(--ci) var(--ci) no-repeat,
+    linear-gradient(45deg,transparent 50%,var(--sc-ice) 50%,var(--sc-ice) calc(50% + 1.2px),transparent calc(50% + 1.2px)) left bottom/var(--ci) var(--ci) no-repeat,
+    linear-gradient(135deg,transparent calc(50% - 1.2px),var(--sc-ice) calc(50% - 1.2px),var(--sc-ice) 50%,transparent 50%) right bottom/var(--ci) var(--ci) no-repeat,
+    linear-gradient(180deg,rgba(150,210,255,.11),transparent 1.4rem),
+    linear-gradient(rgba(10,14,18,.42),rgba(10,14,18,.42)),
+    url('./assets/gunmetal-v1.png') 0 0/420px auto,
+    var(--sc-face);
+  box-shadow:inset 0 0 0 1px var(--sc-ice),inset 0 0 0 2px rgba(5,9,13,.85),inset 0 0 .7rem rgba(110,185,240,.26);
+  clip-path:polygon(var(--ci) 0,calc(100% - var(--ci)) 0,100% var(--ci),100% calc(100% - var(--ci)),calc(100% - var(--ci)) 100%,var(--ci) 100%,0 calc(100% - var(--ci)),0 var(--ci));
+}
+.live-hud .live-game-presentation .ff-ph {height:1.3rem;padding:0 .55rem;letter-spacing:.04em;color:#bfe6ff;}
+.live-hud .live-game-presentation .ff-ph::before {display:none;}
+.live-hud .live-game-presentation .flow {position:absolute;top:calc(var(--hud-gutter) + 5.9rem);width:34.25rem;max-width:calc(100vw - 1rem);z-index:35;padding:var(--sc-frame);}
+.live-hud .live-game-presentation .flow__col,.live-hud .live-game-presentation .flow__foot {background:rgba(8,11,14,.75);}
+.live-hud .live-game-presentation .flow__body {background:var(--sc-ice-soft);}
+.live-hud .live-game-presentation .ff-tip {background:#8d99a2;}
+.live-hud .live-game-presentation .ff-tip::before,.live-hud .live-game-presentation .ff-tip__grid>div {background:#12171c;}
+
+/* ---------- Resources (upper left): two rows, glyph socket, bar with storage beneath, big net, small income/usage ---------- */
+.live-hud .live-game-presentation .eco {position:absolute;display:grid;gap:0;width:23rem;padding:calc(var(--sc-frame) + .15rem) calc(var(--sc-frame) + .2rem);}
+.live-hud .live-game-presentation .res {--res-tone:var(--mass);width:100%;height:var(--hud-top-h);background:none;clip-path:none;box-shadow:none;grid-template-columns:1.9rem minmax(0,1fr) auto 3.6rem;grid-template-rows:1fr 1fr;gap:.12rem .55rem;padding:.25rem .4rem;}
+.live-hud .live-game-presentation .res--energy {--res-tone:var(--energy);}
+.live-hud .live-game-presentation .res::before {display:none;}
+.live-hud .live-game-presentation .res+.res {border-top:1px solid var(--sc-ice-soft);}
+.live-hud .live-game-presentation .res:hover {background:rgba(150,210,255,.07);}
+.live-hud .live-game-presentation .res:focus-visible {outline:2px solid var(--sc-ice);outline-offset:-2px;}
+.live-hud .live-game-presentation .res__glyph {grid-row:1/3;grid-column:1;align-self:center;display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:50%;color:var(--res-tone);background:radial-gradient(circle at 50% 38%,#2b343c,#0a0e11 72%);box-shadow:0 0 0 1px #9aa6af,0 0 0 2px #151a1f,inset 0 0 .4rem color-mix(in srgb,var(--res-tone) 45%,transparent);}
+.live-hud .live-game-presentation .res__glyph .ff-gi {width:1.1rem;height:1.1rem;filter:drop-shadow(0 0 .2rem color-mix(in srgb,var(--res-tone) 70%,transparent));}
+.live-hud .live-game-presentation .res__bar {grid-column:2;grid-row:1;align-self:end;height:.35rem;margin:0;background:#05080a;box-shadow:0 0 0 1px #59656f;}
+.live-hud .live-game-presentation .res__store {display:flex;justify-content:space-between;gap:.4rem;grid-column:2;grid-row:2;align-self:start;font-size:var(--fs-cap);font-weight:normal;color:var(--res-tone);}
+.live-hud .live-game-presentation .res__store small {font-size:inherit;color:var(--text-mid);margin-left:auto;}
+.live-hud .live-game-presentation .res__net {grid-column:3;grid-row:1/3;align-self:center;font-size:1.45rem;min-width:4.4ch;text-align:right;color:var(--res-tone);text-shadow:0 0 .4rem color-mix(in srgb,var(--res-tone) 35%,transparent);}
+.live-hud .live-game-presentation .res__net.is-neg {color:#ff6a55;text-shadow:none;}
+.live-hud .live-game-presentation .res__net.is-soon {color:var(--warn);}
+.live-hud .live-game-presentation .res__flow {display:grid;grid-column:4;grid-row:1/3;gap:.05rem;align-content:center;justify-items:end;font-size:var(--fs-micro);}
+.live-hud .live-game-presentation .res__flow .in {color:var(--res-tone);}
+.live-hud .live-game-presentation .res__flow .out {color:#ff8f7a;}
+.live-hud .live-game-presentation .res__flow .eff,.live-hud .live-game-presentation .res .ff-badge {display:none;}
+
+/* ---------- Match status (upper right): time, speed, cap, menu ---------- */
+.live-hud .live-game-presentation .status {position:absolute;width:max-content;height:var(--hud-top-h);padding:var(--sc-frame) calc(var(--sc-frame) + .1rem);}
+.live-hud .live-game-presentation .stat {padding:0 .55rem;font-size:var(--fs-cap);color:var(--text);border-left:1px solid var(--sc-ice-soft);}
+.live-hud .live-game-presentation .stat:first-child {border-left:0;}
+.live-hud .live-game-presentation .stat--timer {color:#9fe3ff;font-variant-numeric:tabular-nums;}
+.live-hud .live-game-presentation .stat--cap {color:var(--energy);}
+.live-hud .live-game-presentation .stat__step {width:1.15rem;height:1.15rem;background:#0a0e11;border:1px solid #74818b;color:var(--text-hi);}
+.live-hud .live-game-presentation .stat__step:hover {border-color:var(--sc-ice);}
+.live-hud .live-game-presentation .status__menu {width:1.9rem;border-left:1px solid var(--sc-ice-soft);color:var(--text-hi);}
+.live-hud .live-game-presentation .status__menu:hover {background:rgba(150,210,255,.1);}
+.live-hud .live-game-presentation .banner {position:absolute;top:3.4rem;min-width:12rem;padding:.45rem 1.4rem .55rem;}
+.live-hud .live-game-presentation .banner__title {font-size:1rem;letter-spacing:.08em;color:var(--ember-100);}
+
+/* ---------- Notices ---------- */
+.live-hud .live-game-presentation .alerts {top:calc(var(--hud-gutter) + var(--hud-top-h) + .4rem);max-width:min(24rem,calc(100vw - 2 * var(--hud-gutter)));}
+.live-hud .live-game-presentation .live-notices {gap:.3rem;}
+.live-hud .live-game-presentation .live-notice-row {max-width:100%;width:max-content;pointer-events:auto;}
+.live-hud .live-game-presentation .live-notice {display:flex;align-items:center;gap:.6rem;max-width:100%;min-height:2rem;padding:.35rem .6rem;border:1px solid #7f8c9680;border-left:3px solid var(--notice-color,var(--text-mid));background:rgba(12,16,20,.9);color:var(--text-hi);font:inherit;font-size:var(--fs-cap);line-height:1.3;text-align:left;}
+.live-hud .live-game-presentation button.live-notice {cursor:pointer;}
+.live-hud .live-game-presentation button.live-notice:hover {background:var(--surface-hover);border-color:var(--line-strong);}
+.live-hud .live-game-presentation button.live-notice:focus-visible {outline:2px solid var(--sc-ice);outline-offset:2px;}
+.live-hud .live-game-presentation .live-notice-text {min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.live-hud .live-game-presentation .live-notice-flow {flex:none;font-variant-numeric:tabular-nums;color:var(--notice-color);}
+.live-hud .live-game-presentation .live-notice-jump {flex:none;color:var(--text-mid);}
+.live-hud .live-game-presentation .live-notice--crit {--notice-color:var(--crit);}
+.live-hud .live-game-presentation .live-notice--warn {--notice-color:var(--warn);}
+.live-hud .live-game-presentation .live-notice--ok {--notice-color:var(--ok);}
+.live-hud .live-game-presentation .live-notice.is-stale {opacity:.65;}
+
+/* ---------- Dock: selection over orders (left), tools/queue/upgrades over the build strip (right, to the edge) ---------- */
+.live-hud .live-game-presentation .live-bottom-context {position:absolute;left:var(--hud-gutter);right:var(--hud-gutter);bottom:var(--hud-gutter);display:flex;flex-direction:column;align-items:stretch;gap:.3rem;pointer-events:none;}
+.live-hud .live-game-presentation .live-dock-upper {display:flex;align-items:flex-end;gap:.4rem;min-width:0;pointer-events:none;}
+.live-hud .live-game-presentation .live-selection-context {position:relative;flex:none;width:var(--dock-left);max-width:100%;display:flex;flex-direction:column;pointer-events:none;}
+.live-hud .live-game-presentation .live-dock-aux {display:flex;flex:1;flex-wrap:wrap-reverse;align-items:flex-end;gap:.3rem .4rem;min-width:0;pointer-events:none;}
+.live-hud .live-game-presentation :is(.live-selection-context,.live-dock-aux,.live-command-context)>* {pointer-events:auto;}
+.live-hud .live-game-presentation .live-command-context {display:flex;align-items:stretch;gap:.4rem;min-width:0;pointer-events:none;}
+/* Without build entries the order panel stands alone; no empty strip is drawn. */
+.live-hud .live-game-presentation .live-bottom-context:not([data-strip]) .live-command-context {align-self:flex-start;}
+
+/* Orders: six colour-coded pictograms with short captions in one row. */
+.live-hud .live-game-presentation .live-primary-orders {flex:none;display:flex;align-items:center;width:var(--dock-left);max-width:100%;height:auto;padding:calc(var(--sc-frame) + .3rem) calc(var(--sc-frame) + .35rem);}
+.live-hud .live-game-presentation .live-primary-order-row {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.3rem;width:100%;}
+.live-hud .live-game-presentation .live-primary-order {--tone:#4fd6ff;position:relative;height:3.6rem;min-width:0;}
+.live-hud .live-game-presentation .live-primary-order[data-order=attack] {--tone:#ff4d3f;}
+.live-hud .live-game-presentation .live-primary-order[data-order=stop] {--tone:#ff3b3b;}
+.live-hud .live-game-presentation .live-primary-order[data-order=assist] {--tone:#ffd23a;}
+.live-hud .live-game-presentation .live-primary-order[data-order=reclaim] {--tone:#b4e83a;}
+.live-hud .live-game-presentation .live-primary-orders .ff-order {--c:.45rem;--b:var(--sc-steel);--bg:radial-gradient(circle at 50% 36%,color-mix(in srgb,var(--tone) 30%,transparent) 0,transparent 1.5rem),linear-gradient(180deg,#1d252c,#090c0f);width:100%;height:100%;}
+.live-hud .live-game-presentation .live-primary-orders .ff-order>.ff-gi {position:absolute;left:50%;top:.35rem;transform:translateX(-50%);width:1.85rem;height:1.85rem;color:var(--tone);stroke-width:2.4;filter:drop-shadow(0 0 .22rem color-mix(in srgb,var(--tone) 60%,transparent));}
+.live-hud .live-game-presentation .live-primary-orders .ff-order:hover {--b:var(--sc-steel-hot);}
+.live-hud .live-game-presentation .live-primary-orders .ff-order.is-armed {--b:var(--sc-steel-hot);--bg:radial-gradient(circle at 50% 36%,color-mix(in srgb,var(--tone) 50%,transparent) 0,transparent 1.8rem),linear-gradient(180deg,#173246,#0a1824);}
+.live-hud .live-game-presentation .live-primary-orders .ff-order:focus-visible {--b:#ffffff;}
+.live-hud .live-game-presentation .live-primary-orders .ff-order.is-disabled {--b:linear-gradient(180deg,#68737b,#343b41);--bg:#0b0e11;}
+.live-hud .live-game-presentation .live-primary-orders .ff-order.is-disabled>.ff-gi {opacity:.3;filter:none;}
+.live-hud .live-game-presentation .live-primary-orders .ff-order__key {top:.15rem;bottom:auto;right:.25rem;font-size:var(--fs-micro);color:var(--text-lo);}
+.live-hud .live-game-presentation .live-primary-order-caption {position:absolute;left:.1rem;right:.1rem;bottom:.3rem;z-index:1;pointer-events:none;text-align:center;font-family:var(--font-ui);font-size:var(--fs-micro);line-height:1.1;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.live-hud .live-game-presentation .live-primary-order:has(.is-disabled) .live-primary-order-caption {color:var(--text-lo);}
+
+/* Build/production strip: one row of compact tiles, scrolls inside the frame, arrows only while clipped. */
+.live-hud .live-game-presentation .live-build-strip {flex:1;min-width:0;width:auto;height:auto;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:none;align-items:stretch;padding:var(--sc-frame);}
+.live-hud .live-game-presentation .live-build-strip .ff-ph {width:5.2rem;height:auto;padding:.3rem .55rem;display:flex;align-items:center;font-family:var(--font-ui);font-size:var(--fs-micro);line-height:1.2;white-space:normal;overflow-wrap:anywhere;text-transform:uppercase;border-right:1px solid var(--sc-ice-soft);background:linear-gradient(90deg,rgba(130,200,250,.14),transparent);}
+.live-hud .live-game-presentation .live-strip-viewport {position:relative;display:flex;min-width:0;}
+.live-hud .live-game-presentation .card__grid {display:flex;flex-wrap:nowrap;gap:var(--cell-gap);width:100%;max-width:none;min-width:0;height:auto;padding:.35rem .4rem;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-padding-inline:1.6rem;scrollbar-width:thin;scrollbar-color:#7f8c96 transparent;}
+.live-hud .live-game-presentation .live-strip-viewport[data-clipped-start] .card__grid {mask-image:linear-gradient(90deg,transparent 0,#000 2.2rem);}
+.live-hud .live-game-presentation .live-strip-viewport[data-clipped-end] .card__grid {mask-image:linear-gradient(90deg,#000 calc(100% - 2.2rem),transparent 100%);}
+.live-hud .live-game-presentation .live-strip-viewport[data-clipped-start][data-clipped-end] .card__grid {mask-image:linear-gradient(90deg,transparent 0,#000 2.2rem,#000 calc(100% - 2.2rem),transparent 100%);}
+.live-hud .live-game-presentation .live-strip-nav {position:absolute;top:.35rem;bottom:.35rem;z-index:2;width:1.35rem;padding:0;border:0;display:grid;place-items:center;font-size:1.3rem;line-height:1;color:#e6f6ff;background:linear-gradient(180deg,#56616a,#20272d);box-shadow:inset 0 0 0 1px #a3afb8,inset 0 0 0 2px #12171b;cursor:pointer;}
+.live-hud .live-game-presentation .live-strip-nav:hover {background:linear-gradient(180deg,#4c8fbb,#183247);}
+.live-hud .live-game-presentation .live-strip-nav[hidden] {display:none;}
+.live-hud .live-game-presentation .live-strip-nav.is-prev {left:.15rem;}
+.live-hud .live-game-presentation .live-strip-nav.is-next {right:.15rem;}
+.live-hud .live-game-presentation .card__grid .ff-cell {--c:.4rem;--b:var(--sc-steel);--bg:linear-gradient(180deg,rgba(150,210,255,.1),transparent 40%),linear-gradient(180deg,#1b232a,#0a0d10);flex:none;width:4.6rem;height:4.6rem;min-height:44px;cursor:pointer;}
+.live-hud .live-game-presentation .card__grid .ff-cell:hover {--b:var(--sc-steel-hot);}
+.live-hud .live-game-presentation .card__grid .ff-cell.is-active {--b:var(--sc-steel-hot);--bg:radial-gradient(circle at 50% 35%,rgba(127,208,255,.35),transparent 70%),linear-gradient(180deg,#173246,#0a1824);}
+.live-hud .live-game-presentation .card__grid .ff-cell:focus-visible {--b:#ffffff;}
+.live-hud .live-game-presentation .card__grid .ff-cell__icon {display:block;top:.3rem;width:2.15rem;height:2.15rem;object-fit:contain;}
+.live-hud .live-game-presentation .card__grid .live-build-glyph {filter:drop-shadow(0 1px 0 #000a);}
+.live-hud .live-game-presentation .card__grid .ff-cell__key {top:.2rem;left:.3rem;font-size:var(--fs-micro);color:#9fdcff;z-index:1;}
+.live-hud .live-game-presentation .card__grid .ff-cell__name {bottom:.45rem;left:.2rem;right:.2rem;font-size:var(--fs-micro);line-height:1.1;max-height:2.2em;white-space:normal;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;text-align:center;color:var(--text-hi);text-decoration:none;}
+/* The content glyph already includes tech marks. Decorative tier rails must not cross text. */
+.live-hud .live-game-presentation .card__grid .ff-cell__tiers {display:none;}
+.live-hud .live-game-presentation .card__grid .ff-cell__progress {position:absolute;top:auto;bottom:.15rem;left:.4rem;right:.4rem;height:2px!important;min-height:0;margin:0;pointer-events:none;}
+.live-hud .live-game-presentation .card__grid .ff-cell__lock {top:.25rem;right:.3rem;left:auto;width:auto;height:auto;font-size:var(--fs-cap);color:var(--text-mid);}
+.live-hud .live-game-presentation .card__grid .ff-cell.is-locked .ff-cell__icon,.live-hud .live-game-presentation .card__grid .ff-cell.is-disabled .ff-cell__icon {opacity:.55;}
+.live-hud .live-game-presentation .card__grid .ff-cell.is-locked .ff-cell__name,.live-hud .live-game-presentation .card__grid .ff-cell.is-disabled .ff-cell__name {color:var(--text-mid);text-decoration:none;}
+
+/* Selection summary: name + Details, paused state, HP or type groups; details pop upward and scroll. */
+.live-hud .live-game-presentation .live-selection-panel {width:100%;height:auto;display:grid;gap:.25rem;padding:calc(var(--sc-frame) + .3rem) calc(var(--sc-frame) + .5rem);}
+.live-hud .live-game-presentation .live-selection-heading {display:flex;gap:.5rem;align-items:center;justify-content:space-between;font-size:var(--fs-body);color:var(--text-hi);}
+.live-hud .live-game-presentation .live-selection-heading>b {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-hud .live-game-presentation .live-detail-toggle {flex:none;padding:.15rem .4rem;border:1px solid #6d7a84;background:#0a0e11;color:#bfe6ff;font:inherit;font-size:var(--fs-micro);white-space:nowrap;cursor:pointer;}
+.live-hud .live-game-presentation .live-detail-toggle:hover,.live-hud .live-game-presentation .live-detail-toggle[aria-expanded=true] {border-color:var(--sc-ice);color:var(--ember-100);background:var(--surface-select);}
+.live-hud .live-game-presentation .live-detail-toggle:focus-visible {outline:2px solid var(--sc-ice);outline-offset:1px;}
+.live-hud .live-game-presentation .live-single-text {display:grid;gap:.2rem;font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-hp {display:flex;justify-content:space-between;gap:.5rem;font-variant-numeric:tabular-nums;}
+.live-hud .live-game-presentation .live-single-text .ff-bar {height:.4rem;background:#05080a;box-shadow:0 0 0 1px #59656f;}
+.live-hud .live-game-presentation .live-type-groups {display:flex;flex-wrap:wrap;gap:3px;max-height:3.75rem;overflow-y:auto;}
+.live-hud .live-game-presentation .live-type-group {display:flex;flex:0 1 auto;gap:.3rem;align-items:center;max-width:100%;height:1.75rem;padding:0 .4rem 0 .15rem;border:1px solid #6d7a8480;background:rgba(8,12,15,.7);color:var(--text);font:inherit;font-size:var(--fs-cap);text-align:left;cursor:pointer;}
+.live-hud .live-game-presentation .live-type-group:hover,.live-hud .live-game-presentation .live-type-group.is-focus {border-color:var(--sc-ice);background:var(--surface-select);color:var(--text-hi);}
+.live-hud .live-game-presentation .live-type-group:focus-visible {outline:2px solid var(--sc-ice);outline-offset:1px;}
+.live-hud .live-game-presentation .live-type-group span {min-width:0;max-width:7.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-hud .live-game-presentation .live-type-group b {color:#bfe6ff;font-variant-numeric:tabular-nums;}
+.live-hud .live-game-presentation .live-type-group>.ff-si {width:1.15rem;height:1.3rem;flex:none;}
+.live-hud .live-game-presentation .live-paused-row {display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.1rem .15rem .1rem .4rem;border:1px solid var(--warn);border-left-width:3px;background:var(--warn-bg);color:var(--warn);font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-paused-row>button {flex:none;min-height:1.55rem;padding:.1rem .5rem;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text-hi);font:inherit;cursor:pointer;}
+.live-hud .live-game-presentation .live-paused-row>button:hover {background:var(--surface-hover);}
+.live-hud .live-game-presentation .live-paused-row>button:focus-visible {outline:2px solid var(--sc-ice);outline-offset:2px;}
+.live-hud .live-game-presentation .live-selection-details {position:absolute;left:0;bottom:calc(100% + .3rem);z-index:5;width:max(100%,24rem);max-width:calc(100vw - 2 * var(--hud-gutter));max-height:min(22rem,calc(100vh - 16rem));display:grid;grid-template-rows:auto minmax(0,1fr);padding:var(--sc-frame);pointer-events:auto;}
+.live-hud .live-game-presentation .live-selection-details[hidden] {display:none;}
+.live-hud .live-game-presentation .live-details-head {display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.2rem .3rem .2rem .55rem;border-bottom:1px solid var(--sc-ice-soft);font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:#bfe6ff;}
+.live-hud .live-game-presentation .live-details-close {width:1.6rem;height:1.6rem;padding:0;border:1px solid #6d7a84;background:#0a0e11;color:var(--text-hi);font:inherit;font-size:1rem;line-height:1;cursor:pointer;}
+.live-hud .live-game-presentation .live-details-close:hover {border-color:var(--sc-ice);background:var(--surface-select);}
+.live-hud .live-game-presentation .live-details-close:focus-visible {outline:2px solid var(--sc-ice);outline-offset:1px;}
+.live-hud .live-game-presentation .live-details-body {display:grid;align-content:start;gap:.35rem;min-height:0;overflow:auto;padding:.45rem .55rem .55rem;font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-unit-stats {display:flex;flex-wrap:wrap;gap:.2rem .6rem;}
+.live-hud .live-game-presentation .live-selection-unit-list,.live-hud .live-game-presentation [data-testid=order-queue] {display:flex;flex-wrap:wrap;gap:.2rem;}
+.live-hud .live-game-presentation .live-details-body button {padding:.2rem .4rem;background:var(--surface-1);color:var(--text);border:1px solid var(--line);font:inherit;text-align:left;cursor:pointer;}
+.live-hud .live-game-presentation .live-details-body button:hover {border-color:var(--sc-ice);}
+.live-hud .live-game-presentation .live-secondary-orders {display:flex;flex-wrap:wrap;gap:.25rem;}
+.live-hud .live-game-presentation .live-details-body .live-secondary-orders .ff-order {width:2rem;height:2rem;padding:0;--b:#6d7a84;--bg:#0a0e11;}
+.live-hud .live-game-presentation .live-details-body .live-secondary-orders .ff-order:hover {--b:var(--sc-ice);}
+
+/* Tools beside the summary: selection filters and filled control groups only. */
+.live-hud .live-game-presentation .live-selection-tools {display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;padding:calc(var(--sc-frame) + .15rem) calc(var(--sc-frame) + .3rem);}
+.live-hud .live-game-presentation .live-selection-tools:empty {display:none;}
+.live-hud .live-game-presentation .filters {gap:2px;align-self:center;}
+.live-hud .live-game-presentation .filters .ff-order {width:1.7rem;height:1.7rem;--b:#6d7a84;--bg:#0a0e11;}
+.live-hud .live-game-presentation .filters .ff-order:hover {--b:var(--sc-ice);}
+.live-hud .live-game-presentation .idle {margin-left:0;}
+.live-hud .live-game-presentation .idle .ff-order {width:2.2rem;}
+.live-hud .live-game-presentation .live-groups {display:flex;flex-wrap:wrap;align-items:center;gap:3px;}
+.live-hud .live-game-presentation .live-groups-caption {font-size:var(--fs-micro);color:var(--text-mid);margin-right:.15rem;}
+.live-hud .live-game-presentation .live-group {display:flex;align-items:center;gap:.25rem;height:1.7rem;padding:0 .4rem 0 .2rem;border:1px solid #6d7a84;background:#0a0e11;color:var(--text-hi);font:inherit;font-size:var(--fs-cap);cursor:pointer;}
+.live-hud .live-game-presentation .live-group kbd {min-width:1.05rem;padding:0 .2rem;border:1px solid var(--line-strong);border-radius:2px;background:#05080a;color:#bfe6ff;font:inherit;font-size:var(--fs-micro);text-align:center;}
+.live-hud .live-game-presentation .live-group:hover,.live-hud .live-game-presentation .live-group.is-active {border-color:var(--sc-ice);background:var(--surface-select);}
+.live-hud .live-game-presentation .live-group:focus-visible {outline:2px solid var(--sc-ice);outline-offset:2px;}
+
+/* Factory: progress, controls and queue in two short rows directly above its production strip. */
+.live-hud .live-game-presentation .live-factory-text {display:grid;gap:.25rem;width:30rem;max-width:100%;padding:calc(var(--sc-frame) + .25rem) calc(var(--sc-frame) + .4rem);font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-text-queue {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:.3rem .4rem;}
+.live-hud .live-game-presentation .fq__now {grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.15rem .6rem;font-variant-numeric:tabular-nums;}
+.live-hud .live-game-presentation .fq__now.is-idle {color:var(--text-mid);}
+.live-hud .live-game-presentation .fq__now>.ff-bar {grid-column:1/-1;height:.3rem;margin:0;background:#05080a;box-shadow:0 0 0 1px #59656f;}
+.live-hud .live-game-presentation .fq__now .num {font-size:var(--fs-cap);color:#bfe6ff;}
+.live-hud .live-game-presentation .live-queue-product {display:flex;align-items:center;gap:.4rem;min-width:0;font-weight:normal;color:var(--text-hi);}
+.live-hud .live-game-presentation .live-queue-product>span {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-hud .live-game-presentation .live-queue-product>.ff-si,.live-hud .live-game-presentation .fqi>.ff-si {width:1.15rem;height:1.3rem;flex:none;}
+.live-hud .live-game-presentation .fq__ctl {grid-column:1;display:flex;gap:.2rem;}
+.live-hud .live-game-presentation .fq__ctl .ff-btn {height:1.6rem;padding:0 .45rem;--b:#6d7a84;--bg:#0a0e11;}
+.live-hud .live-game-presentation .fq__ctl .ff-btn:hover:not(:disabled) {--b:var(--sc-ice);}
+.live-hud .live-game-presentation .fq__ctl .ff-btn.is-on {--b:var(--sc-ice);--bg:var(--surface-select);--fg:var(--ember-100);}
+.live-hud .live-game-presentation .fq__list {grid-column:2;display:flex;gap:.2rem;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#7f8c96 transparent;}
+.live-hud .live-game-presentation .fqi {position:static;flex:none;width:auto;height:1.6rem;display:flex;align-items:center;gap:.3rem;padding:0 .4rem 0 .2rem;border:1px solid #6d7a84;background:#0a0e11;color:var(--text);font:inherit;font-size:var(--fs-cap);cursor:pointer;}
+.live-hud .live-game-presentation .fqi:hover:not(:disabled) {border-color:var(--sc-ice);}
+.live-hud .live-game-presentation .fqi:disabled {opacity:.55;cursor:default;}
+.live-hud .live-game-presentation .fqi b {position:static;font-size:inherit;color:#bfe6ff;}
+.live-hud .live-game-presentation .fqi.is-loop::after {position:static;}
+.live-hud .live-game-presentation .live-factory-details {display:flex;flex-wrap:wrap;gap:.15rem .9rem;padding-top:.25rem;border-top:1px solid var(--sc-ice-soft);color:var(--text-mid);}
+.live-hud .live-game-presentation .live-factory-details[hidden] {display:none;}
+
+/* Upgrades (commander, extractor, factory) sit beside the queue above the strip. */
+.live-hud .live-game-presentation .live-commander-upgrade {width:24rem;max-width:100%;height:auto;padding:calc(var(--sc-frame) + .25rem) calc(var(--sc-frame) + .45rem);font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-upgrade-heading {display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.2rem;color:#bfe6ff;}
+.live-hud .live-game-presentation .live-upgrade-heading>b {font-weight:normal;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-hud .live-game-presentation .live-upgrade-heading>span {flex:none;font-size:var(--fs-micro);color:var(--text-hi);}
+.live-hud .live-game-presentation .live-upgrade-start {display:flex;align-items:center;gap:.45rem;width:100%;min-height:44px;padding:.25rem .4rem;border:1px solid #6d7a84;background:linear-gradient(180deg,rgba(150,210,255,.08),transparent 60%),#0a0e11;color:var(--text-hi);font:inherit;text-align:left;cursor:pointer;}
+.live-hud .live-game-presentation .live-upgrade-start>img {width:32px;height:32px;object-fit:contain;flex:none;}
+.live-hud .live-game-presentation .live-upgrade-start>.live-build-glyph {position:static;transform:none;width:32px;height:32px;flex:none;}
+.live-hud .live-game-presentation .live-upgrade-start>.ff-gi {width:1.2rem;height:1.2rem;flex:none;}
+.live-hud .live-game-presentation .live-upgrade-target {display:grid;gap:.1rem;min-width:0;flex:1;}
+.live-hud .live-game-presentation .live-upgrade-target>b {font-weight:normal;}
+.live-hud .live-game-presentation .live-upgrade-target>small {display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:var(--fs-micro);line-height:1.2;color:var(--text-mid);}
+.live-hud .live-game-presentation .live-upgrade-cost {display:grid;gap:.1rem;flex:none;font-variant-numeric:tabular-nums;font-size:var(--fs-micro);white-space:nowrap;color:var(--energy);}
+.live-hud .live-game-presentation .live-upgrade-mass {color:var(--mass);}
+.live-hud .live-game-presentation .live-upgrade-start:hover:not(:disabled),.live-hud .live-game-presentation .live-upgrade-running-actions>button:hover:not(:disabled) {background:var(--surface-hover);border-color:var(--sc-ice);}
+.live-hud .live-game-presentation .live-upgrade-start:focus-visible,.live-hud .live-game-presentation .live-upgrade-running-actions>button:focus-visible {outline:2px solid var(--sc-ice);outline-offset:2px;}
+.live-hud .live-game-presentation .live-upgrade-start:disabled {opacity:.55;cursor:default;}
+.live-hud .live-game-presentation .live-upgrade-running {display:grid;gap:.2rem .4rem;grid-template-columns:minmax(0,1fr) auto;align-items:center;}
+.live-hud .live-game-presentation .live-upgrade-progress-label {display:flex;justify-content:space-between;gap:.5rem;grid-column:1;}
+.live-hud .live-game-presentation .live-upgrade-running>.ff-bar {height:.3rem;margin:0;grid-column:1;background:#05080a;box-shadow:0 0 0 1px #59656f;}
+.live-hud .live-game-presentation .live-upgrade-running-actions {display:flex;gap:.2rem;grid-column:2;grid-row:1/3;}
+.live-hud .live-game-presentation .live-upgrade-running-actions>button {min-height:2rem;padding:.2rem .45rem;border:1px solid #6d7a84;background:#0a0e11;color:var(--text-hi);font:inherit;cursor:pointer;}
+.live-hud .live-game-presentation .live-upgrade-running-actions>button:disabled {opacity:.55;cursor:default;}
+.live-hud .live-game-presentation .live-upgrade-complete {color:var(--text-hi);}
+.live-hud .live-game-presentation .live-upgrade-paused-note {grid-column:1/-1;font-size:var(--fs-micro);line-height:1.25;color:var(--warn);}
+
+/* Narrow windows: stack summary, tools, orders and strip instead of squeezing tiles; the strip keeps scrolling. */
+@media (max-width:760px) {
+  .live-game-presentation {--dock-left:min(22.5rem,calc(100vw - 1rem));}
+  .live-hud .live-game-presentation .eco {width:min(23rem,calc(100vw - 1rem));}
+  .live-hud .live-game-presentation .live-dock-upper {flex-direction:column;align-items:flex-start;}
+  .live-hud .live-game-presentation .live-dock-aux {flex-wrap:wrap;width:100%;}
+  .live-hud .live-game-presentation .live-command-context {flex-direction:column;align-items:stretch;}
+  .live-hud .live-game-presentation .live-bottom-context:not([data-strip]) .live-command-context {align-self:stretch;align-items:flex-start;}
+  .live-hud .live-game-presentation .live-build-strip .ff-ph {width:3.8rem;}
+  .live-hud .live-game-presentation :is(.live-factory-text,.live-commander-upgrade) {width:100%;}
+}

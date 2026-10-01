@@ -1,0 +1,22 @@
+/** Generated from the live visual-to-model mapping by hud-icons.ts. */
+export const BUILD_PORTRAIT_MODELS: Readonly<Record<string, string>> = {
+  "core:cmd_commander": "cmd_commander",
+  "core:cmd_commander_armored": "cmd_commander",
+  "core:cmd_commander_engineering": "cmd_commander",
+  "core:eng_t1": "lnd_t1_engineer",
+  "core:fac_land_t1": "str_t1_fac_land",
+  "core:fac_land_t2": "str_t2_fac_land",
+  "core:fac_land_t3": "str_t3_fac_land",
+  "core:lnd_t1_arty": "lnd_t1_arty",
+  "core:lnd_t1_scout": "lnd_t1_scout",
+  "core:lnd_t1_tank": "lnd_t1_tank",
+  "core:lnd_t2_tank": "lnd_t2_tank",
+  "core:lnd_t3_heavy": "lnd_t3_bot",
+  "core:str_t1_estorage": "str_t1_estore",
+  "core:str_t1_mex": "str_t1_mex",
+  "core:str_t1_pd": "str_t1_pd",
+  "core:str_t1_pgen": "str_t1_pgen",
+  "core:str_t1_radar": "str_t1_radar",
+  "core:str_t2_mex": "str_t2_mex",
+  "core:str_t3_mex": "str_t3_mex"
+};

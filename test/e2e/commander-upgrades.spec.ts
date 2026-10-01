@@ -33,17 +33,25 @@ async function screenshots(page: Page, info: TestInfo, state: string) {
     const commands = await page.locator('.live-command-context').boundingBox();
     const selection = await page.locator('.live-selection-context').boundingBox();
     expect(commands).not.toBeNull(); expect(selection).not.toBeNull();
-    expect(commands!.width).toBeLessThanOrEqual(448);
-    // Only the actually visible ACU enhancement row earns this extra height budget.
+    const orders = await page.getByTestId('order-bar').boundingBox();
+    const strip = await page.getByTestId('command-card').boundingBox();
+    expect(orders).not.toBeNull(); expect(strip).not.toBeNull();
+    expect(orders!.width).toBeLessThanOrEqual(380);
+    expect(strip!.x).toBeGreaterThanOrEqual(orders!.x + orders!.width);
+    expect(strip!.x + strip!.width).toBeGreaterThanOrEqual(viewport.width - 20);
+    expect(commands!.width).toBeGreaterThanOrEqual(viewport.width - 32);
     const hasEnhancements = await upgrades.isVisible();
-    expect(commands!.height).toBeLessThanOrEqual(hasEnhancements ? 380 : 300);
+    expect(commands!.height).toBeLessThanOrEqual(100);
     expect(commands!.x).toBeGreaterThanOrEqual(0);
     expect(commands!.y).toBeGreaterThanOrEqual(0);
     expect(commands!.x + commands!.width).toBeLessThanOrEqual(viewport.width);
     expect(commands!.y + commands!.height).toBeLessThanOrEqual(viewport.height);
-    expect(selection!.x).toBeGreaterThanOrEqual(commands!.x + commands!.width);
-    expect(selection!.width).toBeLessThanOrEqual(280);
-    expect(selection!.height).toBeLessThanOrEqual(200);
+    expect(Math.abs(selection!.x - orders!.x)).toBeLessThanOrEqual(2);
+    expect(selection!.y + selection!.height).toBeLessThanOrEqual(orders!.y);
+    expect(selection!.width).toBeLessThanOrEqual(380);
+    expect(selection!.height).toBeLessThanOrEqual(140);
+    const dock = await page.locator('.live-bottom-context').boundingBox();
+    expect(dock!.height).toBeLessThanOrEqual(220);
     const buildCells = await page.getByTestId('command-card').locator('.ff-cell').evaluateAll(cells => cells.map(cell => {
       const glyph = cell.querySelector('.ff-cell__icon')!, name = cell.querySelector('.ff-cell__name')!, track = cell.querySelector('.ff-cell__progress')!;
       return { button: cell.getBoundingClientRect().toJSON(), glyph: glyph.getBoundingClientRect().toJSON(),
@@ -65,7 +73,7 @@ async function screenshots(page: Page, info: TestInfo, state: string) {
       bottomMiddle: document.elementFromPoint(width / 2, height - 20)?.id === 'game-canvas',
       bottomRight: document.elementFromPoint(width - 20, height - 20)?.id === 'game-canvas',
     }), viewport);
-    expect(clearWorld).toEqual({ center: true, bottomMiddle: true, bottomRight: true });
+    expect(clearWorld).toEqual({ center: true, bottomMiddle: false, bottomRight: false });
     const path = info.outputPath(`acu-${state}-${viewport.width}.png`);
     await page.screenshot({ path });
     await info.attach(`acu-${state}-${viewport.width}`, { path, contentType: 'image/png' });
