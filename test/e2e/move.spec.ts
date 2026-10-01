@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/silent-test.ts';
 import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
 
 // Move (S3, S4, SPK6 chain): a right click on the plane is picked on the CPU, sent as a binary Move
@@ -25,7 +25,7 @@ async function ownCentroid(page: Page): Promise<{ x: number; z: number; n: numbe
 for (const server of SERVERS) {
   test(`move: Rechtsklick bewegt alle eigenen Würfel – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'map=testplane', 1000);
     await waitTick(page, 5);
     await page.evaluate(() => window.__faf!.metrics.reset());
 
@@ -51,7 +51,9 @@ for (const server of SERVERS) {
 
     // The cubes approach the target (positions from the frames).
     const t0 = await page.evaluate(() => window.__faf!.tick);
-    await waitTick(page, t0 + 20);
+    // MS3 steers and separates a thousand-unit formation before its centroid advances.
+    // Ack/marker latency is checked above; allow four sim seconds for group progress.
+    await waitTick(page, t0 + 40);
     const after = await ownCentroid(page);
     const d1 = Math.hypot(after.x - target!.x, after.z - target!.z);
     await attachJson(testInfo, 'move', { target, before, after, d0, d1, snap });

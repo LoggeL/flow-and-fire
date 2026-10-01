@@ -1,0 +1,188 @@
+{
+  "node": "v24.18.0",
+  "cpu": "Apple M5 Pro",
+  "runs": 25,
+  "warmup": 3,
+  "results": {
+    "hollow-ridge": {
+      "sizeWu": 512,
+      "samples": 263169,
+      "markers": 20,
+      "components": 1,
+      "passableSamples": 226590,
+      "issues": {
+        "errors": 0,
+        "warnings": 2,
+        "infos": 1
+      },
+      "createTerrainAnalysis": {
+        "runs": 25,
+        "p50Ms": 3.837,
+        "p95Ms": 5.355,
+        "minMs": 3.346,
+        "maxMs": 5.945
+      },
+      "validateCached": {
+        "runs": 25,
+        "p50Ms": 0.076,
+        "p95Ms": 0.097,
+        "minMs": 0.047,
+        "maxMs": 0.112
+      },
+      "validateFirstCall": {
+        "runs": 10,
+        "p50Ms": 3.622,
+        "p95Ms": 6.695,
+        "minMs": 3.46,
+        "maxMs": 6.695
+      },
+      "analysisBuilds": 1
+    },
+    "tessera": {
+      "sizeWu": 512,
+      "samples": 263169,
+      "markers": 40,
+      "components": 29,
+      "passableSamples": 249703,
+      "issues": {
+        "errors": 0,
+        "warnings": 0,
+        "infos": 1
+      },
+      "createTerrainAnalysis": {
+        "runs": 25,
+        "p50Ms": 3.472,
+        "p95Ms": 4.239,
+        "minMs": 3.292,
+        "maxMs": 4.533
+      },
+      "validateCached": {
+        "runs": 25,
+        "p50Ms": 0.077,
+        "p95Ms": 0.089,
+        "minMs": 0.075,
+        "maxMs": 0.107
+      },
+      "validateFirstCall": {
+        "runs": 10,
+        "p50Ms": 3.493,
+        "p95Ms": 4.116,
+        "minMs": 3.391,
+        "maxMs": 4.116
+      },
+      "analysisBuilds": 1
+    },
+    "braidwater": {
+      "sizeWu": 512,
+      "samples": 263169,
+      "markers": 43,
+      "components": 69,
+      "passableSamples": 214863,
+      "issues": {
+        "errors": 0,
+        "warnings": 0,
+        "infos": 1
+      },
+      "createTerrainAnalysis": {
+        "runs": 25,
+        "p50Ms": 3.277,
+        "p95Ms": 4.029,
+        "minMs": 3.13,
+        "maxMs": 4.071
+      },
+      "validateCached": {
+        "runs": 25,
+        "p50Ms": 0.086,
+        "p95Ms": 0.106,
+        "minMs": 0.083,
+        "maxMs": 0.126
+      },
+      "validateFirstCall": {
+        "runs": 10,
+        "p50Ms": 4.444,
+        "p95Ms": 5.14,
+        "minMs": 3.56,
+        "maxMs": 5.14
+      },
+      "analysisBuilds": 1
+    },
+    "setons": {
+      "sizeWu": 1024,
+      "samples": 1050625,
+      "markers": 124,
+      "components": 117,
+      "passableSamples": 437725,
+      "issues": {
+        "errors": 0,
+        "warnings": 10,
+        "infos": 1
+      },
+      "createTerrainAnalysis": {
+        "runs": 25,
+        "p50Ms": 13.245,
+        "p95Ms": 15.427,
+        "minMs": 11.386,
+        "maxMs": 15.435
+      },
+      "validateCached": {
+        "runs": 25,
+        "p50Ms": 0.361,
+        "p95Ms": 0.725,
+        "minMs": 0.3,
+        "maxMs": 0.786
+      },
+      "validateFirstCall": {
+        "runs": 10,
+        "p50Ms": 13.465,
+        "p95Ms": 14.349,
+        "minMs": 12.582,
+        "maxMs": 14.349
+      },
+      "analysisBuilds": 1
+    },
+    "setons+fields": {
+      "fields": 16,
+      "fieldCoverWarnings": 68,
+      "validateCachedFields": {
+        "runs": 25,
+        "p50Ms": 0.934,
+        "p95Ms": 1.561,
+        "minMs": 0.745,
+        "maxMs": 1.612
+      },
+      "expansionsDuringCachedRuns": 0,
+      "validateOneChangedField": {
+        "runs": 25,
+        "p50Ms": 1.107,
+        "p95Ms": 1.932,
+        "minMs": 0.981,
+        "maxMs": 1.982
+      }
+    },
+    "setons-io": {
+      "bytes": 2698440,
+      "identical": true,
+      "read": {
+        "runs": 25,
+        "p50Ms": 5.726,
+        "p95Ms": 7.244,
+        "minMs": 5.43,
+        "maxMs": 8.626
+      },
+      "write": {
+        "runs": 25,
+        "p50Ms": 6.455,
+        "p95Ms": 8.295,
+        "minMs": 5.707,
+        "maxMs": 9.36
+      },
+      "readWrite": {
+        "runs": 25,
+        "p50Ms": 12.846,
+        "p95Ms": 14.895,
+        "minMs": 11.414,
+        "maxMs": 15.719
+      }
+    }
+  }
+}

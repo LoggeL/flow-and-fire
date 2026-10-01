@@ -1,0 +1,4 @@
+import { it, expect } from 'vitest';
+import { createAlertsSection, pushAlert, isAlertStale, tickAlerts, visibleAlerts, olderAlertCount, ALERT_TYPES } from '../../src/index.ts';
+it('merges within repeat windows, preserves latest jump target, expires at sixty seconds', () => { const s = createAlertsSection(), id = pushAlert(s, { type: 'commanderDanger', atS: 0, location: { x: 1, z: 2 } }); expect(pushAlert(s, { type: 'commanderDanger', atS: 2, location: { x: 3, z: 4 } })).toBe(id); expect(s.items.value[0]?.count).toBe(2); expect(s.items.value[0]?.location).toEqual({ x: 3, z: 4 }); expect(isAlertStale(s.items.value[0]!, 22)).toBe(true); expect(tickAlerts(s, 61)).toBe(0); expect(tickAlerts(s, 62)).toBe(1); expect(s.historyCount.value).toBe(1); for (const type of ALERT_TYPES)
+    pushAlert(s, { type, atS: 100 }); expect(visibleAlerts(s.items.value)).toHaveLength(3); expect(olderAlertCount(s.items.value, s.historyCount.value)).toBe(8); });

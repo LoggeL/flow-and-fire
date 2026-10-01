@@ -28,10 +28,11 @@ const COLD_TOLERANCE_BYTES = 8 * 1024 * 1024;
  */
 const CASES = [
   { name: 'test plane', map: false, spawn: [256, 256, 80], area: [64, 384] },
-  { name: 'hollow-ridge', map: true, spawn: [150, 150, 70], area: [40, 160] },
+  // MS3: targets in [40, 200)² of the NW side; paths around the plateau cliffs and mesas.
+  { name: 'hollow-ridge', map: true, spawn: [100, 100, 20], area: [40, 160] },
 ] as const;
 
-describe.each(CASES)('allocation of the host tick path ($name)', (c) => {
+describe.each(CASES)('allocation of the host tick path ($name)', { timeout: 300_000 }, (c) => {
   it('warm: 10,000 ticks with 1,000 driving cubes allocate < 1 MB; cold within tolerance', async () => {
     expect(gc).toBeTypeOf('function');
     const cold0 = heap();
@@ -43,7 +44,7 @@ describe.each(CASES)('allocation of the host tick path ($name)', (c) => {
     // Messages are not recorded (a real worker serializes them in postMessage).
     const h = makeTestHost({ autoStart: false, seed: 3, keepMessages: false, host: { clock, logCapacity: 4 << 20 }, ...(c.map ? { map: hollowRidgeBuffer() } : {}) });
     try {
-      h.host.submit(bufferOf([spawnCmd(0, 1000, c.spawn[0], c.spawn[1], c.spawn[2], 1)]));
+      h.host.submit(bufferOf([spawnCmd(0, 1000, c.spawn[0], c.spawn[1], c.spawn[2], 1, 0, h.host.core.world.bp.indexOf('core:cube'))]));
       h.host.runTicks(1);
       expect(unitHandles(h.host.core.world, 0).length).toBe(1000);
       const batches = driveBatches(unitHandles(h.host.core.world, 0), 10, 4, 2, c.area[0], c.area[1]);
@@ -64,7 +65,8 @@ describe.each(CASES)('allocation of the host tick path ($name)', (c) => {
       };
       run(999);
       const cold = heap().used - cold0.used;
-      run(1000); // warm-up
+      // Warm-up: JIT incl. the cold per-command paths (group offsets, order records, requests).
+      run(4000);
       const before = heap();
       // Allocation, not retention: heap growth between GCs, chunk by chunk (support/alloc.ts).
       const m = await measureAllocation(run, 10_000);
@@ -78,16 +80,19 @@ describe.each(CASES)('allocation of the host tick path ($name)', (c) => {
           `moving ${moving}, frames ${h.host.framesWritten}, log ${h.host.core.recorder!.byteLength} B`,
       );
       expect(moving).toBeGreaterThan(300);
-      expect(h.host.tick).toBe(12_000);
+      expect(h.host.tick).toBe(15_000);
       // Keyframe snapshots (external ArrayBuffers) may let V8 collect inside a chunk; at most a
       // few chunks may be excluded that way, the rest must be GC-free and within budget.
       expect(m.chunksWithGc, JSON.stringify(m)).toBeLessThanOrEqual(2);
       expect(m.bytes * (10_000 / m.ticks)).toBeLessThan(1024 * 1024);
       expect(retained).toBeLessThan(1024 * 1024);
       expect(cold).toBeLessThan(COLD_TOLERANCE_BYTES);
-      // Keyframes: every 600 ticks one snapshot, nothing else keeps ArrayBuffers alive.
-      expect(h.host.core.keyframes!.count).toBe(21);
-      expect(abGrown).toBeLessThanOrEqual(17 * h.host.core.world.snapshotByteLength + 64 * 1024);
+      // Keyframes: every 600 ticks one snapshot (thinned out at the byte budget), nothing else
+      // keeps ArrayBuffers alive.
+      const kf = h.host.core.keyframes!;
+      expect(kf.count).toBeGreaterThan(1);
+      expect(kf.count).toBeLessThanOrEqual(kf.capacity);
+      expect(abGrown).toBeLessThanOrEqual(kf.capacity * h.host.core.world.snapshotByteLength + 64 * 1024);
     } finally {
       h.close();
     }

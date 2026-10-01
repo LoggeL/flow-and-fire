@@ -1,0 +1,20 @@
+{
+  "ui.status.region": "Partiestatus",
+  "ui.status.timer": "Spielzeit (Sim-Zeit)",
+  "ui.status.speed": "Sim-Tempo {value}",
+  "ui.status.speedValue": "×{value}",
+  "ui.status.slower": "Sim-Tempo verringern",
+  "ui.status.faster": "Sim-Tempo erhöhen",
+  "ui.status.units": "Einheiten {units} von {cap}",
+  "ui.status.capNear": "Unit-Cap fast erreicht: {units} von {cap}",
+  "ui.status.capReached": "Unit-Cap erreicht: {units} von {cap}",
+  "ui.status.score": "Punkte: eigenes Haus {self}, Gegner {enemy}",
+  "ui.status.menu": "Menü",
+  "ui.status.banner.pause": "PAUSE",
+  "ui.status.banner.pauseSub": "Sim angehalten · Kamera und Befehle bleiben aktiv ·",
+  "ui.status.banner.resume": "fortsetzen",
+  "ui.status.banner.background": "Pausiert – Tab war verborgen",
+  "ui.status.banner.speed": "SIM-TEMPO ×{value}",
+  "ui.status.banner.lag": "Sim hinkt nach · ×{value} effektiv",
+  "ui.status.banner.contextLoss": "Grafik wird wiederhergestellt · Sim läuft weiter"
+}

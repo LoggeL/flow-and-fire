@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import type { FlightReport } from '../../apps/game/src/hooks.ts';
 import { attachJson, captureErrors, expectNoErrors, MEASURED_LOCALLY, openGame, PERF_GATE, SERVERS, waitTick, writeReport } from './support/game.ts';
 
@@ -104,7 +104,7 @@ for (const server of SERVERS) {
         rafIdleHz,
         fpsRatio: flight.fps / rafIdleHz,
         fpsGe60OrRafRate: flight.fps >= 60 || flight.fps >= FPS_OF_RAF * rafIdleHz,
-        allLodsUsed: flight.lodInstancesMax.every((n) => n > 0),
+        meshLodsAndIconsUsed: flight.lodInstancesMax[0]! > 0 && flight.lodInstancesMax[1]! > 0 && flight.drawsByPassMax.icons === 1,
         mainJsP95Ms: flight.mainJsMs.p95,
         gpuP95Ms: flight.gpuMs?.p95 ?? null,
       },
@@ -117,10 +117,12 @@ for (const server of SERVERS) {
     expect(flight.draws.max).toBeLessThanOrEqual(MAX_DRAWS);
     expect(flight.drawsByPassMax.terrain).toBe(1);
     expect(flight.drawsByPassMax.water).toBe(1);
-    // Culling and LOD are active: views where most instances are culled, and all three LODs used.
+    // MS3: the far view replaces the smallest mesh LOD with strategic icons.
     expect(flight.culledInstances.max).toBeGreaterThan(1000);
     expect(flight.lodInstancesMax.length).toBe(3);
-    expect(flight.lodInstancesMax.every((n) => n > 0), `instances per LOD (max per frame): ${flight.lodInstancesMax.join('/')}`).toBe(true);
+    expect(flight.lodInstancesMax[0]).toBeGreaterThan(0);
+    expect(flight.lodInstancesMax[1]).toBeGreaterThan(0);
+    expect(flight.drawsByPassMax.icons).toBe(1);
     if (PERF_GATE) {
       expect(flight.fps, `FPS vs. idle rAF rate ${rafIdleHz.toFixed(1)} Hz`).toBeGreaterThanOrEqual(Math.min(60, FPS_OF_RAF * rafIdleHz));
       expect(flight.mainJsMs.p95, 'Main-JS p95').toBeLessThanOrEqual(5);

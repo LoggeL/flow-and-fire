@@ -41,6 +41,8 @@ export interface RecorderOptions {
   readonly initialCapacity?: number;
   /** Flush the sink every N entries (default 64) — flush() also runs on pause/export. */
   readonly flushEveryEntries?: number;
+  /** Wall-clock flush deadline while a sink is attached, including pauses (default 5000 ms). */
+  readonly flushIntervalMs?: number;
 }
 
 export class CommandLogRecorder {
@@ -54,12 +56,15 @@ export class CommandLogRecorder {
   private sinkLen = 0;
   private readonly flushEvery: number;
   private sinceFlush = 0;
+  private readonly flushIntervalMs: number;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
   private readonly scratch4 = new Uint8Array(4);
   private readonly scratch4dv = new DataView(this.scratch4.buffer);
   private readonly view = new CommandBatchView();
   private lastTickValue = 0;
   private taintedFlag = false;
   private entries = 0;
+  private finished = false;
   /** Last sink error (the recorder falls back to memory-only). */
   sinkError: string | null = null;
 
@@ -72,6 +77,9 @@ export class CommandLogRecorder {
     this.buf.set(h, 0);
     this.len = h.length;
     this.flushEvery = Math.max(1, options.flushEveryEntries ?? 64);
+    this.flushIntervalMs = options.flushIntervalMs ?? 5000;
+    if (!Number.isFinite(this.flushIntervalMs) || this.flushIntervalMs <= 0 || this.flushIntervalMs > 5000)
+      throw new RangeError('flushIntervalMs must be in (0, 5000]');
   }
 
   /** Current log bytes (view into the internal buffer; valid until the next append). */
@@ -139,6 +147,7 @@ export class CommandLogRecorder {
    * itself stays open and continues).
    */
   export(endTick: number): ArrayBuffer {
+    if (this.finished) return this.bytes.slice().buffer;
     const t = Math.max(endTick, this.lastTickValue) >>> 0;
     const out = new ArrayBuffer(this.len + LOG_ENTRY_HEADER_BYTES);
     const u8 = new Uint8Array(out);
@@ -160,6 +169,7 @@ export class CommandLogRecorder {
    * earlier state). The sink file is cut accordingly.
    */
   truncateAfter(tick: number): void {
+    if (this.finished) throw new Error('command log is finished');
     const dv = this.dv;
     let p = this.headerBytes;
     let last = 0;
@@ -190,6 +200,7 @@ export class CommandLogRecorder {
    * entry. On a write error the recorder falls back to memory-only (`sinkError`).
    */
   attachSink(sink: LogSink): boolean {
+    if (this.finished) throw new Error('command log is finished');
     this.detachSink();
     this.sinkRef = sink;
     this.sinkLen = 0;
@@ -199,6 +210,9 @@ export class CommandLogRecorder {
       sink.write(this.buf, 0, this.len, 0);
       sink.flush();
       this.sinkLen = this.len;
+      this.flushTimer = setInterval(() => this.flush(), this.flushIntervalMs);
+      // Node recordings must not keep the process alive merely because a sink was attached.
+      (this.flushTimer as unknown as { unref?: () => void }).unref?.();
       return true;
     } catch (e) {
       this.dropSink(e);
@@ -208,14 +222,17 @@ export class CommandLogRecorder {
 
   /** Detaches (and closes) the sink; recording continues in memory. */
   detachSink(): void {
+    this.clearFlushTimer();
     const s = this.sinkRef;
     if (s === null) return;
     this.sinkRef = null;
     try {
       s.flush();
-      s.close();
-    } catch {
-      // closing a broken handle is best effort
+    } catch (error) {
+      this.sinkError = error instanceof Error ? error.message : String(error);
+    } finally {
+      try { s.close(); }
+      catch (error) { this.sinkError ??= error instanceof Error ? error.message : String(error); }
     }
   }
 
@@ -233,8 +250,16 @@ export class CommandLogRecorder {
   close(): void {
     this.detachSink();
   }
+  /** A normal session exit appends a durable END; crash recovery still has no END. */
+  finish(endTick: number): void {
+    if (this.finished) { this.close(); return; }
+    this.append(LogEntryKind.End, 0, 0, Math.max(endTick, this.lastTickValue), this.scratch4, 0, 0);
+    this.finished = true;
+    this.close();
+  }
 
   private dropSink(e: unknown): void {
+    this.clearFlushTimer();
     this.sinkError = e instanceof Error ? e.message : String(e);
     const s = this.sinkRef;
     this.sinkRef = null;
@@ -245,6 +270,11 @@ export class CommandLogRecorder {
         // already broken
       }
     }
+  }
+
+  private clearFlushTimer(): void {
+    if (this.flushTimer !== null) clearInterval(this.flushTimer);
+    this.flushTimer = null;
   }
 
   private ensure(extra: number): void {
@@ -259,6 +289,7 @@ export class CommandLogRecorder {
   }
 
   private append(kind: number, sub: number, aux: number, tick: number, data: Uint8Array, off: number, len: number): void {
+    if (this.finished) throw new Error('command log is finished');
     if (tick < this.lastTickValue) throw new RangeError(`command log is tick-ordered: ${tick} < ${this.lastTickValue}`);
     const padded = align4(len);
     this.ensure(LOG_ENTRY_HEADER_BYTES + padded);

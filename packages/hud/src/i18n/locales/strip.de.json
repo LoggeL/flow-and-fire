@@ -1,0 +1,18 @@
+{
+  "ui.strip.filters": "Auswahlfilter",
+  "ui.strip.filter.land": "Alle Landeinheiten",
+  "ui.strip.filter.air": "Alle Lufteinheiten",
+  "ui.strip.filter.factories": "Alle Fabriken",
+  "ui.strip.filter.engineers": "Alle Engineers",
+  "ui.strip.filter.label": "{name} ({key}) · ⇧ = aktuelle Auswahl filtern",
+  "ui.strip.idle.label": "Untätiger Engineer (.) · ⇧ = alle untätigen · Rechtsklick = untätige Fabrik (,)",
+  "ui.strip.idle.engineers.one": "{n} untätiger Engineer",
+  "ui.strip.idle.engineers.other": "{n} untätige Engineers",
+  "ui.strip.idle.factories.one": "{n} untätige Fabrik",
+  "ui.strip.idle.factories.other": "{n} untätige Fabriken",
+  "ui.strip.idle.none": "Keine untätigen Engineers",
+  "ui.strip.groups": "Kontrollgruppen",
+  "ui.strip.group.empty": "Gruppe {key} leer · Alt+{key} oder Rechtsklick = Auswahl speichern",
+  "ui.strip.group.filled": "Gruppe {key}: {units} · {key} abrufen, doppelt = Kamera · Alt+{key} oder Rechtsklick = speichern · ⇧+Rechtsklick = hinzufügen",
+  "ui.strip.group.active": "aktive Gruppe"
+}

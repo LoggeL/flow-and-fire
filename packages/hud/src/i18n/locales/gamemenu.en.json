@@ -1,0 +1,9 @@
+{
+  "ui.gamemenu.title": "Game menu",
+  "ui.gamemenu.resume": "Resume",
+  "ui.gamemenu.settings": "Settings",
+  "ui.gamemenu.keys": "Key reference",
+  "ui.gamemenu.surrender": "Surrender",
+  "ui.gamemenu.confirm": "Surrender this match?",
+  "ui.gamemenu.quit": "Main menu"
+}

@@ -8,5 +8,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../../packages/formats" }, { "path": "../../packages/blueprints" }]
+  "references": [{ "path": "../../packages/formats" }, { "path": "../../packages/blueprints" }, { "path": "../../packages/modelkit" }]
 }

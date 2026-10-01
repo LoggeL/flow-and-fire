@@ -4,7 +4,8 @@
  * Measured per move click (`beginClick`):
  * - click timestamp: `event.timeStamp` (same time origin as `performance.now()`),
  * - click marker: first rendered rAF after the click (ms and rAF count; ≤ 1 frame is the gate),
- * - seq confirmation: arrival (poll) of the first frame whose `ackSeq` ≥ the command's seq,
+ * - seq confirmation: arrival of a committed host ACK, or the first polled frame whose `ackSeq`
+ *   confirms the command's sequence when the host does not send direct notifications,
  * - "first moved pixel": first rAF in which one of the commanded units is drawn ≥ 1 CSS pixel away
  *   from how it was drawn at click time: either its interpolated position — projected with the
  *   camera of that rAF — differs by ≥ 1 px from its position at click time (projected with the same
@@ -19,7 +20,7 @@
  * Distributions are ring buffers (last `capacity` samples) with p50/p95/p99. `snapshot()` returns
  * a plain, structured-clonable object (window hooks, E2E).
  */
-import { UnitFlags, type FrameReader } from '@faf/protocol';
+import { UnitFlags, UNIT_RECORD_BYTES, UNIT_OFF_PREV_POS, UNIT_OFF_CUR_POS, UNIT_OFF_PREV_YAW, UNIT_OFF_CUR_YAW, type FrameReader } from '@faf/protocol';
 import type { RtsCamera } from '@faf/render';
 import { interpolatedPos } from './selection.ts';
 
@@ -229,7 +230,7 @@ export class ClientMetrics {
    * Registers a move click. `handles` are the commanded units; up to SAMPLE_UNITS of them that
    * stand still in `reader`'s frame are sampled with their position interpolated at `alpha`.
    */
-  beginClick(clickMs: number, seq: number, handles: ArrayLike<number>, reader: FrameReader | null, alpha: number): void {
+  beginClick(clickMs: number, seq: number, handles: ArrayLike<number>, reader: FrameReader | null, alpha: number, rendered?: DataView): void {
     this.clicks++;
     let m: Measurement | null = null;
     for (let i = 0; i < this.ms.length; i++) {
@@ -278,6 +279,9 @@ export class ClientMetrics {
           reader.unitPrevYaw(i) === reader.unitCurYaw(i);
         if (!still) break;
         interpolatedPos(reader, i, alpha, this.p);
+        if (rendered !== undefined && (rendered.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_POS, true) !== reader.unitCur(i, 0) ||
+          rendered.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_POS + 8, true) !== reader.unitCur(i, 2) ||
+          rendered.getUint16(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_YAW, true) !== reader.unitCurYaw(i))) break;
         const s = m.sampleCount++;
         m.yaw[s] = reader.unitCurYaw(i);
         const v = reader.unitVisual(i);
@@ -314,7 +318,7 @@ export class ClientMetrics {
    * After a rAF rendered: `nowMs` is the time the frame was drawn, `reader`/`alpha` what was drawn,
    * `camera` the camera used. Resolves marker and "first moved pixel" measurements.
    */
-  onRendered(nowMs: number, reader: FrameReader | null, alpha: number, camera: RtsCamera): void {
+  onRendered(nowMs: number, reader: FrameReader | null, alpha: number, camera: RtsCamera, rendered?: DataView): void {
     if (this.pending === 0) return;
     for (let k = 0; k < this.ms.length; k++) {
       const m = this.ms[k]!;
@@ -324,7 +328,7 @@ export class ClientMetrics {
         this.clickToMarkerMs.push(nowMs - m.clickMs);
         this.clickToMarkerFrames.push(this.rafs - m.clickRaf);
       }
-      if (!m.movedDone && reader !== null && this.moved(m, reader, alpha, camera)) {
+      if (!m.movedDone && reader !== null && this.moved(m, reader, alpha, camera, rendered)) {
         m.movedDone = true;
         this.clickToMoveMs.push(nowMs - m.clickMs);
       }
@@ -386,7 +390,7 @@ export class ClientMetrics {
     }
   }
 
-  private moved(m: Measurement, r: FrameReader, alpha: number, camera: RtsCamera): boolean {
+  private moved(m: Measurement, r: FrameReader, alpha: number, camera: RtsCamera, rendered?: DataView): boolean {
     const n = r.unitCount;
     for (let s = 0; s < m.sampleCount; s++) {
       const h = m.handles[s]!;
@@ -395,7 +399,15 @@ export class ClientMetrics {
       for (let i = start; i < n; i++) {
         if (r.unitHandle(i) !== h) continue;
         m.hint[s] = i;
-        interpolatedPos(r, i, alpha, this.p);
+        if (rendered === undefined) interpolatedPos(r, i, alpha, this.p);
+        else {
+          const a = (r.unitFlags(i) & NO_INTERP) !== 0 ? 1 : alpha;
+          for (let c = 0; c < 3; c++) {
+            const prev = rendered.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_PREV_POS + c * 4, true);
+            const cur = rendered.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_POS + c * 4, true);
+            this.p[c] = prev + (cur - prev) * a;
+          }
+        }
         const okA = camera.project(this.p[0]!, this.p[1]!, this.p[2]!, this.sa);
         const okB = camera.project(m.pos[s * 3]!, m.pos[s * 3 + 1]!, m.pos[s * 3 + 2]!, this.sb);
         if (okA && okB) {
@@ -406,7 +418,12 @@ export class ClientMetrics {
         const radius = m.radius[s]!;
         if (okA && radius > 0) {
           const noInterp = (r.unitFlags(i) & NO_INTERP) !== 0;
-          const yaw = interpolatedYaw(r, i, alpha, noInterp);
+          let yaw = interpolatedYaw(r, i, alpha, noInterp);
+          if (rendered !== undefined) {
+            const prev = rendered.getUint16(i * UNIT_RECORD_BYTES + UNIT_OFF_PREV_YAW, true);
+            const cur = rendered.getUint16(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_YAW, true);
+            yaw = noInterp ? cur : prev + (((cur - prev + 98304) % 65536) - 32768) * alpha;
+          }
           const dYaw = Math.abs(((yaw - m.yaw[s]! + 98304) % 65536) - 32768);
           if (dYaw > 0) {
             const chordWU = 2 * radius * Math.sin((dYaw * ANG16_TO_RAD) / 2);

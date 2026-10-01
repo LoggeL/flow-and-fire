@@ -1,0 +1,18 @@
+{
+  "ui.strip.filters": "Selection filters",
+  "ui.strip.filter.land": "All land units",
+  "ui.strip.filter.air": "All air units",
+  "ui.strip.filter.factories": "All factories",
+  "ui.strip.filter.engineers": "All engineers",
+  "ui.strip.filter.label": "{name} ({key}) · ⇧ = filter the current selection",
+  "ui.strip.idle.label": "Idle engineer (.) · ⇧ = all idle · right-click = idle factory (,)",
+  "ui.strip.idle.engineers.one": "{n} idle engineer",
+  "ui.strip.idle.engineers.other": "{n} idle engineers",
+  "ui.strip.idle.factories.one": "{n} idle factory",
+  "ui.strip.idle.factories.other": "{n} idle factories",
+  "ui.strip.idle.none": "No idle engineers",
+  "ui.strip.groups": "Control groups",
+  "ui.strip.group.empty": "Group {key} empty · Alt+{key} or right-click = save selection",
+  "ui.strip.group.filled": "Group {key}: {units} · {key} recalls, twice = camera · Alt+{key} or right-click = save · ⇧+right-click = add",
+  "ui.strip.group.active": "active group"
+}

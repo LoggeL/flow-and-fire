@@ -11,7 +11,7 @@ import {
   type CommandEnvelope,
 } from '@faf/protocol';
 
-/** The checked-in game bundle (core:cube = sim id 0). */
+/** The current checked-in game bundle; resolve entity IDs through the compiled table. */
 export function gameSimBin(): Uint8Array {
   return new Uint8Array(readFileSync(fileURLToPath(new URL('../../../../content/generated/sim.bin', import.meta.url))));
 }
@@ -19,6 +19,13 @@ export function gameSimBin(): Uint8Array {
 export function gameTable(): SimBpTable {
   return decodeSimBin(gameSimBin());
 }
+
+export function gameBp(id: string): number {
+  const index = gameTable().indexOf(id);
+  if (index < 0) throw new Error(`Missing fixture blueprint ${id}`);
+  return index;
+}
+const GAME_CUBE_BP = gameBp('core:cube');
 
 /** A table with core:cube (0) and a faster test cube (1) built directly by the compiler. */
 export function testTable(): SimBpTable {
@@ -53,7 +60,7 @@ export function nextSeq(army: number): number {
   return s & 0xffff;
 }
 
-export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, bp = 0, byArmy = army, seq = nextSeq(byArmy)): CommandEnvelope {
+export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, bp = GAME_CUBE_BP, byArmy = army, seq = nextSeq(byArmy)): CommandEnvelope {
   return {
     tick: asTick(0),
     army: asArmyId(byArmy),

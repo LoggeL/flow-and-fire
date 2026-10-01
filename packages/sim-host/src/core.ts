@@ -14,15 +14,32 @@
 
 import { createTestPlaneMap, mapSimData, mapSimHash, readRtsMap, validateRtsMap, type RtsMap } from '@faf/formats';
 import { setBatchTick } from '@faf/protocol';
-import { createWorld, fullHash, lastHash, lastHashTick, restore, ruleHash, snapshot, step, HASH_INTERVAL_TICKS, type PhaseProbe, type World } from '@faf/sim';
-import type { SimBpTable } from '@faf/blueprints/simbin';
+import {
+  createWorld,
+  initializeSkirmish,
+  fullHash,
+  lastHash,
+  lastHashTick,
+  replaceBlueprints,
+  restore,
+  ruleHash,
+  snapshot,
+  step,
+  HASH_INTERVAL_TICKS,
+  type PhaseProbe,
+  type World,
+  type WorldInitProbe,
+} from '@faf/sim';
+import { decodeSimBin, type SimBpTable } from '@faf/blueprints/simbin';
 import { KeyframeStore, type KeyframeOptions } from './keyframes.ts';
-import { MarkKind, parseCommandLog, type LogHeader } from './log-format.ts';
+import { MarkKind, parseCommandLog, type LogHeader, type LogInitialization } from './log-format.ts';
 import { CommandLogRecorder, type RecorderOptions } from './recorder.ts';
 import { simIdFor } from './identity.ts';
 import { BatchBuilder, LocalSource, ReplaySource, type TickSource } from './sources.ts';
 
 export interface SimCoreOptions {
+  /** Deterministic match setup, persisted in the log and recreated by ReplayPlayer. */
+  readonly initialization?: LogInitialization;
   /** Compiled blueprints (sim.bin bytes) or a decoded table. */
   readonly simBin?: Uint8Array;
   readonly bpTable?: SimBpTable;
@@ -46,8 +63,12 @@ export interface SimCoreOptions {
   readonly keyframes?: KeyframeOptions | false;
   /** Command sources; default: one LocalSource (`core.local`). */
   readonly sources?: readonly TickSource[];
+  /** Human source supplied alongside tick-synchronous AI sources. */
+  readonly localSource?: LocalSource;
   /** Keep the rule-hash trail (tick/hash every 10 ticks) in memory (default true). */
   readonly trail?: boolean;
+  /** Timing hook around the world setup stages (nav precompute; host status). */
+  readonly initProbe?: WorldInitProbe;
 }
 
 /**
@@ -86,9 +107,21 @@ export function resolveMap(map: RtsMap | Uint8Array | undefined | null, sizeWu?:
   return map;
 }
 
+/** Result of `SimCore.devReload`. */
+export interface DevReloadResult {
+  /** simHash of the new blueprint table (u32). */
+  readonly simHash: number;
+  /** New simId (SIM_BUILD, new simHash, mapSimHash). */
+  readonly simId: number;
+  /** Unit blueprints before / after. */
+  readonly unitsBefore: number;
+  readonly unitsAfter: number;
+}
+
 export class SimCore {
   readonly world: World;
-  readonly simId: number;
+  /** Session identity; changes only with a dev reload of the blueprints (tainted log). */
+  simId: number;
   /** The map of this session (the generated test plane when none was given). Static data; never changes. */
   readonly map: RtsMap;
   /** formats mapSimHash of the map; part of simId. */
@@ -122,15 +155,21 @@ export class SimCore {
       ...(options.bpTable !== undefined ? { bpTable: options.bpTable } : {}),
       seed: options.seed >>> 0,
       armyCount: options.armyCount,
+      ...(options.initialization?.rules !== undefined ? { unitCapPerArmy: options.initialization.rules.unitCap } : {}),
       map: mapSimData(map),
       ...(options.mapSizeWu !== undefined ? { mapSizeWu: options.mapSizeWu } : {}),
+      ...(options.initProbe !== undefined ? { initProbe: options.initProbe } : {}),
     });
+    if (options.initialization !== undefined) {
+      if (options.initialization.kind !== 'skirmish') throw new RangeError('invalid session initialization');
+      initializeSkirmish(w, options.initialization);
+    }
     this.world = w;
     this.map = map;
     this.mapSimHash = mapSimHash(map) >>> 0;
     this.mapName = map.meta.name;
     this.simId = simIdFor(w.bp.simHash, this.mapSimHash);
-    this.local = new LocalSource();
+    this.local = options.localSource ?? new LocalSource();
     this.sources = options.sources ?? [this.local];
     this.acceptsLocal = this.sources.includes(this.local);
     this.trailOn = options.trail ?? true;
@@ -147,6 +186,7 @@ export class SimCore {
       hashInterval: HASH_INTERVAL_TICKS,
       buildHash: options.buildHash ?? 'dev',
       mapSimHash: this.mapSimHash,
+      ...(options.initialization !== undefined ? { initialization: options.initialization } : {}),
     };
     this.recorder = options.record === false ? null : new CommandLogRecorder(header, options.recorder);
     this.keyframes = options.keyframes === false ? null : new KeyframeStore(w.snapshotByteLength, options.keyframes ?? {});
@@ -284,6 +324,22 @@ export class SimCore {
 
   fullHash(): number {
     return fullHash(this.world) >>> 0;
+  }
+
+  /**
+   * Dev reload (Vite HMR, MS3): replaces the blueprint table of the running world with `simBin`
+   * (sim.bin bytes). The new table must keep every existing id at its sim id (new ones only
+   * appended), otherwise a RangeError with the reason is thrown and nothing changes. The command
+   * log gets a DevReload MARK (tainted: it cannot be replayed with one blueprint table), the
+   * simId follows the new simHash. Configuration only: the arena (state) is untouched.
+   */
+  devReload(simBin: Uint8Array): DevReloadResult {
+    const next = decodeSimBin(simBin);
+    const before = this.world.bp.count;
+    replaceBlueprints(this.world, next);
+    this.simId = simIdFor(next.simHash, this.mapSimHash);
+    if (!this.replaying) this.recorder?.mark(this.tick, MarkKind.DevReload);
+    return { simHash: next.simHash >>> 0, simId: this.simId, unitsBefore: before, unitsAfter: next.count };
   }
 
   /** Byte length of a session snapshot (header + dynamic arena). */

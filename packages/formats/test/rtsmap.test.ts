@@ -280,6 +280,73 @@ describe('mapSimHash / mapSimData', () => {
   });
 
   it('every known chunk id is a valid 4CC', () => {
-    expect(RTSMAP_CHUNK_ORDER).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'PREV']);
+    expect(RTSMAP_CHUNK_ORDER).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'PFLD', 'PREV']);
+  });
+});
+
+describe('PFLD chunk (prop fields, additive)', () => {
+  const field = {
+    name: 'Hain',
+    kind: 'tree' as const,
+    shape: { kind: 'circle' as const, x: 32 * ONE, z: 32 * ONE, r: 8 * ONE },
+    entries: [{ id: 'core:tree_01', weight: 1 }],
+    densityPerKWu2: 32,
+    seed: 99,
+    scaleMinPermille: 900,
+    scaleMaxPermille: 1100,
+    maxSlopePermille: 0,
+    dryOnly: false,
+    reclaimMassMilli: 1000,
+    reclaimEnergyMilli: 500,
+  };
+
+  it('writes PFLD between PROP and PREV', () => {
+    const m: RtsMap = { ...smallMap(), propFields: [field], unknownChunks: [] };
+    const bytes = writeRtsMap(m);
+    expect(readContainer(bytes, 'RTSM').chunks.map((c) => c.id)).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'PFLD', 'PREV']);
+    expect(readRtsMap(bytes)).toEqual(m);
+  });
+
+  it('keeps unknown chunks around PFLD in place (anchor semantics unchanged)', () => {
+    const m: RtsMap = {
+      ...smallMap(),
+      propFields: [field],
+      unknownChunks: [
+        { id: 'AFTP', data: new Uint8Array([1]), after: 'PROP' },
+        { id: 'AFTF', data: new Uint8Array([2, 3]), after: 'PFLD' },
+        { id: 'AFTV', data: new Uint8Array([4]), after: 'PREV' },
+      ],
+    };
+    const bytes = writeRtsMap(m);
+    expect(readContainer(bytes, 'RTSM').chunks.map((c) => c.id)).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'AFTP', 'PFLD', 'AFTF', 'PREV', 'AFTV']);
+    const back = readRtsMap(bytes);
+    expect(back.unknownChunks.map((u) => u.after)).toEqual(['PROP', 'PFLD', 'PREV']);
+    expect(Buffer.from(writeRtsMap(back)).equals(Buffer.from(bytes))).toBe(true);
+    // Without PFLD, a chunk anchored to it falls back to the nearest present chunk before (PROP).
+    const noFields: RtsMap = { ...back };
+    delete (noFields as { propFields?: unknown }).propFields;
+    const ids = readContainer(writeRtsMap(noFields), 'RTSM').chunks.map((c) => c.id);
+    expect(ids).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'AFTP', 'AFTF', 'PREV', 'AFTV']);
+    // Unknown chunks and the field name never change the simulation identity; the field does.
+    expect(mapSimHash(back)).toBe(mapSimHash({ ...back, unknownChunks: [], propFields: [{ ...field, name: 'X' }] }));
+    expect(mapSimHash(back)).not.toBe(mapSimHash(noFields));
+  });
+
+  it('rejects a duplicate PFLD and a bit flip inside it', () => {
+    const bytes = writeRtsMap({ ...smallMap(), propFields: [field], unknownChunks: [] });
+    const chunks = readContainer(bytes, 'RTSM').chunks.map((c) => ({ id: c.id, data: c.data }));
+    const pfld = chunks.find((c) => c.id === 'PFLD')!;
+    expect(codeOf(() => readRtsMap(writeContainer('RTSM', 1, [...chunks.slice(0, 5), pfld, ...chunks.slice(5)])))).toBe('duplicate-chunk');
+    const start = readContainer(bytes, 'RTSM').chunks.find((c) => c.id === 'PFLD')!.offset;
+    let undetected = 0;
+    const flipped = bytes.slice();
+    for (let i = start; i < start + 12 + pfld.data.length; i++) {
+      for (let bit = 0; bit < 8; bit++) {
+        flipped[i] = bytes[i]! ^ (1 << bit);
+        if (codeOf(() => readRtsMap(flipped)) === 'no-error') undetected++;
+      }
+      flipped[i] = bytes[i]!;
+    }
+    expect(undetected).toBe(0);
   });
 });

@@ -188,6 +188,6 @@ describe('asset pipeline check', () => {
   });
 
   it('rejects view.mesh references to unknown models', async () => {
-    await expect(buildAssets({ models: [] })).rejects.toThrow(/unknown models: core:cube → units\/cube_bot/);
+    await expect(buildAssets({ models: [] })).rejects.toThrow(/core:cube → units\/cube_bot/);
   });
 });

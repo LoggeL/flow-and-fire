@@ -13,7 +13,11 @@ export interface LodGeometry {
   readonly positions: Float32Array<ArrayBuffer>;
   readonly normals: Float32Array<ArrayBuffer>;
   readonly partIds: Uint8Array<ArrayBuffer>;
-  readonly indices: Uint16Array<ArrayBuffer>;
+  readonly indices: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer>;
+  /** Modelkit palette in linear RGB; omitted by legacy benchmark geometry. */
+  readonly colors?: Float32Array<ArrayBuffer>;
+  /** Team, emissive, metal and ambient-occlusion channels. */
+  readonly mask?: Uint8Array<ArrayBuffer>;
 }
 
 const POS_GRID = 4096;

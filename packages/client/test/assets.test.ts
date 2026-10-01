@@ -203,7 +203,16 @@ describe('asset loader (fakes)', () => {
     const map = msgs.find((x) => x.t === 'asset' && x.kind === 'map')!;
     expect(map.t === 'asset' && map.bytes.byteLength).toBe(manifest.assets['maps/braidwater']!.bytes);
     // Order: content, maps, models.
-    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera', 'units/cube_bot']);
+    const view = parseViewJson(new TextDecoder().decode(fileBytes(manifest.assets['content/view.json']!.url)));
+    const expectedModels = [...new Set(['units/cube_bot', ...view.visuals.flatMap(v => v.mesh === undefined ? [] : [v.mesh])])].sort();
+    const order = defaultLoadOrder(manifest);
+    expect(order).toEqual(['content/sim.bin', 'content/view.json', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera', ...expectedModels, 'icons/atlas', 'icons/atlas-metrics']);
+    const commanderMesh = 'units/varkan/cmd_commander';
+    expect(['core:cmd_commander', 'core:cmd_commander_armored', 'core:cmd_commander_engineering']
+      .map(id => view.visuals.find(visual => visual.id === id)?.mesh)).toEqual([commanderMesh, commanderMesh, commanderMesh]);
+    expect(order.filter(id => id === commanderMesh)).toHaveLength(1);
+    expect(msgs.filter(message => message.t === 'model' && message.id === commanderMesh)).toHaveLength(1);
+    expect(w.networkRequests.filter(url => url === resolveAssetUrl(MANIFEST_URL, manifest.assets[commanderMesh]!.url))).toHaveLength(1);
   });
 
   it('warm: a cache hit needs no network (no asset bytes), only the manifest', async () => {
@@ -307,8 +316,9 @@ describe('AssetManager', () => {
     const res = await mgr.load();
     expect(mgr.mode).toBe('worker');
     expect(res.mode).toBe('worker');
-    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera']);
-    expect(decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids).toEqual(['core:cube']);
+    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'icons/atlas', 'icons/atlas-metrics', 'maps/braidwater', 'maps/hollow-ridge', 'maps/setons', 'maps/tessera']);
+    expect(res.files.get('content/sim.bin')!.bytes).toEqual(fileBytes(manifest.assets['content/sim.bin']!.url));
+    expect(decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids).toEqual(expect.arrayContaining(['core:cube', 'core:cmd_commander', 'core:fac_land_t1', 'core:str_t1_mex']));
     expect(res.models.get('units/cube_bot')!.variant).toBe('meshopt');
     expect(progress.at(-1)!.assetsDone).toBe(N);
     expect(progress.at(-1)!.assetsTotal).toBe(N);
@@ -325,7 +335,7 @@ describe('AssetManager', () => {
     const inline = new AssetManager({ manifestUrl: MANIFEST_URL, env: w.env(), raw: false });
     const r1 = await inline.load(['content/view.json']);
     expect(r1.mode).toBe('inline');
-    expect(parseViewJson(new TextDecoder().decode(r1.files.get('content/view.json')!.bytes)).visuals[0]!.mesh).toBe('units/cube_bot');
+    expect(parseViewJson(new TextDecoder().decode(r1.files.get('content/view.json')!.bytes)).visuals.find((v) => v.id === 'core:cube')!.mesh).toBe('units/cube_bot');
     const failing = new AssetManager({
       manifestUrl: MANIFEST_URL,
       env: w.env(),
@@ -431,17 +441,23 @@ describe('browser asset environment (fake globals)', () => {
 describe('visual table from view.json + models', () => {
   it('uses loaded model LODs and view.lod; placeholder otherwise; commander flags', () => {
     const view = parseViewJson(readFileSync(join(REPO_ROOT, 'content/generated/view.json'), 'utf8'));
+    const cube = view.visuals.findIndex((v) => v.id === 'core:cube');
+    expect(cube).toBeGreaterThanOrEqual(0);
     const bot = parseGlb(fileBytes(manifest.assets['units/cube_bot']!.fallback!.url), null);
     const t1 = visualTableFromView(view, new Map([['units/cube_bot', bot]]));
-    expect(t1[0]!.meshes).toHaveLength(3);
-    expect(t1[0]!.lodDistancesWU).toEqual([60, 180]);
-    expect(t1[0]!.spec).toEqual({ hull: 'box', size: [0.5, 0.5, 0.5], color: [0.62, 0.66, 0.72] });
+    expect(t1[cube]!.meshes).toHaveLength(3);
+    expect(t1[cube]!.lodDistancesWU).toEqual([60, 180]);
+    expect(t1[cube]!.spec).toEqual({ hull: 'box', size: [0.5, 0.5, 0.5], color: [0.62, 0.66, 0.72] });
     const t2 = visualTableFromView(view);
-    expect(t2[0]!.meshes).toBeUndefined();
-    expect(t2[0]!.lodDistancesWU).toEqual([60, 180]);
+    expect(t2[cube]!.meshes).toBeUndefined();
+    expect(t2[cube]!.lodDistancesWU).toEqual([60, 180]);
     const t3 = visualTableFromView(view, (id) => (id === 'units/cube_bot' ? bot.lods.slice(0, 1) : undefined));
-    expect(t3[0]!.meshes).toHaveLength(1);
+    expect(t3[cube]!.meshes).toHaveLength(1);
     const bp = decodeSimBin(new Uint8Array(readFileSync(join(REPO_ROOT, 'content/generated/sim.bin'))));
-    expect([...commanderVisuals(bp)]).toEqual([0]); // no ACU before MS5
+    const flags = [...commanderVisuals(bp)];
+    const commanderIds = ['core:cmd_commander', 'core:cmd_commander_armored', 'core:cmd_commander_engineering'];
+    expect(bp.ids.filter((_id, index) => flags[index] !== 0)).toEqual(commanderIds);
+    for (const id of commanderIds) expect(flags[bp.indexOf(id)]).toBe(1);
+    expect(flags[bp.indexOf('core:cube')]).toBe(0);
   });
 });

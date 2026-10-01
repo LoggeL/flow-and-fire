@@ -1,0 +1,3 @@
+#game-canvas[data-game-cursor] { cursor: var(--faf-world-cursor) !important; }
+#faf-virtual-cursor[data-game-cursor] { width: 32px !important; height: 32px !important; background-size: 32px 32px; background-repeat: no-repeat; }
+#faf-virtual-cursor[data-game-cursor] > svg { display: none; }

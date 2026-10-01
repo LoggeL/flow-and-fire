@@ -8,10 +8,11 @@
  * `pickReference`, `exportMap` roundtrip), camera (`camera`, `project`, `flight`), load timings,
  * the last Move target, fullscreen/pointer-lock state and the rule hash.
  */
-import { RAW_PER_WU, type CameraState, type MetricsSnapshot, type RenderPresetName, type StatSummary } from '@faf/client';
+import { strategicZoom, interpolatedPos, RAW_PER_WU, type CameraState, type MetricsSnapshot, type RenderPresetName, type StatSummary } from '@faf/client';
 import { mapSimHash, readRtsMap, writeRtsMap } from '@faf/formats';
-import { sampleHeightRaw } from '@faf/rules';
-import type { CtlMessage } from '@faf/protocol';
+import { isDeepWaterForLand, sampleHeightRaw } from '@faf/rules';
+import { EcoField, type CtlMessage } from '@faf/protocol';
+import { SOUND_CATEGORIES, type AudioStats, type ListenerState, type LoadReport } from '@faf/audio';
 import type { FrameFingerprint } from './frame-hash.ts';
 import type { Game, MoveTarget } from './game.ts';
 import type { LoadTimings } from './loading.ts';
@@ -26,7 +27,12 @@ export interface UnitPosWU {
 export interface RenderStatsSnapshot {
   readonly frames: number;
   readonly drawCalls: number;
-  readonly drawsByPass: { terrain: number; water: number; units: number; overlay: number };
+  readonly drawsByPass: { terrain: number; water: number; fog: number; units: number; icons: number; overlay: number };
+  readonly passDraws: { terrain: number; water: number; fog: number; units: number; icons: number; overlay: number };
+  readonly visibilityFog: { enabled: boolean; active: boolean; dim: number; version: number; unknown: number; explored: number; visible: number; uploads: number; uploadBytes: number; draws: number; transition: number };
+  readonly zoomLevel: number;
+  readonly iconCount: number;
+  readonly dynamicDecals: number;
   readonly instances: number;
   readonly unitInstances: number;
   readonly culledInstances: number;
@@ -93,7 +99,7 @@ export interface FlightReport {
   readonly frames: number;
   readonly fps: number;
   readonly draws: { max: number; min: number; mean: number; over50: number };
-  readonly drawsByPassMax: { terrain: number; water: number; units: number; overlay: number };
+  readonly drawsByPassMax: { terrain: number; water: number; fog: number; units: number; icons: number; overlay: number };
   readonly renderCpuMs: { p50: number; p95: number; max: number };
   readonly gpuMs: { p50: number; p95: number; samples: number } | null;
   readonly mainJsMs: StatSummary;
@@ -115,7 +121,32 @@ export interface FullscreenState {
   readonly virtualCursor: { x: number; y: number; visible: boolean } | null;
 }
 
+export interface WatchInfo { handle: number; orders: number; flags: number; points: { x: number; z: number }[]; targets: { type: number; x: number; z: number }[] }
+export interface ProjectedUnit { handle: number; army: number; visual: number; x: number; y: number; rect: number[] }
+/** Accepted-frame inspection only; no hidden World or authoritative state is exposed. */
+export interface InspectionSnapshot {
+  viewer: number; viewArmy: number; tick: number; flowTick: number; readOnlyCommands: boolean; sentCommands: number;
+  eco: { army: number; massStored: number; massCapacity: number; massOverflow: number; energyStored: number; energyCapacity: number }[];
+  watches: { handle: number; typeId: string | null; product: string | null; progress: number; queue: string[]; rally: { x: number; z: number } }[];
+}
 export interface FafTestHooks {
+  /** Exact cheat spawn through the client command pipeline (WU). */
+  spawnAt(blueprint: string, x: number, z: number, army?: number): number;
+  selected(): number[];
+  controlGroups(): number[][];
+  projectedUnits(): ProjectedUnit[];
+  watch(): WatchInfo[];
+  inspection(): InspectionSnapshot | null;
+  /** Visible accepted-frame observations and the mesh poses actually submitted to the renderer. */
+  rigPose(handle: number): ReturnType<Game['client']['rigPose']>;
+  rigPoseStats(): { animatedUnits: number; walkingUnits: number; observedMounts: number; overflowUnits: number };
+  pathStats(): { pending: number; requestsIssued: number; repathsTriggered: number; stuckGiveUps: number };
+  unitInfo(handle: number): (UnitPosWU & { visual: number; orders: number | null; blocked: boolean; hp: number; hpMax: number; build: number; flags: number }) | null;
+  waitTick(tick: number, timeoutMs?: number): Promise<void>;
+  readonly zoomLevel: number;
+  readonly simHash: number;
+  readonly tainted: boolean;
+  readonly hmr: Game['hmr'];
   readonly tick: number;
   readonly paused: boolean;
   readonly transport: 'sab' | 'transfer';
@@ -145,7 +176,7 @@ export interface FafTestHooks {
   /** Units of `army` in the newest frame. */
   armyUnitCount(army: number): number;
   /** Move command for `handles` to (x, z) in WU, like a right click (marker, line, measurement). */
-  sendMove(handles: readonly number[], x: number, z: number): number;
+  sendMove(handles: readonly number[], x: number, z: number, queue?: boolean): number;
   /** Last Move command sent to the sim (decoded from the batch; raw coordinates). */
   lastMoveTarget(): MoveTarget | null;
   /** Explicit selection (empty array = clear; null = back to "all own units"). */
@@ -194,9 +225,19 @@ export interface FafTestHooks {
   readonly budgetOpen: boolean;
   /** Last phase-budget stats from the host (plain object) or null. */
   stats(): unknown;
+  fxStats(): unknown;
+  /** Real GameAudio diagnostics. No playback, synthetic event routing or autoplay bypass. */
+  audioStats(): AudioStats;
+  resetAudioStats(): void;
+  audioLoadReport(): Promise<LoadReport>;
+  audioSnapshot(): { listener: ListenerState; contextState: string; muted: boolean; voices: number; maxVoices: number | null; poolSize: number | null };
+  soundVoices(name: string): number;
+  audioSpatial(name: string, x: number, z: number): { audible: boolean; gain: number; pan: number } | null;
   /** Last host status (plain object) or null. */
   hostStatus(): unknown;
   renderStats(): RenderStatsSnapshot;
+  /** Copied visibility already accepted by Game, never a read of hidden World state. */
+  visibility(): { viewer: number; tick: number; epoch: number; dim: number; cells: number[] } | null;
   /** Command log bytes (length) via `exportLog`. */
   exportLogBytes(): Promise<number>;
 }
@@ -224,6 +265,11 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       frames: s.frames,
       drawCalls: s.drawCalls,
       drawsByPass: { ...s.drawsByPass },
+      passDraws: { ...s.passDraws },
+      visibilityFog: { ...s.visibilityFog },
+      zoomLevel: s.zoomLevel,
+      iconCount: s.iconCount,
+      dynamicDecals: s.dynamicDecals,
       instances: s.instances,
       unitInstances: s.unitInstances,
       culledInstances: s.culledInstances,
@@ -243,6 +289,76 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
   const heightRaw = (xRaw: number, zRaw: number): number => map.heightAtRaw(xRaw, zRaw);
 
   const hooks: FafTestHooks = {
+    spawnAt: (blueprint, x, z, army = 0) => {
+      const bp = game.bp.indexOf(blueprint);
+      if (bp < 0) throw new Error(`unknown blueprint ${blueprint}`);
+      return c.spawn(bp, 1, army, Math.round(x * RAW_PER_WU), Math.round(z * RAW_PER_WU), 0);
+    },
+    selected: () => Array.from(c.selection.selected()),
+    controlGroups: () => c.controlGroups.snapshot(),
+    get zoomLevel() { return strategicZoom(c.camera.distance, map.sizeWu).level; },
+    get simHash() { return game.status.value?.simHash ?? game.bp.simHash; },
+    get tainted() { return game.status.value?.tainted ?? false; },
+    get hmr() { return { ...game.hmr }; },
+    projectedUnits: () => {
+      const r = c.lastFrame; const out: ProjectedUnit[] = [];
+      if (r === null) return out;
+      const pos = new Float64Array(3); const rect = new Float64Array(4);
+      c.camera.update();
+      for (let i = 0; i < r.unitCount; i++) {
+        interpolatedPos(r, i, c.stream.lastAlpha, pos);
+        if (!c.camera.project(pos[0]!, pos[1]!, pos[2]!, tmp) || !c.selection.screenRect(c.camera, i, c.stream.lastAlpha, rect)) continue;
+        out.push({ handle: r.unitHandle(i), army: r.unitArmy(i), visual: r.unitVisual(i), x: tmp[0]!, y: tmp[1]!, rect: Array.from(rect) });
+      }
+      return out;
+    },
+    watch: () => {
+      const r = c.lastFrame; const out: WatchInfo[] = [];
+      if (r === null) return out;
+      for (let w = 0; w < r.watchCount; w++) {
+        const points: WatchInfo['points'] = []; const targets: WatchInfo['targets'] = [];
+        for (let k = 0; k < r.watchPointCount(w); k++) points.push({ x: r.watchPointX(w, k) / RAW_PER_WU, z: r.watchPointZ(w, k) / RAW_PER_WU });
+        for (let k = 0; k < r.watchTargetCount(w); k++) targets.push({ type: r.watchTargetType(w, k), x: r.watchTargetX(w, k) / RAW_PER_WU, z: r.watchTargetZ(w, k) / RAW_PER_WU });
+        out.push({ handle: r.watchHandle(w), orders: r.watchOrderCount(w), flags: r.watchFlags(w), points, targets });
+      }
+      return out;
+    },
+    pathStats: () => { const r = c.lastFrame; return { pending: r?.pathPending ?? 0, requestsIssued: r?.requestsIssued ?? 0, repathsTriggered: r?.repathsTriggered ?? 0, stuckGiveUps: r?.stuckGiveUps ?? 0 }; },
+    rigPose: handle => c.rigPose(handle),
+    rigPoseStats: () => ({ ...c.rigPoseStats }),
+    unitInfo: (handle) => {
+      const r = c.lastFrame; if (r === null) return null;
+      for (let i = 0; i < r.unitCount; i++) {
+        if (r.unitHandle(i) !== handle) continue;
+        const x = r.unitCur(i, 0); const z = r.unitCur(i, 2); const y = r.unitCur(i, 1);
+        const cx = Math.floor(x / RAW_PER_WU); const cz = Math.floor(z / RAW_PER_WU);
+        const hf = map.heightfield; const cls = Math.max(1, Math.min(3, game.bp.sizeClass(r.unitVisual(i))));
+        let blocked = map.waterLevelRaw !== null && isDeepWaterForLand(hf, map.waterLevelRaw, x, z);
+        // Mirrors nav land terrain + Chebyshev clearance. Runtime footprint occupancy is not exported to the client.
+        for (let dz = 1 - cls; dz < cls; dz++) for (let dx = 1 - cls; dx < cls; dx++) {
+          const xx = cx + dx; const zz = cz + dz;
+          if (xx <= 0 || zz <= 0 || xx >= map.sizeWu - 1 || zz >= map.sizeWu - 1) { blocked = true; continue; }
+          const k = zz * hf.dim + xx; const hs = [hf.heights[k]!, hf.heights[k + 1]!, hf.heights[k + hf.dim]!, hf.heights[k + hf.dim + 1]!];
+          if ((Math.max(...hs) - Math.min(...hs)) * hf.heightScaleRaw > 3072) blocked = true;
+          if (map.waterLevelRaw !== null && isDeepWaterForLand(hf, map.waterLevelRaw, xx * RAW_PER_WU + 2048, zz * RAW_PER_WU + 2048)) blocked = true;
+        }
+        let orders: number | null = null;
+        for (let w = 0; w < r.watchCount; w++) if (r.watchHandle(w) === handle) orders = r.watchOrderCount(w);
+        const hpMax = game.bp.maxHp(r.unitVisual(i));
+        return { x: x / RAW_PER_WU, y: y / RAW_PER_WU, z: z / RAW_PER_WU, visual: r.unitVisual(i), orders, blocked,
+          hp: Math.round(r.unitHp(i) / 255 * hpMax), hpMax, build: r.unitBuild(i) / 255, flags: r.unitFlags(i) };
+      }
+      return null;
+    },
+    waitTick: (tick, timeoutMs = 10000) => new Promise((resolve, reject) => {
+      const start = performance.now();
+      const poll = (): void => {
+        if (c.tick >= tick) resolve();
+        else if (performance.now() - start > timeoutMs) reject(new Error(`tick ${tick} timeout at ${c.tick}`));
+        else requestAnimationFrame(poll);
+      };
+      poll();
+    }),
     get tick() {
       return c.tick;
     },
@@ -257,7 +373,7 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       return game.ready !== null;
     },
     get simId() {
-      return game.ready?.simId ?? null;
+      return game.status.value?.simId ?? game.ready?.simId ?? null;
     },
     get mapSimHash() {
       return game.ready?.mapSimHash ?? null;
@@ -301,6 +417,23 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       return r === null ? null : { tick: r.tick, hashTick: r.hashTick, hash: r.hash >>> 0 };
     },
     ownHandles: () => c.ownHandles(),
+    inspection: () => {
+      const r = c.lastFrame;
+      if (!r) return null;
+      const eco = Array.from({ length: r.ecoCount }, (_, i) => ({ army: r.ecoArmy(i),
+        massStored: r.ecoValue(i, EcoField.massStored), massCapacity: r.ecoValue(i, EcoField.massCapacity), massOverflow: r.ecoValue(i, EcoField.massOverflow),
+        energyStored: r.ecoValue(i, EcoField.energyStored), energyCapacity: r.ecoValue(i, EcoField.energyCapacity) }));
+      const watches = Array.from({ length: r.watchCount }, (_, i) => {
+        const handle = r.watchHandle(i), product = r.watchFactoryBp(i);
+        let typeId: string | null = null;
+        for (let j = 0; j < r.unitCount; j++) if (r.unitHandle(j) === handle) { typeId = game.bp.ids[r.unitVisual(j)] ?? null; break; }
+        return { handle, typeId, product: game.bp.ids[product] ?? null, progress: r.watchFactoryProgress(i),
+          queue: Array.from({ length: r.watchFactoryQueueCount(i) }, (_, j) => game.bp.ids[r.watchFactoryQueueBp(i, j)] ?? ''),
+          rally: { x: r.watchRallyX(i) / RAW_PER_WU, z: r.watchRallyZ(i) / RAW_PER_WU } };
+      });
+      return { viewer: r.viewer, viewArmy: c.viewArmy, tick: r.tick, flowTick: r.flowTick,
+        readOnlyCommands: c.readOnlyCommands, sentCommands: c.commands.sent, eco, watches };
+    },
     armyUnitCount: (army) => {
       const r = c.lastFrame;
       if (r === null) return 0;
@@ -308,12 +441,13 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       for (let i = 0; i < r.unitCount; i++) if (r.unitArmy(i) === army) n++;
       return n;
     },
-    sendMove: (handles, x, z) => c.moveTo(x * RAW_PER_WU, z * RAW_PER_WU, handles),
+    sendMove: (handles, x, z, queue = false) => c.moveTo(x * RAW_PER_WU, z * RAW_PER_WU, handles, undefined, queue),
     lastMoveTarget: () => game.lastMove,
     select: (handles) => {
       if (handles === null) c.selection.selectAll();
       else if (handles.length === 0) c.selection.clear();
       else c.selection.set(handles);
+      c.syncSelection();
       return c.selection.count;
     },
     ctl: (msg) => c.sendCtl(msg),
@@ -450,6 +584,29 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
     get budgetOpen() {
       return game.budgetOpen.value;
     },
+    fxStats: () => ({ ...game.fx.stats }),
+    audioStats: () => game.audio.engine.stats(),
+    resetAudioStats: () => game.audio.engine.resetStats(),
+    audioLoadReport: async () => {
+      const report = await game.audio.ready;
+      return { ...report, paths: { ...report.paths } };
+    },
+    audioSnapshot: () => {
+      const engine = game.audio.engine;
+      return { listener: { ...engine.spatial.listener }, contextState: engine.context.state, voices: engine.voices?.voiceCount ?? 0,
+        muted: engine.muted, maxVoices: engine.voices?.maxVoices ?? null, poolSize: engine.voices?.poolSize ?? null };
+    },
+    soundVoices: name => {
+      const engine = game.audio.engine, index = engine.catalog?.resolveIndex(name, engine.faction) ?? -1;
+      return index < 0 ? 0 : engine.voices?.soundVoices(index) ?? 0;
+    },
+    audioSpatial: (name, x, z) => {
+      const engine = game.audio.engine, index = engine.catalog?.resolveIndex(name, engine.faction) ?? -1;
+      if (index < 0 || engine.catalog === null) return null;
+      const sound = engine.catalog.byIndex(index), out = { gain: 0, pan: 0 };
+      const audible = engine.spatial.spatialize(SOUND_CATEGORIES.indexOf(sound.category), x, z, out);
+      return { audible, ...out };
+    },
     stats: () => {
       const s = game.stats.value;
       return s === null ? null : (JSON.parse(JSON.stringify(s)) as unknown);
@@ -459,6 +616,10 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       return s === null ? null : (JSON.parse(JSON.stringify(s)) as unknown);
     },
     renderStats,
+    visibility: () => {
+      const v = game.visibility.snapshot;
+      return v === null ? null : { viewer: v.viewer, tick: v.tick, epoch: v.epoch, dim: v.dim, cells: Array.from(v.cells) };
+    },
     exportLogBytes: async () => (await game.exportLog(false)).byteLength,
   };
   const w = window as unknown as Record<string, unknown>;
@@ -496,7 +657,7 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
   const draws: number[] = [];
   const cpu: number[] = [];
   const gpu: number[] = [];
-  const passMax = { terrain: 0, water: 0, units: 0, overlay: 0 };
+  const passMax = { terrain: 0, water: 0, fog: 0, units: 0, icons: 0, overlay: 0 };
   let uiMin = Infinity;
   let uiMax = 0;
   let cuMin = Infinity;
@@ -519,7 +680,9 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
         if (s.gpuMs !== undefined) gpu.push(s.gpuMs);
         passMax.terrain = Math.max(passMax.terrain, s.drawsByPass.terrain);
         passMax.water = Math.max(passMax.water, s.drawsByPass.water);
+        passMax.fog = Math.max(passMax.fog, s.drawsByPass.fog);
         passMax.units = Math.max(passMax.units, s.drawsByPass.units);
+        passMax.icons = Math.max(passMax.icons, s.drawsByPass.icons);
         passMax.overlay = Math.max(passMax.overlay, s.drawsByPass.overlay);
         uiMin = Math.min(uiMin, s.unitInstances);
         uiMax = Math.max(uiMax, s.unitInstances);

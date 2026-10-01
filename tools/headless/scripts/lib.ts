@@ -6,6 +6,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REPLAY_PATHS } from '../src/replay/assets.ts';
+export { REPLAY_PATHS } from '../src/replay/assets.ts';
 import { parseGolden, type Golden } from '../src/goldens.ts';
 
 export const HEADLESS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -20,6 +22,11 @@ export const XXH32_WASM_PATH = resolve(HEADLESS_DIR, 'src/spk5/xxh32.wasm');
 
 /** Map files the scenarios reference (repo-relative paths, see src/scenarios.ts). */
 export const MAP_PATHS: readonly string[] = ['content/maps/hollow-ridge.rtsmap', 'content/maps/setons.rtsmap'];
+
+/** Golden replay asset keys shared with the statically bundled worker list. */
+export function loadReplays(): Record<string, Uint8Array> {
+  return Object.fromEntries(REPLAY_PATHS.map((path) => [path, new Uint8Array(readFileSync(resolve(REPO_DIR, path)))]));
+}
 
 /** Bytes of every scenario map by repo-relative path (RunOptions.maps / JobAssets.maps). */
 export function loadMaps(): Record<string, Uint8Array> {

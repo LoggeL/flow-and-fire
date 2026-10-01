@@ -77,7 +77,9 @@ describe('std140Layout', () => {
     expect(FRAME_LAYOUT.offsetOf('camPosInt')).toBe(64);
     expect(FRAME_LAYOUT.offsetOf('camFrac')).toBe(80);
     expect(FRAME_LAYOUT.offsetOf('viewport')).toBe(64 + 16 * 8);
-    expect(FRAME_LAYOUT.size).toBe(64 + 16 * 9);
+    expect(FRAME_LAYOUT.offsetOf('strategic')).toBe(64 + 16 * 9);
+    expect(FRAME_LAYOUT.offsetOf('iconParams')).toBe(64 + 16 * 10);
+    expect(FRAME_LAYOUT.size).toBe(64 + 16 * 11);
     expect(PALETTE_LAYOUT.offsetOf('visual')).toBe(MAX_ARMY_COLORS * 16);
   });
 });

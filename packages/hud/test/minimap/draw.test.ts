@@ -1,0 +1,4 @@
+import { it, expect, vi } from 'vitest';
+import { worldPoint, drawCamera, drawFog } from '../../src/index.ts';
+import type { MiniCtx } from '../../src/index.ts';
+it('clamps pointer coordinates and differentiates fog stages', () => { expect(worldPoint(-10, 300, { left: 0, top: 0, width: 200, height: 200 }, 1024)).toEqual([0, 1024]); const ctx = { fillStyle: '', strokeStyle: '', lineWidth: 0, clearRect: vi.fn(), fillRect: vi.fn(), beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), closePath: vi.fn(), stroke: vi.fn() } as unknown as MiniCtx; drawFog(ctx, { res: 2, cells: new Uint8Array([0, 1, 2, 2]) }, 200); expect(ctx.fillRect).toHaveBeenCalledTimes(2); drawCamera(ctx, [[0, 0], [512, 0], [512, 512], [0, 512]], 1024, 200); expect(ctx.moveTo).toHaveBeenCalledWith(0, 0); expect(ctx.lineTo).toHaveBeenCalledWith(100, 100); });

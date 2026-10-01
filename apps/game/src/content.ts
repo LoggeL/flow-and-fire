@@ -53,6 +53,8 @@ export function startLayout(map: StartSource, playerArmy: number, enemyArmy: num
 /** Terrain query for land spawns (ClientMap fits). */
 export interface LandSource {
   readonly sizeWu: number;
+  /** Optional terrain samples, used to avoid nav-blocked cliff cells in flight spawns. */
+  readonly heightfield?: { readonly dim: number; readonly heights: Uint16Array; readonly heightScaleRaw: number };
   /** Water depth (raw) at a point; ≤ 0 = dry. */
   waterDepthRaw(xRaw: number, zRaw: number): number;
 }
@@ -91,6 +93,15 @@ export function discIsLand(src: LandSource, xWU: number, zWU: number, radiusWU: 
       const dz = z - zWU;
       if (dx * dx + dz * dz > r * r) continue;
       if (src.waterDepthRaw(x * RAW_PER_WU, z * RAW_PER_WU) > LAND_SPAWN_MAX_DEPTH_RAW) return false;
+      const hf = src.heightfield;
+      if (hf !== undefined) {
+        if (x < 1 || z < 1 || x >= size - 1 || z >= size - 1) return false;
+        const k = z * hf.dim + x;
+        const a = hf.heights[k]!; const b = hf.heights[k + 1]!;
+        const c = hf.heights[k + hf.dim]!; const d = hf.heights[k + hf.dim + 1]!;
+        // Same class-1 land slope limit as nav.terrainCell: 0.75 WU per cell.
+        if ((Math.max(a, b, c, d) - Math.min(a, b, c, d)) * hf.heightScaleRaw > 3072) return false;
+      }
     }
   }
   return true;

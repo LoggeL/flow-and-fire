@@ -1,0 +1,14 @@
+.ff-cell__progress {position:absolute;left:0;right:0;bottom:0;height:3px!important;margin:0;pointer-events:none;}
+.ff-cell__tiers {position:absolute;left:.3rem;right:.3rem;bottom:.15rem;display:flex;gap:2px;justify-content:center;}
+.ff-cell__tiers i {width:.4rem;height:2px;background:var(--text-lo)} .ff-cell__tiers i.is-current{background:var(--text-hi)} .ff-cell__tiers i.is-missing{opacity:0}
+.ff-cell__lock{position:absolute;left:.25rem;top:1.35rem;color:var(--text-lo)}
+.ff-cell.is-locked .ff-cell__name{color:var(--text-lo)} .ff-cell.is-locked .ff-cell__icon{opacity:.55}
+.ff-cell__badge{position:absolute;right:.15rem;top:.1rem;background:var(--ember-500);color:var(--text-on-ember);font-size:var(--fs-micro);padding:0 .15rem}
+.ff-order.is-mixed{border-style:dashed} .ff-order__state{position:absolute;bottom:0;left:.2rem;font-size:var(--fs-micro)}
+.orders{gap:2px} .orders .ff-order{width:2.125rem;height:2.125rem} .orders .ff-order__key{font-size:var(--fs-micro);line-height:1}
+.card__grid .ff-cell__name{font-size:var(--fs-micro);bottom:.4rem;left:.12rem;right:.12rem;white-space:normal;line-height:1.02;max-height:1.8em;}
+.ff-cell.is-danger,.ff-order.is-danger{--fg:var(--crit)}
+/* Short labels may wrap in the pseudo locale; retain the full accessible name. */
+.ff-cell__name,.card__grid .ff-cell__name{white-space:normal;overflow-wrap:anywhere;line-height:1.05;max-height:none;font-size:var(--fs-micro);left:.15rem;right:.15rem;bottom:.4rem}
+/* Plex accented glyphs need enough line box height at 1.25 scale. */
+.ff-cell__name,.card__grid .ff-cell__name{line-height:1.2}

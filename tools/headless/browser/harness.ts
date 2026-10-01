@@ -10,6 +10,7 @@ import type { FafHarness } from '../src/harness/page/main.ts';
 import type { SeriesResult } from '../src/series.ts';
 
 const HEADLESS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+export const REPO_DIR = resolve(HEADLESS_DIR, '../..');
 export const DIST_DIR = resolve(HEADLESS_DIR, 'dist-harness');
 export const GOLDENS_DIR = resolve(HEADLESS_DIR, 'goldens');
 /** Raw per-engine outputs (*.tmp.json, git-ignored); the scripts aggregate them. */
@@ -65,10 +66,13 @@ export async function openHarness(page: Page): Promise<void> {
 }
 
 export async function runSeriesIn(page: Page, job: Job, engine: string): Promise<SeriesResult> {
-  return page.evaluate(
+  const result = await page.evaluate(
     ({ job, engine }) => (window as unknown as { fafHarness: FafHarness }).fafHarness.series(job, engine),
     { job, engine },
   );
+  const browser = page.context().browser();
+  if (browser === null) throw new Error('harness browser unavailable');
+  return { ...result, engine: { ...result.engine, browserVersion: browser.version() } };
 }
 
 export function writeRaw(name: string, data: unknown): string {

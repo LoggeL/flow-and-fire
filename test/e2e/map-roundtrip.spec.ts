@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import { createTestPlaneMap, mapSimHash, readRtsMap, writeRtsMap } from '../../packages/formats/src/index.ts';
 import { simIdFor } from '../../packages/sim-host/src/identity.ts';
 import { attachJson, captureErrors, expectNoErrors, HOLLOW_RIDGE, openGame, SERVERS, writeReport } from './support/game.ts';

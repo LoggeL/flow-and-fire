@@ -1,0 +1,109 @@
+{
+  "bench": "propfields",
+  "date": "2026-09-29T20:59:09.707Z",
+  "node": "v24.18.0",
+  "cpu": "Apple M5 Pro",
+  "runs": 25,
+  "map": {
+    "name": "setons",
+    "sizeWu": 1024,
+    "props": 72,
+    "bytes": 2698440
+  },
+  "expansion": [
+    {
+      "target": 30000,
+      "props": 29978,
+      "fields": 16,
+      "densityPerKWu2": 71,
+      "expand": {
+        "runs": 25,
+        "p50Ms": 8.555,
+        "p95Ms": 9.763,
+        "minMs": 7.963,
+        "maxMs": 11.665
+      },
+      "validate": {
+        "runs": 25,
+        "p50Ms": 4.201,
+        "p95Ms": 4.676,
+        "minMs": 3.908,
+        "maxMs": 5.029
+      }
+    },
+    {
+      "target": 65000,
+      "props": 64674,
+      "fields": 16,
+      "densityPerKWu2": 153,
+      "expand": {
+        "runs": 25,
+        "p50Ms": 18.062,
+        "p95Ms": 23.346,
+        "minMs": 17.299,
+        "maxMs": 23.951
+      },
+      "validate": {
+        "runs": 25,
+        "p50Ms": 9.332,
+        "p95Ms": 9.774,
+        "minMs": 8.701,
+        "maxMs": 9.914
+      }
+    }
+  ],
+  "codec256": {
+    "fields": 256,
+    "bytes": 67700,
+    "encode": {
+      "runs": 25,
+      "p50Ms": 0.181,
+      "p95Ms": 0.535,
+      "minMs": 0.147,
+      "maxMs": 2.09
+    },
+    "decode": {
+      "runs": 25,
+      "p50Ms": 0.118,
+      "p95Ms": 0.196,
+      "minMs": 0.112,
+      "maxMs": 0.26
+    }
+  },
+  "rtsmap": {
+    "legacy": {
+      "bytes": 2698440,
+      "read": {
+        "runs": 25,
+        "p50Ms": 5.636,
+        "p95Ms": 6.456,
+        "minMs": 5.412,
+        "maxMs": 8.211
+      },
+      "write": {
+        "runs": 25,
+        "p50Ms": 5.952,
+        "p95Ms": 7.912,
+        "minMs": 5.636,
+        "maxMs": 8.422
+      }
+    },
+    "with65kFields": {
+      "bytes": 2700208,
+      "read": {
+        "runs": 25,
+        "p50Ms": 15.093,
+        "p95Ms": 16.541,
+        "minMs": 14.21,
+        "maxMs": 18.8
+      },
+      "write": {
+        "runs": 25,
+        "p50Ms": 15.082,
+        "p95Ms": 16.465,
+        "minMs": 14.612,
+        "maxMs": 16.549
+      }
+    }
+  }
+}

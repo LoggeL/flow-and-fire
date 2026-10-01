@@ -31,6 +31,7 @@ export interface ModelPartInfo {
   readonly name: string;
   readonly parent: number;
   readonly pivot: readonly [number, number, number];
+  readonly anim?: string;
 }
 
 export interface ParsedModel {
@@ -279,7 +280,8 @@ function parseParts(v: unknown): ModelPartInfo[] {
     if (!isObj(p) || !Array.isArray(p.pivot) || p.pivot.length !== 3) throw new GlbError('format', `extras.faf.parts[${i}]`);
     const parent = Number(p.parent ?? 0);
     if (!Number.isInteger(parent) || parent < 0 || (i > 0 && parent >= i)) throw new GlbError('format', `extras.faf.parts[${i}].parent`);
-    return { name: String(p.name ?? `part${i}`), parent, pivot: [Number(p.pivot[0]), Number(p.pivot[1]), Number(p.pivot[2])] as const };
+    return { name: String(p.name ?? `part${i}`), parent, pivot: [Number(p.pivot[0]), Number(p.pivot[1]), Number(p.pivot[2])] as const,
+      ...(typeof p.anim === 'string' ? { anim: p.anim } : {}) };
   });
 }
 
@@ -295,6 +297,11 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
   if (!isObj(scene)) throw new GlbError('format', 'no scene');
   const faf = isObj(scene.extras) && isObj(scene.extras.faf) ? scene.extras.faf : {};
   const parts = parseParts(faf.parts);
+  // Modelkit is +Z forward; yaw-zero Game meshes are +X forward. Rotate geometry,
+  // normals and pivots together with a proper rotation (no winding reversal or scale).
+  const forwardZ = faf.forward === '+z';
+  const orient = (x: number, y: number, z: number): readonly [number, number, number] => forwardZ ? [z, y, -x] : [x, y, z];
+  const orientedParts = parts.map(p => ({ ...p, pivot: orient(...p.pivot) }));
   const nodes: Json[] = Array.isArray(json.nodes) ? json.nodes : [];
   const meshes: Json[] = Array.isArray(json.meshes) ? json.meshes : [];
   const lodNodes: { lod: number; mesh: number; world: number[] }[] = [];
@@ -316,7 +323,7 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
 
   const partPivots = new Float32Array(parts.length * 3);
   const partParents = new Uint8Array(parts.length);
-  parts.forEach((p, i) => {
+  orientedParts.forEach((p, i) => {
     partPivots.set(p.pivot, i * 3);
     partParents[i] = p.parent;
   });
@@ -337,9 +344,9 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
       const x = pos.values[i * 3]!;
       const y = pos.values[i * 3 + 1]!;
       const z = pos.values[i * 3 + 2]!;
-      const wx = world[0]! * x + world[4]! * y + world[8]! * z + world[12]!;
-      const wy = world[1]! * x + world[5]! * y + world[9]! * z + world[13]!;
-      const wz = world[2]! * x + world[6]! * y + world[10]! * z + world[14]!;
+      const [wx, wy, wz] = orient(world[0]! * x + world[4]! * y + world[8]! * z + world[12]!,
+        world[1]! * x + world[5]! * y + world[9]! * z + world[13]!,
+        world[2]! * x + world[6]! * y + world[10]! * z + world[14]!);
       positions[i * 3] = wx;
       positions[i * 3 + 1] = wy;
       positions[i * 3 + 2] = wz;
@@ -359,9 +366,8 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
         const x = nrm.values[i * 3]!;
         const y = nrm.values[i * 3 + 1]!;
         const z = nrm.values[i * 3 + 2]!;
-        const nx = nm[0]! * x + nm[1]! * y + nm[2]! * z;
-        const ny = nm[3]! * x + nm[4]! * y + nm[5]! * z;
-        const nz = nm[6]! * x + nm[7]! * y + nm[8]! * z;
+        const [nx, ny, nz] = orient(nm[0]! * x + nm[1]! * y + nm[2]! * z,
+          nm[3]! * x + nm[4]! * y + nm[5]! * z, nm[6]! * x + nm[7]! * y + nm[8]! * z);
         const l = Math.hypot(nx, ny, nz) || 1;
         normals[i * 3] = nx / l;
         normals[i * 3 + 1] = ny / l;
@@ -381,6 +387,21 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
       }
     }
     const idx = r.accessor(Number(prim.indices));
+    let colors: Float32Array | undefined;
+    let mask: Uint8Array | undefined;
+    if (prim.attributes.COLOR_0 !== undefined || prim.attributes._MASK !== undefined) {
+      if (prim.attributes.COLOR_0 === undefined || prim.attributes._MASK === undefined) throw new GlbError('format', 'COLOR_0 and _MASK must be paired');
+      const col = r.accessor(Number(prim.attributes.COLOR_0)), channels = r.accessor(Number(prim.attributes._MASK));
+      if (col.count !== n || col.comps !== 3 || channels.count !== n || channels.comps !== 4) throw new GlbError('format', 'invalid palette attribute sizes');
+      colors = new Float32Array(col.values);
+      mask = new Uint8Array(channels.values.length);
+      for (let i = 0; i < colors.length; i++) if (!Number.isFinite(colors[i]) || colors[i]! < 0 || colors[i]! > 1) throw new GlbError('format', 'palette color out of range');
+      for (let i = 0; i < mask.length; i++) {
+        const value = channels.values[i]!;
+        if (!Number.isFinite(value) || value < 0 || value > 1) throw new GlbError('format', 'palette mask out of range');
+        mask[i] = Math.round(value * 255);
+      }
+    }
     if (idx.comps !== 1 || idx.count % 3 !== 0) throw new GlbError('format', 'indices must be a triangle list');
     const indices = n <= 65536 ? new Uint16Array(idx.count) : new Uint32Array(idx.count);
     for (let i = 0; i < idx.count; i++) {
@@ -392,6 +413,7 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
       positions,
       normals,
       partIds,
+      ...(colors === undefined ? {} : { colors, mask: mask! }),
       indices,
       vertexCount: n,
       indexCount: idx.count,
@@ -401,5 +423,5 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
     return data;
   });
   const id = typeof faf.id === 'string' ? faf.id : null;
-  return { id, lods, parts, meshopt: r.meshopt };
+  return { id, lods, parts: orientedParts, meshopt: r.meshopt };
 }

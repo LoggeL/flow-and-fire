@@ -1,0 +1,21 @@
+import { expect, test } from './support/silent-test.ts';
+import { openGame, SERVERS } from './support/game.ts';
+for (const server of SERVERS) test(`MS3 control groups (${server.name})`, async ({ page }) => {
+  await openGame(page, server.url, 'map=testplane&spawn=tanks&cubes=12&enemy=0', 12, { legacySelection: false });
+  const hs = await page.evaluate(() => window.__faf!.ownHandles());
+  await page.evaluate((ids) => window.__faf!.select(ids), hs.slice(0, 3));
+  await page.keyboard.press('Control+Digit1');
+  expect(await page.evaluate(() => window.__faf!.controlGroups()[1])).toEqual(hs.slice(0, 3));
+  await page.evaluate((ids) => window.__faf!.select(ids), hs.slice(3, 5));
+  await page.keyboard.press('Alt+Shift+Digit1');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Digit1');
+  expect(await page.evaluate(() => window.__faf!.selected())).toEqual(hs.slice(0, 5));
+  await page.evaluate((ids) => { window.__faf!.select(ids); window.__faf!.setCamera(400, 400, 100); }, hs.slice(5, 6));
+  await page.keyboard.press('Shift+Digit1');
+  expect(await page.evaluate(() => window.__faf!.selected().length)).toBe(6);
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Digit1');
+  const state = await page.evaluate(() => { const h = window.__faf!; const p = h.controlGroups()[1]!.map((id) => h.unitPos(id)!); return { camera: h.camera(), x: p.reduce((a, u) => a + u.x, 0) / p.length, z: p.reduce((a, u) => a + u.z, 0) / p.length }; });
+  expect(Math.hypot(state.camera.x - state.x, state.camera.z - state.z)).toBeLessThan(2);
+  await page.evaluate((id) => { window.__faf!.select([id]); window.__faf!.console('kill'); }, hs[0]!);
+  await expect.poll(() => page.evaluate(() => window.__faf!.controlGroups()[1]!.length)).toBe(4);
+});

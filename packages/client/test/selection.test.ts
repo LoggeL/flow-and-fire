@@ -1,5 +1,5 @@
 import { FrameReader, UnitFlags } from '@faf/protocol';
-import { RAW_PER_WU, RtsCamera } from '@faf/render';
+import { RAW_PER_WU, RtsCamera, eyeDistanceWU, iconProjectionScale, iconScreenRect } from '@faf/render';
 import { describe, expect, it } from 'vitest';
 import { CommandBuilder } from '../src/commands.ts';
 import { Selection, interpolatedPos, isOwnUnit } from '../src/selection.ts';
@@ -26,16 +26,17 @@ function expectedBox(r: FrameReader, cam: RtsCamera, x0: number, y0: number, x1:
   for (let i = 0; i < r.unitCount; i++) {
     if (r.unitArmy(i) !== 0) continue;
     if (!cam.project(r.unitCur(i, 0), r.unitCur(i, 1), r.unitCur(i, 2), s)) continue;
-    if (s[0]! >= x0 && s[0]! <= x1 && s[1]! >= y0 && s[1]! <= y1) out.push(r.unitHandle(i));
+    const radius = 0.5 * iconProjectionScale(cam.viewportHeight, cam.fovY) / eyeDistanceWU(cam, r.unitCur(i, 0), r.unitCur(i, 1), r.unitCur(i, 2));
+    if (s[0]! + radius >= x0 && s[0]! - radius <= x1 && s[1]! + radius >= y0 && s[1]! - radius <= y1) out.push(r.unitHandle(i));
   }
   return out;
 }
 
 describe('Selection', () => {
-  it('defaults to all own units (no highlight), never enemies', () => {
+  it('starts empty; explicit selectAll highlights own units and never enemies', () => {
     const { sel, reader } = setup();
-    expect(sel.mode).toBe('allOwn');
-    expect(sel.count).toBe(100);
+    expect(sel.mode).toBe('explicit');
+    expect(sel.count).toBe(0);
     expect(sel.highlightCount).toBe(110);
     for (let i = 0; i < sel.count; i++) expect(reader.unitArmy(sel.indices[i]!)).toBe(0);
     expect([...sel.highlight.subarray(0, 110)].every((v) => v === 0)).toBe(true);
@@ -133,4 +134,28 @@ describe('Selection', () => {
     expect(out[0]).toBe(reader.unitCur(0, 0));
     expect(UnitFlags.NoInterp).toBe(1 << 10);
   });
+});
+
+
+it('strategic icon boxes match rendered rectangles over 200 random boxes and 1000 units', () => {
+  const { sel, cam, reader } = setup(1000, 0);
+  sel.visuals = [{ spec: { hull: 'box', size: [1, 1, 1] }, icon: 'cube', selectionRadius: 0.7, iconThreshold: 14 }];
+  sel.mapSizeWu = 512;
+  cam.distance = 900; cam.update();
+  let state = 43;
+  const random = (): number => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 4294967296; };
+  const rect = new Float64Array(4);
+  for (let b = 0; b < 200; b++) {
+    const x = 560 + random() * 160; const y = 300 + random() * 100;
+    const w = 2 + random() * 80; const h = 2 + random() * 80;
+    const expected: number[] = [];
+    for (let i = 0; i < reader.unitCount; i++) if (iconScreenRect(cam, reader.unitCur(i, 0), reader.unitCur(i, 1), reader.unitCur(i, 2), rect) && rect[2]! >= x && rect[0]! <= x + w && rect[3]! >= y && rect[1]! <= y + h) expected.push(reader.unitHandle(i));
+    sel.boxSelect(cam, 1, x, y, x + w, y + h, false);
+    expect(Array.from(sel.selected())).toEqual(expected);
+  }
+  const p = new Float64Array(4);
+  cam.project(reader.unitCur(0, 0), reader.unitCur(0, 1), reader.unitCur(0, 2), p);
+  sel.clear(); const h = sel.clickSelect(cam, 1, p[0]!, p[1]!, false);
+  sel.clickSelect(cam, 1, p[0]!, p[1]!, true); expect(sel.count).toBe(0);
+  sel.selectTypeOnScreen(cam, 1, h); expect(sel.count).toBe(1000);
 });

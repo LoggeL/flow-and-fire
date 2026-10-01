@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/silent-test.ts';
 import { attachJson, captureErrors, COI_URL, expectNoErrors, HOLLOW_RIDGE, openGame, PERF_GATE, SERVERS, stepTicks, waitTick, writeReport } from './support/game.ts';
 import { colorShare, decodePng, pixelStats } from './support/png.ts';
 import { CLEAR_RGB } from './support/terrain.ts';
@@ -88,13 +88,17 @@ for (const server of SERVERS) {
     expect(after.render.drawsByPass.terrain).toBe(1);
     expect(after.render.drawsByPass.water).toBe(1);
     expect(after.render.terrainPatches).toBeGreaterThan(0);
-    expect(after.render.decals).toBe(18);
+    expect(after.render.decals - after.render.dynamicDecals).toBe(18);
     expect(after.render.unitInstances).toBeGreaterThan(0);
     expect(after.probe.mismatches, 'GPU probe after restore').toBe(0);
     expect(stats.distinctColors).toBeGreaterThanOrEqual(16);
     expect(stats.dominantShare).toBeLessThan(0.9);
     expect(clearShare, 'terrain pixels (not the clear color)').toBeLessThan(0.05);
     if (PERF_GATE) expect(restoreMs, 'picture back after restore').toBeLessThanOrEqual(RESTORE_LIMIT_MS);
+    // MS3: the restored context must also rebuild the icon atlas.
+    await page.evaluate(() => window.__faf!.setCamera(256, 256, 900));
+    await expect.poll(() => page.evaluate(() => window.__faf!.renderStats().passDraws.icons)).toBe(1);
+    expect(await page.evaluate(() => window.__faf!.renderStats().iconCount)).toBeGreaterThan(0);
     expectNoErrors(errors.filter((e) => !isLossMessage(e)));
   });
 }

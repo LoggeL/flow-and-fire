@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import type { FlightReport } from '../../apps/game/src/hooks.ts';
 import { attachJson, captureErrors, expectNoErrors, MEASURED_LOCALLY, openGame, PERF_GATE, SERVERS, SETONS, waitTick, writeReport } from './support/game.ts';
 

@@ -1,20 +1,27 @@
 /**
  * `step(world, commands, probe?)`: advances the world by exactly one tick (PLAN §3.1: the state
- * only changes through step). Phases run in the binding order of PLAN §3.4; MS1 runs
- * 1 CommandApply, 2 Orders, 7 Movement, 8 SpatialRebuild, 15 Cleanup, 16 Output.
+ * only changes through step). Phases run in the binding order of PLAN §3.4; MS3 runs
+ * 1 CommandApply, 2 Orders, 3 PathService, 7 Movement, 8 SpatialRebuild, 15 Cleanup, 16 Output.
  *
  * Commands are applied in this step regardless of the envelope's tick field (inputDelay = 0;
  * the host stamps the application tick for recording).
  */
 import { fullHash as arenaFullHash, ruleHash as arenaRuleHash } from '@faf/heap';
 import { CommandBatchView, type CommandEnvelope } from '@faf/protocol';
+import { intelPhase } from './intel.ts';
+import { weaponsPhase, projectilesPhase, deathPhase, matchPhase } from './combat.ts';
+import { reclaimPhase } from './reclaim.ts';
+import { productionPhase } from './production.ts';
 import { commandApplyPhase } from './commands.ts';
 import { HASH_INTERVAL_TICKS } from './constants.ts';
-import { movementPhase, ordersPhase } from './movement.ts';
+import { constructionPhase, economyPhase } from './economy.ts';
+import { movementPhase } from './movement.ts';
+import { ordersPhase } from './orders.ts';
+import { pathServicePhase } from './pathservice.ts';
 import { PhaseId, type PhaseProbe } from './phases.ts';
 import { HL_LAST_HASH, HL_LAST_HASH_TICK, WH_TICK } from './schema.ts';
 import { spatialRebuildPhase } from './spatial.ts';
-import { cleanupPhase } from './units.ts';
+import { cleanupPhase } from './unit-storage.ts';
 import type { World } from './world.ts';
 
 /** Commands of one step: a binary batch, a positioned batch cursor, or envelope objects. */
@@ -50,6 +57,7 @@ export function step(w: World, cmds?: StepCommands, probe: PhaseProbe = NO_PROBE
   const h = w.header.i32;
   const tick = h[WH_TICK]! + 1;
   h[WH_TICK] = tick;
+  w.footprintEvents.i32[0] = 0;w.combatEvents.i32[0]=0;
 
   probe.begin(PhaseId.CommandApply);
   stageCommands(w, cmds);
@@ -61,6 +69,14 @@ export function step(w: World, cmds?: StepCommands, probe: PhaseProbe = NO_PROBE
   ordersPhase(w);
   probe.end(PhaseId.Orders);
 
+  probe.begin(PhaseId.PathService);
+  pathServicePhase(w);
+  probe.end(PhaseId.PathService);
+
+  productionPhase(w);
+  probe.begin(PhaseId.Economy); economyPhase(w); probe.end(PhaseId.Economy);
+  probe.begin(PhaseId.Construction); constructionPhase(w);productionPhase(w,true);reclaimPhase(w); probe.end(PhaseId.Construction);
+
   probe.begin(PhaseId.Movement);
   movementPhase(w);
   probe.end(PhaseId.Movement);
@@ -69,7 +85,12 @@ export function step(w: World, cmds?: StepCommands, probe: PhaseProbe = NO_PROBE
   spatialRebuildPhase(w);
   probe.end(PhaseId.SpatialRebuild);
 
+  probe.begin(PhaseId.Intel);intelPhase(w);probe.end(PhaseId.Intel);
+  probe.begin(PhaseId.Weapons);weaponsPhase(w);probe.end(PhaseId.Weapons);
+  probe.begin(PhaseId.Projectiles);projectilesPhase(w);probe.end(PhaseId.Projectiles);
+  probe.begin(PhaseId.Death);deathPhase(w);probe.end(PhaseId.Death);
   probe.begin(PhaseId.Cleanup);
+  matchPhase(w);deathPhase(w);
   cleanupPhase(w);
   probe.end(PhaseId.Cleanup);
 
@@ -100,7 +121,7 @@ export function ruleHash(w: World): number {
   return arenaRuleHash(w.arena, w.hasher);
 }
 
-/** Full hash including derived state (spatial grids; desync-diff and restore tests). */
+/** Full hash including derived state (spatial grids, nav caches; desync-diff and restore tests). */
 export function fullHash(w: World): number {
   return arenaFullHash(w.arena, w.hasher);
 }
@@ -113,4 +134,6 @@ export function snapshot(w: World, target?: Uint8Array): Uint8Array {
 /** Restores a snapshot taken from a world with the same layout (same blueprint table/map size). */
 export function restore(w: World, bytes: Uint8Array): void {
   w.arena.restore(bytes);
+  w.frameFlowTick = -1;
+  w.frameEconomyEvents.fill(0);
 }

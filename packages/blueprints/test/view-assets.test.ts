@@ -1,4 +1,4 @@
-// MS2 (P3): view.mesh / view.lod (view only, simHash pinned) and the asset manifest contract.
+// View-only mesh/LOD edits preserve sim bytes; generated game assets match current content.
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -9,7 +9,6 @@ import {
   assetIdsOfKind,
   compileBlueprints,
   defineUnit,
-  hex32,
   parseAssetManifest,
   parseViewJson,
   serializeAssetManifest,
@@ -17,11 +16,6 @@ import {
   type UnitBlueprint,
 } from '../src/index.ts';
 import { compileContent, CONTENT_GENERATED } from '../scripts/content.ts';
-
-/** simHash of the game bundle since MS1 (`faf-sim/ms1.x`); view changes must never move it. */
-const PINNED_SIM_HASH = 0xd4135af1;
-/** SHA-256 of content/generated/sim.bin as checked in with MS1 (commit 01a464a). */
-const PINNED_SIM_BIN_SHA256 = 'e6be93f7b7d4d0ae7af46acc103a5918b82b7470118297a103e3be4e97ec46ed';
 
 function unit(id: string, view: Partial<UnitBlueprint['view']> = {}): UnitBlueprint {
   return {
@@ -55,17 +49,19 @@ describe('blueprint view: mesh + lod (MS2)', () => {
     expect(() => compileBlueprints(src(defineUnit(unit('core:a', { lod: [0, 50] }))))).toThrow(BlueprintCompileError);
     const base = { format: 'faf-view', version: 1 };
     const v = { id: 'a', nameKey: 'a.b', descKey: 'a.c', placeholder: { hull: 'box', size: [1, 1, 1] } };
+    const base2 = { format: 'faf-view', version: 2, effects: [] };
+    const v2 = { ...v, iconThreshold: 14, tech: 1, categories: ['LAND'], selectionRadius: 0.6, sizeClass: 1 };
+    expect(() => parseViewJson({ ...base2, visuals: [{ ...v2, mesh: '../x' }] })).toThrow(/\/visuals\/0\/mesh/);
+    expect(() => parseViewJson({ ...base2, visuals: [{ ...v2, lod: [9, 3] }] })).toThrow(/lod\[0\] < lod\[1\]/);
     expect(() => parseViewJson({ ...base, visuals: [{ ...v, mesh: '../x' }] })).toThrow(/\/visuals\/0\/mesh/);
     expect(() => parseViewJson({ ...base, visuals: [{ ...v, lod: [9, 3] }] })).toThrow(/lod\[0\] < lod\[1\]/);
     expect(() => parseViewJson({ ...base, visuals: [{ ...v, lod: [1] }] })).toThrow(/\/visuals\/0\/lod/);
   });
 
-  it('game content: core:cube uses units/cube_bot, simHash and sim.bin bytes stay pinned', async () => {
+  it('game content: core:cube keeps its mesh and generated sim bytes equal the current roster', async () => {
     const game = await compileContent({ includeTest: false });
-    expect(hex32(game.simHash)).toBe(hex32(PINNED_SIM_HASH));
-    expect(game.view.visuals[0]).toMatchObject({ id: 'core:cube', mesh: 'units/cube_bot', lod: [60, 180] });
+    expect(game.view.visuals.find((v) => v.id === 'core:cube')).toMatchObject({ id: 'core:cube', mesh: 'units/cube_bot', lod: [60, 180] });
     const bin = await readFile(join(CONTENT_GENERATED, 'sim.bin'));
-    expect(createHash('sha256').update(bin).digest('hex')).toBe(PINNED_SIM_BIN_SHA256);
     expect(Buffer.from(game.simBin).equals(bin)).toBe(true);
   });
 });

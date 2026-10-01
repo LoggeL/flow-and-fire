@@ -1,0 +1,55 @@
+{
+  "skill": "/Users/logge/.codex/skills/.system/imagegen/SKILL.md",
+  "mode": "built-in image_gen",
+  "date": "2026-09-30",
+  "graphics": [
+    {
+      "purpose": "favicon",
+      "source": "source/favicon-imagegen-v1.png",
+      "asset": "../../../apps/game/public/favicon.png",
+      "displaySizes": [
+        16,
+        32
+      ],
+      "prompt": "Use case: logo-brand. Asset type: production favicon for Flow & Fire, a science-fiction real-time strategy game whose compact dark steel-blue interface follows the visual proportions of Supreme Commander Forged Alliance. Primary request: a single crisp emblem readable at 16 and 32 pixels: a broad cyan-blue command chevron surrounding one small warm amber flame/core. Composition: square canvas, one centered symbol occupying 85% of its width, strong silhouette, no fine detail. Style: restrained flat painted game UI icon with very subtle beveled metal edges, dark navy inner negative space. Background: genuinely transparent, no baked checkerboard or square card. Constraints: no text, no letters, no words, no watermark, no scenery, no lighting flare, no duplicates, no tiny decoration. Make a usable icon asset rather than a logo presentation sheet."
+    },
+    {
+      "purpose": "ACU engineering enhancement",
+      "source": "source/acu-engineering-imagegen-v1.png",
+      "asset": "../../../apps/game/src/assets/ui/acu-engineering.png",
+      "displaySizes": [
+        32
+      ],
+      "prompt": "Use case: stylized-concept. Asset type: one production ACU engineering enhancement button icon, read at 32px, for Flow & Fire's compact dark steel-blue RTS HUD inspired by Supreme Commander Forged Alliance. Subject: a single broad open-ended engineering wrench over a simple six-tooth gear, as one fused unmistakable engineering glyph. Palette: pale cyan-blue metal with subtle dark navy bevel, restrained amber center dot. Composition: centered square canvas, fill 85%, minimal large shapes, thick clean silhouette, no tiny machinery. Style: clean restrained game UI bitmap with subtle bevel, consistent with a cyan steel command emblem. Transparent background with true alpha, no surrounding card, no scene. No text, no letters, no numbers, no watermark, no flare, no decorative frame, no icon sheet. Prioritize readability at 32px."
+    },
+    {
+      "purpose": "ACU reinforced armor enhancement",
+      "source": "source/acu-armor-imagegen-v1.png",
+      "asset": "../../../apps/game/src/assets/ui/acu-armor.png",
+      "displaySizes": [
+        32
+      ],
+      "prompt": "Use case: stylized-concept. Asset type: one production reinforced armor enhancement button icon for an ACU commander, displayed at 32px in Flow & Fire's compact dark steel-blue RTS HUD inspired by Supreme Commander Forged Alliance. Subject: one solid broad beveled armored shield plate, angular silhouette, a single raised central reinforcing rib, simple pale cyan-blue metal with dark navy bevel and a small amber core. Composition: square canvas, centered shield occupies85% width, thick large shapes, visuallydistinct from engineering wrench. Style: restrained clean painted game UI bitmap, subtle bevel only. Background genuinely transparent with true alpha, no surrounding card. No text, no letters, no numbers, no watermark, no flare, no scene, no icon sheet, no tiny panel markings. Prioritize immediate recognition and readability at32pixels."
+    }
+  ],
+  "processing": "Original transparent PNGs preserved; sips made only size derivatives. No generation via API CLI or raster repainting.",
+  "existingIcons": "Compiled content strategic SVG glyphs supply unit/building/type icons; restored by current HUD.",
+  "goalRequirement": {
+    "required": true,
+    "plan": "../../status/integration-goal.md",
+    "futureMissingGraphics": "Generate, inspect, preserve in this project, wire into runtime and verify final-size native rendering before qualification."
+  },
+  "coverage": {
+    "generatedRasterAssets": 3,
+    "compiledUnitAndBuildingTypes": 14,
+    "unitTypeMapping": "../../../packages/hud/src/data/icons.ts",
+    "unitIconCoverageTest": "../../../packages/hud/test/data/icons.test.tsx",
+    "cursorStates": 21,
+    "cursorSource": "../../../apps/game/src/cursors.ts",
+    "nativeQualification": ".git/integration-goal/ms61-integrated-native-20261001-r1/current/qualification.json",
+    "currentMissing": [],
+    "nativeBuild": "b411bee7eaa2-d1d202021",
+    "uiCasesPassed": 24,
+    "qualificationScope": "All24 UI cases passed in the current39-case run; six context fixture cases and six literal latency cases failed separately."
+  }
+}

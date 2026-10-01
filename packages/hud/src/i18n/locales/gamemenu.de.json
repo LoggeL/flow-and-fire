@@ -1,0 +1,9 @@
+{
+  "ui.gamemenu.title": "Spielmenü",
+  "ui.gamemenu.resume": "Fortsetzen",
+  "ui.gamemenu.settings": "Einstellungen",
+  "ui.gamemenu.keys": "Tastenübersicht",
+  "ui.gamemenu.surrender": "Aufgeben",
+  "ui.gamemenu.confirm": "Dieses Gefecht aufgeben?",
+  "ui.gamemenu.quit": "Ins Hauptmenü"
+}

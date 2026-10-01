@@ -20,6 +20,7 @@ export type TransportRequest = 'auto' | 'sab' | 'transfer';
 
 export interface GameParams {
   readonly transport: TransportRequest;
+  readonly spawn: 'tanks' | 'cubes' | 'none';
   readonly seed: number;
   readonly cubes: number;
   readonly enemyCubes: number;
@@ -32,8 +33,8 @@ export interface GameParams {
 }
 
 export const DEFAULT_SEED = 1;
-export const DEFAULT_CUBES = 1000;
-export const DEFAULT_ENEMY_CUBES = 24;
+export const DEFAULT_CUBES = 150;
+export const DEFAULT_ENEMY_CUBES = 150;
 export const DEFAULT_MAP = 'setons';
 /** `?map=testplane`: the flat 512 WU MS1 test plane (no `.rtsmap`). */
 export const TEST_PLANE_MAP = 'testplane';
@@ -66,12 +67,14 @@ export function parseParams(search: string): GameParams {
   const t = q.get('transport');
   const transport: TransportRequest = t === 'sab' || t === 'transfer' ? t : 'auto';
   const auto = q.get('autostart');
+  const spawn = q.get('spawn') === 'none' ? 'none' : q.get('spawn') === 'cubes' || (q.get('spawn') !== 'tanks' && q.has('cubes')) ? 'cubes' : 'tanks';
   const units = intParam(q, 'units', 0, 0, MAX_FLIGHT_UNITS);
   return {
     transport,
+    spawn,
     seed: intParam(q, 'seed', DEFAULT_SEED, 0, 0xffffffff),
-    cubes: intParam(q, 'cubes', units > 0 ? 0 : DEFAULT_CUBES, 0, MAX_CUBES_PER_ARMY),
-    enemyCubes: intParam(q, 'enemy', units > 0 ? 0 : DEFAULT_ENEMY_CUBES, 0, MAX_CUBES_PER_ARMY),
+    cubes: intParam(q, 'cubes', units > 0 || spawn === 'none' ? 0 : spawn === 'cubes' ? 1000 : DEFAULT_CUBES, 0, MAX_CUBES_PER_ARMY),
+    enemyCubes: intParam(q, 'enemy', units > 0 || spawn === 'none' ? 0 : spawn === 'cubes' ? 24 : DEFAULT_ENEMY_CUBES, 0, MAX_CUBES_PER_ARMY),
     autostart: !(auto === '0' || auto === 'false' || auto === 'no'),
     map: mapParam(q),
     preset: parsePresetName(q.get('preset')) ?? DEFAULT_PRESET,

@@ -2,13 +2,15 @@ import { asArmyId, asHandle, asTick, fx, handleGen, handleIndex, makeHandle } fr
 import { encodeCheatSpawn, Op } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import {
-  ARRIVE_TOLERANCE,
+  ARRIVAL_RADIUS,
   armyUnitCount,
   createWorld,
   isAllied,
   isUnitAlive,
   lastAckSeq,
+  MOVE_PIVOT_CREEP,
   setAlliance,
+  spawnRejectedCount,
   step,
   unitCount,
   unitHandles,
@@ -16,7 +18,7 @@ import {
   UnitState,
   type World,
 } from '../src/index.ts';
-import { batch, gameTable, killCmd, moveCmd, spawnCmd, stopCmd, testTable } from './support/fixtures.ts';
+import { batch, gameBp, gameTable, killCmd, moveCmd, spawnCmd, stopCmd, testTable } from './support/fixtures.ts';
 
 function world(armyCount = 2, unitCapPerArmy?: number): World {
   return createWorld({ bpTable: gameTable(), seed: 1234, armyCount, ...(unitCapPerArmy === undefined ? {} : { unitCapPerArmy }) });
@@ -29,10 +31,12 @@ function run(w: World, ticks: number): void {
 describe('CommandApply', () => {
   it('Cheat Spawn creates units around (x, z) within the spread, clamped to the map', () => {
     const w = world();
-    step(w, [spawnCmd(0, 50, 100, 100, 5), spawnCmd(1, 3, 0, 0, 10, 0, 1)]);
-    expect(unitCount(w)).toBe(53);
+    step(w, [spawnCmd(0, 50, 100, 100, 5), spawnCmd(1, 3, 0, 0, 10, gameBp('core:cube'), 1)]);
+    // MS3: the map border cells are not passable (nav), spawns there are rejected and counted.
+    const nearCorner = 3 - spawnRejectedCount(w);
+    expect(unitCount(w)).toBe(50 + nearCorner);
     expect(armyUnitCount(w, 0)).toBe(50);
-    expect(armyUnitCount(w, 1)).toBe(3);
+    expect(armyUnitCount(w, 1)).toBe(nearCorner);
     for (const h of unitHandles(w, 0)) {
       const u = unitInfo(w, h)!;
       const dx = u.x - fx(100);
@@ -41,7 +45,7 @@ describe('CommandApply', () => {
       expect(Math.sqrt(dx * dx + dz * dz)).toBeLessThanOrEqual(fx(5) + fx(0.3));
       expect(u.hp).toBe(100);
       expect(u.state).toBe(UnitState.Idle);
-      expect(u.bp).toBe(0);
+      expect(u.bp).toBe(gameBp('core:cube'));
     }
     for (const h of unitHandles(w, 1)) {
       const u = unitInfo(w, h)!;
@@ -49,8 +53,8 @@ describe('CommandApply', () => {
       expect(u.z).toBeGreaterThanOrEqual(0);
     }
     // Invalid blueprint or inactive army: nothing happens.
-    step(w, [spawnCmd(0, 5, 10, 10, 1, 7), spawnCmd(5, 5, 10, 10, 1, 0, 0)]);
-    expect(unitCount(w)).toBe(53);
+    step(w, [spawnCmd(0, 5, 10, 10, 1, 0xffff), spawnCmd(5, 5, 10, 10, 1, gameBp('core:cube'), 0)]);
+    expect(unitCount(w)).toBe(50 + nearCorner);
   });
 
   it('Move drives a cube to its target; it arrives within the tolerance and becomes idle', () => {
@@ -72,14 +76,14 @@ describe('CommandApply', () => {
     expect(u.state).toBe(UnitState.Idle);
     const dx = u.x - fx(60);
     const dz = u.z - fx(50);
-    expect(dx * dx + dz * dz).toBeLessThanOrEqual(ARRIVE_TOLERANCE * ARRIVE_TOLERANCE);
+    expect(dx * dx + dz * dz).toBeLessThanOrEqual(ARRIVAL_RADIUS * ARRIVAL_RADIUS);
     // Facing +x (yaw ≈ 0) after driving along +x.
     expect(Math.min(u.yaw, 65536 - u.yaw)).toBeLessThan(600);
     run(w, 5);
     expect(unitInfo(w, h!)!.speed).toBe(0);
   });
 
-  it('turns towards the target with the blueprint turn rate before accelerating', () => {
+  it('turns towards the target with the blueprint turn rate, creeping while the heading error is large', () => {
     const w = world();
     step(w, [spawnCmd(0, 1, 50, 50, 0)]);
     const [h] = unitHandles(w);
@@ -89,8 +93,10 @@ describe('CommandApply', () => {
     step(w, [moveCmd(0, [h!], 50 + 20 * Math.cos(back), 50 + 20 * Math.sin(back))]);
     const u = unitInfo(w, h!)!;
     const turned = Math.abs((((u.yaw - yaw0) << 16) >> 16));
-    expect(turned).toBe(gameTable().turnRatePerTick(0));
-    expect(u.speed).toBe(0); // heading error ≥ 90° ⇒ no forward speed yet
+    expect(turned).toBe(gameTable().turnRatePerTick(gameBp('core:cube')));
+    // Heading error > 70° (SPK2 start angle) ⇒ pivot with creep speed (10 % of the top speed).
+    expect(u.speed).toBeGreaterThan(0);
+    expect(u.speed).toBeLessThanOrEqual(Math.floor((gameTable().speedPerTick(gameBp('core:cube')) * MOVE_PIVOT_CREEP) / 4096));
   });
 
   it('Stop halts a moving unit (decelerating) and keeps it idle', () => {
@@ -149,20 +155,25 @@ describe('CommandApply', () => {
 
   it('applies commands in (army, seq) order independent of arrival order', () => {
     const w = world();
-    step(w, [spawnCmd(0, 1, 50, 50, 0, 0, 0, 1)]);
+    step(w, [spawnCmd(0, 1, 50, 50, 0, gameBp('core:cube'), 0, 1)]);
     const [h] = unitHandles(w);
     // seq 11 (later) arrives first, seq 10 second: the target of seq 11 must win.
     step(w, [moveCmd(0, [h!], 90, 50, 11), moveCmd(0, [h!], 10, 50, 10)]);
     expect(unitInfo(w, h!)!.targetX).toBe(fx(90));
     expect(lastAckSeq(w, 0)).toBe(11);
-    // The Queue flag replaces the order in MS1.
+    // MS3 (G7): the Queue flag appends the order; the active target stays.
     step(w, [moveCmd(0, [h!], 70, 70, 12, 1)]);
+    expect(unitInfo(w, h!)!.targetX).toBe(fx(90));
+    expect(unitInfo(w, h!)!.orders).toBe(2);
+    // Without the flag the queue is replaced.
+    step(w, [moveCmd(0, [h!], 70, 70, 13)]);
     expect(unitInfo(w, h!)!.targetX).toBe(fx(70));
+    expect(unitInfo(w, h!)!.orders).toBe(1);
   });
 
   it('orders a u16 seq wrap-around inside one tick in serial-number order (65535 before 1)', () => {
     const w = world();
-    step(w, [spawnCmd(0, 1, 50, 50, 0, 0, 0, 65533)]);
+    step(w, [spawnCmd(0, 1, 50, 50, 0, gameBp('core:cube'), 0, 65533)]);
     const [h] = unitHandles(w);
     step(w, [moveCmd(0, [h!], 20, 50, 65534)]);
     expect(lastAckSeq(w, 0)).toBe(65534);
@@ -176,14 +187,14 @@ describe('CommandApply', () => {
     expect(unitInfo(w, h!)!.targetX).toBe(fx(40));
     expect(lastAckSeq(w, 0)).toBe(3);
     // Another army's order is independent (its lastAck is still none = −1 ⇒ plain seq order).
-    step(w, [moveCmd(1, [], 1, 1, 2), spawnCmd(1, 1, 80, 80, 0, 0, 1, 1)]);
+    step(w, [moveCmd(1, [], 1, 1, 2), spawnCmd(1, 1, 80, 80, 0, gameBp('core:cube'), 1, 1)]);
     expect(lastAckSeq(w, 1)).toBe(2);
     expect(lastAckSeq(w, 0)).toBe(3);
   });
 
   it('drops unknown ops and malformed payloads but acknowledges them', () => {
     const w = world();
-    step(w, [spawnCmd(0, 1, 50, 50, 0, 0, 0, 1)]);
+    step(w, [spawnCmd(0, 1, 50, 50, 0, gameBp('core:cube'), 0, 1)]);
     const [h] = unitHandles(w);
     const unknown = { tick: asTick(0), army: asArmyId(0), seq: 2, op: Op.Build, flags: 0, units: [h!], payload: new Uint8Array(3) };
     const badMove = { ...moveCmd(0, [h!], 1, 1, 3), payload: new Uint8Array(5) };
@@ -198,7 +209,7 @@ describe('CommandApply', () => {
 
   it('enforces the per-army unit cap and the table capacity', () => {
     const w = world(2, 10);
-    step(w, [spawnCmd(0, 25, 50, 50, 5), spawnCmd(1, 4, 80, 80, 2, 0, 1)]);
+    step(w, [spawnCmd(0, 25, 50, 50, 5), spawnCmd(1, 4, 80, 80, 2, gameBp('core:cube'), 1)]);
     expect(armyUnitCount(w, 0)).toBe(10);
     expect(armyUnitCount(w, 1)).toBe(4);
     const big = world(1);
@@ -212,12 +223,13 @@ describe('CommandApply', () => {
     const w = createWorld({ bpTable: testTable(), seed: 9, armyCount: 1, mapSizeWu: 64 });
     step(w, [spawnCmd(0, 1, 60, 60, 0, 1)]);
     const [h] = unitHandles(w);
-    step(w, [moveCmd(0, [h!], 500, 500)]); // clamped to the map corner
-    expect(unitInfo(w, h!)!.targetX).toBe(fx(64));
+    step(w, [moveCmd(0, [h!], 500, 500)]); // clamped to the map corner, then retargeted (border cells are blocked)
     run(w, 100);
     const u = unitInfo(w, h!)!;
-    expect(u.x).toBeLessThanOrEqual(fx(64));
-    expect(u.z).toBeLessThanOrEqual(fx(64));
+    // Nearest passable cell to the corner: (62, 62), its centre is the new slot.
+    expect([u.targetX, u.targetZ]).toEqual([fx(62.5), fx(62.5)]);
+    expect(u.x).toBeLessThan(fx(63));
+    expect(u.z).toBeLessThan(fx(63));
     expect(u.moving).toBe(false);
   });
 
@@ -225,8 +237,10 @@ describe('CommandApply', () => {
     const w = world();
     step(w, [spawnCmd(0, 60, 100, 100, 15)]);
     const hs = unitHandles(w);
-    step(w, [moveCmd(0, hs, 150, 100)]);
-    run(w, 400);
+    // One command per unit: every unit has the same slot (a group order would keep offsets).
+    step(w, hs.map((h) => moveCmd(0, [h], 150, 100)));
+    // 50 WU at 3 WU/s plus settling (contagion, slot returns of pushed units).
+    run(w, 600);
     const infos = hs.map((h) => unitInfo(w, h)!);
     expect(infos.every((u) => !u.moving)).toBe(true);
     let minD2 = Infinity;

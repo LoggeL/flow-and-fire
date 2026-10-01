@@ -1,0 +1,240 @@
+{
+  "date": "2026-09-29",
+  "editorUnitTests": {
+    "files": 25,
+    "passed": 292
+  },
+  "browserCorrectness": {
+    "passed": 48,
+    "engines": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "port": 4883,
+    "workers": 1,
+    "command": "FAF_E2E_PORT=4883 ./tools/heavy pnpm exec playwright test -c apps/marker-editor/playwright.config.ts --grep-invert 'measurement'"
+  },
+  "browserMeasurements": {
+    "passed": 3,
+    "runsPerEngine": 2,
+    "command": "FAF_E2E_PORT=4883 ./tools/heavy pnpm exec playwright test -c apps/marker-editor/playwright.config.ts apps/marker-editor/test/e2e/perf.spec.ts"
+  },
+  "checks": [
+    "package build passed",
+    "App tsc passed",
+    "editor eslint passed"
+  ],
+  "screenshots": [
+    {
+      "file": "edit-chromium.png",
+      "sha256": "1bc3008879693f25e67e6c0050bec9dec76f0c1d3d384b72be10797ce434e66f",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "edit-firefox.png",
+      "sha256": "3bcacea49d9c132c87d0bb4728f36bf227041ed6b28468b9f0aa1b2f0efd5360",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "edit-webkit.png",
+      "sha256": "176e467f79f9e4321067021f46a841b13093e605a4a4baa47ac7cc9141884154",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1280-chromium.png",
+      "sha256": "0d098b6a09b85411aa3c34d3c4fbe92edda858c1cf9d2328e84a3bb9b2d48cec",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1280-firefox.png",
+      "sha256": "b6fd414a6b5a9a9af428c087b9fb1895b24cd9763c68339faa4d4cf016874f62",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1280-webkit.png",
+      "sha256": "e68a19b9312d6b858543ada00afdfa24766208ec160255e9e9c0d32d79f846ed",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1920-chromium.png",
+      "sha256": "e6fb40a8db967d0c1726d393666c8c6b0ae358da7f51e27a34ac1649fe24a7e5",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1920-firefox.png",
+      "sha256": "5cbeda42b7794e234b161a205ae8232fa5c02a5ccd577bc6a36812169fefa828",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "help-1920-webkit.png",
+      "sha256": "c7f5fcbf2c7a3cc4bcd3b597d02c51397a15423395202d9b59dfddaba46c52dd",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-braidwater-chromium.png",
+      "sha256": "819707cc4eb9a8c93862648d2b8fda9de1c512d06580faffb669160af37a6ba6",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-braidwater-firefox.png",
+      "sha256": "acc715b8e194b4837870c25d7af76b7bc802f8be40a5dcb43779da021385e55d",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-braidwater-webkit.png",
+      "sha256": "f71d34c9099f21945ec9062310fa85ee000b5bb5a9776a4abf53b6a5f7c86630",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-hollow-ridge-chromium.png",
+      "sha256": "8e4dbbb48681142e41384f1e17309a4c64ca7d093f45c33593d84180010f5a57",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-hollow-ridge-firefox.png",
+      "sha256": "cdea5aaa3900845e9667565d871ac140e3ed2517ff1b155c33c70cbff82bc9d6",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-hollow-ridge-webkit.png",
+      "sha256": "47f091eb12566c7297be8a0d8e80b22048b918218cf5c7d25104d3674c080121",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-setons-chromium.png",
+      "sha256": "9d82ba658dca4f6b46ca5feb4ff9f5c40a33722abcc445e9520ff52c8487da6d",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-setons-firefox.png",
+      "sha256": "b19dd60a47355e9762670aeb8d6c4e8e860b6e29d29ee4afe284ef3ee8dcda9e",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-setons-webkit.png",
+      "sha256": "626028958765296921f7b9b499f40d00f7bf05f2c5465cbeeda2962742cc0755",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-tessera-chromium.png",
+      "sha256": "06e61ae71682f37d0e4e0088e93eb29737072b7a3ac9534dd217dbe8f29b937f",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-tessera-firefox.png",
+      "sha256": "9a63c1c462176bdd705deabac84025d60493712812e60ea00d00206f776b3049",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "roundtrip-tessera-webkit.png",
+      "sha256": "a7089169fa49557c77526ede2a03640c30d9b8211dce68a7fac8848039dc65e4",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-edge-chromium.png",
+      "sha256": "f40e51b8e6e0296d5be14c09d9b5293f1e167196008d14dc5032a22301010bfd",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-edge-firefox.png",
+      "sha256": "b2e2b1ad86c7056e19892beb7f5497e5e012a24c8bb29fb6385e747f70e03128",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-edge-webkit.png",
+      "sha256": "aa5384da44d5e44d71bbd65116f7a61e6751d518c0de5862b76ef5ec3ea0bd2c",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-in-water-chromium.png",
+      "sha256": "ae8fb5f1e9872ae3f87f1f1e137276cc0d1ccd56df960af99b7b077416f18012",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-in-water-firefox.png",
+      "sha256": "1ab3bc373802dbf23c26304d6da1e2d1016088eae106a77d5c1fa882dae9d2b1",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-in-water-webkit.png",
+      "sha256": "bb06a4a8b822c6e62ced7961a9310e3bb4bd62c03c2b36f5c398fed817bd184a",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-not-flat-chromium.png",
+      "sha256": "15a84eb1aa28d5b4e2d89919fd2004a107062c2783b77699df7fb9981fcd747d",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-not-flat-firefox.png",
+      "sha256": "52968a94cb6868ce9e902f3581ac5732cd46fd72cb44937e5783895642e0bbb0",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "validation-spot-not-flat-webkit.png",
+      "sha256": "b609025a1e544cd3f3c2d1de90e7dc5a74c5fd544c25452521c3291d9c4fe8a2",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-braidwater-chromium.png",
+      "sha256": "a575cca586ed84a2db80a00000d826e151398e0a31e5f042ff43b894f727f700",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-braidwater-firefox.png",
+      "sha256": "af33dfe1a564fb49d7bd939109c4ef89a9f1dc4caa041d52a4736707c751ab56",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-braidwater-webkit.png",
+      "sha256": "c7e79d3e3086149ee64a069702be61564f5a72542ba419a525ed5fb11225c1c7",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-hollow-ridge-chromium.png",
+      "sha256": "cb9a8d839fc09493ecddadd3102157c5d85bf2edd1f02424b189c739dc2dc64d",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-hollow-ridge-firefox.png",
+      "sha256": "bea70f7ab4e53e6c0e9dd6e0c7735c34b1cd0ceb860e83708741552d77be1eac",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-hollow-ridge-webkit.png",
+      "sha256": "faf8e70557c87451da513ec9a208caa367f731280b36be5da5f70778898cde1e",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-setons-chromium.png",
+      "sha256": "a05ac4aa66d1263a961f0f19062019611ca54e9cec7d1100fb7fed68bf3960bd",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-setons-firefox.png",
+      "sha256": "09ac50da701e2f3b1763cf0edb191466e457c7fdc07f5eb18bb8fbc5a246d854",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-setons-webkit.png",
+      "sha256": "e86c5261fd50024780f48365a83004815cdcdb32eb9c2cb23fc41253a505e330",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-tessera-chromium.png",
+      "sha256": "10c9e651d7917f7974f0baab8241e141fd5508013c366b2b18f6227a9f5c7ac8",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-tessera-firefox.png",
+      "sha256": "96c218b51e74de83ffc23f4b4c2b2219c75cbd29235a30130512fb708772139c",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    },
+    {
+      "file": "view-tessera-webkit.png",
+      "sha256": "32a96dae17c92590cdc617887d6062348973aa7b87d713dade6da52454fc70ff",
+      "review": "visuell geprüft: Terrain, Marker, Panels; Kontaktbogen und Detailbilder"
+    }
+  ]
+}

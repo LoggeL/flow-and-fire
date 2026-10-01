@@ -4,18 +4,45 @@
     "rootDir": "src",
     "outDir": "dist/tsc-harness-worker",
     "tsBuildInfoFile": "dist/tsc-harness-worker/.tsbuildinfo",
-    "lib": ["ES2022", "WebWorker"],
+    "lib": [
+      "ES2022",
+      "WebWorker"
+    ],
     "types": []
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/harness/page/**"],
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/harness/page/**"
+  ],
   "references": [
-    { "path": "../../packages/fixed" },
-    { "path": "../../packages/heap" },
-    { "path": "../../packages/protocol" },
-    { "path": "../../packages/rules" },
-    { "path": "../../packages/blueprints" },
-    { "path": "../../packages/sim" },
-    { "path": "../../packages/formats" }
+    {
+      "path": "../../packages/fixed"
+    },
+    {
+      "path": "../../packages/heap"
+    },
+    {
+      "path": "../../packages/protocol"
+    },
+    {
+      "path": "../../packages/rules"
+    },
+    {
+      "path": "../../packages/nav"
+    },
+    {
+      "path": "../../packages/blueprints"
+    },
+    {
+      "path": "../../packages/sim"
+    },
+    {
+      "path": "../../packages/formats"
+    },
+    {
+      "path": "../../packages/sim-host"
+    }
   ]
 }

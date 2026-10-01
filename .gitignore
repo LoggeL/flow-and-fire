@@ -1,4 +1,5 @@
 # dependencies / caches
+.worktrees/
 node_modules/
 .turbo/
 .vite/
@@ -30,6 +31,10 @@ bench-results/
 tools/headless/results/*.json
 packages/*/bench/results/*.json
 tools/render-bench/results/*.json
+# MS3: nav SPK3 bench, headless SPK2/SPK3/MS3 benches
+packages/nav/bench/results/
+tools/headless/results/
+tools/headless/spk2/out/
 *.bench.tmp.*
 *.cpuprofile
 *.heapsnapshot
@@ -39,3 +44,11 @@ tools/render-bench/results/*.json
 .DS_Store
 .env
 .env.*
+
+apps/*/results/*.json
+
+# Local qualification bundles and third-party visual references are not published.
+apps/game/dist-ai-qualification/
+docs/design/ui-concepts/references/*.jpg
+docs/design/ui-concepts/forged-alliance-original-adapted-v3.png
+tools/ai-arena/tools/ai-arena/results/

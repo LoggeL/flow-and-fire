@@ -5,11 +5,11 @@
  */
 import { engineInfo, runJob, type Job } from '../src/jobs.ts';
 import { runSeries } from '../src/series.ts';
-import { loadMaps, loadSimBin, loadXxh32Wasm } from './lib.ts';
+import { loadMaps, loadReplays, loadSimBin, loadXxh32Wasm } from './lib.ts';
 
 const job = JSON.parse(process.argv[2] ?? '') as Job;
 const clock = (): number => performance.now();
-const assets = { simBin: loadSimBin(), xxh32Wasm: loadXxh32Wasm(), maps: loadMaps() };
+const assets = { simBin: loadSimBin(), xxh32Wasm: loadXxh32Wasm(), maps: loadMaps(), replays: loadReplays() };
 const info = engineInfo('node', clock);
 const env = { clock, info };
 const result = await runSeries(job, info, (j, mode) => runJob(j, mode, assets, env));

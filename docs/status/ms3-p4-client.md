@@ -1,0 +1,17 @@
+# MS3 P4: Client und Spiel
+
+Stand 2026-09-29. Der Client startet mit leerer Auswahl. Linksziehen wählt eigene Einheiten über dieselben Icon-Rechtecke und dieselbe Crossfade-Schwelle wie der Renderer. Klick wählt eine Einheit, Shift-Klick toggelt, Shift-Box ergänzt, Doppelklick wählt den sichtbaren gleichen Typ, Strg/⌘+A alle eigenen, Esc leert. Rechtsklick ohne Auswahl erzeugt keinen Move.
+
+Strg+Ziffer oder Alt+Ziffer speichert eine Control Group, Shift ergänzt die gespeicherte Gruppe. Ziffer ruft ab, Shift+Ziffer ergänzt die Auswahl. Doppeltap innerhalb 350 ms zentriert auf den Schwerpunkt; tote Generation-Handles entfallen. Im Vollbild wird Keyboard Lock angefragt, soweit der Browser es anbietet. Strg-Bindings nutzen KeyboardEvent.code; Alt bleibt die Alternative für reservierte Browser-Tasten.
+
+Rechtsklick sendet einen Gruppen-Move, Shift-Rechtsklick hängt ein Ziel an, S stoppt. Klickmarker und optimistische Linie erscheinen sofort. Nach Ack stammen Linien aus der Watch-Sektion; die ersten 64 ausgewählten Handles werden bei Auswahländerung an den Host geschickt. Selektionsringe und Zieldiscs liegen im dynamischen Terrain-Decal-Layer. Ringe nutzen standardmäßig die Armee-Farbe, HP-Balken stammen aus dem Renderer. Die Frame-Schleife verwendet vorbereitete Puffer; Client-Allokationstest ist grün.
+
+Die Standardszene bleibt nach der Projektentscheidung Setons, mit 150 Blueprint-Panzern pro Armee. `?map=hollow-ridge` öffnet die MS3-Abnahmekarte. `?spawn=tanks|cubes|none` steuert den Spawn, tanks ist Standard; explizites `?cubes=` ohne spawn erhält die Würfel-Testszene. `?units=n` verteilt Würfel für Kameraflüge auf navigierbare, flache Land-Discs; die Prüfung berücksichtigt jetzt Wasser, Kartenrand und Klippen. Weitere Parameter: `enemy`, `seed`, `autostart`, `transport`, `preset`, `assets=raw`.
+
+Die Konsole bietet `obstacle x z w h [remove]`, `paths`, `select bp-id` und `watch` (Linien umschalten). Blueprint-/Locales-HMR kompiliert ganze Transaktionen aus `FAF_BLUEPRINT_DIR`/`FAF_LOCALES_DIR`. Erfolgreiche Transaktionen setzen Visuals neu und senden devReload; Syntax-/Schemafehler melden Diagnosen ohne Reload. Der HUD zeigt Zoomstufe, simHash und tainted.
+
+`window.__faf` bietet Auswahl/Gruppen, projizierte Positionen/Rechtecke, Watch-Polylinien/Orderziele, Pfadzähler, unitInfo, waitTick, Zoom/RenderStats und HMR-Zeitpunkte. `spawnAt` ist ein präziser Cheat über denselben Client-Befehlspfad, kein direkter Sim-Zugriff. unitInfo.blocked prüft statische Nav-Kriterien aus ClientMap, inklusive Größenklasse; die dynamischen Footprint-Zellen werden nicht an den Client repliziert. FlightReport enthält die maximalen Icon-Draws.
+
+Prüfung: 22 Client-/Game-Testdateien mit 165 Tests bestanden. Der größere Client/Game/Nav/Sim-Lauf bestand 357 von 359 Tests; zwei damalige Fehler gehörten zum parallel korrigierten Asset-Test und zum Replay-Player-Timeout. Kein Sim-Verhalten wurde in P4-P6 geändert. `@faf/game build` bestanden. Die Browser-Messwerte und verbleibenden Grenzen stehen in ms3-p6-e2e.md.
+
+Die älteren E2E-Szenen boot/move/latency/flight/picking/camera/pause/console/transports/terrain/map-load/map-roundtrip/smoke/context-loss nutzen explizit `spawn=cubes` und eine bewusste Auswahl im Testhelfer. MS3-Specs deaktivieren diese Legacy-Auswahl. Statische Decal-Checks ziehen dynamicDecals ab. Der Kameraflug prüft LOD 0/1 plus Icons in der Fernansicht, weil MS3 das kleinste Mesh dort ersetzt. Context-Restore prüft zusätzlich den wiederhergestellten Icon-Atlas.

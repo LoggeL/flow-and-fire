@@ -1,5 +1,5 @@
 import { asArmyId, asTick, fx } from '@faf/fixed';
-import { CommandBatchEncoder, encodeMove, FrameWriter, Op } from '@faf/protocol';
+import { CmdFlags, CommandBatchEncoder, encodeMove, FrameWriter, Op } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import { createWorld, PhaseId, step, unitHandles, writeFrame, type PhaseProbe } from '../src/index.ts';
 import { measureAllocation } from './support/alloc.ts';
@@ -35,7 +35,7 @@ describe('allocation (PLAN §3.4: warm < 1 MB over 10,000 ticks)', () => {
   it('10,000 warm ticks with 1,000 driving cubes incl. commands, frame writing and hash', async () => {
     expect(gc).toBeTypeOf('function');
     const w = createWorld({ bpTable: gameTable(), seed: 11, armyCount: 2 });
-    step(w, [spawnCmd(0, 1000, 256, 256, 80, 0, 0, 1)]);
+    step(w, [spawnCmd(0, 1000, 256, 256, 80, w.bp.indexOf('core:cube'), 0, 1)]);
     const hs = unitHandles(w, 0);
     // Four reusable batches: 10 groups of 100 cubes, each with a new target.
     const batches: Uint8Array[] = [];
@@ -70,7 +70,9 @@ describe('allocation (PLAN §3.4: warm < 1 MB over 10,000 ticks)', () => {
         }
       }
     };
-    tickRun(1000); // warm-up (JIT, DataView caches)
+    // Warm-up (JIT incl. the cold per-command paths, DataView caches): 4,000 ticks = 40 command
+    // ticks. Shorter warm-ups measure V8 tiering (interpreted cold paths box numbers), not the sim.
+    tickRun(4000);
     // Allocation, not retention: heap growth between GCs, chunk by chunk (support/alloc.ts).
     const m = await measureAllocation(tickRun, 10_000);
     gc!();
@@ -88,52 +90,62 @@ describe('allocation (PLAN §3.4: warm < 1 MB over 10,000 ticks)', () => {
     expect(m.ticks).toBe(10_000);
     expect(m.bytes).toBeLessThan(1024 * 1024);
     expect(retained).toBeLessThan(256 * 1024);
-    expect(probe.begins[PhaseId.Movement]).toBe(12_000);
-    expect(probe.ends[PhaseId.HashTick]).toBe(1200);
-  });
+    expect(probe.begins[PhaseId.Movement]).toBe(15_000);
+    expect(probe.begins[PhaseId.PathService]).toBe(15_000);
+    expect(probe.ends[PhaseId.HashTick]).toBe(1500);
+  }, 240_000);
 });
 
-describe('allocation with a map (MS2: hollow-ridge, terrain height + deep-water rule every tick)', () => {
-  it('10,000 warm ticks with 1,000 cubes driving over slopes and against the river', async () => {
+describe('allocation with a map (MS3: hollow-ridge, pathing + group moves + watch section)', () => {
+  it('10,000 warm ticks with 1,000 units driving across the map with path requests', async () => {
     expect(gc).toBeTypeOf('function');
-    const w = createWorld({ bpTable: gameTable(), seed: 12, armyCount: 2, map: hollowRidgeSim() });
-    step(w, [spawnCmd(0, 1000, 150, 150, 70, 0, 0, 1)]);
+    const w = createWorld({ bpTable: gameTable(), seed: 12, armyCount: 2, map: hollowRidgeSim(), unitCapPerArmy: 1000 });
+    // Blueprint tanks (classes 1–3) on both plateaus; the army cap stops at exactly 1,000.
+    const t1=w.bp.indexOf('core:lnd_t1_tank'),t2=w.bp.indexOf('core:lnd_t2_tank'),t3=w.bp.indexOf('core:lnd_t3_heavy');
+    step(w, [spawnCmd(0, 700, 110, 110, 40, t1, 0, 1), spawnCmd(0, 300, 402, 402, 30, t2, 0, 2), spawnCmd(0, 400, 402, 402, 35, t3, 0, 3), spawnCmd(0, 400, 110, 110, 40, t1, 0, 4)]);
     const hs = unitHandles(w, 0);
     expect(hs.length).toBe(1000);
-    // 10 groups; targets on the NW side (x, z in [40, 200)) and every 4th variant across the
-    // river (blocked, sliding, stuck ⇒ idle) so every code path of placeUnit runs warm.
+    // 10 groups of 100; targets alternate between both plateaus, the lowland and the mesas, so
+    // requests, HPA* routes over the fords, lazy refinement, cursor advance and the stuck chain
+    // all run warm. Every 4th variant targets deep water (retarget).
+    const targets = [[400, 400], [110, 110], [150, 380], [380, 150], [256, 120], [120, 256], [300, 300], [256, 256]] as const;
     const batches: Uint8Array[] = [];
     for (let k = 0; k < 4; k++) {
       const e = new CommandBatchEncoder();
       for (let g = 0; g < 10; g++) {
-        const a = ((k * 10 + g + 1) * 2654435761) >>> 0;
-        const across = k === 3 && g % 2 === 0;
-        const x = across ? 330 + (a % 60) : 40 + (a % 160);
-        const z = across ? 330 + ((a >>> 9) % 60) : 40 + ((a >>> 9) % 160);
-        e.add({ tick: asTick(0), army: asArmyId(0), seq: 2 + k * 10 + g, op: Op.Move, flags: 0, units: hs.slice(g * 100, g * 100 + 100), payload: encodeMove({ x: fx(x), y: fx(0), z: fx(z) }) });
+        const [x, z] = targets[(k * 3 + g) % targets.length]!;
+        e.add({ tick: asTick(0), army: asArmyId(0), seq: 10 + k * 10 + g, op: Op.Move, flags: g % 3 === 0 ? CmdFlags.Queue : 0, units: hs.slice(g * 100, g * 100 + 100), payload: encodeMove({ x: fx(x), y: fx(0), z: fx(z) }) });
       }
       batches.push(e.view().slice());
     }
     const writer = new FrameWriter();
     const target = new Uint8Array(writer.capacityBytes);
+    const watch = new Uint32Array(64);
+    for (let i = 0; i < 64; i++) watch[i] = hs[i * 15]!;
     let moving = 0;
     const tickRun = (n: number): void => {
       for (let i = 0; i < n; i++) {
         const t = w.tick;
         step(w, t % 100 === 0 ? batches[(t / 100) % 4]! : null);
-        writeFrame(w, 0, writer, target);
+        writeFrame(w, 0, writer, target, undefined, watch, 64);
         if (t % 1000 === 0) {
           moving = 0;
           for (let r = 0; r < w.movers.count; r++) if (w.movers.col.speed[r]! > 0) moving++;
         }
       }
     };
-    tickRun(1000);
+    tickRun(4000); // warm-up, see above
+    const issued0 = w.nav.requestsIssued;
     const m = await measureAllocation(tickRun, 10_000);
-    console.log(`[alloc] sim + map: allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks (${m.gcEvents} GCs), moving at last sample: ${moving}`);
+    const issued = w.nav.requestsIssued - issued0;
+    console.log(
+      `[alloc] sim + map + pathing: allocated ${(m.bytes / 1024).toFixed(1)} KiB in ${m.ticks} GC-free warm ticks (${m.gcEvents} GCs), ` +
+        `moving at last sample: ${moving}, path requests during the measurement: ${issued}`,
+    );
     expect(moving).toBeGreaterThan(300);
+    expect(issued).toBeGreaterThan(400);
     expect(m.gcEvents).toBe(0);
     expect(m.ticks).toBe(10_000);
     expect(m.bytes).toBeLessThan(1024 * 1024);
-  });
+  }, 240_000);
 });

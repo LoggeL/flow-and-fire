@@ -1,7 +1,8 @@
 import { rmSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/silent-test.ts';
 import type { LoadTimings } from '../../apps/game/src/loading.ts';
 import { attachJson, captureErrors, expectNoErrors, MEASURED_LOCALLY, PERF_GATE, SERVERS, writeReport } from './support/game.ts';
+import { installSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 
 // Map load (P3, MS2 acceptance "Laden ≤ 3 s aus dem Cache, ≤ 8 s kalt"; since the Setons package on
 // the default map Setons, 1,024 WU ≈ 2.7 MB – 4.5× the MS2 map, so the MS2 limits are kept as a
@@ -67,6 +68,7 @@ interface LoadResult {
 }
 
 async function loadOnce(page: Page, url: string): Promise<LoadResult> {
+  await installSilentOutput(page);
   const t0 = Date.now();
   await page.goto(url, { waitUntil: 'commit' });
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
@@ -101,9 +103,9 @@ for (const server of SERVERS) {
     const page = ctx.pages()[0] ?? (await ctx.newPage());
     const errors = captureErrors(page);
 
-    const cold = await loadOnce(page, server.url);
+    const cold = await loadOnce(page, server.url + "?spawn=cubes");
     await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
-    const cached = await loadOnce(page, server.url);
+    const cached = await loadOnce(page, server.url + "?spawn=cubes");
     await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
 
     const report = {

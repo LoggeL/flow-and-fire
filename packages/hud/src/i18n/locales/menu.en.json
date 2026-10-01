@@ -1,0 +1,17 @@
+{
+  "ui.menu.title": "Flow & Fire",
+  "ui.menu.tagline": "Mass gives form. Energy keeps it alive.",
+  "ui.menu.skirmish": "Skirmish",
+  "ui.menu.replays": "Replays",
+  "ui.menu.settings": "Settings",
+  "ui.menu.tutorial": "Briefing",
+  "ui.menu.credits": "Credits",
+  "ui.menu.last": "Last match",
+  "ui.menu.empty": "No matches yet",
+  "ui.menu.replay": "Watch replay",
+  "ui.menu.rematch": "Rematch",
+  "ui.menu.locked": "From MS11",
+  "ui.menu.post": "After MVP",
+  "ui.menu.language": "Language",
+  "ui.menu.build": "Build {build} · Sim {sim} · {transport} · {preset}"
+}

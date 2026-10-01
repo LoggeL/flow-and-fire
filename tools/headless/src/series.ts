@@ -16,18 +16,21 @@ export interface SeriesResult {
   readonly warm: JobResult;
   /** Hash chains of the warm-up runs (hashChain jobs only; must equal cold/warm). */
   readonly warmupChains: readonly HashChain[];
+  readonly warmupResults: readonly JobResult[];
 }
 
 /** Runs a series through `exec` (one call = one run in the same engine context). */
 export async function runSeries(job: Job, info: EngineInfo, exec: (job: Job, mode: RunMode) => Promise<JobResult>): Promise<SeriesResult> {
   const cold = await exec(job, 'measure');
   const warmupChains: HashChain[] = [];
+  const warmupResults: JobResult[] = [];
   for (let i = 0; i < WARMUP_RUNS; i++) {
     const r = await exec(job, 'warmup');
     if (r.kind === 'hashChain') warmupChains.push(r.chain);
+    if (r.kind === 'replayVerify' || r.kind === 'requestBurst') warmupResults.push(r);
   }
   const warm = await exec(job, 'measure');
-  return { engine: info, job, cold, warm, warmupChains };
+  return { engine: info, job, cold, warm, warmupChains, warmupResults };
 }
 
 /** Messages between harness page and worker. */

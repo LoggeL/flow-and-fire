@@ -1,3 +1,6 @@
+import { OpaquePipelineExtension } from '../opaque-extension.ts';
+import type { OpaqueShaderExtension } from '../opaque-extension.ts';
+import type { PipelineDesc } from '../rhi/types.ts';
 /**
  * UnitPass (PLAN §3.7 "Units", G14, P2): one instanced draw per (visual, LOD).
  *
@@ -16,6 +19,11 @@
  *   `partCount = 0` ⇒ rigid.
  * - Team color from the army palette (UBO, 16 entries), Lambert sun + hemisphere light.
  * - Second instance stream: u8 highlight per unit (selection), stride 4 (Metal/ANGLE alignment).
+ * - Strategic zoom (C2): the VS computes the unit's icon fade (strategic.ts, per-visual threshold and
+ *   selection radius from the shared {@link VisualDataTexture}); the FS removes that share of the mesh
+ *   by screen-door dithering (4×4 Bayer, no sorting). Records whose mesh is invisible for every alpha
+ *   are sorted into the icon-only bucket (last bucket) and never drawn here; the IconPass and the HP
+ *   bars draw ALL visible records of the same instance ring (`instanceBuffer`/`instanceOffset`).
  */
 import type { Frustum } from '../frustum.ts';
 import type { MeshData } from '../mesh/placeholder.ts';
@@ -25,6 +33,7 @@ import { vf } from '../rhi/types.ts';
 import {
   UNIT_FLAG_NO_INTERP,
   UNIT_INSTANCE_OFF_CUR_POS,
+  UNIT_INSTANCE_OFF_HP,
   UNIT_INSTANCE_OFF_PART_BASE,
   UNIT_INSTANCE_OFF_PREV_POS,
   UNIT_INSTANCE_OFF_PREV_YAW,
@@ -32,12 +41,16 @@ import {
   UNIT_INSTANCE_STRIDE,
   VisualBuckets,
 } from '../instance-layout.ts';
+import { STRATEGIC_GLSL } from '../strategic.ts';
 import { DEFAULT_LOD_DISTANCES, InstanceCuller, LOD_LEVELS } from '../units/culling.ts';
-import type { CullStats } from '../units/culling.ts';
+import type { CullStats, StrategicCull } from '../units/culling.ts';
+import { UNIT_VISUAL_DATA, VISUAL_DATA_GLSL, VisualDataTexture } from '../units/visual-data.ts';
 import { FRAME_BLOCK_GLSL, MAX_VISUALS, PALETTE_BLOCK_GLSL, SLOT_FRAME, SLOT_PALETTE } from './shared.ts';
 
-/** Mesh vertex: position f32×3 | normal snorm8×4 | partId u8 | pad ×3. */
-export const MESH_VERTEX_STRIDE = 20;
+/** Mesh vertex: position f32×3 | normal snorm8×4 | partId u8 + pad | palette RGBA f32 | mask RGBA u8. */
+export const MESH_VERTEX_STRIDE = 40;
+/** Matches render-fx compositeHdr's display-referred scene contract; authored COLOR_0 is linear. */
+export const UNIT_DISPLAY_GAMMA = 2.2;
 /** Highlight stream stride (one u8 used). */
 export const HIGHLIGHT_STRIDE = 4;
 const RING_REGIONS = 3;
@@ -58,6 +71,8 @@ export const UNIT_ATTR = {
   meta: 6,
   highlight: 7,
   parts: 8,
+  color: 9,
+  mask: 10,
 } as const;
 
 const UNIT_VS = /* glsl */ `#version 300 es
@@ -67,9 +82,13 @@ ${FRAME_BLOCK_GLSL}
 ${PALETTE_BLOCK_GLSL}
 uniform highp usampler2D u_parts;     // PartStream: (prevYaw, curYaw, prevPitch, curPitch) per part
 uniform highp sampler2D u_partPivots; // (pivot xyz, parent) at (partId, visual)
+${VISUAL_DATA_GLSL}
+${STRATEGIC_GLSL}
 layout(location = ${UNIT_ATTR.position}) in vec3 a_position;
 layout(location = ${UNIT_ATTR.normal}) in vec4 a_normal;
 layout(location = ${UNIT_ATTR.partId}) in uint a_partId;
+layout(location = ${UNIT_ATTR.color}) in vec4 a_color; // linear palette RGB, w=1 for authored material
+layout(location = ${UNIT_ATTR.mask}) in vec4 a_mask; // team, emissive, metal, AO
 layout(location = ${UNIT_ATTR.prevPos}) in ivec3 a_prevPos;
 layout(location = ${UNIT_ATTR.curPos}) in ivec3 a_curPos;
 layout(location = ${UNIT_ATTR.yaw}) in uvec2 a_yaw;     // prevYaw, curYaw (Ang16)
@@ -79,8 +98,12 @@ layout(location = ${UNIT_ATTR.parts}) in uvec2 a_parts; // partBase | partCount 
 
 out vec3 v_normal;
 out vec3 v_albedo;
+out vec3 v_emissive;
+out vec2 v_material;
 out vec3 v_rel;
 flat out uint v_highlight;
+flat out uint v_authored;
+flat out float v_fade;
 
 const float ANG16_TO_RAD = 6.283185307179586 / 65536.0;
 
@@ -121,6 +144,7 @@ void main() {
   vec3 relPrev = vec3(a_prevPos - u_camPosInt.xyz) / 4096.0;
   vec3 base = noInterp ? relCur : mix(relPrev, relCur, alpha);
   uint visual = min(a_meta.x, ${MAX_VISUALS - 1}u);
+  v_fade = unitIconFade(base - u_camFrac.xyz, visualRow(visual, 0));
 
   // Merged-part: rotate around the part pivot, then follow the parent chain up to the hull.
   vec3 p = a_position;
@@ -149,7 +173,18 @@ void main() {
   uint army = a_meta.y & 15u;
   vec4 vc = u_visual[visual];
   vec3 albedo = mix(u_army[army].rgb, vc.rgb, vc.a);
-  v_albedo = a_partId == 0u ? albedo : albedo * 0.85;
+  v_authored = a_color.w > 0.5 ? 1u : 0u;
+  if (v_authored != 0u) {
+    // Army palette is display-referred, while modelkit COLOR_0 and its lighting are linear.
+    vec3 teamLinear = pow(max(u_army[army].rgb, vec3(0.0)), vec3(${UNIT_DISPLAY_GAMMA}));
+    v_albedo = a_color.rgb * mix(vec3(1.0), teamLinear, a_mask.x);
+    v_emissive = a_color.rgb * a_mask.y;
+    v_material = a_mask.zw;
+  } else {
+    v_albedo = a_partId == 0u ? albedo : albedo * 0.85;
+    v_emissive = vec3(0.0);
+    v_material = vec2(0.0, 1.0);
+  }
   v_highlight = a_highlight;
   gl_Position = u_viewProj * vec4(world, 1.0);
 }
@@ -161,15 +196,34 @@ precision highp int;
 ${FRAME_BLOCK_GLSL}
 in vec3 v_normal;
 in vec3 v_albedo;
+in vec3 v_emissive;
+in vec2 v_material;
 in vec3 v_rel;
 flat in uint v_highlight;
+flat in uint v_authored;
+flat in float v_fade;
 out vec4 o_color;
 
+// 4×4 Bayer threshold in (0, 1) for screen-door transparency.
+float bayer4(vec2 frag) {
+  ivec2 i = ivec2(frag) & 3;
+  const int M[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+  return (float(M[i.y * 4 + i.x]) + 0.5) / 16.0;
+}
+
 void main() {
+  // Strategic crossfade: the icon replaces this share of the mesh (no sorting needed).
+  if (v_fade > 0.0 && bayer4(gl_FragCoord.xy) < v_fade) discard;
   vec3 n = normalize(v_normal);
   float ndl = max(dot(n, u_sunDir.xyz), 0.0);
   vec3 hemi = mix(u_groundColor.rgb, u_skyColor.rgb, n.y * 0.5 + 0.5);
-  vec3 color = v_albedo * (hemi + u_sunColor.rgb * ndl);
+  vec3 color = v_albedo * (hemi * v_material.y + u_sunColor.rgb * ndl);
+  // Authored metal has a broad highlight (modelkit's roughness=0.85), glow is unlit.
+  vec3 halfDir = normalize(normalize(-v_rel) + u_sunDir.xyz);
+  color += mix(vec3(0.04), v_albedo, v_material.x) * pow(max(dot(n, halfDir), 0.0), 8.0) * v_material.x * ndl;
+  color += v_emissive;
+  // Scene/post, selection and fog use display space. Encode authored lighting exactly once.
+  if (v_authored != 0u) color = pow(max(color, vec3(0.0)), vec3(1.0 / ${UNIT_DISPLAY_GAMMA}));
   if (v_highlight != 0u) {
     vec3 viewDir = normalize(-v_rel);
     float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 2.0);
@@ -219,6 +273,13 @@ export function mergeMeshes(meshes: readonly MeshData[]): MergedMeshes {
       i8[o + 14] = Math.round(m.normals[v * 3 + 2]! * 127);
       i8[o + 15] = 0;
       u8[o + 16] = m.partIds[v]!;
+      const material = m.colors !== undefined && m.mask !== undefined;
+      f32[(o >> 2) + 5] = material ? m.colors![v * 3]! : 1;
+      f32[(o >> 2) + 6] = material ? m.colors![v * 3 + 1]! : 1;
+      f32[(o >> 2) + 7] = material ? m.colors![v * 3 + 2]! : 1;
+      f32[(o >> 2) + 8] = material ? 1 : 0;
+      if (material) u8.set(m.mask!.subarray(v * 4, v * 4 + 4), o + 36);
+      else u8[o + 39] = 255;
     }
     firstIndex[k] = i0;
     indexCount[k] = m.indexCount;
@@ -247,6 +308,7 @@ export interface UnitPartsView {
 
 export class UnitPass {
   readonly pipeline: PipeH;
+  private readonly shader: OpaquePipelineExtension;
   private vbo: BufH | null = null;
   private ibo: BufH | null = null;
   private mesh: MergedMeshes | null = null;
@@ -265,6 +327,15 @@ export class UnitPass {
   private hlStaging = new Uint8Array(0);
   readonly buckets = new VisualBuckets();
   readonly culler = new InstanceCuller();
+  /** Per-visual strategic data (shared with IconPass and HP bars). */
+  readonly visualData: VisualDataTexture;
+  /** Strategic-zoom cull inputs; `projK = 0` (default) disables the icon-only classification. */
+  readonly strategic: StrategicCull;
+  /** First sorted record of the icon-only bucket (= number of mesh-bucket records). */
+  iconOnlyStart = 0;
+  /** Visible records with highlight ≠ 0 / with hp < 255 (HP bar candidates) of the last sort. */
+  selectedVisible = 0;
+  damagedVisible = 0;
 
   // merged-part textures
   private partsTex: TexH;
@@ -302,7 +373,7 @@ export class UnitPass {
     private readonly frameGroup: BindGroupH,
     private readonly paletteGroup: BindGroupH,
   ) {
-    this.pipeline = dev.createPipeline({
+    const pipelineDesc: PipelineDesc = {
       label: 'units',
       vertex: UNIT_VS,
       fragment: UNIT_FS,
@@ -314,6 +385,8 @@ export class UnitPass {
             { location: UNIT_ATTR.position, format: vf('f32', 3, 'float'), offset: 0 },
             { location: UNIT_ATTR.normal, format: vf('i8', 4, 'norm'), offset: 12 },
             { location: UNIT_ATTR.partId, format: vf('u8', 1, 'int'), offset: 16 },
+            { location: UNIT_ATTR.color, format: vf('f32', 4, 'float'), offset: 20 },
+            { location: UNIT_ATTR.mask, format: vf('u8', 4, 'norm'), offset: 36 },
           ],
         },
         {
@@ -340,13 +413,24 @@ export class UnitPass {
       samplers: [
         { name: 'u_parts', unit: UNIT_TEX_PARTS },
         { name: 'u_partPivots', unit: UNIT_TEX_PIVOTS },
+        { name: 'u_visualData', unit: UNIT_VISUAL_DATA },
       ],
       cullMode: 'back',
       depthTest: true,
       depthWrite: true,
       depthCompare: 'less',
-    });
+    };
+    this.pipeline = dev.createPipeline(pipelineDesc);
+    this.shader = new OpaquePipelineExtension(dev, pipelineDesc, '(v_rel + u_camFrac.xyz)', 'n');
     this.partsTex = this.createPartsTexture(1);
+    this.visualData = new VisualDataTexture(dev);
+    this.strategic = {
+      projK: 0,
+      iconForce: 0,
+      marginPerWU: 0,
+      selectionRadius: this.visualData.selectionRadius,
+      iconThreshold: this.visualData.iconThreshold,
+    };
     // Instance rings and the PartStream texture are not restored by callbacks: re-upload next frame.
     this.offRestored = dev.onRestored(() => {
       this.dirty = true;
@@ -457,7 +541,12 @@ export class UnitPass {
     this.dev.writeTexture(this.pivotTex, { x: 0, y: 0, width: MAX_MESH_PARTS, height: rows }, pivots);
     this.rebuildTextureGroup();
 
-    this.buckets.ensure(Math.max(this.capacity, 1), buckets);
+    this.buckets.ensure(Math.max(this.capacity, 1), buckets + 1);
+    this.dirty = true;
+  }
+
+  /** Forces a re-cull/sort/upload on the next `prepare` (strategic inputs changed). */
+  invalidate(): void {
     this.dirty = true;
   }
 
@@ -502,7 +591,7 @@ export class UnitPass {
     });
     this.hlStaging = new Uint8Array(cap * HIGHLIGHT_STRIDE);
     this.capacity = cap;
-    this.buckets.ensure(cap, this.visualCount * LOD_LEVELS);
+    this.buckets.ensure(cap, this.visualCount * LOD_LEVELS + 1);
     this.dirty = true;
   }
 
@@ -556,6 +645,7 @@ export class UnitPass {
     cameraVersion: number,
   ): boolean {
     if (this.mesh === null) return false;
+    this.visualData.upload();
     this.ensureCapacity(Math.max(count, 1));
     const unchanged =
       !this.dirty &&
@@ -573,14 +663,37 @@ export class UnitPass {
     this.lastCamVersion = cameraVersion;
     this.dirty = false;
 
-    this.lastCull = this.culler.cull(bytes, count, this.visualCount, frustum, camPosInt, camFrac, this.radii, this.lodDist, this.lodBias);
+    this.lastCull = this.culler.cull(
+      bytes,
+      count,
+      this.visualCount,
+      frustum,
+      camPosInt,
+      camFrac,
+      this.radii,
+      this.lodDist,
+      this.lodBias,
+      this.strategic,
+    );
     const b = this.buckets;
-    b.sortByKeys(bytes, count, this.culler.keys, this.visualCount * LOD_LEVELS, highlight);
+    const iconKey = this.visualCount * LOD_LEVELS;
+    b.sortByKeys(bytes, count, this.culler.keys, iconKey + 1, highlight);
     b.dropped = this.lastCull.dropped;
     const total = b.total;
+    this.iconOnlyStart = b.start[iconKey] ?? total;
     const hs = this.hlStaging;
     const hl = b.highlight;
-    for (let j = 0; j < total; j++) hs[j * HIGHLIGHT_STRIDE] = hl[j]!;
+    const sorted = b.sorted;
+    let sel = 0;
+    let dmg = 0;
+    for (let j = 0; j < total; j++) {
+      const h = hl[j]!;
+      hs[j * HIGHLIGHT_STRIDE] = h;
+      if (h !== 0) sel++;
+      if (sorted[j * UNIT_INSTANCE_STRIDE + UNIT_INSTANCE_OFF_HP]! < 255) dmg++;
+    }
+    this.selectedVisible = sel;
+    this.damagedVisible = dmg;
     this.region = (this.region + 1) % RING_REGIONS;
     if (total > 0) {
       this.dev.writeBuffer(this.ring!, this.region * this.capacity * UNIT_INSTANCE_STRIDE, b.sorted, 0, total * UNIT_INSTANCE_STRIDE);
@@ -590,13 +703,17 @@ export class UnitPass {
   }
 
   /** Records one draw per (visual, LOD) with at least one visible instance. */
-  draw(enc: PassEncoder): void {
+  setShader(extension: OpaqueShaderExtension | null): void { this.shader.set(extension); }
+
+  draw(enc: PassEncoder, depthOnly = false): void {
     const mesh = this.mesh;
     if (mesh === null || this.ring === null || this.hlRing === null || this.buckets.total === 0) return;
-    enc.setPipeline(this.pipeline);
+    enc.setPipeline(depthOnly ? this.pipeline : this.shader.pipeline ?? this.pipeline);
+    if (!depthOnly && this.shader.group !== null) enc.setBindGroup(this.shader.group);
     enc.setBindGroup(this.frameGroup);
     enc.setBindGroup(this.paletteGroup);
     enc.setBindGroup(this.textureGroup!);
+    enc.setBindGroup(this.visualData.group);
     enc.setIndexBuffer(this.ibo!, mesh.indexFormat);
     const s = this.streams;
     s[0]!.buffer = this.vbo!;
@@ -616,6 +733,29 @@ export class UnitPass {
       enc.setVertexStreams(s);
       enc.drawIndexedInstanced(this.bucketCount[k]!, n, this.bucketFirst[k]!);
     }
+  }
+
+  /** Instance ring holding the sorted visible records of the last `prepare` (null before the first). */
+  get instanceBuffer(): BufH | null {
+    return this.ring;
+  }
+
+  get highlightBuffer(): BufH | null {
+    return this.hlRing;
+  }
+
+  /** Byte offset of record 0 of the current ring region. */
+  instanceOffset(): number {
+    return this.region * this.capacity * UNIT_INSTANCE_STRIDE;
+  }
+
+  highlightOffset(): number {
+    return this.region * this.capacity * HIGHLIGHT_STRIDE;
+  }
+
+  /** Visible records (mesh buckets + icon-only bucket) of the last sort. */
+  get visibleRecords(): number {
+    return this.buckets.total;
   }
 
   /** Number of visuals with at least one visible instance (any LOD). */
@@ -654,8 +794,10 @@ export class UnitPass {
     if (this.textureGroup !== null) this.dev.destroyBindGroup(this.textureGroup);
     this.textureGroup = null;
     this.dev.destroyTexture(this.partsTex);
+    this.visualData.dispose();
     if (this.pivotTex !== null) this.dev.destroyTexture(this.pivotTex);
     this.pivotTex = null;
+    this.shader.destroy();
     this.dev.destroyPipeline(this.pipeline);
   }
 }

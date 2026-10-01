@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import { attachJson, captureErrors, expectNoErrors, HOLLOW_RIDGE, openGame, SERVERS, waitTick } from './support/game.ts';
 import { decodePng, pixelStats } from './support/png.ts';
 

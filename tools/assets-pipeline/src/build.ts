@@ -7,7 +7,10 @@
  *   `models/<id>.<hash8>.raw.glb` (uncompressed fallback),
  * - `content/maps/*.rtsmap` (validated with `@faf/formats`) → `maps/<name>.<hash8>.rtsmap`,
  * - `content/generated/sim.bin` / `view.json` (blueprint compiler output, validated) →
- *   `content/sim.<hash8>.bin`, `content/view.<hash8>.json`.
+ *   `content/sim.<hash8>.bin`, `content/view.<hash8>.json`,
+ * - `content/icons/icons.json` (vector icon sources, MS3/C2) → the MSDF atlas
+ *   `icons/atlas.<hash8>.rgba` (kind `iconatlas`) + `icons/atlas.<hash8>.json` (kind `iconmetrics`),
+ *   see icons.ts; every `view.icon` must be an atlas glyph.
  *
  * `hash8` = first 8 hex digits of the file's own SHA-256; the manifest carries the full digest in
  * SRI form. Every `view.mesh` must name a built model. The build is byte-deterministic (building
@@ -30,7 +33,9 @@ import { decodeSimBin } from '@faf/blueprints/simbin';
 import { parseViewJson } from '@faf/blueprints/view';
 import { readRtsMap } from '@faf/formats';
 import { writeCompressedGlb, writeRawGlb } from './gltf.ts';
-import { allModels, type ModelDef } from './models.ts';
+import { buildIconAtlas, parseIconSource } from './icons.ts';
+import { type ModelDef } from './models.ts';
+import { referencedModels } from './modelkit.ts';
 
 /** Repository root (…/flow-and-fire). */
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -79,7 +84,6 @@ function ref(path: string, bytes: Uint8Array): AssetFileRef {
 /** Builds all asset files in memory. */
 export async function buildAssets(opts: BuildOptions = {}): Promise<AssetBuild> {
   const root = opts.repoRoot ?? REPO_ROOT;
-  const models = [...(opts.models ?? allModels())].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const files: AssetFile[] = [];
   const assets: Record<string, AssetEntry> = {};
   const add = (id: string, path: string, bytes: Uint8Array, kind: AssetEntry['kind'], fallback?: AssetFileRef): void => {
@@ -91,11 +95,28 @@ export async function buildAssets(opts: BuildOptions = {}): Promise<AssetBuild> 
   // Compiled content (blueprint compiler output).
   const generated = join(root, 'content', 'generated');
   const simBin = new Uint8Array(await readFile(join(generated, 'sim.bin')));
-  decodeSimBin(simBin); // validates
+  const blueprintTable = decodeSimBin(simBin); // validates
   const viewBytes = new Uint8Array(await readFile(join(generated, 'view.json')));
   const view = parseViewJson(new TextDecoder().decode(viewBytes));
+  const structureFootprints = new Map<string, readonly [number, number]>();
+  for (const v of view.visuals) if (v.mesh !== undefined && v.categories.includes('STRUCTURE')) {
+    const index = blueprintTable.indexOf(v.id);
+    structureFootprints.set(v.mesh, [blueprintTable.footprintWCol[index]!, blueprintTable.footprintHCol[index]!]);
+  }
+  const models = [...(opts.models ?? await referencedModels(view.visuals.flatMap(v => v.mesh === undefined ? [] : [v.mesh]), root, structureFootprints))]
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   add('content/sim.bin', hashedName('content', 'sim', 'bin', simBin), simBin, 'simbin');
   add('content/view.json', hashedName('content', 'view', 'json', viewBytes), viewBytes, 'viewjson');
+
+  // Strategic icon atlas (MSDF, raw RGBA8) + metrics.
+  const iconSrc = parseIconSource(new TextDecoder().decode(await readFile(join(root, 'content', 'icons', 'icons.json'))));
+  const atlas = buildIconAtlas(iconSrc);
+  const metricsBytes = new TextEncoder().encode(atlas.metricsText);
+  add('icons/atlas', hashedName('icons', 'atlas', 'rgba', atlas.pixels), atlas.pixels, 'iconatlas');
+  add('icons/atlas-metrics', hashedName('icons', 'atlas', 'json', metricsBytes), metricsBytes, 'iconmetrics');
+  const glyphIds = new Set(atlas.metrics.glyphs.map((g) => g.id));
+  const noGlyph = view.visuals.filter((v) => v.icon !== undefined && !glyphIds.has(v.icon));
+  if (noGlyph.length > 0) throw new Error(`view.json references icons without atlas glyph: ${noGlyph.map((v) => `${v.id} → ${v.icon}`).join(', ')}`);
 
   // Maps.
   const mapDir = join(root, 'content', 'maps');

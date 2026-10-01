@@ -15,7 +15,7 @@ export function scenarioCommands(w: World, tick: number): CommandEnvelope[] {
   const seq = tick * 8;
   switch (tick) {
     case 1:
-      return [spawnCmd(0, 900, 128, 128, 40, 0, 0, seq), spawnCmd(1, 100, 384, 384, 20, 0, 1, seq)];
+      return [spawnCmd(0, 900, 128, 128, 40, w.bp.indexOf('core:cube'), 0, seq), spawnCmd(1, 100, 384, 384, 20, w.bp.indexOf('core:cube'), 1, seq)];
     case 5:
       return [moveCmd(0, unitHandles(w, 0), 300, 200, seq)];
     case 300: {
@@ -24,7 +24,7 @@ export function scenarioCommands(w: World, tick: number): CommandEnvelope[] {
     }
     case 700: {
       const a0 = unitHandles(w, 0);
-      return [killCmd(0, a0.filter((_, i) => i % 18 === 0), seq), spawnCmd(0, 50, 256, 256, 10, 0, 0, seq + 1)];
+      return [killCmd(0, a0.filter((_, i) => i % 18 === 0), seq), spawnCmd(0, 50, 256, 256, 10, w.bp.indexOf('core:cube'), 0, seq + 1)];
     }
     case 1100:
       return [moveCmd(0, unitHandles(w, 0), 400, 100, seq)];

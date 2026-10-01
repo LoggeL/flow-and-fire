@@ -29,7 +29,7 @@ export interface WorkerLike extends PortLike {
   terminate(): void;
 }
 
-const HOST_TAGS = new Set(['ready', 'status', 'stats', 'log', 'error']);
+const HOST_TAGS = new Set(['ready', 'status', 'stats', 'log', 'error', 'closed', 'ack']);
 
 function isHostMessage(x: unknown): x is HostMessage {
   return typeof x === 'object' && x !== null && HOST_TAGS.has((x as { t?: unknown }).t as string);
@@ -107,6 +107,18 @@ export class WorkerSimLink implements SimLink {
     this.worker.removeEventListener('messageerror', this.onError);
     this.frames.close();
     this.worker.terminate();
+  }
+  /** Give the live worker a bounded chance to flush and close OPFS before termination. */
+  async closeGracefully(): Promise<void> {
+    if (this.closed) return;
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => { unsubscribe(); reject(new Error('Session close timed out')); }, 3000);
+        const unsubscribe = this.onHostMessage(message => { if (message.t === 'closed') { clearTimeout(timer); unsubscribe(); resolve(); } });
+        try { this.worker.postMessage({ t: 'shutdown' }); }
+        catch (error) { clearTimeout(timer); unsubscribe(); reject(error); }
+      });
+    } finally { this.close(); }
   }
 
   private emit(m: HostMessage): void {

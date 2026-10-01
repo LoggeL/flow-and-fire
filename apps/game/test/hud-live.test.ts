@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest';
+import { signal } from '@preact/signals';
+import { CmdFlags, EcoField, FrameFlags, FrameWriter, Op, decodeBatch, decodeBuild, frameCapacityBytes } from '@faf/protocol';
+import { GameClient, ClientMap } from '@faf/client';
+import { GameHudController, gridActionMap } from '../src/hud/live.ts';
+import type { Game } from '../src/game.ts';
+import { FakeSimLink } from '../../../packages/client/test/support/fake-sim-link.ts';
+import { FakeCanvas, FakeTarget, FakeRenderer, ManualRaf, key, pointer } from '../../../packages/client/test/support/fakes.ts';
+
+function fixture(readOnlyCommands = false) {
+  const link=new FakeSimLink({units:1,enemyUnits:0}); const canvas=new FakeCanvas(); const win=new FakeTarget(); const renderer=new FakeRenderer();
+  const map=ClientMap.testPlane(64);
+  const client=new GameClient({canvas,keyTarget:win,renderer,link,map,visuals:[],playerArmy:0,raf:new ManualRaf(),readOnlyCommands});
+  const bp={ids:['core:cmd_commander','core:str_t1_pgen','core:str_t1_mex'],indexOf:(id:string)=>bp.ids.indexOf(id),buildPowerQ16PerTickCol:Int32Array.of(65536,0,0),massCostCol:Int32Array.of(0,75,36),spotKindCol:Int32Array.of(-1,-1,0),upgradesTo:()=>-1,maxHpCol:Int32Array.of(10000,400,400),firstMount:()=>0,mountCount:()=>0,footprintW:()=>2,footprintH:()=>2,maxSlope:()=>4096,buildableByExpr:()=>0,unitMatchesExpr:()=>true,maxHp:()=>10000,speedPerTick:()=>4096,vision:()=>40960};
+  const game={client,bp,map,unitCap:8192,replayMode:readOnlyCommands,hud:signal({contextLost:false}),params:{preset:'medium'},buildHash:'test',transport:'transfer',ready:null} as unknown as Game;
+  const controller=new GameHudController(game);
+  const caps={units:4,parts:0,projectiles:0,beams:0,events:0,debugBytes:0,eco:1,footprints:4};
+  let seq=0;
+  const publish=(occupied=false)=> {const writer=new FrameWriter(caps);const bytes=new Uint8Array(frameCapacityBytes(caps));writer.beginFrame(bytes,++seq,seq,0,1000,0,FrameFlags.FootprintSnapshot,0,0,0);
+    writer.writeUnit(32*4096,0,32*4096,32*4096,0,32*4096,0,0,0,0,255,255,0,0,42,0,0);
+    const eco=writer.beginEco(0,0,65536,32768,65536);writer.setEcoValue(eco,EcoField.massStored,125000);writer.setEcoValue(eco,EcoField.massCapacity,500000);writer.setEcoValue(eco,EcoField.massIncome,500);writer.setEcoValue(eco,EcoField.massDemand,1000);writer.setEcoValue(eco,EcoField.massSpent,500);
+    if(occupied)writer.writeFootprint(31,31,2,2,1,88);
+    link.frames.deliver(bytes,seq,writer.endFrame());client.frame(seq*100);client.selectHandles([42]);controller.update(true);}; publish();
+  return {controller,client,link,canvas,win,publish};
+}
+const click={button:0,shift:false,ctrl:false,alt:false} as const;
+describe('real game HUD adapter',()=>{
+  it('binds economy milli/tick values and real selection to presentation signals',()=>{const f=fixture();expect(f.controller.model.eco.mass.stored.value).toBe(125);expect(f.controller.model.eco.mass.income.value).toBe(5);expect(f.controller.model.eco.mass.demand.value).toBe(10);expect(f.controller.model.eco.mass.flow.value).toBe(.5);expect(f.controller.model.card.selectedTypes.value).toEqual(['core:cmd_commander']);expect(f.controller.model.selection.single.value?.handle).toBe(42);f.controller.dispose();f.client.dispose();});
+  it('physical grid key arms a real pgen, shared placement blocks occupancy and shift serializes build',()=>{const f=fixture();
+    expect(f.controller.handleKey(key('keydown','KeyW') as unknown as KeyboardEvent)).toBe(true);
+    expect(f.controller.model.card.placingTypeId.value).toBe('core:str_t1_pgen');
+    f.canvas.dispatch(pointer('pointerdown',640,360,0,{shiftKey:true}));f.canvas.dispatch(pointer('pointerup',640,360,0,{shiftKey:true}));
+    const envelope=decodeBatch(f.link.sentBatches[0]!)[0]!;expect(envelope.op).toBe(Op.Build);expect(envelope.flags).toBe(CmdFlags.Queue);expect(decodeBuild(envelope.payload).bp).toBe(1);
+    expect(f.controller.model.card.placingTypeId.value).toBe('core:str_t1_pgen');
+    f.publish(true);f.controller.commands.cardActivate('KeyW',click);f.canvas.dispatch(pointer('pointerdown',640,360,0));f.canvas.dispatch(pointer('pointerup',640,360,0));
+    expect(f.link.sentBatches).toHaveLength(1);expect(f.controller.ghost.value?.verdict).not.toBe(0);
+    f.controller.commands.cancelMode();f.controller.dispose();f.client.dispose();});
+  it('camera and selected commands route through the active client, unsupported actions report visibly',()=>{const f=fixture();f.controller.commands.setCamera(12,14);expect(f.client.cameraState().x).toBe(12);f.controller.commands.minimapOrder(20,25,true);expect(decodeBatch(f.link.sentBatches[0]!)[0]!.op).toBe(Op.Move);f.controller.commands.activateOrder('stop',click);expect(decodeBatch(f.link.sentBatches[1]!)[0]!.op).toBe(Op.Stop);f.controller.commands.queueAdd('core:lnd_t1_tank',1,false);expect(f.controller.error.value).toMatch(/queueAdd/);f.controller.dispose();f.client.dispose();});
+  it('grid mode does not pan while pressing a build key',()=>{const actions=gridActionMap();expect(actions.panDirection('KeyW')).toBeNull();expect(actions.panDirection('ArrowUp')).toEqual([0,1]);expect(gridActionMap(true).panDirection('KeyW')).toEqual([0,1]);});
+  it.each(['key','card'] as const)('immediate %s build after selection uses the current unit and survives the next HUD update',mode=>{
+    const f=fixture();
+    f.client.selectHandles([]); f.controller.update(true);
+    expect(f.controller.model.card.selectedTypes.value).toEqual([]);
+    f.client.selectHandles([42]); // Deliberately no HUD rAF between native selection and action.
+    if(mode==='key') expect(f.controller.handleKey(key('keydown','KeyW') as unknown as KeyboardEvent)).toBe(true);
+    else f.controller.commands.cardActivate('KeyW',click);
+    expect(f.controller.model.card.placingTypeId.value).toBe('core:str_t1_pgen');
+    f.controller.update(true);
+    expect(f.controller.model.card.placingTypeId.value).toBe('core:str_t1_pgen');
+    f.canvas.dispatch(pointer('pointerdown',640,360,0)); f.canvas.dispatch(pointer('pointerup',640,360,0));
+    const cmd=decodeBatch(f.link.sentBatches[0]!)[0]!;
+    expect(cmd.op).toBe(Op.Build); expect(cmd.units).toEqual([42]);
+    f.controller.dispose(); f.client.dispose();
+  });
+  it('an immediate patrol key after selection arms the actual mobile unit and survives presentation',()=>{
+    const f=fixture();
+    f.client.selectHandles([]); f.controller.update(true);
+    f.client.selectHandles([42]);
+    expect(f.controller.handleKey(key('keydown','KeyW',{altKey:true}) as unknown as KeyboardEvent)).toBe(true);
+    expect(f.controller.model.orders.states.value.patrol?.armed).toBe(true);
+    f.controller.update(true);
+    expect(f.controller.model.orders.states.value.patrol?.armed).toBe(true);
+    f.canvas.dispatch(pointer('pointerdown',640,360,0)); f.canvas.dispatch(pointer('pointerup',640,360,0));
+    const cmd=decodeBatch(f.link.sentBatches[0]!)[0]!;
+    expect(cmd.op).toBe(Op.Patrol); expect(cmd.units).toEqual([42]);
+    f.controller.dispose(); f.client.dispose();
+  });
+  it('replay permits camera/selection/pause/step and blocks every sim mutation path',()=>{const f=fixture(true);f.client.moveTo(20*4096,20*4096);f.client.stopSelected();f.client.spawn(0,1,0,0,0,0);f.client.kill();f.client.commands.footprint(3,3,2,2,1);f.client.commands.build([42],1,10*4096,10*4096);f.client.commands.issue(Op.TogglePause,[42],Uint8Array.of(1));f.controller.commands.cardActivate('KeyW',click);f.controller.commands.minimapOrder(20,20,false);f.canvas.dispatch(pointer('pointerdown',640,360,2));expect(f.link.sentBatches).toEqual([]);expect(f.client.commands.sent).toBe(0);f.controller.commands.setCamera(12,14);expect(f.client.cameraState().x).toBe(12);f.client.togglePause();expect(f.client.step()).toBe(true);expect(f.link.sentCtl.some(m=>m.t==='step')).toBe(true);f.client.sendCtl({t:'devReload',simBin:new ArrayBuffer(0)});expect(f.link.sentCtl.some(m=>m.t==='devReload')).toBe(false);expect(f.client.selection.count).toBe(1);f.controller.dispose();f.client.dispose();});
+});

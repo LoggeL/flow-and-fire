@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick } from './support/game.ts';
 
 // Pause (A5): the tick stands still, camera and command acceptance keep working; a command accepted
@@ -7,7 +7,7 @@ import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick 
 for (const server of SERVERS) {
   test(`pause: Tick steht, Kamera und Commands laufen weiter – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'map=testplane', 1000);
     await waitTick(page, 5);
     await page.locator('#game-canvas').focus();
 
@@ -29,7 +29,7 @@ for (const server of SERVERS) {
     expect(cam1.distance).toBeLessThan(cam0.distance);
 
     // Command accepted during the pause (sent, not yet applied).
-    const handles = await page.evaluate(() => window.__faf!.ownHandles().slice(0, 50));
+    const handles = await page.evaluate(() => { const h = window.__faf!; return h.ownHandles().sort((a, b) => { const pa = h.unitPos(a)!; const pb = h.unitPos(b)!; return Math.hypot(pa.x - 140, pa.z - 140) - Math.hypot(pb.x - 140, pb.z - 140) || a - b; }).slice(0, 50); });
     const pos0 = await page.evaluate((hs) => hs.map((h) => window.__faf!.unitPos(h)), handles);
     const seq = await page.evaluate((hs) => window.__faf!.sendMove(hs, 140, 140), handles);
     expect(seq).toBeGreaterThan(0);
@@ -53,7 +53,7 @@ for (const server of SERVERS) {
     // Resume: the commanded cubes drive towards (140, 140).
     await page.keyboard.press('KeyP');
     await page.waitForFunction(() => window.__faf!.paused === false);
-    await waitTick(page, tick0 + 15);
+    await waitTick(page, tick0 + 40);
     const pos1 = await page.evaluate((hs) => hs.map((h) => window.__faf!.unitPos(h)), handles);
     let closer = 0;
     for (let i = 0; i < handles.length; i++) {
@@ -72,7 +72,7 @@ for (const server of SERVERS) {
 for (const server of SERVERS) {
   test(`pause: verborgener Tab pausiert, sichtbarer setzt fort – ${server.label}`, async ({ page }) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'map=testplane', 1000);
     await waitTick(page, 3);
     const setVisibility = (state: 'hidden' | 'visible') =>
       page.evaluate((s) => {

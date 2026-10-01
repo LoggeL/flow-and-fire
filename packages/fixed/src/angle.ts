@@ -86,7 +86,7 @@ export function sinA(a: Ang16): Fx {
 
 /** cos(a) as Fx (−4096..4096). */
 export function cosA(a: Ang16): Fx {
-  return sinA(((a + ANG_QUARTER) & ANG_MASK) as Ang16);
+  return (sinA(((a + ANG_QUARTER) & ANG_MASK) as Ang16) | 0) as Fx;
 }
 
 /** atan of a ratio num/den with 0 ≤ num ≤ den, den > 0, as Ang16 in [0, 8192]. */

@@ -78,6 +78,8 @@ export function repsFor(resolutionMs: number, targetMs: number, maxReps = 50): n
 export interface EngineInfo {
   /** 'node' or the Playwright project name. */
   readonly engine: string;
+  /** Native browser version supplied by Playwright when run through the browser harness. */
+  readonly browserVersion?: string;
   readonly userAgent: string;
   readonly crossOriginIsolated: boolean;
   /** Observed clock resolution in ms. */

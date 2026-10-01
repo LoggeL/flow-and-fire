@@ -7,7 +7,7 @@ import {
   FrameWriter,
   type HostMessage,
 } from '@faf/protocol';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WorkerSimLink, type WorkerLike } from '../src/worker-link.ts';
 
 const CAP = frameCapacityBytes(DEFAULT_FRAME_CAPS);
@@ -52,9 +52,27 @@ function writeFrame(target: Uint8Array, tick: number): number {
 
 afterEach(() => {
   for (const p of open.splice(0)) p.close();
+  vi.useRealTimers();
 });
 
 describe('WorkerSimLink', () => {
+  it('waits for the durable shutdown acknowledgement before terminating the worker', async () => {
+    const { worker, host } = pair();
+    const link = new WorkerSimLink(worker, 'transfer', CAP);
+    const message = nextMessage(host), closing = link.closeGracefully();
+    expect(await message).toEqual({ t: 'shutdown' });
+    expect(worker.terminated).toBe(false);
+    host.postMessage({ t: 'closed' }); await closing;
+    expect(worker.terminated).toBe(true);
+  });
+  it('terminates an unresponsive worker after the bounded shutdown wait', async () => {
+    vi.useFakeTimers();
+    const { worker } = pair();
+    const link = new WorkerSimLink(worker, 'transfer', CAP);
+    const closing = expect(link.closeGracefully()).rejects.toThrow('Session close timed out');
+    await vi.advanceTimersByTimeAsync(3000); await closing;
+    expect(worker.terminated).toBe(true);
+  });
   it('posts commands with the batch transferred and ctl messages as they are', async () => {
     const { worker, host } = pair();
     const link = new WorkerSimLink(worker, 'transfer', CAP);

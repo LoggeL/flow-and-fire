@@ -36,6 +36,9 @@ export function sessionAssetIds(manifest: AssetManifest, mapName: string): strin
     ids.push(id);
   }
   ids.push(...assetIdsOfKind(manifest, 'model'));
+  for (const id of ['icons/atlas', 'icons/atlas-metrics']) {
+    if (manifest.assets[id] !== undefined) ids.push(id);
+  }
   return ids;
 }
 

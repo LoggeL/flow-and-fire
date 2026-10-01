@@ -79,6 +79,52 @@ describe('InputController action mapping', () => {
     ]);
   });
 
+  it('opening a modal ends a held middle grab once before physical release and blocks new pointer actions', () => {
+    const { canvas, win, actions, input } = setup();
+    canvas.dispatch(pointer('pointerdown', 100, 100, 1));
+    canvas.dispatch(pointer('pointermove', 130, 90, 1));
+    expect(input.cursor.state).toBe('grabPan');
+    input.setSuspended(true);
+    expect(input.cursor.state).toBe('idle');
+    expect(actions.map((a) => a.type)).toEqual(['grabStart', 'pan', 'grabEnd']);
+    input.setSuspended(true);
+    const ended = actions.slice();
+    canvas.dispatch(pointer('pointermove', 150, 120, 1));
+    canvas.dispatch(pointer('pointerdown', 150, 120, 1));
+    canvas.dispatch(pointer('pointerdown', 150, 120, 2));
+    canvas.dispatch(pointer('pointerdown', 150, 120));
+    canvas.dispatch(pointer('pointerup', 150, 120));
+    canvas.dispatch({ ...pointer('pointerup', 150, 120), type: 'dblclick' });
+    canvas.dispatch(wheel(100, 150, 120));
+    win.dispatch(key('keydown', 'KeyP'));
+    expect(actions).toEqual(ended);
+    expect(input.cursor.state).toBe('idle');
+    // Closing the modal does not revive the old grab when its button finally releases.
+    input.setSuspended(false);
+    canvas.dispatch(pointer('pointerup', 150, 120, 1));
+    canvas.dispatch(pointer('pointermove', 160, 130, 1));
+    expect(actions).toEqual(ended);
+    canvas.dispatch(pointer('pointerdown', 160, 130, 1));
+    expect(input.cursor.state).toBe('grabPan');
+    expect(actions.at(-1)?.type).toBe('grabStart');
+  });
+
+  it('opening a modal clears an active selection box without committing selection', () => {
+    const { canvas, actions, boxes, input } = setup();
+    canvas.dispatch(pointer('pointerdown', 100, 100));
+    canvas.dispatch(pointer('pointermove', 150, 150));
+    expect(input.dragging).toBe(true);
+    input.setSuspended(true);
+    expect(input.dragging).toBe(false);
+    expect(input.cursor.leftPressed).toBe(false);
+    expect(boxes).toEqual([{ x0: 90, y0: 80, x1: 140, y1: 130 }, null]);
+    input.setSuspended(true);
+    input.setSuspended(false);
+    canvas.dispatch(pointer('pointerup', 150, 150));
+    expect(actions).toEqual([]);
+    expect(boxes).toHaveLength(2);
+  });
+
   it('keyboard actions: Ctrl/Cmd+A, P, Pause, N, console keys', () => {
     const { win, actions } = setup();
     const a = win.dispatch(key('keydown', 'KeyA', { ctrlKey: true }));

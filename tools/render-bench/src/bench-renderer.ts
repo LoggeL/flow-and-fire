@@ -148,7 +148,8 @@ export class FacadeBench implements BenchRenderer {
     st.byPass.terrain = rs.drawsByPass.terrain;
     st.byPass.water = rs.drawsByPass.water;
     st.byPass.units = rs.drawsByPass.units;
-    st.byPass.overlay = rs.drawsByPass.overlay;
+    // MS3: the strategic IconPass (1 draw at far zoom) is reported with the overlay column.
+    st.byPass.overlay = rs.drawsByPass.overlay + rs.drawsByPass.icons;
     st.unitInstances = rs.unitInstances;
     st.terrainPatches = rs.terrainPatches;
   }

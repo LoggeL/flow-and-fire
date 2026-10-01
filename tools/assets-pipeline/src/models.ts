@@ -14,6 +14,7 @@ export interface ModelPart {
   readonly parent: number;
   /** Rotation pivot in model space (WU). */
   readonly pivot: readonly [number, number, number];
+  readonly anim?: string;
 }
 
 export interface ModelDef {
@@ -22,6 +23,10 @@ export interface ModelDef {
   readonly parts: readonly ModelPart[];
   /** 1–3 LODs, finest first. */
   readonly lods: readonly LodGeometry[];
+  readonly forward?: '+z';
+  readonly sourceModelId?: string;
+  /** Explicit uniform adaptation from authored WU to the current structure footprint. */
+  readonly viewScale?: number;
 }
 
 /**

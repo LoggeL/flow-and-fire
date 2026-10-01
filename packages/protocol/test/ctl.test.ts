@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEV_RELOAD_SIM_BIN_MAX_BYTES,
+  DEV_RELOAD_SIM_BIN_MIN_BYTES,
   INIT_MAP_MAX_BYTES,
   INIT_MAP_MIN_BYTES,
   MAX_WATCH,
@@ -26,6 +28,7 @@ describe('ctl messages', () => {
       { t: 'watch', handles: [0, 0xffffffff] },
       { t: 'debug', flags: 5 },
       { t: 'devReload' },
+      { t: 'devReload', simBin: new ArrayBuffer(64) },
       { t: 'exportLog' },
     ];
     for (const m of msgs) {
@@ -48,7 +51,12 @@ describe('ctl messages', () => {
       { t: 'watch', handles: new Array(MAX_WATCH + 1).fill(0) },
       { t: 'watch', handles: [-1] },
       { t: 'debug', flags: -1 },
+      { t: 'devReload', simBin: new Uint8Array(64) },
+      { t: 'devReload', simBin: new ArrayBuffer(DEV_RELOAD_SIM_BIN_MIN_BYTES - 1) },
+      { t: 'devReload', simBin: 'sim.bin' },
+      { t: 'devReload', simBin: null },
     ];
+    expect(DEV_RELOAD_SIM_BIN_MAX_BYTES).toBe(64 * 1024 * 1024);
     for (const b of bad) expect(parseCtlMessage(b)).toBeNull();
   });
 

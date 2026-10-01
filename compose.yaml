@@ -1,0 +1,20 @@
+name: flow-and-fire
+services:
+  game:
+    image: flow-and-fire:${SOURCE_REVISION:-local}
+    build:
+      context: .
+      args:
+        SOURCE_REVISION: ${SOURCE_REVISION:-}
+    ports:
+      - "${FLOW_FIRE_BIND:-0.0.0.0}:${FLOW_FIRE_PORT:-8080}:8080"
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    mem_limit: 256m
+    cpus: 1

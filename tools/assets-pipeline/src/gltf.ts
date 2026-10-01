@@ -35,18 +35,25 @@ export function modelDocument(model: ModelDef): Document {
   doc.getRoot().getAsset().generator = GLTF_GENERATOR;
   const buffer = doc.createBuffer('data');
   const name = modelName(model.id);
-  const parts = model.parts.map((p) => ({ name: p.name, parent: p.parent, pivot: [p.pivot[0], p.pivot[1], p.pivot[2]] }));
-  const scene = doc.createScene(name).setExtras({ faf: { id: model.id, lods: model.lods.length, parts } });
+  const parts = model.parts.map((p) => ({ name: p.name, parent: p.parent, pivot: [p.pivot[0], p.pivot[1], p.pivot[2]], ...(p.anim === undefined ? {} : { anim: p.anim }) }));
+  const scene = doc.createScene(name).setExtras({ faf: { id: model.id, lods: model.lods.length, parts,
+    ...(model.forward === undefined ? {} : { forward: model.forward, up: '+y', unit: 'WU', sourceModelId: model.sourceModelId, viewScale: model.viewScale ?? 1 }) } });
   model.lods.forEach((lod, i) => {
     for (const id of lod.partIds) if (id >= model.parts.length) throw new RangeError(`${model.id} lod${i}: part id ${id} without part`);
-    const acc = (label: string, type: 'VEC3' | 'SCALAR', array: Float32Array<ArrayBuffer> | Uint8Array<ArrayBuffer> | Uint16Array<ArrayBuffer>) =>
-      doc.createAccessor(`${name}_lod${i}_${label}`).setType(type).setArray(array).setBuffer(buffer);
+    const acc = (label: string, type: 'VEC3' | 'VEC4' | 'SCALAR', array: Float32Array<ArrayBuffer> | Uint8Array<ArrayBuffer> | Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer>, normalized = false) =>
+      doc.createAccessor(`${name}_lod${i}_${label}`).setType(type).setArray(array).setNormalized(normalized).setBuffer(buffer);
     const prim = doc
       .createPrimitive()
       .setAttribute('POSITION', acc('position', 'VEC3', lod.positions))
       .setAttribute('NORMAL', acc('normal', 'VEC3', lod.normals))
       .setAttribute('_PARTID', acc('partid', 'SCALAR', lod.partIds))
       .setIndices(acc('indices', 'SCALAR', lod.indices));
+    if (lod.colors !== undefined && lod.mask !== undefined) {
+      if (lod.colors.length !== lod.positions.length || lod.mask.length !== lod.partIds.length * 4) throw new RangeError(`${model.id}: invalid palette arrays`);
+      prim.setAttribute('COLOR_0', acc('color', 'VEC3', lod.colors))
+        .setAttribute('_MASK', acc('mask', 'VEC4', lod.mask, true));
+      prim.setMaterial(doc.createMaterial(`${name}_vertex`).setBaseColorFactor([1, 1, 1, 1]).setMetallicFactor(0).setRoughnessFactor(0.85));
+    }
     const extras = { faf: { lod: i, parts } };
     const mesh = doc.createMesh(`${name}_lod${i}`).addPrimitive(prim).setExtras(extras);
     scene.addChild(doc.createNode(`lod${i}`).setMesh(mesh).setExtras({ faf: { lod: i } }));

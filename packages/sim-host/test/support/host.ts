@@ -35,8 +35,12 @@ export interface TestHostOptions {
   readonly seed?: number;
   readonly startPaused?: boolean;
   readonly autoStart?: boolean;
+  readonly persistentRecording?: boolean;
+  readonly initialization?: HostInitMessage['initialization'];
   /** `.rtsmap` bytes for InitMessage.map (default: test plane). */
   readonly map?: ArrayBuffer;
+  /** sim.bin bytes for InitMessage.simBin (default: the checked-in game bundle). */
+  readonly simBin?: ArrayBuffer;
   /** Record host messages in `msgs` (default true; false: post is a no-op, e.g. allocation tests). */
   readonly keepMessages?: boolean;
   readonly host?: Partial<Omit<SimHostOptions, 'post' | 'port' | 'wakeup'>>;
@@ -78,7 +82,7 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
   }
   const init: HostInitMessage = {
     t: 'init',
-    simBin: gameSimBinBuffer(),
+    simBin: o.simBin ?? gameSimBinBuffer(),
     seed: o.seed ?? 77,
     armyCount: 2,
     playerArmy: 0,
@@ -86,6 +90,8 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
     ...(sab !== undefined ? { frameSab: sab } : {}),
     frameCapacity: FRAME_CAP,
     buildHash: 'test-build',
+    ...(o.persistentRecording !== undefined ? { persistentRecording: o.persistentRecording } : {}),
+    ...(o.initialization !== undefined ? { initialization: o.initialization } : {}),
     ...(o.startPaused !== undefined ? { startPaused: o.startPaused } : {}),
     ...(o.map !== undefined ? { map: o.map } : {}),
   };

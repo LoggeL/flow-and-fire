@@ -280,15 +280,16 @@ export function compileCategoryExpr(source: string, registry: CategoryRegistry):
 const STACK = new Uint8Array(MAX_EXPR_DEPTH);
 
 /**
- * Evaluates a compiled expression against the mask at `off` (4 u32 words). Allocation-free.
+ * Evaluates postfix bytecode stored in `code[start, start + length)` (e.g. the expression pool of
+ * sim.bin) against the mask at `off`. Allocation-free; the code must be valid
+ * (see {@link validateCategoryCode}).
  */
-export function matchesMask(mask: Uint32Array, compiled: CompiledCategoryExpr, off = 0): boolean {
-  const code = compiled.code;
+export function matchesMaskCode(mask: Uint32Array, off: number, code: Int32Array, start: number, length: number): boolean {
   const st = STACK;
   let sp = 0;
-  let pc = 0;
-  const n = code.length;
-  while (pc < n) {
+  let pc = start;
+  const end = start + length;
+  while (pc < end) {
     const op = code[pc++]!;
     switch (op) {
       case ExprOp.Bit: {
@@ -319,3 +320,39 @@ export function matchesMask(mask: Uint32Array, compiled: CompiledCategoryExpr, o
   return st[0] === 1;
 }
 
+/**
+ * Evaluates a compiled expression against the mask at `off` (4 u32 words). Allocation-free.
+ */
+export function matchesMask(mask: Uint32Array, compiled: CompiledCategoryExpr, off = 0): boolean {
+  return matchesMaskCode(mask, off, compiled.code, 0, compiled.code.length);
+}
+
+/**
+ * Validates bytecode in `code[start, start + length)` for a registry with `categoryCount` bits:
+ * known opcodes, bit operands in range, no stack underflow, stack depth ≤ MAX_EXPR_DEPTH and
+ * exactly one result. Returns the maximum stack depth, or −1 if the code is invalid.
+ */
+export function validateCategoryCode(code: Int32Array, start: number, length: number, categoryCount: number): number {
+  if (start < 0 || length <= 0 || start + length > code.length) return -1;
+  let sp = 0;
+  let max = 0;
+  let pc = start;
+  const end = start + length;
+  while (pc < end) {
+    const op = code[pc++]!;
+    if (op === ExprOp.Bit) {
+      if (pc >= end) return -1;
+      const bit = code[pc++]!;
+      if (bit < 0 || bit >= categoryCount) return -1;
+      sp++;
+      if (sp > max) max = sp;
+      if (max > MAX_EXPR_DEPTH) return -1;
+    } else if (op === ExprOp.Not) {
+      if (sp < 1) return -1;
+    } else if (op === ExprOp.And || op === ExprOp.Or || op === ExprOp.AndNot) {
+      if (sp < 2) return -1;
+      sp--;
+    } else return -1;
+  }
+  return sp === 1 ? max : -1;
+}

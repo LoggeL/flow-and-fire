@@ -6,6 +6,7 @@
   "dependencies": {
     "@faf/blueprints": "workspace:*",
     "@faf/formats": "workspace:*",
+    "@faf/modelkit": "workspace:*",
     "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/extensions": "^4.5.1",
     "@gltf-transform/functions": "^4.5.1",
@@ -16,7 +17,7 @@
     "tsx": "^4.23.15"
   },
   "scripts": {
-    "build": "tsx scripts/build.ts",
+    "build": "pnpm --filter @faf/blueprints compile && tsx scripts/build.ts",
     "check": "tsx scripts/check.ts"
   },
   "exports": {

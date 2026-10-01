@@ -178,6 +178,45 @@ describe('InputController (MS2)', () => {
     expect(canvas.style.cursor).toBe('default');
   });
 
+  it('modal suspension resets the grab cursor immediately, before mouseup or an edge scan', () => {
+    const { canvas, actions, input } = inputSetup();
+    canvas.dispatch(pointer('pointerdown', 100, 100, 1));
+    expect(canvas.style.cursor).toBe('grabbing');
+    input.setSuspended(true);
+    expect(input.cursor.state).toBe('idle');
+    expect(canvas.style.cursor).toBe('default');
+    expect(actions.map((a) => a.type)).toEqual(['grabStart', 'grabEnd']);
+    canvas.dispatch(pointer('pointerup', 100, 100, 1));
+    expect(actions.map((a) => a.type)).toEqual(['grabStart', 'grabEnd']);
+  });
+
+  it('modal suspension clears edge pan and held keys, including a pending S tap', () => {
+    const { canvas, win, actions, input } = inputSetup();
+    win.dispatch(pointer('pointermove', 2, 300));
+    input.updateEdge(800, 600);
+    expect(input.cursor.state).toBe('edgePan');
+    expect(canvas.style.cursor).toBe('w-resize');
+    win.dispatch(key('keydown', 'KeyW', { timeStamp: 100 }));
+    win.dispatch(key('keydown', 'KeyS', { timeStamp: 100 }));
+    expect(input.panAxisY(101)).toBe(1);
+    input.setSuspended(true);
+    expect([input.edgeX, input.edgeY]).toEqual([0, 0]);
+    expect(input.cursor.state).toBe('idle');
+    expect(canvas.style.cursor).toBe('default');
+    expect(input.panAxisY(102)).toBe(0);
+    win.dispatch(key('keydown', 'ArrowRight', { timeStamp: 103 }));
+    input.updateEdge(800, 600);
+    expect(input.panAxisX(104)).toBe(0);
+    expect(input.edgeX).toBe(0);
+    input.setSuspended(false);
+    win.dispatch(key('keyup', 'KeyS', { timeStamp: 105 }));
+    win.dispatch(key('keyup', 'KeyW', { timeStamp: 105 }));
+    expect(actions).toEqual([]);
+    expect(input.panAxisY(106)).toBe(0);
+    win.dispatch(key('keydown', 'KeyW', { timeStamp: 107 }));
+    expect(input.panAxisY(108)).toBe(1);
+  });
+
   it('edge pan: 8 px band, only with a focused window and the pointer inside; off on blur/pointerout/typing', () => {
     const f = { el: null as unknown };
     const { win, input } = inputSetup({ focus: f });

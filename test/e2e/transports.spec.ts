@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/silent-test.ts';
 import { captureErrors, COI_URL, expectNoErrors, NO_COI_URL, openGame, stepTicks } from './support/game.ts';
 
 // Transport equality (S4, G14): the SAB triple buffer (COI_PORT, COOP/COEP) and the transfer ping-pong

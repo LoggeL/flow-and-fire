@@ -4,7 +4,8 @@
  * snapshot/restore are single memcpys and the hashes cover everything.
  */
 import { FX_ONE, MAX_ARMIES, XxHash32, type Tick } from '@faf/fixed';
-import { ArenaBuilder, type Arena, type Dense, type RawRegion, type Table } from '@faf/heap';
+import { ArenaBuilder, SafeIntColumn, type Arena, type Dense, type RawRegion, type Slab, type Table } from '@faf/heap';
+import { addNavRegions, defineNavRegions, Nav, type NavRegions } from '@faf/nav';
 import { CommandBatchView } from '@faf/protocol';
 import { createTestPlaneMap, mapSimData, type MapSimData } from '@faf/formats';
 import type { Heightfield } from '@faf/rules';
@@ -21,7 +22,11 @@ import {
 } from './constants.ts';
 import {
   Alliance,
+  Weapons, Wrecks,WRECKS_SCHEMA, Projectiles, PROJECTILES_SCHEMA, FactoryQueue, CombatEvents, intelRegion,
   Armies,
+  Formations,
+  FootprintEvents,
+  FORMATIONS_SCHEMA,
   gridDims,
   gridRegions,
   HashLog,
@@ -39,6 +44,9 @@ import {
   MT_WATER_LEVEL_RAW,
   Movers,
   MOVERS_SCHEMA,
+  OrderPool,
+  PathOwner,
+  PATH_OWNER_NONE,
   Units,
   UNITS_SCHEMA,
   WH_ARMY_COUNT,
@@ -48,6 +56,11 @@ import {
   WorldHeader,
 } from './schema.ts';
 import { CommandStage } from './stage.ts';
+
+/** Safe-integer observation storage is independent of the rule arena and never snapshotted. */
+function observationColumn(capacity:number):SafeIntColumn {
+  const column=new SafeIntColumn();column.bindTo(new ArrayBuffer(capacity*8),0,capacity);return column;
+}
 
 /** Views of one spatial grid (fine or coarse). */
 export class SpatialGrid {
@@ -68,6 +81,20 @@ export class SpatialGrid {
     this.items = items.i32.subarray(0, CAP_UNITS);
     this.cellOf = cellOf.i32.subarray(0, CAP_UNITS);
   }
+}
+
+/** Stages of createWorld reported to `CreateWorldOptions.initProbe` (host timing, not sim state). */
+export const WorldInitStage = {
+  /** Static nav terrain (passability + cost per cell) from the map. */
+  NavStatic: 1,
+  /** Derived nav regions (clearance, components, sector graph). */
+  NavDerived: 2,
+} as const;
+
+/** Timing hook around the setup stages of createWorld (the sim itself never reads a clock). */
+export interface WorldInitProbe {
+  begin(stage: number): void;
+  end(stage: number): void;
 }
 
 export interface CreateWorldOptions {
@@ -91,12 +118,17 @@ export interface CreateWorldOptions {
   readonly mapSizeWu?: number;
   /** Unit cap per army (default: CAP_UNITS, i.e. only the table capacity limits). */
   readonly unitCapPerArmy?: number;
+  /** Optional timing hook around the nav precompute (sim-host status). */
+  readonly initProbe?: WorldInitProbe;
 }
 
 export class World {
   readonly arena: Arena;
-  /** Blueprint table (configuration, not state; part of simId via simHash). */
-  readonly bp: SimBpTable;
+  /**
+   * Blueprint table (configuration, not state; part of simId via simHash). Replaced only by
+   * `replaceBlueprints` (dev reload, taints the log).
+   */
+  bp: SimBpTable;
   readonly header: RawRegion;
   /** Derived: last rule hash + tick (observation, not rule state). */
   readonly hashLog: RawRegion;
@@ -104,15 +136,53 @@ export class World {
   readonly alliance: RawRegion;
   readonly units: Table<typeof UNITS_SCHEMA>;
   readonly movers: Dense<typeof MOVERS_SCHEMA>;
+  /** Order records (G7), 32 B each. */
+  readonly orders: Slab;
+  /** Group records (one per Move command / queue entry). */
+  readonly formations: Table<typeof FORMATIONS_SCHEMA>;
+  readonly footprintEvents: RawRegion;
+  readonly weapons: RawRegion;
+  readonly wrecks:Table<typeof WRECKS_SCHEMA>;
+  readonly projectiles: Table<typeof PROJECTILES_SCHEMA>;
+  readonly factoryQueue: Slab;
+  readonly combatEvents: RawRegion;
+  readonly explored: RawRegion;
+  /** Tick-local presentation observations, never rule state or snapshot input. */
+  readonly frameFlowDemandMass = observationColumn(CAP_UNITS);
+  readonly frameFlowDemandEnergy = observationColumn(CAP_UNITS);
+  readonly frameFlowSpentMass = observationColumn(CAP_UNITS);
+  readonly frameFlowSpentEnergy = observationColumn(CAP_UNITS);
+  readonly frameFlowPower = observationColumn(CAP_UNITS);
+  readonly frameFlowContributor = new Uint8Array(CAP_UNITS);
+  readonly frameFlowHandles = new Uint32Array(CAP_UNITS);
+  readonly frameEconomyEvents = new Uint8Array(MAX_ARMIES);
+  readonly framePreviousStall = new Uint8Array(MAX_ARMIES);
+  readonly framePreviousOverflow = new Uint8Array(MAX_ARMIES);
+  readonly frameFog: Uint8Array;
+  frameFlowTick = -1;
+  /** Owner of every nav path slot (see schema PathOwner). */
+  readonly pathOwner: Int32Array;
+  /** Navigation (@faf/nav) over the nav regions of this arena. */
+  readonly nav: Nav;
+  readonly navRegions: NavRegions;
+  /** Nav clearance per cell (derived region view; class c passable ⇔ clearance ≥ c). */
+  readonly navClear: Uint8Array;
+  /** Nav static terrain per cell (0 blocked, else 1 + cost level). */
+  readonly navTerrain: Uint8Array;
+  /** log2 of the map size (cell index = z << navShift | x). */
+  readonly navShift: number;
   readonly fine: SpatialGrid;
   readonly coarse: SpatialGrid;
   /** Map side in WU and as raw Fx (positions are clamped to [0, mapMax]). */
   readonly mapSizeWu: number;
   readonly mapMax: number;
   /** Largest per-tick speed of any blueprint (grid staleness margin of the separation query). */
-  readonly maxSpeedPerTick: number;
-  /** Largest collision radius of any blueprint (Fx). */
-  readonly maxRadius: number;
+  maxSpeedPerTick: number;
+  /**
+   * Largest collision radius of a mobile blueprint (speed > 0, Fx). Units without speed
+   * (structures) scan for their own contacts in the collision pass (see movement.ts).
+   */
+  maxRadius: number;
   /** Static map area (PLAN §3.5): terrain parameters, heights, starts, spots. */
   readonly mapTerrain: RawRegion;
   readonly mapHeights: RawRegion;
@@ -138,15 +208,11 @@ export class World {
     this.bp = bp;
     this.mapSizeWu = mapSizeWu;
     this.mapMax = mapSizeWu * FX_ONE;
+    this.frameFog = new Uint8Array((mapSizeWu >> 3) * (mapSizeWu >> 3));
     const dim = mapSizeWu + 1;
-    let maxV = 0;
-    let maxR = 0;
-    for (let i = 0; i < bp.count; i++) {
-      if (bp.speed[i]! > maxV) maxV = bp.speed[i]!;
-      if (bp.radiusCol[i]! > maxR) maxR = bp.radiusCol[i]!;
-    }
-    this.maxSpeedPerTick = maxV;
-    this.maxRadius = maxR;
+    this.maxSpeedPerTick = 0;
+    this.maxRadius = 0;
+    updateBlueprintBounds(this);
 
     const dims = gridDims(mapSizeWu);
     const fineDefs = gridRegions('grid.fine', dims.fine * dims.fine);
@@ -157,6 +223,16 @@ export class World {
     this.alliance = b.addRegion(Alliance);
     this.units = b.addTable(Units);
     this.movers = b.addDense(Movers);
+    this.orders = b.addSlab(OrderPool);
+    this.formations = b.addTable(Formations);
+    this.footprintEvents = b.addRegion(FootprintEvents);
+    this.weapons = b.addRegion(Weapons);this.wrecks=b.addTable(Wrecks);
+    this.projectiles = b.addTable(Projectiles);
+    this.factoryQueue = b.addSlab(FactoryQueue);
+    this.combatEvents = b.addRegion(CombatEvents);
+    this.explored = b.addRegion(intelRegion(mapSizeWu));
+    const owner = b.addRegion(PathOwner);
+    this.navRegions = addNavRegions(b, defineNavRegions(mapSizeWu));
     const fs = b.addRegion(fineDefs.start);
     const fc = b.addRegion(fineDefs.cursor);
     const fi = b.addRegion(fineDefs.items);
@@ -172,6 +248,11 @@ export class World {
     this.mapStarts = b.addRegion(MapStarts);
     this.mapSpots = b.addRegion(mapSpotsRegion(map.spots.length));
     this.arena = b.build();
+    this.pathOwner = owner.i32;
+    this.nav = new Nav(this.navRegions);
+    this.navClear = this.nav.st.clear;
+    this.navTerrain = this.nav.st.terrain;
+    this.navShift = this.nav.st.shift;
     this.fine = new SpatialGrid(dims.fine, FINE_CELL_SHIFT, fs, fc, fi, fo);
     this.coarse = new SpatialGrid(dims.coarse, COARSE_CELL_SHIFT, cs, cc, ci, co);
     this.terrain = { sizeWu: mapSizeWu, dim, heights: this.mapHeights.u16.subarray(0, dim * dim), heightScaleRaw: map.heightScaleRaw };
@@ -198,6 +279,45 @@ export class World {
   get snapshotByteLength(): number {
     return this.arena.snapshotByteLength;
   }
+}
+
+/** Recomputes the blueprint-derived bounds of the world (setup and dev reload). */
+function updateBlueprintBounds(w: World): void {
+  const bp = w.bp;
+  let maxV = 0;
+  let maxR = 0;
+  for (let i = 0; i < bp.count; i++) {
+    if (bp.speed[i]! > maxV) maxV = bp.speed[i]!;
+    if (bp.speed[i]! > 0 && bp.radiusCol[i]! > maxR) maxR = bp.radiusCol[i]!;
+  }
+  w.maxSpeedPerTick = maxV;
+  w.maxRadius = maxR;
+}
+
+/**
+ * Checks that `next` can replace the blueprint table `cur` of a running world (dev reload, MS3
+ * HMR): every existing id keeps its sim id (same order), new blueprints are only appended.
+ * Returns null if compatible, else the reason.
+ */
+export function blueprintReloadProblem(cur: SimBpTable, next: SimBpTable): string | null {
+  if (next.count < cur.count) return `the new table has ${next.count} unit blueprints, the running world ${cur.count} (blueprints may only be appended)`;
+  for (let i = 0; i < cur.count; i++) {
+    if (next.ids[i] !== cur.ids[i]) return `sim id ${i} is '${next.ids[i] ?? '?'}' in the new table, '${cur.ids[i] ?? '?'}' in the running world (ids must keep their order)`;
+  }
+  return null;
+}
+
+/**
+ * Replaces the blueprint table of a world (configuration, not state; dev reload). Throws a
+ * RangeError with the reason if the tables are incompatible (see blueprintReloadProblem). Units
+ * keep their per-unit copies (layer); every other value is read from the new table from the next
+ * tick on. The caller marks the command log as tainted (the simId changes with the simHash).
+ */
+export function replaceBlueprints(w: World, next: SimBpTable): void {
+  const problem = blueprintReloadProblem(w.bp, next);
+  if (problem !== null) throw new RangeError(`devReload rejected: ${problem}`);
+  w.bp = next;
+  updateBlueprintBounds(w);
 }
 
 /** Copies the map into the static arena area (setup time, before tick 0). */
@@ -301,14 +421,26 @@ export function createWorld(options: CreateWorldOptions): World {
   for (let i = 0; i < MAX_ARMIES; i++) {
     const row = a.alloc();
     a.col.active[row] = i < armyCount ? 1 : 0;
-    a.col.unitCount[row] = 0;
+    a.col.unitCount[row] = 0; a.col.incomeFactor[row]=65536;
     a.col.unitCap[row] = cap;
     a.col.lastAckSeq[row] = NO_ACK;
+    a.col.ratioHigh[row] = 65536; a.col.ratioNormal[row] = 65536; a.col.ratioLow[row] = 65536;
   }
   const m = w.alliance.u8;
   for (let i = 0; i < MAX_ARMIES; i++) m[i * MAX_ARMIES + i] = 1;
   // Empty grids: every bucket is empty and no slot is registered.
   w.fine.cellOf.fill(-1);
   w.coarse.cellOf.fill(-1);
+  w.pathOwner.fill(PATH_OWNER_NONE);
+  // Navigation (M5/M6): static passability from the map, then the derived regions (clearance,
+  // components, sector graph). Both are part of the arena; restore needs no recomputation.
+  const probe = options.initProbe;
+  probe?.begin(WorldInitStage.NavStatic);
+  const t = w.terrain;
+  w.nav.precomputeStatic({ sizeWu: t.sizeWu, dim: t.dim, heights: t.heights, heightScaleRaw: t.heightScaleRaw, waterLevelRaw: w.hasWater ? w.waterLevel : null });
+  probe?.end(WorldInitStage.NavStatic);
+  probe?.begin(WorldInitStage.NavDerived);
+  w.nav.rebuildDerived();
+  probe?.end(WorldInitStage.NavDerived);
   return w;
 }

@@ -19,6 +19,8 @@ export const SIM_SOURCES = [
   'packages/rules/src/**/*.ts',
   'packages/sim/src/**/*.ts',
   'packages/nav/src/**/*.ts',
+  // Test map generator of @faf/nav (`@faf/nav/testmap`): its output feeds L2 goldens (MS3).
+  'packages/nav/bench/testmap.ts',
   'packages/protocol/src/**/*.ts',
   'packages/formats/src/**/*.ts',
   'packages/blueprints/src/simbin.ts',
@@ -27,8 +29,10 @@ export const SIM_SOURCES = [
 export default defineConfig(
   {
     ignores: [
+      '.worktrees/**',
       '**/node_modules/**',
       '**/dist/**',
+      'apps/game/dist-ai-qualification/**',
       'content/generated/**',
       'tools/headless/dist-harness/**',
       'test-results/**',
@@ -61,9 +65,12 @@ export default defineConfig(
     files: [
       'packages/render/**/*.ts',
       'packages/client/**/*.{ts,tsx}',
+      'packages/audio/src/**/*.ts',
+      'packages/hud/src/**/*.{ts,tsx}',
       'apps/**/src/**/*.{ts,tsx}',
       'tools/headless/src/harness/page/**/*.ts',
       'tools/render-bench/{src,page}/**/*.ts',
+      'packages/render-fx/{src,smoke}/**/*.ts',
     ],
     languageOptions: { globals: { ...globals.browser } },
   },
@@ -80,11 +87,14 @@ export default defineConfig(
       '**/*.mjs',
       '**/scripts/**/*.{ts,js}',
       '**/bench/**/*.ts',
-      '**/test/**/*.ts',
+      '**/test/**/*.{ts,tsx}',
+      'apps/*/e2e/**/*.ts',
       'test/**/*.ts',
       'tools/**/*.{js,ts}',
       'tools/assets-pipeline/**/*.{js,mjs,ts}',
       'apps/*/vite.config.ts',
+      'apps/*/playwright.config.ts',
+      'apps/*/audio-assets.ts',
       'packages/*/vite.config.ts',
     ],
     languageOptions: { globals: { ...globals.node } },
@@ -93,6 +103,10 @@ export default defineConfig(
     files: ['**/*.cjs'],
     languageOptions: { sourceType: 'commonjs' },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['{packages,apps}/*/test/**/*.tsx'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   // Determinism contract for simulation sources.
   {
@@ -106,7 +120,7 @@ export default defineConfig(
           sqrtAllow: ['packages/fixed/src/isqrt.ts'],
           float64Allow: ['packages/heap/src/safeint.ts'],
           // The .rtsmap META reader checks every number with Number.isInteger (num()/isInt()).
-          jsonParseAllow: ['packages/formats/src/rtsmap.ts'],
+          jsonParseAllow: ['packages/formats/src/rtsmap.ts', 'packages/formats/src/rtsreplay/meta.ts'],
         },
       ],
     },

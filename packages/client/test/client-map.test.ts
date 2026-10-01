@@ -74,6 +74,7 @@ describe('GameClient with a map', () => {
   it('right click targets the terrain pick; marker and line sit on the terrain height', () => {
     const { client, canvas, link, renderer, frame, frames, map } = setup();
     frames(12);
+    client.selection.selectAll();
     client.jumpTo(120 * RAW_PER_WU, 120 * RAW_PER_WU, 70);
     frame();
     const p = client.pickAt(700, 400)!;

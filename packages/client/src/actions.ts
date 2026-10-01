@@ -14,6 +14,7 @@ export type KeyAction =
   | 'panBack'
   | 'panLeft'
   | 'panRight'
+  | 'clearSelection'
   | 'selectAll'
   | 'stop'
   | 'togglePause'
@@ -28,6 +29,7 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   'panBack',
   'panLeft',
   'panRight',
+  'clearSelection',
   'selectAll',
   'stop',
   'togglePause',
@@ -74,6 +76,7 @@ export const DEFAULT_ACTION_MAP: ActionTable = {
     { code: 'KeyD', anyModifiers: true },
     { code: 'ArrowRight', anyModifiers: true },
   ],
+  clearSelection: [{ code: 'Escape' }],
   selectAll: [{ code: 'KeyA', primary: true }],
   // S tapped = stop (released within the hold threshold), S held = pan back.
   stop: [{ code: 'KeyS' }],
@@ -184,4 +187,10 @@ export class ActionMap {
     for (const b of this.table[action]) if (bindingMatches(b, ev)) return true;
     return false;
   }
+}
+
+/** Browser-safe physical digit chords. Meta+digit remains owned by the browser. */
+export function controlGroupChord(ev: KeyChord): { slot: number; save: boolean; additive: boolean } | null {
+  if (!/^Digit[0-9]$/.test(ev.code) || ev.metaKey || (ev.ctrlKey && ev.altKey)) return null;
+  return { slot: Number(ev.code.slice(5)), save: ev.ctrlKey || ev.altKey, additive: ev.shiftKey };
 }

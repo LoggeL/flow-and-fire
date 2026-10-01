@@ -14,6 +14,7 @@ import { chromium, firefox, webkit, type BrowserType, type LaunchOptions } from 
 import { decodePng, pixelStats } from '../support/png.ts';
 import { checkSpot, checkWater, settle } from '../support/terrain.ts';
 import type { FafTestHooks } from '../../../apps/game/src/hooks.ts';
+import { installSilentOutput, assertSilentOutput } from '../../../apps/game/test/support/silent-output.ts';
 
 declare global {
   interface Window {
@@ -52,14 +53,17 @@ async function main(): Promise<void> {
   mkdirSync(outDir, { recursive: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await installSilentOutput(page);
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(`console.error: ${m.text()}`);
     });
-    const res = await page.goto(url, { waitUntil: 'commit' });
+    const target = new URL(url); if (!target.searchParams.has('spawn')) target.searchParams.set('spawn', 'cubes');
+    const res = await page.goto(target.toString(), { waitUntil: 'commit' });
     const headers = res === null ? {} : res.headers();
     await page.waitForFunction(() => document.documentElement.dataset['ready'] === '1', null, { timeout: 60_000 });
     await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1000 && window.__faf!.tick >= 10, null, { timeout: 30_000 });
+    await assertSilentOutput(page);
     const info = await page.evaluate(() => {
       const h = window.__faf!;
       return {

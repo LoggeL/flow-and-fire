@@ -147,6 +147,89 @@ describe('mapc (CLI import)', () => {
   });
 });
 
+describe('mapc prop fields (markers.json "propFields")', () => {
+  const fields = [
+    {
+      name: 'Wald',
+      kind: 'tree',
+      shape: { circle: { x: 32, z: 32.5, r: 10 } },
+      entries: [{ id: 'core:tree_01', weight: 3 }, { id: 'core:tree_02' }],
+      density: 64,
+      seed: 4242,
+      scale: [0.8, 1.25],
+      maxSlope: 0.4,
+      dryOnly: true,
+      reclaimMass: 2.5,
+      reclaimEnergy: 10,
+    },
+    { name: 'Felsen', kind: 'rock', shape: { polygon: [[1, 1], [20, 2], [10, 15.25]] }, entries: [{ id: 'core:rock_01', weight: 1 }], density: 8, seed: 1 },
+  ];
+
+  it('converts WU / decimals to Fx raw, permille and milli and writes a PFLD chunk', () => {
+    const m = compileMap({ heightmap: testHeightmap(), markers: testMarkers({ propFields: fields }) });
+    expect(m.propFields).toEqual([
+      {
+        name: 'Wald',
+        kind: 'tree',
+        shape: { kind: 'circle', x: 32 * 4096, z: 32.5 * 4096, r: 10 * 4096 },
+        entries: [{ id: 'core:tree_01', weight: 3 }, { id: 'core:tree_02', weight: 1 }],
+        densityPerKWu2: 64,
+        seed: 4242,
+        scaleMinPermille: 800,
+        scaleMaxPermille: 1250,
+        maxSlopePermille: 400,
+        dryOnly: true,
+        reclaimMassMilli: 2500,
+        reclaimEnergyMilli: 10_000,
+      },
+      {
+        name: 'Felsen',
+        kind: 'rock',
+        shape: { kind: 'polygon', points: [{ x: 4096, z: 4096 }, { x: 20 * 4096, z: 2 * 4096 }, { x: 10 * 4096, z: 15.25 * 4096 }] },
+        entries: [{ id: 'core:rock_01', weight: 1 }],
+        densityPerKWu2: 8,
+        seed: 1,
+        scaleMinPermille: 1000,
+        scaleMaxPermille: 1000,
+        maxSlopePermille: 0,
+        dryOnly: false,
+        reclaimMassMilli: 0,
+        reclaimEnergyMilli: 0,
+      },
+    ]);
+    const bytes = writeRtsMap(m);
+    const back = readRtsMap(bytes);
+    expect(back.propFields).toEqual(m.propFields);
+    expect(Buffer.from(writeRtsMap(back)).equals(Buffer.from(bytes))).toBe(true);
+    // Without the key: no PFLD chunk, identical bytes to a map compiled before prop fields existed.
+    const plain = compileMap({ heightmap: testHeightmap(), markers: testMarkers() });
+    expect('propFields' in plain).toBe(false);
+    const empty = compileMap({ heightmap: testHeightmap(), markers: testMarkers({ propFields: [] }) });
+    expect(empty.propFields).toEqual([]);
+  });
+
+  it('reports prop field problems clearly', () => {
+    const hm = testHeightmap();
+    const c = (f: Record<string, unknown>) => problemsOf(() => compileMap({ heightmap: hm, markers: testMarkers({ propFields: [{ ...fields[1], ...f }] }) }));
+    expect(c({})).toBe('');
+    expect(c({ kind: 'bush' })).toMatch(/propFields\[0\]\.kind must be 'tree', 'rock' or 'wreck'/);
+    expect(c({ shape: { square: 1 } })).toMatch(/propFields\[0\]\.shape must be/);
+    expect(c({ shape: { circle: { x: 70, z: 1, r: 2 } } })).toMatch(/shape\.circle\.x = 70 lies outside the map/);
+    expect(c({ shape: { polygon: [[1, 1], [2]] } })).toMatch(/polygon\[1\] must be \[x, z\]/);
+    expect(c({ entries: [] })).toMatch(/entries must be a non-empty array/);
+    expect(c({ entries: [{ id: 'Tree' }] })).toMatch(/namespace id/);
+    expect(c({ density: 5000 })).toMatch(/density must be an integer 1\.\.4096/);
+    expect(c({ seed: -1 })).toMatch(/seed must be an integer/);
+    expect(c({ scale: [2, 1] })).toMatch(/scale must satisfy/);
+    expect(c({ maxSlope: -0.1 })).toMatch(/maxSlope must be a number/);
+    expect(c({ dryOnly: 'yes' })).toMatch(/dryOnly must be a boolean/);
+    expect(c({ colour: 1 })).toMatch(/unknown key 'colour'/);
+    // Format-level invariants (e.g. a self-intersecting polygon) come back through createRtsMap.
+    expect(c({ shape: { polygon: [[0, 0], [10, 10], [10, 0], [0, 12]] } })).toMatch(/not simple/);
+    expect(problemsOf(() => compileMap({ heightmap: hm, markers: testMarkers({ propFields: {} }) }))).toMatch(/propFields must be an array/);
+  });
+});
+
 describe('checked-in maps are fresh', () => {
   it('mapc from content/maps/src/hollow-ridge reproduces content/maps/hollow-ridge.rtsmap byte-exactly', () => {
     const checkedIn = new Uint8Array(readFileSync(join(MAPS_DIR, 'hollow-ridge.rtsmap')));

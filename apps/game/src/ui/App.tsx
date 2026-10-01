@@ -5,6 +5,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ConsoleHistory } from '../console-commands.ts';
 import type { Game } from '../game.ts';
+import { LiveGameHud } from '../hud/LiveHud.tsx';
+import type { GameHudPorts, MatchResult } from '../hud/live.ts';
 
 function fmtMs(v: number | null, digits = 2): string {
   return v === null || !Number.isFinite(v) ? '–' : `${v.toFixed(digits)} ms`;
@@ -22,8 +24,8 @@ function hex32(v: number | null): string {
 export function Hud({ game }: { game: Game }) {
   const h = game.hud.value;
   return (
-    <div class="faf-hud" data-testid="hud">
-      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS2</span></div>
+    <div class="faf-hud" data-testid="diagnostic-hud">
+      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS3</span></div>
       <table>
         <tbody>
           <tr><th>Tick</th><td data-testid="hud-tick">{h.tick}</td></tr>
@@ -34,6 +36,9 @@ export function Hud({ game }: { game: Game }) {
           <tr><th>Main-JS p95</th><td data-testid="hud-main-p95">{fmtMs(h.mainJsP95Ms, 3)}</td></tr>
           <tr><th>Einheiten</th><td data-testid="hud-units">{h.units}{h.selected > 0 ? ` (${h.selected} ausgewählt)` : ''}</td></tr>
           <tr><th>Transport</th><td data-testid="hud-transport">{h.transport}</td></tr>
+          <tr><th>Zoom</th><td data-testid="hud-zoom">Z{h.zoom}</td></tr>
+          <tr><th>simHash</th><td data-testid="hud-simhash">{hex32(h.simHash)}{h.tainted ? " (tainted)" : ""}</td></tr>
+          {h.hmrError !== null ? <tr><th>Blueprint</th><td role="alert">{h.hmrError}</td></tr> : null}
           <tr><th>simId</th><td data-testid="hud-simid">{hex32(h.simId)}</td></tr>
           <tr><th>Build</th><td data-testid="hud-build">{h.buildHash}</td></tr>
           <tr><th>Karte</th><td data-testid="hud-map">{h.mapName}</td></tr>
@@ -66,7 +71,6 @@ export function Banners({ game }: { game: Game }) {
   const fatal = game.fatal.value;
   return (
     <>
-      {h.ready && h.paused ? <div class="faf-banner" data-testid="pause-banner">PAUSE</div> : null}
       {h.contextLost ? (
         <div class="faf-banner faf-warn" data-testid="context-lost">Grafikkontext verloren – wird wiederhergestellt …</div>
       ) : null}
@@ -178,10 +182,12 @@ export function DevConsole({ game }: { game: Game }) {
   );
 }
 
-export function App({ game }: { game: Game }) {
+export function App({ game, ports, result }: { game: Game; ports?: GameHudPorts; result?: MatchResult }) {
+  const diagnostics = typeof location !== 'undefined' && new URLSearchParams(location.search).get('diagnostics') === '1';
   return (
     <>
-      <Hud game={game} />
+      <LiveGameHud game={game} {...(ports ? { ports } : {})} {...(result ? { result } : {})} />
+      <details class="faf-diagnostics" data-testid="diagnostics" hidden={!diagnostics}><summary>Diagnostics</summary><Hud game={game} /></details>
       <Banners game={game} />
       <DragRect game={game} />
       <Budget game={game} />

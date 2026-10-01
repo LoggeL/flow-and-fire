@@ -7,3 +7,5 @@ export * from './simid.ts';
 export { DataViewCache } from './bytes.ts';
 export { decodeUtf8, encodeUtf8 } from './utf8.ts';
 export * from './transport/index.ts';
+export * from './events.ts';
+export * from './setup.ts';

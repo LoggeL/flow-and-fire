@@ -1,5 +1,6 @@
 /**
- * L6 benchmarks (script `bench`): tick bench on hollow-ridge (MS2 budget) and on the MS1 test
+ * L6 benchmarks (script `bench`): tick bench on hollow-ridge (MS3 budget: 1,000 moving units with
+ * pathing, p95 ≤ 8 ms; ms budgets gate only with FAF_PERF_GATE=1, DECISIONS 16) and on the MS1 test
  * plane, SPK1 and SPK5 in Node (fresh process per job) and in Chromium/Firefox/WebKit module
  * workers (sequential), each JIT cold and warm.
  * Writes results/bench-<date>.json (local measurement output, git-ignored) and prints the
@@ -30,7 +31,10 @@ const JOBS: Job[] = [
 ];
 
 /** Budgets (PLAN §3.4, §4, §5.2). */
-const BUDGET_TICK_P95_MS = 2;
+/** MS3 (PLAN §5.2): 1,000 moving units with pathing, sim p95 ≤ 8 ms (MS2 was 2 ms without pathing). */
+const BUDGET_TICK_P95_MS = 8;
+/** Machine-dependent ms budgets gate only with FAF_PERF_GATE=1 (DECISIONS 16); otherwise reported. */
+const PERF_GATE = process.env['FAF_PERF_GATE'] === '1';
 const BUDGET_SPK1_P95_MS = 25;
 const BUDGET_HASH_TICK_MS = 2;
 
@@ -99,7 +103,7 @@ function maxOf(kind: Kind, pick: (r: JobResult) => number, key: string = kind): 
 const lines: string[] = [];
 const push = (...l: string[]): void => void lines.push(...l);
 
-// Tick benches (hollow-ridge = MS2 budget, test plane = MS1 reference)
+// Tick benches (hollow-ridge = MS3 budget, test plane = MS1 reference)
 function tickBenchTables(key: string, title: string): { value: number; where: string } {
   const tb0 = get('node', 'tickBench', 'warm', key);
   push(
@@ -126,11 +130,15 @@ function tickBenchTables(key: string, title: string): { value: number; where: st
   push('', `**Ziel:** p95 ≤ ${BUDGET_TICK_P95_MS} ms im langsamsten Engine-Worker inkl. Hash-Tick → gemessen max. p95 = **${ms(max.value)} ms** (${max.where}) ⇒ **${max.value >= 0 && max.value <= BUDGET_TICK_P95_MS ? 'erfüllt' : 'verfehlt'}**.`, '');
   return max;
 }
-const tickMax = tickBenchTables(RIDGE_KEY, 'Tick-Bench MS2 auf hollow-ridge');
+const tickMax = tickBenchTables(RIDGE_KEY, 'Tick-Bench MS3 auf hollow-ridge (mit Pathing)');
 const tickOk = tickMax.value >= 0 && tickMax.value <= BUDGET_TICK_P95_MS;
 const planeMax = tickBenchTables('tickBench', 'Tick-Bench MS1-Referenz (Testebene)');
 const planeOk = planeMax.value >= 0 && planeMax.value <= BUDGET_TICK_P95_MS;
-if (!tickOk) problems.push(`MS2 tick budget missed on hollow-ridge: p95 ${ms(tickMax.value)} ms (${tickMax.where}) > ${BUDGET_TICK_P95_MS} ms`);
+if (!tickOk) {
+  const msg = `MS3 tick budget missed on hollow-ridge: p95 ${ms(tickMax.value)} ms (${tickMax.where}) > ${BUDGET_TICK_P95_MS} ms`;
+  if (PERF_GATE) problems.push(msg);
+  else console.warn(`⚠ ${msg} (reported only; gate with FAF_PERF_GATE=1)`);
+}
 
 // SPK1
 const s10 = get('node', 'spk1', 'warm');
@@ -205,7 +213,7 @@ push(
 const summaryTable = [
   '| Kriterium | Budget | gemessen (max. über Engines, kalt/warm) | Ergebnis |',
   '|---|---|---|---|',
-  `| MS2 Sim-Tick p95, 1.000 fahrende Würfel auf hollow-ridge, inkl. Hash-Tick | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(tickMax.value)} ms (${tickMax.where}) | ${tickOk ? 'erfüllt' : 'verfehlt'} |`,
+  `| MS3 Sim-Tick p95, 1.000 fahrende Würfel mit Pathing auf hollow-ridge, inkl. Hash-Tick | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(tickMax.value)} ms (${tickMax.where}) | ${tickOk ? 'erfüllt' : 'verfehlt'} |`,
   `| MS1 Sim-Tick p95 (Testebene, Referenz) | ≤ ${BUDGET_TICK_P95_MS} ms | ${ms(planeMax.value)} ms (${planeMax.where}) | ${planeOk ? 'erfüllt' : 'verfehlt'} |`,
   `| SPK1 Big-Battle-Prototyp p95 | ≤ ${BUDGET_SPK1_P95_MS} ms | ${ms(spkMax.value)} ms (${spkMax.where}) | ${spkOk ? 'erfüllt → TS' : 'verfehlt → Rust/WASM'} |`,
   `| SPK5 Hash-Tick (Live-Bereich, 1.000 Units) p95 | ≤ ${BUDGET_HASH_TICK_MS} ms | ${ms(worstHash)} ms | ${hashOk ? 'erfüllt → JS-Hash' : 'verfehlt → Rolling/WASM'} |`,

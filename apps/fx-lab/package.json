@@ -1,0 +1,26 @@
+{
+  "name": "@faf/fx-lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone lab for @faf/render-fx: battle, shield and explosion scenes, FX benchmarks and screenshots",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "shot": "node --import tsx scripts/shot.ts",
+    "fxbench": "node --import tsx scripts/bench.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/render": "workspace:*",
+    "@faf/render-fx": "workspace:*",
+    "gl-matrix": "^3.4.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15",
+    "vite": "^8.3.1"
+  }
+}

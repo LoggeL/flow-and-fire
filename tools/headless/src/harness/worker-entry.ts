@@ -14,6 +14,17 @@ const MAP_URLS: Readonly<Record<string, URL>> = {
   'content/maps/hollow-ridge.rtsmap': new URL('../../../../content/maps/hollow-ridge.rtsmap', import.meta.url),
   'content/maps/setons.rtsmap': new URL('../../../../content/maps/setons.rtsmap', import.meta.url),
 };
+const REPLAY_URLS: Readonly<Record<string, URL>> = {
+  'test/golden-replays/choke-3wu.rtsreplay': new URL('../../../../test/golden-replays/choke-3wu.rtsreplay', import.meta.url),
+  'test/golden-replays/cubes-1000-move.rtsreplay': new URL('../../../../test/golden-replays/cubes-1000-move.rtsreplay', import.meta.url),
+  'test/golden-replays/cubes-churn.rtsreplay': new URL('../../../../test/golden-replays/cubes-churn.rtsreplay', import.meta.url),
+  'test/golden-replays/obstacle-repath.rtsreplay': new URL('../../../../test/golden-replays/obstacle-repath.rtsreplay', import.meta.url),
+  'test/golden-replays/ridge-1000-move.rtsreplay': new URL('../../../../test/golden-replays/ridge-1000-move.rtsreplay', import.meta.url),
+  'test/golden-replays/ridge-group-offset.rtsreplay': new URL('../../../../test/golden-replays/ridge-group-offset.rtsreplay', import.meta.url),
+  'test/golden-replays/ridge-shift-queue.rtsreplay': new URL('../../../../test/golden-replays/ridge-shift-queue.rtsreplay', import.meta.url),
+  'test/golden-replays/ridge-water-block.rtsreplay': new URL('../../../../test/golden-replays/ridge-water-block.rtsreplay', import.meta.url),
+  'test/golden-replays/setons-bridge-move.rtsreplay': new URL('../../../../test/golden-replays/setons-bridge-move.rtsreplay', import.meta.url),
+};
 const clock = (): number => performance.now();
 
 let assets: JobAssets | null = null;
@@ -37,7 +48,9 @@ scope.onmessage = (ev: MessageEvent<WorkerRequest>): void => {
         const [simBin, xxh32Wasm] = await Promise.all([fetchBytes(SIM_BIN_URL), fetchBytes(XXH32_WASM_URL)]);
         const maps: Record<string, Uint8Array> = {};
         for (const [path, url] of Object.entries(MAP_URLS)) maps[path] = await fetchBytes(url);
-        assets = { simBin, xxh32Wasm, maps };
+        const replays: Record<string, Uint8Array> = {};
+        for (const [path, url] of Object.entries(REPLAY_URLS)) replays[path] = await fetchBytes(url);
+        assets = { simBin, xxh32Wasm, maps, replays };
         env = { clock, info: engineInfo(req.engine, clock) };
         reply({ id: req.id, ok: true, info: env.info });
         return;

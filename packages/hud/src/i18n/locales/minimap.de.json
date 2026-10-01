@@ -1,0 +1,8 @@
+{
+  "ui.minimap.title": "Übersicht",
+  "ui.minimap.mode": "Gelände / Taktisch",
+  "ui.minimap.resources": "Ressourcenpunkte",
+  "ui.minimap.whole": "Ganze Karte",
+  "ui.minimap.spots": "{free} / {total} Ressourcenpunkte frei",
+  "ui.minimap.pending": "Minimap ab MS11"
+}

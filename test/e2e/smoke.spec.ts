@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/silent-test.ts';
 import { captureErrors, expectNoErrors, SERVERS } from './support/game.ts';
 
 // Two servers from playwright.config.ts (ports: support/ports.ts): one with COOP/COEP, one without (PLAN §5 DoD: "E2E ohne COOP/COEP").
@@ -66,7 +66,7 @@ for (const server of SERVERS) {
     expect(manifestRes.status()).toBe(200);
     expect(manifestRes.headers()['content-type']).toContain('application/json');
     const manifest = (await manifestRes.json()) as { assets: Record<string, { url: string; kind: string; bytes: number }> };
-    const mime: Record<string, string> = { map: 'application/octet-stream', simbin: 'application/octet-stream', viewjson: 'application/json', model: 'model/gltf-binary' };
+    const mime: Record<string, string> = { map: 'application/octet-stream', simbin: 'application/octet-stream', viewjson: 'application/json', model: 'model/gltf-binary', iconatlas: 'application/octet-stream', iconmetrics: 'application/json' };
     for (const [id, a] of Object.entries(manifest.assets)) {
       const r = await page.request.get(new URL(a.url, assetBase).toString());
       expect(r.status(), id).toBe(200);

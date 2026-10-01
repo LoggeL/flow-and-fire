@@ -1,0 +1,28 @@
+{
+  "name": "@faf/ai-arena",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@faf/ai": "workspace:*",
+    "@faf/fixed": "workspace:*",
+    "@faf/formats": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "@faf/rules": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "fast-check": "^4.10.2",
+    "tsx": "^4.23.15"
+  },
+  "scripts": {
+    "tournament": "node --import tsx scripts/tournament.ts",
+    "bench": "node --import tsx scripts/bench.ts",
+    "scenarios": "vitest run test/scenarios --config ../../vitest.config.ts",
+    "smoke": "node --import tsx src/scenarios/smoke.ts",
+    "gates": "node --import tsx scripts/tournament.ts --suite ms9 && node --import tsx scripts/bench.ts"
+  }
+}

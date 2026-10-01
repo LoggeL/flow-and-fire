@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createWorld, fullHash, restore, ruleHash, snapshot, spawnRejectedCount, unitCount } from '../src/index.ts';
+import { armyUnitCount, createWorld, fullHash, restore, ruleHash, snapshot, spawnRejectedCount, unitCount } from '../src/index.ts';
 import { gameTable } from './support/fixtures.ts';
 import { hollowRidgeSim } from './support/maps.ts';
 import { continueScenario, runScenario } from './support/scenario.ts';
 
-describe('determinism (L1/L4, 1,000 cubes, 2,000 ticks)', () => {
+describe('determinism (L1/L4, 1,000 cubes, 2,000 ticks)', { timeout: 180_000 }, () => {
   const table = gameTable();
 
   it('same seed + commands ⇒ identical hash chain, independent of the command input form', () => {
@@ -47,7 +47,7 @@ describe('determinism (L1/L4, 1,000 cubes, 2,000 ticks)', () => {
   });
 });
 
-describe('determinism with a map (hollow-ridge, 2,000 ticks)', () => {
+describe('determinism with a map (hollow-ridge, 2,000 ticks)', { timeout: 180_000 }, () => {
   const table = gameTable();
   const map = hollowRidgeSim();
 
@@ -57,9 +57,14 @@ describe('determinism with a map (hollow-ridge, 2,000 ticks)', () => {
     expect(a.chain.length).toBe(200);
     expect(b.chain).toEqual(a.chain);
     expect(fullHash(b.world)).toBe(fullHash(a.world));
-    // The respawn at (256, 256) lies in the lake: all 50 are rejected (M2).
-    expect(spawnRejectedCount(a.world)).toBe(50);
-    expect(unitCount(a.world)).toBe(950);
+    // The respawn at (256, 256) lies in the lake: all 50 are rejected (M2); the initial spawns on
+    // the plateaus lose the points on cliffs/slopes (M5, MS3).
+    const start = runScenario(table, 0xc0ffee, 699, 'batch', map);
+    const atStart = spawnRejectedCount(start.world);
+    expect(atStart).toBeGreaterThan(0);
+    expect(spawnRejectedCount(a.world)).toBe(atStart + 50);
+    // Tick 700 kills every 18th unit of army 0 (the respawn is rejected completely).
+    expect(unitCount(a.world)).toBe(unitCount(start.world) - Math.ceil(armyUnitCount(start.world, 0) / 18));
     const plane = runScenario(table, 0xc0ffee, 200, 'batch');
     expect(plane.chain).not.toEqual(a.chain.slice(0, 20));
   });

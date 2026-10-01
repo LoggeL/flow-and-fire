@@ -74,8 +74,8 @@ export class OpfsLogSink implements LogSink {
   close(): void {
     if (this.closed) return;
     this.closed = true;
-    settle(this.handle.flush());
-    settle(this.handle.close());
+    try { settle(this.handle.flush()); }
+    finally { settle(this.handle.close()); }
   }
 }
 

@@ -9,6 +9,11 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "references": [
+    { "path": "../../packages/audio" },
+    { "path": "../../packages/hud" },
+    { "path": "../../packages/nav" },
+    { "path": "../../packages/render-fx" },
+    { "path": "../../packages/render" },
     { "path": "../../packages/fixed" },
     { "path": "../../packages/protocol" },
     { "path": "../../packages/blueprints" },

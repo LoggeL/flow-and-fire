@@ -15,7 +15,7 @@
 import { asArmyId, asTick, fx, MAX_ARMIES, type Handle } from '@faf/fixed';
 import type { SimBpTable } from '@faf/blueprints/simbin';
 import { createTestPlaneMap, mapSimData, mapSimHash, readRtsMap, type RtsMap } from '@faf/formats';
-import { CmdFlags, CommandBatchEncoder, encodeCheatKill, encodeCheatSpawn, encodeMove, Op } from '@faf/protocol';
+import { CmdFlags, CommandBatchEncoder, encodeCheatFootprint, encodeCheatKill, encodeCheatSpawn, encodeMove, Op } from '@faf/protocol';
 import {
   armyUnitCount,
   createWorld,
@@ -55,9 +55,11 @@ export interface SpawnSpec {
 /** One command of a scenario. Coordinates are WU (converted with `fx`). */
 export type ScenarioCommand =
   | { readonly kind: 'move'; readonly army: number; readonly units: readonly Handle[]; readonly x: number; readonly z: number; readonly queue?: boolean }
-  | { readonly kind: 'stop'; readonly army: number; readonly units: readonly Handle[] }
+  | { readonly kind: 'stop'; readonly army: number; readonly units: readonly Handle[]; readonly queue?: boolean }
   | { readonly kind: 'kill'; readonly army: number; readonly units: readonly Handle[] }
-  | ({ readonly kind: 'spawn' } & SpawnSpec);
+  | ({ readonly kind: 'spawn' } & SpawnSpec)
+  /** MS3 cheat: footprint rectangle in nav cells (delta +1 adds, −1 removes). */
+  | { readonly kind: 'footprint'; readonly army: number; readonly x: number; readonly z: number; readonly w: number; readonly h: number; readonly delta?: 1 | -1 };
 
 /** Read access for command and assert callbacks. */
 export interface ScenarioContext {
@@ -273,6 +275,16 @@ export interface RunOptions {
   readonly bpTable?: SimBpTable;
   /** Map files by scenario path (`.rtsmap` bytes or parsed), for scenarios with `map({ path })`. */
   readonly maps?: Readonly<Record<string, Uint8Array | RtsMap>>;
+  /**
+   * Observer of every batch the runner actually passes to `step()` (ticks without commands pass
+   * null and are not reported): called after the envelopes were stamped with `tick`, right
+   * before the step. The buffer belongs to the runner's encoder and is REUSED for the next tick —
+   * copy it (`batch.slice()`) to keep it. Used to record FAFL command logs of scenarios
+   * (replay/scenario-log.ts); it must not change the world.
+   */
+  readonly onBatch?: (tick: number, batch: Uint8Array) => void;
+  /** Called once with the fresh world right after createWorld (before alliances and tick 1). */
+  readonly onWorld?: (world: World) => void;
 }
 
 /**
@@ -297,6 +309,7 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
     armyCount: sc.armyCount,
     map: mapSimData(map),
   });
+  opts.onWorld?.(w);
   for (const [a, b] of sc.alliances) setAlliance(w, a, b, true);
 
   const seqs = new Int32Array(MAX_ARMIES).fill(-1);
@@ -334,7 +347,10 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
         enc.add({ tick: t, army, seq, op: Op.Move, flags: c.queue === true ? CmdFlags.Queue : 0, units: c.units, payload: encodeMove({ x: fx(c.x), y: fx(0), z: fx(c.z) }) });
         return;
       case 'stop':
-        enc.add({ tick: t, army, seq, op: Op.Stop, flags: 0, units: c.units, payload: new Uint8Array(0) });
+        enc.add({ tick: t, army, seq, op: Op.Stop, flags: c.queue === true ? CmdFlags.Queue : 0, units: c.units, payload: new Uint8Array(0) });
+        return;
+      case 'footprint':
+        enc.add({ tick: t, army, seq, op: Op.Cheat, flags: 0, units: [], payload: encodeCheatFootprint({ cellX: c.x, cellZ: c.z, w: c.w, h: c.h, delta: c.delta ?? 1 }) });
         return;
       case 'kill':
         enc.add({ tick: t, army, seq, op: Op.Cheat, flags: 0, units: c.units, payload: encodeCheatKill() });
@@ -365,7 +381,9 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
       }
       ci++;
     }
-    step(w, enc.count > 0 ? enc.view() : null);
+    const batch = enc.count > 0 ? enc.view() : null;
+    if (batch !== null) opts.onBatch?.(tick, batch);
+    step(w, batch);
     if (lastHashTick(w) === tick) trail.push(lastHash(w));
     while (ai < sc.asserts.length && sc.asserts[ai]!.tick === tick) {
       const a = sc.asserts[ai]!;

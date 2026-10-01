@@ -1,0 +1,17 @@
+{
+  "ui.menu.title": "Flow & Fire",
+  "ui.menu.tagline": "Masse gibt Form. Energie hält sie am Leben.",
+  "ui.menu.skirmish": "Gefecht",
+  "ui.menu.replays": "Replays",
+  "ui.menu.settings": "Einstellungen",
+  "ui.menu.tutorial": "Einweisung",
+  "ui.menu.credits": "Mitwirkende",
+  "ui.menu.last": "Letzte Partie",
+  "ui.menu.empty": "Noch keine Partie",
+  "ui.menu.replay": "Replay ansehen",
+  "ui.menu.rematch": "Revanche",
+  "ui.menu.locked": "Ab MS11",
+  "ui.menu.post": "Nach dem MVP",
+  "ui.menu.language": "Sprache",
+  "ui.menu.build": "Build {build} · Sim {sim} · {transport} · {preset}"
+}

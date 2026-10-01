@@ -27,9 +27,10 @@ describe('opcodes (append-only)', () => {
       Stop: 21,
       FormationMove: 22,
       GroupMove: 23,
+      FactoryQueueEdit:24,
       Cheat: 250,
     });
-    expect(CheatSub).toEqual({ Spawn: 1, Kill: 2 });
+    expect(CheatSub).toEqual({ Spawn: 1, Kill: 2, Footprint: 3 });
     expect(CmdFlags).toEqual({ Queue: 1 });
   });
 
@@ -42,7 +43,7 @@ describe('opcodes (append-only)', () => {
       expect(isOp(v)).toBe(true);
     }
     expect(isOp(0)).toBe(false);
-    expect(isOp(24)).toBe(false);
+    expect(isOp(25)).toBe(false);
     expect(opName(Op.Move)).toBe('Move');
     expect(opName(Op.Cheat)).toBe('Cheat');
     expect(opName(99)).toBe('op#99');

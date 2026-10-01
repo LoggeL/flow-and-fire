@@ -1,0 +1,18 @@
+import { describe,expect,it } from 'vitest';
+import { bpTableFromRoster,encodeBuild,encodeFactoryQueue,encodePosition,encodeUpgrade,PerceptionWriter,SnapshotPerception } from '@faf/ai';
+import { asArmyId,asHandle,asTick } from '@faf/fixed';
+import { Op,type CommandEnvelope } from '@faf/protocol';
+import { loadRosterJson } from '../../src/data/design.ts';
+import { getArenaMap } from '../../src/data/maps.ts';
+import { ArenaWorld } from '../../src/world/index.ts';
+import { writePerception } from '../../src/perception/index.ts';
+const bps=bpTableFromRoster(loadRosterJson());
+const bp=(cat:string,tech=1)=>bps.list.find(b=>b.tech===tech&&b.categoryNames.includes(cat)&&(!['FACTORY','SCOUT'].includes(cat)||b.categoryNames.includes('LAND')))!;
+function world(){return ArenaWorld.create({map:getArenaMap('hollow-ridge'),bps,seed:7,armies:[{army:0,startIndex:0},{army:1,startIndex:1}]});}
+function command(w:ArenaWorld,h:number,op:CommandEnvelope['op'],payload:Uint8Array):CommandEnvelope{return {tick:asTick(w.tick),army:asArmyId(0),seq:1,op,flags:0,units:[asHandle(h)],payload};}
+describe('arena world and fog',()=>{
+ it('builds using conserved economy, produces and upgrades at the same handle',()=>{const w=world(),acu=[...w.units.values()][0]!,fac=bp('FACTORY');let x=acu.x+12;const z=acu.z;for(let i=0;!w.canPlace(fac.index,x,z)&&i<100;i++)x+=2;expect(w.canPlace(fac.index,x,z)).toBe(true);w.apply([command(w,acu.handle,Op.Build,encodeBuild(fac.index,x,z,0))]);w.addIncome(0,1000,10000);for(let i=0;i<600;i++)w.step();const f=[...w.units.values()].find(u=>u.bp===fac.index)!;expect(f?.complete).toBe(true);const eng=bp('ENGINEER');w.apply([command(w,f.handle,Op.FactoryQueue,encodeFactoryQueue(eng.index,1))]);for(let i=0;i<300;i++)w.step();expect([...w.units.values()].some(u=>u.bp===eng.index)).toBe(true);w.apply([command(w,f.handle,Op.Upgrade,encodeUpgrade(fac.upgradesTo))]);for(let i=0;i<Math.ceil(bps.list[fac.upgradesTo]!.buildTime/fac.buildPower*10)+10;i++)w.step();expect(w.units.get(f.handle)?.bp).toBe(fac.upgradesTo);});
+ it('AI-PERC-01 hidden unit does not change snapshot bytes',()=>{const a=world(),b=world();a.drainEvents(0);b.drainEvents(0);const p=b.static.starts[1]!;b.spawn(1,bp('SCOUT').id,p.x+15,p.z+15);b.updateVisibility();expect(writePerception(a,0,0,new PerceptionWriter())).toEqual(writePerception(b,0,0,new PerceptionWriter()));});
+ it('AI-PERC-02 hidden enemy mex keeps known-only placement and becomes a ghost',()=>{const a=world(),b=world(),sp=b.static.spots.filter(s=>s.kind==='mass').sort((x,y)=>Math.abs(x.x-b.static.starts[1]!.x)-Math.abs(y.x-b.static.starts[1]!.x)||x.index-y.index)[0]!,mex=bp('MASSEXTRACTION');b.spawn(1,mex.id,sp.x,sp.z);b.updateVisibility();const view=(w:ArenaWorld)=>new SnapshotPerception(w.staticFor(0),writePerception(w,0,w.tick,new PerceptionWriter()));expect(view(a).freeMassSpots()).toEqual(view(b).freeMassSpots());expect(view(a).canPlace(mex.index,sp.x,sp.z,0)).toBe(view(b).canPlace(mex.index,sp.x,sp.z,0));const h=b.spawn(0,bp('SCOUT').id,sp.x,sp.z);b.updateVisibility();expect(view(b).freeMassSpots().some(s=>s.index===sp.index)).toBe(false);b.units.get(h)!.x=b.static.starts[0]!.x;b.units.get(h)!.z=b.static.starts[0]!.z;b.updateVisibility();expect([...b.known.get(0)!.values()].some(e=>e.bp===mex.index&&e.kind==='ghost')).toBe(true);});
+ it('rejects another army and malformed commands without mutating its units',()=>{const w=world(),enemy=[...w.units.values()][1]!,x=enemy.x;w.apply([command(w,enemy.handle,Op.Move,encodePosition(10,10)),command(w,[...w.units.values()][0]!.handle,Op.Build,new Uint8Array(1))]);expect(enemy.x).toBe(x);expect(w.drainEvents(0).filter(e=>e.kind==='commandRejected').length).toBe(2);});
+});

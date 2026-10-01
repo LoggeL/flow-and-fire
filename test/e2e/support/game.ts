@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { expect, type Page, type TestInfo } from '@playwright/test';
 import type { FafTestHooks } from '../../../apps/game/src/hooks.ts';
 import { COI_ORIGIN, COI_PORT, NO_COI_ORIGIN, NO_COI_PORT } from './ports.ts';
+import { installSilentOutput } from '../../../apps/game/test/support/silent-output.ts';
 
 export const COI_URL = `${COI_ORIGIN}/`;
 export const NO_COI_URL = `${NO_COI_ORIGIN}/`;
@@ -102,8 +103,10 @@ export function withPinnedMap(query: string): string {
  * Without `map=` in the query the page opens hollow-ridge ({@link withPinnedMap}); `pinMap: false`
  * opens the game's default map (Setons).
  */
-export async function openGame(page: Page, base: string, query = '', minUnits = 1, opts: { pinMap?: boolean } = {}): Promise<void> {
-  const q = opts.pinMap === false ? query : withPinnedMap(query);
+export async function openGame(page: Page, base: string, query = '', minUnits = 1, opts: { pinMap?: boolean; legacySelection?: boolean } = {}): Promise<void> {
+  await installSilentOutput(page);
+  const supplied = /(^|&)spawn=/.test(query) ? query : `${query}${query === '' ? '' : '&'}spawn=cubes`;
+  const q = opts.pinMap === false ? supplied : withPinnedMap(supplied);
   // 'commit': the root page redirects with an inline location.replace before its load event
   // (Firefox then resolves goto() with null / may report an aborted navigation).
   await page.goto(base + (q === '' ? '' : `?${q}`), { waitUntil: 'commit' });
@@ -112,6 +115,8 @@ export async function openGame(page: Page, base: string, query = '', minUnits = 
   if (minUnits > 0) {
     await page.waitForFunction((n) => (window.__faf?.unitCount ?? 0) >= n, minUnits, { timeout: 30_000 });
   }
+  // MS1/MS2 tests exercise the old all-units command scenario with an explicit selection.
+  if (opts.legacySelection !== false) await page.evaluate(() => window.__faf!.select(null));
 }
 
 /** Waits until the sim tick reaches at least `tick`. */

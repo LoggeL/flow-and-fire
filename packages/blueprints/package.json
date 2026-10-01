@@ -8,7 +8,8 @@
     "./simbin": "./src/simbin.ts",
     "./view": "./src/view.ts",
     "./define": "./src/define.ts",
-    "./asset-manifest": "./src/asset-manifest.ts"
+    "./asset-manifest": "./src/asset-manifest.ts",
+    "./content": "./scripts/content.ts"
   },
   "scripts": {
     "compile": "tsx scripts/compile.ts"

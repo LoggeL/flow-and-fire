@@ -16,10 +16,17 @@ import { mat4 } from 'gl-matrix';
 export const RAW_PER_WU = 4096;
 const INV_RAW = 1 / RAW_PER_WU;
 
-/** Largest object height (WU) the dynamic near plane keeps clear of. */
-const NEAR_CLEARANCE_WU = 4;
-const MIN_NEAR = 0.05;
+/** Dynamic near plane (PLAN §3.7): `clamp(height · NEAR_PER_HEIGHT, NEAR_MIN_WU, NEAR_MAX_WU)`. */
+export const NEAR_PER_HEIGHT = 0.02;
+export const NEAR_MIN_WU = 0.05;
+export const NEAR_MAX_WU = 32;
 const MAX_FAR = 60000;
+
+/** Near plane (WU) for an eye height above the ground (WU), see {@link NEAR_PER_HEIGHT}. */
+export function nearPlaneForHeight(heightWU: number): number {
+  const n = heightWU * NEAR_PER_HEIGHT;
+  return n < NEAR_MIN_WU || Number.isNaN(n) ? NEAR_MIN_WU : n > NEAR_MAX_WU ? NEAR_MAX_WU : n;
+}
 
 export interface Ray {
   /** Absolute world position in WU (float64). */
@@ -62,6 +69,11 @@ export class RtsCamera {
   maxPitch: number;
   /** Ground height (WU) used for the dynamic near plane (flat test plane: 0). */
   groundHeight = 0;
+  /**
+   * Map edge length (WU, 0 = unknown). The far plane then always reaches the farthest map corner
+   * (strategic zoom over the whole map, up to 4,096 WU). The renderer sets it from its terrain.
+   */
+  mapSizeWU = 0;
 
   /** Viewport in CSS pixels. */
   viewportWidth = 1;
@@ -94,7 +106,7 @@ export class RtsCamera {
   private readonly eyeRel = new Float64Array(3);
   private readonly center = new Float64Array(3);
   private readonly up = new Float64Array([0, 1, 0]);
-  private lastKey = new Float64Array(10).fill(Number.NaN);
+  private lastKey = new Float64Array(11).fill(Number.NaN);
 
   constructor(opts: CameraOptions = {}) {
     this.fovY = opts.fovY ?? (45 * Math.PI) / 180;
@@ -154,7 +166,8 @@ export class RtsCamera {
       k[6] === this.fovY &&
       k[7] === this.viewportWidth &&
       k[8] === this.viewportHeight &&
-      k[9] === this.groundHeight
+      k[9] === this.groundHeight &&
+      k[10] === this.mapSizeWU
     ) {
       return;
     }
@@ -168,6 +181,7 @@ export class RtsCamera {
     k[7] = this.viewportWidth;
     k[8] = this.viewportHeight;
     k[9] = this.groundHeight;
+    k[10] = this.mapSizeWU;
 
     const cp = Math.cos(this.pitch);
     const sp = Math.sin(this.pitch);
@@ -190,10 +204,20 @@ export class RtsCamera {
 
     // Dynamic near plane from the camera height (PLAN §3.7).
     this.height = ey * INV_RAW - this.groundHeight;
-    const h = Math.max(this.height, MIN_NEAR);
-    this.near = Math.min(1000, Math.max(MIN_NEAR, (h - NEAR_CLEARANCE_WU) * 0.5, h * 0.01));
+    const h = Math.max(this.height, NEAR_MIN_WU);
+    this.near = nearPlaneForHeight(h);
     const lowest = Math.max(this.pitch - this.fovY / 2, 0.05);
-    this.far = Math.min(MAX_FAR, Math.max(this.near * 20, (h / Math.sin(lowest)) * 1.5 + this.distance));
+    let far = Math.max(this.near * 20, (h / Math.sin(lowest)) * 1.5 + this.distance);
+    const map = this.mapSizeWU;
+    if (map > 0) {
+      // Farthest map corner (ground level) plus margin: the whole map stays inside the frustum depth.
+      const exw = ex * INV_RAW;
+      const ezw = ez * INV_RAW;
+      const dx = Math.max(Math.abs(exw), Math.abs(exw - map));
+      const dz = Math.max(Math.abs(ezw), Math.abs(ezw - map));
+      far = Math.max(far, Math.hypot(dx, dz, h + 64) * 1.05 + 16);
+    }
+    this.far = Math.min(MAX_FAR, far);
 
     const eye = this.eyeRel;
     eye[0] = this.camFrac[0]!;

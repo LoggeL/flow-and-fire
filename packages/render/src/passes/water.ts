@@ -278,6 +278,16 @@ export class WaterPass {
     enc.drawInstanced(6, 1);
   }
 
+  /** Visibility overlays use the same water quad and heightmap, retaining unit depth occlusion. */
+  drawFog(enc: PassEncoder, pipeline: PipeH, group: BindGroupH): void {
+    enc.setPipeline(pipeline);
+    enc.setBindGroup(this.frameGroup);
+    enc.setBindGroup(this.heights.group);
+    enc.setBindGroup(group);
+    enc.setVertexStreams(this.streams);
+    enc.drawInstanced(6, 1);
+  }
+
   dispose(): void {
     this.dev.destroyBindGroup(this.group);
     this.dev.destroyBuffer(this.ubo);

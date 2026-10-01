@@ -13,6 +13,11 @@
  *    - the canvas is not a single color, army colors present, a deep-water pixel is water-colored,
  *      a mass-spot ring is visible as a green decal,
  *    - context loss → restore brings terrain, water and the probe back (if WEBGL_lose_context exists),
+ *    - MS3 strategic zoom: the icon atlas loads; at whole-map zoom (Z2) the IconPass is exactly one draw,
+ *      the unit pass draws nothing, and isolated units show an icon in their team color at their
+ *      projected position (pixel check); during the crossfade (fade 0.15/0.5/0.85) every tested unit
+ *      position shows mesh or icon (screenshot vs. the same frame without units); after a context
+ *      loss the icons (atlas) are back,
  *    and logs render-JS p50/p95 (static view and flight) and GPU time (timer query, where available).
  * 4. Closes every browser and the server; writes test-results/render-smoke.json.
  *
@@ -160,6 +165,7 @@ function analyze(img: Image): PixelReport {
 // ---------------------------------------------------------------------------------------------
 
 const MIME: Record<string, string> = {
+  '.rgba': 'application/octet-stream',
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -250,7 +256,11 @@ function launchConfig(name: string): { type: BrowserType; options: LaunchOptions
 
 interface DemoStats {
   drawCalls: number;
-  drawsByPass: { terrain: number; water: number; units: number; overlay: number };
+  drawsByPass: { terrain: number; water: number; units: number; icons: number; overlay: number };
+  zoomLevel: number;
+  iconCount: number;
+  iconOnlyUnits: number;
+  fadedUnits: number;
   instances: number;
   unitInstances: number;
   culledInstances: number;
@@ -313,6 +323,11 @@ interface BrowserResult {
   spotRingHits?: number;
   contextLoss?: 'ok' | 'unsupported' | 'failed';
   pixelsAfterRestore?: PixelReport;
+  atlas?: string;
+  strategic?: IconCheck;
+  crossfade?: { unit: number; visual: number; fade: number; faded: number; maxDiff: number }[];
+  strategicAfterRestore?: IconCheck;
+  z2All?: { draws: DemoStats['drawsByPass']; drawCalls: number; icons: number; visible: number; cpu: CpuStats };
   consoleErrors: string[];
   durationMs: number;
 }
@@ -343,6 +358,169 @@ interface DemoApiView {
   setPose(xWU: number, zWU: number, distance: number, pitchDeg: number, yawDeg: number): void;
   setFlight(on: boolean): void;
   project(x: number, y: number, z: number): [number, number] | null;
+  atlas: 'loading' | 'ok' | 'missing';
+  setPaused(on: boolean): void;
+  setUnitCount(k: number): void;
+  setUnitsVisible(on: boolean): void;
+  unitInfo(i: number): { x: number; y: number; z: number; army: number; visual: number; flags: number; selected: boolean };
+  iconFadeOf(i: number): number;
+  poseForFade(i: number, fade: number, pitchDeg?: number): number;
+}
+
+/** Units rendered for the strategic pixel checks (isolated icons on the 512-WU map). */
+const ICON_UNITS = 160;
+/** Minimum screen distance (CSS px) to any other unit for an icon/crossfade sample. */
+const ISOLATION_PX = 26;
+const BLIP = 1 << 3;
+const GHOST = 1 << 2;
+
+interface IconCheck {
+  zoomLevel: number;
+  draws: DemoStats['drawsByPass'];
+  iconOnly: number;
+  visible: number;
+  sampled: number;
+  hits: number;
+}
+
+interface ScreenUnit {
+  i: number;
+  army: number;
+  visual: number;
+  flags: number;
+  p: [number, number] | null;
+}
+
+async function screenUnits(page: Page, n: number): Promise<ScreenUnit[]> {
+  return page.evaluate((count) => {
+    const d = (window as DemoWindow).__renderDemo!;
+    const out: ScreenUnit[] = [];
+    for (let i = 0; i < count; i++) {
+      const u = d.unitInfo(i);
+      out.push({ i, army: u.army, visual: u.visual, flags: u.flags, p: d.project(u.x, u.y, u.z) });
+    }
+    return out;
+  }, n);
+}
+
+function isolated(units: readonly ScreenUnit[], u: ScreenUnit, img: Image): boolean {
+  if (u.p === null || u.p[0] < 12 || u.p[1] < 12 || u.p[0] > img.width - 12 || u.p[1] > img.height - 12) return false;
+  for (const o of units) {
+    if (o === u || o.p === null) continue;
+    if (Math.hypot(o.p[0] - u.p[0], o.p[1] - u.p[1]) < ISOLATION_PX) return false;
+  }
+  return true;
+}
+
+function teamColored(img: Image, x: number, y: number, army: number, r = 3): boolean {
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      const [cr, cg, cb] = pixelAt(img, x + dx, y + dy);
+      if (army === 0 ? cb > cr + 60 && cb > cg + 30 : cr > cg + 60 && cr > cb + 60) return true;
+    }
+  }
+  return false;
+}
+
+/** Whole-map zoom (Z2): draws and team-colored icons at the projected positions of isolated units. */
+async function iconCheck(page: Page): Promise<IconCheck> {
+  await page.evaluate((k) => {
+    const d = (window as DemoWindow).__renderDemo!;
+    d.setPaused(true);
+    d.setUnitCount(k);
+    d.setPose(256, 256, 700, 75, -90);
+  }, ICON_UNITS);
+  await settle(page, 20);
+  const stats = await page.evaluate(() => (window as DemoWindow).__renderDemo!.stats());
+  const units = await screenUnits(page, ICON_UNITS);
+  const img = await screenshot(page);
+  let sampled = 0;
+  let hits = 0;
+  for (const u of units) {
+    if ((u.flags & (BLIP | GHOST)) !== 0 || !isolated(units, u, img)) continue;
+    sampled++;
+    if (teamColored(img, u.p![0], u.p![1], u.army)) hits++;
+  }
+  return {
+    zoomLevel: stats.zoomLevel,
+    draws: stats.drawsByPass,
+    iconOnly: stats.iconOnlyUnits,
+    visible: stats.unitInstances,
+    sampled,
+    hits,
+  };
+}
+
+function iconFailures(tag: string, c: IconCheck): string[] {
+  const f: string[] = [];
+  if (c.zoomLevel !== 2) f.push(`${tag}: zoom level ${c.zoomLevel} ≠ 2 at whole-map zoom`);
+  if (c.draws.icons !== 1) f.push(`${tag}: IconPass draws ${c.draws.icons} ≠ 1`);
+  if (c.draws.units !== 0) f.push(`${tag}: unit draws ${c.draws.units} ≠ 0 in Z2`);
+  if (c.iconOnly !== c.visible || c.visible < 50) f.push(`${tag}: ${c.iconOnly}/${c.visible} visible units icon-only`);
+  if (c.sampled < 20) f.push(`${tag}: only ${c.sampled} isolated icons to check`);
+  else if (c.hits < c.sampled * 0.95) f.push(`${tag}: team-colored icon at only ${c.hits}/${c.sampled} unit positions`);
+  return f;
+}
+
+/** Crossfade without gaps: at fade 0.15/0.5/0.85 each tested unit position shows mesh or icon. */
+async function crossfadeCheck(page: Page, failures: string[]): Promise<NonNullable<BrowserResult['crossfade']>> {
+  const out: NonNullable<BrowserResult['crossfade']> = [];
+  await page.evaluate((k) => {
+    const d = (window as DemoWindow).__renderDemo!;
+    d.setPaused(true);
+    d.setUnitCount(k);
+    d.setPose(256, 256, 700, 75, -90);
+  }, ICON_UNITS);
+  await settle(page, 10);
+  const all = await screenUnits(page, ICON_UNITS);
+  const img = await screenshot(page);
+  // One isolated, plain unit per visual.
+  const picks: ScreenUnit[] = [];
+  for (let v = 0; v < 4; v++) {
+    const u = all.find((x) => x.visual === v && (x.flags & (BLIP | GHOST)) === 0 && isolated(all, x, img));
+    if (u !== undefined) picks.push(u);
+  }
+  if (picks.length < 3) failures.push(`crossfade: only ${picks.length} isolated test units`);
+  for (const u of picks) {
+    for (const fade of [0.15, 0.5, 0.85]) {
+      await page.evaluate((a) => (window as DemoWindow).__renderDemo!.poseForFade(a.i, a.fade, 60), { i: u.i, fade });
+      await settle(page, 8);
+      const st = await page.evaluate((i) => {
+        const d = (window as DemoWindow).__renderDemo!;
+        const inf = d.unitInfo(i);
+        return { stats: d.stats(), fade: d.iconFadeOf(i), p: d.project(inf.x, inf.y, inf.z) };
+      }, u.i);
+      const withUnits = await screenshot(page);
+      await page.evaluate(() => (window as DemoWindow).__renderDemo!.setUnitsVisible(false));
+      await settle(page, 4);
+      const without = await screenshot(page);
+      await page.evaluate(() => (window as DemoWindow).__renderDemo!.setUnitsVisible(true));
+      let maxDiff = 0;
+      if (st.p !== null) {
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            const a = pixelAt(withUnits, st.p[0] + dx, st.p[1] + dy);
+            const b = pixelAt(without, st.p[0] + dx, st.p[1] + dy);
+            maxDiff = Math.max(maxDiff, Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+          }
+        }
+      }
+      out.push({ unit: u.i, visual: u.visual, fade: st.fade, faded: st.stats.fadedUnits, maxDiff });
+      const tag = `crossfade unit ${u.i} (visual ${u.visual}) fade ${fade}`;
+      if (Math.abs(st.fade - fade) > 0.05) failures.push(`${tag}: measured fade ${st.fade.toFixed(3)}`);
+      if (st.stats.fadedUnits < 1) failures.push(`${tag}: no unit in the crossfade band`);
+      if (st.stats.drawsByPass.icons !== 1 || st.stats.drawsByPass.units < 1) {
+        failures.push(`${tag}: draws icons ${st.stats.drawsByPass.icons}, units ${st.stats.drawsByPass.units}`);
+      }
+      if (maxDiff <= 40) failures.push(`${tag}: nothing visible at the unit position (max diff ${maxDiff})`);
+    }
+  }
+  await page.evaluate((n) => {
+    const d = (window as DemoWindow).__renderDemo!;
+    d.setUnitCount(n);
+    d.setPaused(false);
+  }, 1_000_000);
+  return out;
 }
 
 type DemoWindow = Window & { __renderDemo?: DemoApiView };
@@ -543,7 +721,38 @@ async function runBrowser(name: string, url: string): Promise<BrowserResult> {
     result.spotRingHits = hits;
     if (hits < 6) failures.push(`spot decal: only ${hits}/16 ring samples are decal-green`);
 
-    // ---- 5. context loss → restore brings terrain, water and the probe back
+    // ---- 5. strategic zoom: atlas, whole-map icons (Z2, one draw), crossfade without gaps
+    await page.waitForFunction(() => (window as DemoWindow).__renderDemo!.atlas !== 'loading', undefined, { timeout: 15_000 });
+    result.atlas = await page.evaluate(() => (window as DemoWindow).__renderDemo!.atlas);
+    // The HUD (DOM overlay) covers part of the canvas in screenshots: hide it for the pixel checks.
+    await page.evaluate(() => {
+      const hud = document.getElementById('hud');
+      if (hud !== null) hud.style.display = 'none';
+    });
+    if (result.atlas !== 'ok') failures.push(`icon atlas not loaded (${result.atlas})`);
+    result.strategic = await iconCheck(page);
+    failures.push(...iconFailures('strategic', result.strategic));
+    // Whole-map zoom with ALL units moving: one icon draw, no unit draws; render-JS measured.
+    await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      d.setUnitCount(1_000_000);
+      d.setPaused(false);
+      d.setPose(256, 256, 700, 75, -90);
+    });
+    await settle(page, 10);
+    await page.evaluate(() => (window as DemoWindow).__renderDemo!.resetSamples());
+    await page.waitForTimeout(1500);
+    const z2 = await page.evaluate(() => {
+      const d = (window as DemoWindow).__renderDemo!;
+      return { cpu: d.cpuStats(), stats: d.stats() };
+    });
+    result.z2All = { draws: z2.stats.drawsByPass, drawCalls: z2.stats.drawCalls, icons: z2.stats.iconCount, visible: z2.stats.unitInstances, cpu: z2.cpu };
+    if (z2.stats.drawsByPass.icons !== 1 || z2.stats.drawsByPass.units !== 0) {
+      failures.push(`Z2 (all units): icons ${z2.stats.drawsByPass.icons} ≠ 1 or unit draws ${z2.stats.drawsByPass.units} ≠ 0`);
+    }
+    result.crossfade = await crossfadeCheck(page, failures);
+
+    // ---- 6. context loss → restore brings terrain, water, the probe and the icons back
     await page.evaluate(() => (window as DemoWindow).__renderDemo!.setPose(256, 276, 150, 52, -90));
     await settle(page);
     const lostOk = await page.evaluate(() => (window as DemoWindow).__renderDemo!.loseContext());
@@ -571,6 +780,13 @@ async function runBrowser(name: string, url: string): Promise<BrowserResult> {
         f2.push(...drawFailures('after restore', after.stats, after.maxUnitDraws, after.fixed));
         result.probeAfterRestore = await page.evaluate((n) => (window as DemoWindow).__renderDemo!.probe(n, 2), PROBE_POINTS);
         f2.push(...probeFailures('probe after restore', result.probeAfterRestore));
+        result.strategicAfterRestore = await iconCheck(page);
+        f2.push(...iconFailures('strategic after restore', result.strategicAfterRestore));
+        await page.evaluate((n) => {
+          const d = (window as DemoWindow).__renderDemo!;
+          d.setUnitCount(n);
+          d.setPaused(false);
+        }, 1_000_000);
         failures.push(...f2);
         result.contextLoss = f2.length === 0 ? 'ok' : 'failed';
       } catch (e) {
@@ -615,13 +831,18 @@ async function main(): Promise<void> {
       const p = r.drawsByPass;
       process.stdout.write(
         `[smoke] ${name} ${r.version}: ${r.ok ? 'OK' : 'FAIL'} | ${r.renderer ?? '?'} | draws ${r.drawCalls ?? '?'} ` +
-          `(terrain ${p?.terrain ?? '?'}, units ${p?.units ?? '?'}/${r.maxUnitDraws ?? '?'}, water ${p?.water ?? '?'}, overlay ${p?.overlay ?? '?'}) | ` +
+          `(terrain ${p?.terrain ?? '?'}, units ${p?.units ?? '?'}/${r.maxUnitDraws ?? '?'}, water ${p?.water ?? '?'}, icons ${p?.icons ?? '?'}, overlay ${p?.overlay ?? '?'}) | ` +
           `patches ${r.terrainPatches ?? '?'} | units ${r.unitInstances ?? '?'} vis / ${r.culledInstances ?? '?'} culled, LOD ${r.lodInstances?.join('/') ?? '?'} | ` +
           `probe ${r.probe?.mismatches ?? '?'}/${r.probe?.n ?? '?'} mismatches (${fmt(r.probe?.ms, 1)} ms) | ` +
           `render-JS p50 ${fmt(c?.renderP50)} p95 ${fmt(c?.renderP95)} max ${fmt(c?.renderMax)} ms (timer ${fmt(c?.timerResolutionMs)} ms) | ` +
           `flight render-JS p95 ${fmt(fl?.renderP95)} ms, draws max ${fl?.drawsMax ?? '?'}, ${fmt(fl?.fps, 1)} FPS | ` +
           `GPU p50 ${fmt(c?.gpuP50 ?? undefined, 2)} / flight p95 ${fmt(fl?.gpuP95 ?? undefined, 2)} ms | ` +
           `water rgb ${r.waterPixel?.join(',') ?? '?'} | ring ${r.spotRingHits ?? '?'}/16 | ` +
+          `atlas ${r.atlas ?? '?'} | Z2 icons ${r.strategic?.draws.icons ?? '?'} draw, units ${r.strategic?.draws.units ?? '?'}, ` +
+          `Z2 all ${r.z2All?.visible ?? '?'} units: ${r.z2All?.drawCalls ?? '?'} draws, render-JS p50 ${fmt(r.z2All?.cpu.renderP50)} p95 ${fmt(r.z2All?.cpu.renderP95)} ms, ${fmt(r.z2All?.cpu.fps, 1)} FPS, ` +
+          `team icons ${r.strategic?.hits ?? '?'}/${r.strategic?.sampled ?? '?'} | crossfade min diff ${
+            r.crossfade === undefined || r.crossfade.length === 0 ? '?' : Math.min(...r.crossfade.map((c) => c.maxDiff))
+          } (${r.crossfade?.length ?? 0} samples) | ` +
           `colors ${r.pixels?.distinctColors ?? '?'} | ctx-loss ${r.contextLoss ?? '?'} | ${r.durationMs} ms\n`,
       );
       for (const f of r.failures) process.stdout.write(`[smoke]   ✗ ${f}\n`);

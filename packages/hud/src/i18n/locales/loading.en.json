@@ -1,0 +1,17 @@
+{
+  "ui.loading.title": "Preparing match",
+  "ui.loading.manifest": "Manifest",
+  "ui.loading.assets": "Assets",
+  "ui.loading.map": "Map → Sim",
+  "ui.loading.simWorker": "Sim worker",
+  "ui.loading.aiWorker": "AI worker",
+  "ui.loading.cache": "Cache",
+  "ui.loading.network": "Network",
+  "ui.loading.pending": "Waiting",
+  "ui.loading.active": "Loading",
+  "ui.loading.done": "Ready",
+  "ui.loading.error": "Error",
+  "ui.loading.hint": "Hold Shift to append commands to the order chain.",
+  "ui.loading.total": "Total progress",
+  "ui.loading.menu": "Main menu"
+}

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./worker": "./src/worker.ts"
+    "./worker": "./src/worker.ts",
+    "./ai": "./src/ai/index.ts"
   },
   "scripts": {
     "bench": "node --expose-gc --import tsx bench/tick.ts"
@@ -17,7 +18,8 @@
     "@faf/heap": "workspace:*",
     "@faf/protocol": "workspace:*",
     "@faf/rules": "workspace:*",
-    "@faf/sim": "workspace:*"
+    "@faf/sim": "workspace:*",
+    "@faf/ai": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.23.15"

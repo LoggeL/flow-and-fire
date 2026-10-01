@@ -51,7 +51,7 @@ describe('GameClient', () => {
     expect(last.count).toBe(1020);
     expect(renderer.last!.units.bytes.length).toBe(1020 * 48);
     expect(renderer.last!.units.bytes.buffer).toBe(client.lastFrame!.bytes.buffer);
-    expect(client.selection.count).toBe(1000);
+    expect(client.selection.count).toBe(0);
     expect(client.tick).toBe(0);
     frames(12);
     expect(client.tick).toBeGreaterThanOrEqual(1);
@@ -60,6 +60,7 @@ describe('GameClient', () => {
   it('right click: marker in the very next rAF, waypoint line until the seq is acknowledged, units move', () => {
     const { client, canvas, renderer, link, frame, frames } = setup();
     frames(10);
+    client.selection.selectAll();
     const before = renderer.log.length;
     const [cx, cy] = [640, 360];
     canvas.dispatch(pointer('pointerdown', cx, cy, 2, { timeStamp: 1170 }));
@@ -104,8 +105,9 @@ describe('GameClient', () => {
   it('pause: tick stands, camera pans, commands are accepted and applied after step / resume', () => {
     const { client, win, canvas, link, renderer, frame, frames, clock } = setup();
     frames(20);
+    client.selection.selectAll();
     win.dispatch(key('keydown', 'KeyP'));
-    expect(link.sentCtl).toEqual([{ t: 'pause' }]);
+    expect(link.sentCtl.filter((m) => m.t !== 'watch')).toEqual([{ t: 'pause' }]);
     frame();
     expect(client.paused).toBe(true);
     const tick = client.tick;
@@ -254,6 +256,7 @@ describe('GameClient', () => {
     const { client, canvas, renderer, frames } = setup();
     renderer.record = false;
     frames(30);
+    client.selection.selectAll();
     canvas.dispatch(pointer('pointerdown', 900, 200, 2));
     // Warm up until the JIT has optimised the hot path (the interpreter boxes every double).
     frames(3000);

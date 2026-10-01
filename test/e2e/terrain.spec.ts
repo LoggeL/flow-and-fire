@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import { attachJson, captureErrors, COI_URL, expectNoErrors, HOLLOW_RIDGE, openGame, SERVERS, waitTick, writeReport } from './support/game.ts';
 import { colorShare, decodePng, pixelStats } from './support/png.ts';
 import { CLEAR_RGB, checkSpot, checkWater, settle } from './support/terrain.ts';
@@ -30,14 +30,18 @@ for (const server of SERVERS) {
     expect(rest.mismatches, JSON.stringify(rest.first)).toBe(0);
     expect(rest.prevMismatches).toBe(0);
     // … and while driving down from the plateau (24 WU) into the lowland (≈ 14 WU).
-    const t0 = await page.evaluate(() => {
+    await page.evaluate(() => {
       const h = window.__faf!;
-      h.sendMove(h.ownHandles(), 150, 175);
-      return h.tick;
+      const rampGroup = h.ownHandles().sort((a, b) => { const pa = h.unitPos(a)!; const pb = h.unitPos(b)!; return Math.hypot(pa.x - 140, pa.z - 96) - Math.hypot(pb.x - 140, pb.z - 96) || a - b; }).slice(0, 40);
+      h.sendMove(rampGroup, 196, 96);
     });
+    // MS3 routes the group over ramps. Advance paused batches to sample real pathing without a wall-clock travel gate.
+    await page.evaluate(() => window.__faf!.ctl({ t: 'pause' }));
+    await expect.poll(() => page.evaluate(() => window.__faf!.paused)).toBe(true);
     const driving: { tick: number; mismatches: number; prevMismatches: number; units: number }[] = [];
-    for (let k = 1; k <= 8; k++) {
-      await waitTick(page, t0 + 10 * k);
+    for (let k = 1; k <= 16; k++) {
+      const target = await page.evaluate(() => { const h = window.__faf!; const t = h.tick + 25; h.ctl({ t: 'step', ticks: 25 }); return t; });
+      await waitTick(page, target);
       const r = await page.evaluate(() => window.__faf!.unitHeights());
       driving.push({ tick: r.tick, mismatches: r.mismatches, prevMismatches: r.prevMismatches, units: r.units });
       expect(r.mismatches, JSON.stringify(r.first)).toBe(0);
@@ -66,14 +70,14 @@ for (const server of SERVERS) {
     writeReport(`terrain-${testInfo.project.name}-${server.transport}`, report);
     await attachJson(testInfo, 'terrain', report);
 
-    expect(heightsMoved, 'cubes drove down the plateau cliff').toBeGreaterThanOrEqual(20);
+    expect(heightsMoved, 'cubes followed the ramp down from the plateau').toBeGreaterThanOrEqual(20);
     expect(pixels.distinctColors).toBeGreaterThanOrEqual(16);
     expect(pixels.dominantShare).toBeLessThan(0.9);
     expect(clearShare, 'terrain covers the start view').toBeLessThan(0.05);
     expect(render.drawsByPass.terrain).toBe(1);
     expect(render.drawsByPass.water).toBe(1);
     expect(render.terrainPatches).toBeGreaterThan(0);
-    expect(render.decals).toBe(18);
+    expect(render.decals - render.dynamicDecals).toBe(18);
     expect(water.ok, `water pixel ${JSON.stringify(water.pixel)}`).toBe(true);
     expect(water.boxShare).toBeGreaterThan(0.5);
     expect(mass.hits, 'mass ring samples').toBeGreaterThanOrEqual(6);

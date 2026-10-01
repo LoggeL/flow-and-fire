@@ -1,8 +1,9 @@
-import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { cpSync, createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { blueprintHmr } from './blueprint-hmr.ts';
+import { resolveBuildHash } from './scripts/build-hash.ts';
+import { fafAudioAssets } from '../audio-demo/audio-assets.ts';
 import preact from '@preact/preset-vite';
 import { defineConfig, type Plugin } from 'vite';
 
@@ -15,6 +16,14 @@ const ASSETS_DIR = 'assets';
 
 /** MIME types of the pipeline output (mirrors scripts/serve.mjs and deploy/nginx.conf). */
 const ASSET_MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.wasm': 'application/wasm',
+  '.woff2': 'font/woff2',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.webm': 'audio/webm',
   '.json': 'application/json; charset=utf-8',
   '.bin': 'application/octet-stream',
   '.rtsmap': 'application/octet-stream',
@@ -27,44 +36,6 @@ const COI_HEADERS: Record<string, string> = {
   'Cross-Origin-Embedder-Policy': 'require-corp',
   'Cross-Origin-Resource-Policy': 'same-origin',
 };
-
-function git(args: string[]): Buffer {
-  return execFileSync('git', args, { cwd: appDir, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
-}
-
-/**
- * Build hash for `/b/<buildHash>/` (PLAN §3.1 build versioning): the short commit hash; a build from a
- * dirty working tree gets `-d<8 hex>` over the diff against HEAD plus the untracked files, so it never
- * overwrites (or shares an immutable URL with) the clean build of the same commit.
- */
-function resolveBuildHash(): string {
-  // FAF_BUILD_HASH wins; IRONFLOW_BUILD_HASH is the pre-rename name (still documented in README).
-  for (const name of ['FAF_BUILD_HASH', 'IRONFLOW_BUILD_HASH']) {
-    const fromEnv = process.env[name];
-    if (fromEnv !== undefined && /^[A-Za-z0-9_-]{1,64}$/.test(fromEnv)) return fromEnv;
-  }
-  try {
-    const head = git(['rev-parse', '--short=12', 'HEAD']).toString().trim();
-    if (!/^[0-9a-f]{4,40}$/.test(head)) return 'dev';
-    const root = git(['rev-parse', '--show-toplevel']).toString().trim();
-    const diff = git(['diff', 'HEAD', '--binary']);
-    const untracked = git(['ls-files', '--others', '--exclude-standard', '-z']).toString().split('\0').filter((f) => f !== '').sort();
-    if (diff.length === 0 && untracked.length === 0) return head;
-    const h = createHash('sha256').update(diff);
-    for (const f of untracked) {
-      h.update(`\0${f}\0`);
-      try {
-        h.update(readFileSync(resolve(root, f)));
-      } catch {
-        // vanished or unreadable: the name alone still distinguishes it
-      }
-    }
-    return `${head}-d${h.digest('hex').slice(0, 8)}`;
-  } catch {
-    // not a git checkout (or git missing): fall through
-  }
-  return 'dev';
-}
 
 /** Writes dist/index.html (redirect to the current build) and dist/build.json. */
 function buildManifestPlugin(buildHash: string): Plugin {
@@ -80,6 +51,7 @@ function buildManifestPlugin(buildHash: string): Plugin {
         '<head>',
         '<meta charset="utf-8">',
         '<title>Flow &amp; Fire</title>',
+        `<link rel="icon" type="image/png" sizes="32x32" href="${target}favicon.png">`,
         `<meta http-equiv="refresh" content="0; url=${target}">`,
         `<script>location.replace(${JSON.stringify(target)} + location.search + location.hash);</script>`,
         '</head>',
@@ -89,6 +61,7 @@ function buildManifestPlugin(buildHash: string): Plugin {
       ].join('\n');
       writeFileSync(resolve(distDir, 'index.html'), html);
       writeFileSync(resolve(distDir, 'build.json'), JSON.stringify({ buildHash }, null, 2) + '\n');
+      writeFileSync(resolve(distDir, 'b', buildHash, 'replay-capabilities.json'), JSON.stringify({ buildHash, replayPlayer: 1, sessionTransfer: 1 }) + '\n');
     },
   };
 }
@@ -108,6 +81,29 @@ function pipelineAssetsPlugin(outDir: string): Plugin {
       server.middlewares.use((_req, res, next) => {
         for (const [k, v] of Object.entries(COI_HEADERS)) res.setHeader(k, v);
         next();
+      });
+      // Retained builds use their own bundled code/assets. Missing historical routes are real
+      // 404s, never the current development SPA falsely claiming compatibility.
+      server.middlewares.use((req, res, next) => {
+        const url = new URL(req.url ?? '/', 'http://localhost');
+        if (!url.pathname.startsWith('/b/')) { next(); return; }
+        const route = /^\/b\/([A-Za-z0-9_-]{1,64})\/(.*)$/.exec(url.pathname);
+        let relative = '';
+        try { relative = decodeURIComponent(route?.[2] ?? ''); } catch { /* rejected below */ }
+        const directory = resolve(distDir, 'b', route?.[1] ?? '__invalid__');
+        const absolute = resolve(directory, relative || 'index.html');
+        if (route === null || relative.includes('\0') || !absolute.startsWith(directory + sep)
+          || !existsSync(absolute) || !statSync(absolute).isFile()) {
+          res.statusCode = 404; res.setHeader('Content-Type', 'text/plain; charset=utf-8'); res.end('404 Not Found\n'); return;
+        }
+        if (req.method !== 'GET' && req.method !== 'HEAD') { res.statusCode = 405; res.end(); return; }
+        res.statusCode = 200;
+        res.setHeader('Content-Type', ASSET_MIME[extname(absolute).toLowerCase()] ?? 'application/octet-stream');
+        res.setHeader('Content-Length', String(statSync(absolute).size));
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        if (req.method === 'HEAD') { res.end(); return; }
+        createReadStream(absolute).pipe(res);
       });
       server.middlewares.use((req, res, next) => {
         const url = new URL(req.url ?? '/', 'http://localhost');
@@ -152,12 +148,12 @@ function pipelineAssetsPlugin(outDir: string): Plugin {
 }
 
 export default defineConfig(({ command }) => {
-  const buildHash = command === 'build' ? resolveBuildHash() : 'dev';
+  const buildHash = command === 'build' ? resolveBuildHash(appDir) : 'dev';
   const outDir = resolve(distDir, 'b', buildHash);
   return {
     root: appDir,
     base: command === 'build' ? `/b/${buildHash}/` : '/',
-    plugins: [preact(), pipelineAssetsPlugin(outDir), buildManifestPlugin(buildHash)],
+    plugins: [preact(), blueprintHmr(resolve(appDir, '../..')), pipelineAssetsPlugin(outDir), fafAudioAssets({ distDir: resolve(appDir, '../../content/audio/dist') }), buildManifestPlugin(buildHash)],
     define: {
       __FAF_BUILD_HASH__: JSON.stringify(buildHash),
     },
@@ -165,6 +161,7 @@ export default defineConfig(({ command }) => {
       port: 5173,
       strictPort: false,
       headers: COI_HEADERS,
+      fs: { allow: [resolve(appDir, '../..'), ...(process.env['FAF_BLUEPRINT_DIR'] ? [resolve(process.env['FAF_BLUEPRINT_DIR'])] : []), ...(process.env['FAF_LOCALES_DIR'] ? [resolve(process.env['FAF_LOCALES_DIR'])] : [])] },
     },
     preview: {
       headers: COI_HEADERS,

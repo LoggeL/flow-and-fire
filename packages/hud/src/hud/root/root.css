@@ -1,0 +1,12 @@
+.hud{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 55% 35%,#242e27,#101412 70%)}
+.hud-layer{pointer-events:none}.hud-layer > *{pointer-events:auto}.dock,.strip{pointer-events:none}.dock>*{pointer-events:auto}
+.minimap__facts{padding:.7rem;font-size:var(--fs-cap)}
+.banner{top:5rem;max-width:25rem;min-width:13rem;pointer-events:auto}
+.banner__title{font-size:var(--fs-body);letter-spacing:.05em;}
+.tipbox{pointer-events:none}.ff-tip{max-width:calc(100vw - 1rem)}
+.hud .sel__body--single{grid-template-columns:6.5rem minmax(0,1fr) minmax(12rem,.8fr)}
+.hud .sel__body--factory{grid-template-columns:6.5rem minmax(0,.8fr) minmax(0,1fr)}
+.hud .meter{grid-template-columns:3rem minmax(1rem,1fr) 6rem}
+@media(max-width:1400px){.hud .sel__body--single,.hud .sel__body--factory{grid-template-columns:minmax(0,1fr) minmax(11rem,1fr)}.hud .portrait{display:none}.hud .uinfo__name b{font-size:var(--fs-body)}.hud .stats{gap:.25rem .6rem}.hud .meter{grid-template-columns:2.7rem minmax(1rem,1fr) 5rem}.hud .groups .grp{width:2.5rem}.hud .orders .ff-order{width:1.8rem}.hud .res{width:18rem}}
+/* A grid item's intrinsic content must never enlarge the fixed dock. */
+.hud .dock>*{min-height:0;height:100%;overflow:hidden}.hud .sel__body--multi{grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto}.hud .sel__body--multi:has(.units:empty){grid-template-rows:minmax(0,1fr) 0 auto}.hud .tiles,.hud .units{min-height:0;overflow:auto}.hud .sel-foot{min-height:1rem}

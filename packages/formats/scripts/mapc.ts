@@ -12,11 +12,19 @@
  *     "starts": [{ "army": 0, "x": …, "z": … }], "mass": [{ "x", "z" }], "hydro": [{ "x", "z" }],
  *     "props": [{ "id": "core:rock_01", "x", "z", "yawDeg"?, "scale"? }],
  *     "light"?: { "azimuthDeg", "elevationDeg", "sun": [r,g,b], "ambient": [r,g,b] },
- *     "strata"?: [{ "name", "color": [r,g,b] }] }
+ *     "strata"?: [{ "name", "color": [r,g,b] }],
+ *     "propFields"?: [{ "name", "kind": "tree"|"rock"|"wreck",
+ *                       "shape": { "circle": { "x", "z", "r" } } | { "polygon": [[x, z], …] },
+ *                       "entries": [{ "id": "core:tree_01", "weight": 1..65535 }],
+ *                       "density": <props per 1024 WU², integer 1..4096>, "seed": <u32>,
+ *                       "scale"?: [min, max] (default [1, 1]), "maxSlope"?: <rise/run, 0 = any>,
+ *                       "dryOnly"?: bool, "reclaimMass"?: <mass>, "reclaimEnergy"?: <energy> }] }
+ *   Without "propFields" the map has no PFLD chunk (output byte-identical to earlier mapc).
  *
  * Unit conversion happens exactly once, here: WU → Fx raw = Math.round(v·4096); yawDeg → Ang16 =
  * Math.round(yawDeg·65536/360) mod 65536; scale → scalePermille = Math.round(scale·1000);
- * heightScale → heightScaleRaw = Math.round(heightScale·4096). Everything after this point
+ * heightScale → heightScaleRaw = Math.round(heightScale·4096); prop field scale / maxSlope /
+ * reclaimMass / reclaimEnergy → ·1000 rounded (permille / milli). Everything after this point
  * (the .rtsmap, the sim) is integer-only.
  */
 
@@ -30,6 +38,11 @@ import {
   FormatError,
   writeRtsMap,
   type MapLight,
+  type MapPoint,
+  type MapPropField,
+  type PropFieldEntry,
+  type PropFieldKind,
+  type PropFieldShape,
   type MapPreview,
   type MapProp,
   type MapSplatRaw,
@@ -121,7 +134,7 @@ export function compileMap(input: CompileInput): RtsMap {
   if (!isObj(m)) throw new MapcError([`${source}: markers must be a JSON object`]);
   checkKeys(
     m,
-    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'props', 'light', 'strata'],
+    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'props', 'light', 'strata', 'propFields'],
     'markers',
     pr,
   );
@@ -269,6 +282,8 @@ export function compileMap(input: CompileInput): RtsMap {
     strata.push({ name: s['name'], color: rgbOf(s['color'], `strata[${i}].color`, pr) });
   });
 
+  const propFields = m['propFields'] === undefined ? undefined : parsePropFields(list('propFields'), maxRaw, pr);
+
   let splat: MapSplatRaw | null = null;
   const splatPngs = input.splatPngs ?? [];
   if (splatPngs.length > 0) {
@@ -301,12 +316,134 @@ export function compileMap(input: CompileInput): RtsMap {
       light,
       strata,
       splat,
+      ...(propFields === undefined ? {} : { propFields }),
     });
     return input.preview === true ? { ...base, preview: renderPreview(base, PREVIEW_SIZE) } : base;
   } catch (e) {
     if (e instanceof FormatError) throw new MapcError([`${source}: ${e.message}`]);
     throw e;
   }
+}
+
+/** markers.json "propFields" → MapPropField[] (WU → Fx raw, decimals → permille / milli). */
+function parsePropFields(list: readonly unknown[], maxRaw: number, pr: Problems): MapPropField[] {
+  const out: MapPropField[] = [];
+  const milli = (v: unknown, where: string, dflt: number, max: number): number => {
+    if (v === undefined) return dflt;
+    if (!finite(v) || v < 0 || Math.round(v * 1000) > max) {
+      pr.add(`${where} must be a number in 0..${max / 1000}`);
+      return dflt;
+    }
+    return Math.round(v * 1000) + 0;
+  };
+  const coord = (v: unknown, where: string): number | null => {
+    if (!finite(v)) {
+      pr.add(`${where} must be a number (WU)`);
+      return null;
+    }
+    const r = wuToRaw(v);
+    if (r < 0 || r > maxRaw) {
+      pr.add(`${where} = ${v} lies outside the map (0..${maxRaw / 4096} WU)`);
+      return null;
+    }
+    return r;
+  };
+  list.forEach((f, i) => {
+    const where = `propFields[${i}]`;
+    if (!isObj(f)) {
+      pr.add(`${where} must be an object`);
+      return;
+    }
+    checkKeys(f, ['name', 'kind', 'shape', 'entries', 'density', 'seed', 'scale', 'maxSlope', 'dryOnly', 'reclaimMass', 'reclaimEnergy'], where, pr);
+    const name = f['name'];
+    if (typeof name !== 'string' || name.length === 0) pr.add(`${where}.name must be a non-empty string`);
+    const kind = f['kind'];
+    if (kind !== 'tree' && kind !== 'rock' && kind !== 'wreck') pr.add(`${where}.kind must be 'tree', 'rock' or 'wreck'`);
+
+    let shape: PropFieldShape | null = null;
+    const sh = f['shape'];
+    if (isObj(sh) && Object.keys(sh).length === 1 && isObj(sh['circle'])) {
+      const c = sh['circle'];
+      checkKeys(c, ['x', 'z', 'r'], `${where}.shape.circle`, pr);
+      const x = coord(c['x'], `${where}.shape.circle.x`);
+      const z = coord(c['z'], `${where}.shape.circle.z`);
+      const r = finite(c['r']) && c['r'] > 0 ? wuToRaw(c['r']) : null;
+      if (r === null) pr.add(`${where}.shape.circle.r must be a positive number (WU)`);
+      if (x !== null && z !== null && r !== null) shape = { kind: 'circle', x, z, r };
+    } else if (isObj(sh) && Object.keys(sh).length === 1 && Array.isArray(sh['polygon'])) {
+      const points: MapPoint[] = [];
+      let ok = true;
+      (sh['polygon'] as unknown[]).forEach((pt, k) => {
+        if (!Array.isArray(pt) || pt.length !== 2) {
+          pr.add(`${where}.shape.polygon[${k}] must be [x, z] (WU)`);
+          ok = false;
+          return;
+        }
+        const x = coord(pt[0], `${where}.shape.polygon[${k}][0]`);
+        const z = coord(pt[1], `${where}.shape.polygon[${k}][1]`);
+        if (x === null || z === null) ok = false;
+        else points.push({ x, z });
+      });
+      if (ok) shape = { kind: 'polygon', points };
+    } else {
+      pr.add(`${where}.shape must be { "circle": { x, z, r } } or { "polygon": [[x, z], …] }`);
+    }
+
+    const entries: PropFieldEntry[] = [];
+    const es = f['entries'];
+    if (!Array.isArray(es) || es.length === 0) pr.add(`${where}.entries must be a non-empty array`);
+    else {
+      es.forEach((e, k) => {
+        const ew = `${where}.entries[${k}]`;
+        if (!isObj(e)) {
+          pr.add(`${ew} must be an object`);
+          return;
+        }
+        checkKeys(e, ['id', 'weight'], ew, pr);
+        const id = e['id'];
+        const weight = e['weight'] ?? 1;
+        if (typeof id !== 'string' || !/^[a-z0-9_]+:[a-z0-9_./-]+$/.test(id)) pr.add(`${ew}.id must be a namespace id like 'core:tree_01'`);
+        else if (!Number.isInteger(weight) || (weight as number) < 1 || (weight as number) > 65535) pr.add(`${ew}.weight must be an integer 1..65535`);
+        else entries.push({ id, weight: weight as number });
+      });
+    }
+    const density = f['density'];
+    if (!Number.isInteger(density) || (density as number) < 1 || (density as number) > 4096) pr.add(`${where}.density must be an integer 1..4096 (props per 1024 WU²)`);
+    const seed = f['seed'];
+    if (!Number.isInteger(seed) || (seed as number) < 0 || (seed as number) > 0xffffffff) pr.add(`${where}.seed must be an integer 0..4294967295`);
+    let scaleMin = 1000;
+    let scaleMax = 1000;
+    const sc = f['scale'];
+    if (sc !== undefined) {
+      if (!Array.isArray(sc) || sc.length !== 2) pr.add(`${where}.scale must be [min, max]`);
+      else {
+        scaleMin = milli(sc[0], `${where}.scale[0]`, 1000, 65535);
+        scaleMax = milli(sc[1], `${where}.scale[1]`, 1000, 65535);
+        if (scaleMin < 1 || scaleMin > scaleMax) pr.add(`${where}.scale must satisfy 0.001 <= min <= max`);
+      }
+    }
+    const dryOnly = f['dryOnly'] ?? false;
+    if (typeof dryOnly !== 'boolean') pr.add(`${where}.dryOnly must be a boolean`);
+    const maxSlopePermille = milli(f['maxSlope'], `${where}.maxSlope`, 0, 65535);
+    const reclaimMassMilli = milli(f['reclaimMass'], `${where}.reclaimMass`, 0, 0xffffffff);
+    const reclaimEnergyMilli = milli(f['reclaimEnergy'], `${where}.reclaimEnergy`, 0, 0xffffffff);
+    if (shape === null) return;
+    out.push({
+      name: name as string,
+      kind: kind as PropFieldKind,
+      shape,
+      entries,
+      densityPerKWu2: density as number,
+      seed: seed as number,
+      scaleMinPermille: scaleMin,
+      scaleMaxPermille: scaleMax,
+      maxSlopePermille,
+      dryOnly: dryOnly === true,
+      reclaimMassMilli,
+      reclaimEnergyMilli,
+    });
+  });
+  return out;
 }
 
 const RAMP: readonly (readonly [number, number, number])[] = [

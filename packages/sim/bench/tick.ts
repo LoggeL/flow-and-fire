@@ -1,5 +1,5 @@
 /**
- * Rough Node tick benchmark of the MS1 cube sim (the authoritative multi-engine bench lives in
+ * Rough Node tick benchmark of the cube sim (MS3: every move is pathed; the authoritative multi-engine bench lives in
  * sim-host/headless): 1,000 cubes with new move targets every 100 ticks, p50/p95/p99 per phase.
  * Run: node --expose-gc --import tsx packages/sim/bench/tick.ts [ticks]
  */
@@ -15,7 +15,7 @@ const ticks = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)) ?? 5000)
 const simBin = new Uint8Array(readFileSync(fileURLToPath(new URL('../../../content/generated/sim.bin', import.meta.url))));
 const w = createWorld({ simBin, seed: 7, armyCount: 2 });
 const enc = new CommandBatchEncoder();
-enc.add({ tick: asTick(0), army: asArmyId(0), seq: 1, op: Op.Cheat, flags: 0, units: [], payload: encodeCheatSpawn({ bp: 0, army: 0, count: 1000, x: fx(256), z: fx(256), spread: fx(60) }) });
+enc.add({ tick: asTick(0), army: asArmyId(0), seq: 1, op: Op.Cheat, flags: 0, units: [], payload: encodeCheatSpawn({ bp: w.bp.indexOf('core:cube'), army: 0, count: 1000, x: fx(256), z: fx(256), spread: fx(60) }) });
 step(w, enc.view().slice());
 const handles = unitHandles(w, 0);
 // 10 groups of 100 cubes, each with its own target ring.
@@ -57,7 +57,7 @@ const pct = (a: Float64Array, q: number): number => {
 };
 const hashTicks = Float64Array.from(samples[PhaseId.HashTick]!.filter((_, i) => (i + 2) % 10 === 0));
 const rows: [string, Float64Array][] = [['step total', total]];
-for (const p of [1, 2, 7, 8, 15, 16]) rows.push([PHASE_NAMES[p]!, samples[p]!]);
+for (const p of [1, 2, 3, 7, 8, 15, 16]) rows.push([PHASE_NAMES[p]!, samples[p]!]);
 rows.push(['HashTick (hash ticks)', hashTicks]);
 console.log(`ticks ${ticks}, units ${w.units.liveCount}, node ${process.version}`);
 for (const [name, a] of rows) console.log(`${name.padEnd(24)} p50 ${pct(a, 0.5).toFixed(3)} ms  p95 ${pct(a, 0.95).toFixed(3)} ms  p99 ${pct(a, 0.99).toFixed(3)} ms`);

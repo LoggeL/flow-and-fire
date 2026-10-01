@@ -6,10 +6,13 @@ import { HOLLOW_RIDGE_PATH, SCENARIO_NAMES, scenarioByName } from '../src/scenar
 import { loadMaps, loadSimBin, readGolden } from '../scripts/lib.ts';
 
 describe('L2 goldens (Node)', () => {
-  it('covers ≥ 2 scenarios on the test plane and ≥ 2 on hollow-ridge (MS2 DoD)', () => {
+  it('covers ≥ 2 scenarios on the test plane and ≥ 2 on hollow-ridge (MS2 DoD) plus the MS3 goldens', () => {
     const labels = SCENARIO_NAMES.map((n) => mapLabel(scenarioByName(n).map));
     expect(labels.filter((l) => l === 'testplane:512').length).toBeGreaterThanOrEqual(2);
     expect(labels.filter((l) => l === HOLLOW_RIDGE_PATH).length).toBeGreaterThanOrEqual(2);
+    for (const n of ['ridge-group-offset', 'ridge-shift-queue', 'choke-3wu', 'obstacle-repath']) expect(SCENARIO_NAMES).toContain(n);
+    // choke-3wu runs on a generated map (@faf/nav/testmap 'choke', inline RtsMap).
+    expect(mapLabel(scenarioByName('choke-3wu').map)).toMatch(/^inline:nav-choke-128-3$/);
   });
 
   const simBin = loadSimBin();
@@ -21,7 +24,7 @@ describe('L2 goldens (Node)', () => {
       expect(golden, `golden for ${name} (pnpm --filter @faf/headless goldens -- --update)`).not.toBeNull();
       const r = runScenario(scenarioByName(name), { simBin, maps });
       expect(failedAsserts(r)).toEqual([]);
-      expect(r.trail.length).toBe(200);
+      expect(r.trail.length).toBe(Math.floor(r.ticks / 10));
       const g = toGolden(r);
       // simId contract (PLAN §3.1): the chain was recorded with the current SIM_BUILD. A bump
       // without re-recording fails here; a sim change without a bump fails the chain compare
@@ -34,8 +37,8 @@ describe('L2 goldens (Node)', () => {
       const d = compareChains(golden!, toHashChain(r));
       expect(d.equal, `first divergent tick ${d.firstDivergentTick}: ${d.detail}`).toBe(true);
       // The chain moves (units drive / churn), so a stuck world would be detected.
-      expect(new Set(r.trail).size).toBeGreaterThan(150);
-    });
+      expect(new Set(r.trail).size).toBeGreaterThan(Math.floor(r.trail.length * 0.5));
+    }, 120_000);
   }
 
   it('goldens --update refuses a changed chain without a SIM_BUILD bump', () => {

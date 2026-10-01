@@ -11,7 +11,9 @@ export {
 } from './camera-controller.ts';
 export type { CameraControllerOptions, CameraState, PitchCurve } from './camera-controller.ts';
 export { InputController, isTextInputElement } from './input.ts';
-export type { Action, ActionType, DragBox, InputEventTarget, InputOptions, InputSurface } from './input.ts';
+export type { Action, ActionType, BuildGesture, DragBox, InputEventTarget, InputOptions, InputSurface } from './input.ts';
+export { buildDragGrid, MAX_BUILD_DRAG_SITES } from './build-grid.ts';
+export type { BuildGridPoint } from './build-grid.ts';
 export {
   ActionMap,
   DEFAULT_ACTION_MAP,
@@ -43,6 +45,8 @@ export type { SelectionMode } from './selection.ts';
 export { CommandBuilder, MAX_PENDING_COMMANDS, seqAcked } from './commands.ts';
 export type { AckListener, CommandSink } from './commands.ts';
 export { BASE_TICK_MS, FrameStream } from './frames.ts';
+export { MovePredictionAdapter, MOVE_PREVIEW_MS, MOVE_RECONCILE_MS, MOVE_PREVIEW_MAX_RAW } from './move-prediction.ts';
+export type { MovePredictionMotion } from './move-prediction.ts';
 export type { FrameStreamOptions } from './frames.ts';
 export {
   ClientMetrics,
@@ -98,3 +102,8 @@ export type {
   VisualEntry,
   VisualTable,
 } from '@faf/render';
+
+export type { IconAtlasMetrics } from '@faf/render';
+
+export { ControlGroups } from './control-groups.ts';
+export { iconScreenRect, strategicZoom, unitIconFade } from '@faf/render';

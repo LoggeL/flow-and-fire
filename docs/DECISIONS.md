@@ -211,3 +211,159 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-29 – SPK2 und Blueprint-Format (MS3)
+
+Die importierten MS3-Entscheidungen hatten ebenfalls die Nummern 22 und 23. Hier heißen sie
+`MS3-22` und `MS3-23`; Setons 22/23 bleiben unverändert. Frühere MS3-Verweise auf 22/23 meinen
+SPK2 beziehungsweise das Blueprint-Format, Setons-Verweise die Standardkarte und Render-Messung.
+
+MS3-22. **SPK2 Bewegungsgefühl → Steering ohne RVO/ORCA bleibt; Parametersatz `SPK2_PARAMS` fixiert.**
+    Wegwerf-Prototyp mit Float64 in `tools/headless/src/spk2/` (10 Hz, Grid-A\* + String-Pulling, Separation über
+    ≤ 8 Nachbarn aus einem 2-WU-Grid, Abstandsfeld-Gradient, Ketten-Kinematik, positionsbasierte Kollision nach Masse
+    und Priorität, Arrival-Contagion, Idle-Nudge, Stuck → Repath/Ausweichen, Gruppen-Move mit Offset-Erhalt), Benchmark
+    `pnpm bench:spk2` (`--quick` < 60 s, `--trace <szenario>` + Canvas2D-Viewer `tools/headless/spk2/viewer.html`).
+    **Lokal gemessen, Apple M5 Pro, Node 24; Wertebereiche über 2 Seeds (Tabelle in
+    `docs/status/ms3-p1-blueprints-spk2.md`), Robustheit zusätzlich über 8 Seeds geprüft: alle 6 Szenarien 8/8 bestanden.**
+
+    | Szenario | Ergebnis (Seeds 1–8) |
+    |---|---|
+    | 200 Units über die Karte (256 WU, Grat mit 2 Pässen, See, Felsen; Klassen 1–3) | kein Deadlock, alle nach 146,7–156,7 s angekommen, **98–100 % ohne Stuck > 3 s** (Kriterium ≥ 95 %), eine Pfadanfrage für die Gruppe |
+    | Engstelle 3 WU, 100 T1-Panzer | kein Deadlock, **alle durch nach 22,2–24,7 s** (Kriterium ≤ 60 s) |
+    | Roll-off an der Fabrik (40 Units, Tor, Rally-Punkt) | kein Deadlock, Tor nie blockiert, alle am Rally-Punkt nach 47,4 s |
+    | Klumpen bei Attack-Move (100 Units auf einen Punkt) | kein Deadlock, alle ruhend nach 28,1–35,4 s, Restüberlappung ≤ 0,05 WU |
+    | Mauerlücken 2/4/6 WU (80 Units, Klassen 1–3) | kein Deadlock, alle durch nach 80,4–83,2 s, 100 % ohne Stuck > 3 s |
+    | Offset-Erhalt (60 Units, 3 Reihen, 100 WU) | Offset-Fehler p95 0,31–1,24 WU (Kriterium ≤ 1,5 WU), Maximum 1,01–1,74 WU |
+
+    Parameter (Einheiten WU, WU/s, °, Ticks): Bremsen = 2 × accel; Anfahren während des Drehens bis 70° Kursfehler
+    (Tempo linear 100 % → 40 %), darüber Drehen auf der Stelle mit 10 % Kriechtempo; Start-Kick 3 Ticks mit 2 × accel;
+    Separation Stärke 0,5, Reichweite 1,5 × (ri + rj), ≤ 8 Nachbarn; Clearance-Gradient ab radius + 0,5 WU mit Stärke 1,5;
+    Ankunftsradius 0,35 WU; Contagion bis 4 WU vom Slot, Berührung + 0,3 WU, nur bei belegtem Slot oder 10 Ticks ohne
+    Fortschritt; weggeschobene Angekommene fahren nach 10 Ticks ab 1,0 WU Abweichung zurück; Kollision 2 Iterationen,
+    fahrende Units wiegen 4 × gegenüber stehenden; Idle-Nudge an (seitliches Ausweichen mit 50 % Tempo für 6 Ticks);
+    Stuck = < 0,15 WU Fortschritt auf dem Restpfad in 20 Ticks → 1. Repath, 2. Ausweich-Wegpunkt 2,5 WU seitlich;
+    Wegpunkt erreicht bei 1,0 WU, LOS-Vorausschau alle 5 Ticks; Offset-Kompression R(n) = 2 + 1,1 · √n WU, aber nie enger
+    als ri + rj + 0,15 WU; Default-Masse je Größenklasse 1, 2, 4, 8. Der Sweep (one-at-a-time, 12 Parameter) zeigt ein
+    flaches Optimum; ohne Idle-Nudge und mit Anfahrwinkel 90° reißen Szenarien – beides bleibt wie gewählt.
+
+    Entscheidungen:
+    - **Kein Wechsel auf ORCA-lite:** Alle Szenarien laufen ohne Deadlock mit dem Steering aus PLAN §3.8; ms3-p2 portiert
+      die Werte auf Fx (Konstanten mit Herkunftskommentar, Umrechnung genau einmal).
+    - **Anfahrprofil (SPK6-Folgepunkt aus 8/11):** Die Drehung beginnt im ersten Tick nach dem Befehl (sichtbar nach
+      1–2 Ticks), Units unter 70° Kursfehler fahren sofort an, darüber rollen sie mit 10 % Tempo während der Drehung
+      (Wenderadius ≈ 0,2 WU beim T1-Panzer). Damit ändert jede Unit ihre Position nach ≤ 5 Ticks (MS3 „alle fahren
+      < 1 s los“); zusätzlich verdoppelt ein Start-Kick die Beschleunigung für 3 Ticks.
+    - **Gruppenpfad-Rezept:** ein A\* von der Unit nächst am Schwerpunkt (Klasse = größte der Gruppe); je Unit
+      Gruppen-Wegpunkt + eigener Offset, **wenn für ihre Klasse passierbar und in Clearance-LOS zum vorherigen
+      Wegpunkt**, sonst der Gruppen-Wegpunkt selbst (sonst schneiden verschobene Teilstrecken Klippen/Mauern).
+    - **Contagion nur bei belegtem Slot oder Stillstand** (sonst halten Units mit eigenem Slot zu früh an) und der
+      Contagion-Punkt wird zum neuen Slot; nur weggeschobene Units fahren zu ihrem Slot zurück.
+
+MS3-23. **Blueprint-Format MS3: sim.bin v2, view.json v2, iconThreshold, Größenklassen-Regel.**
+    - **sim.bin v2:** Kopf 48 B (die ersten 32 B wie v1) plus Sektionsverzeichnis (4CC, Offset, Länge, Anzahl, Stride;
+      unbekannte Sektionen werden übersprungen). Der 64-B-Unit-Record behält alle v1-Felder an ihren Offsets; die
+      reservierten Bytes tragen jetzt `mass` (u16), `upgradesTo`, `brakePerTick` (Fx/Tick²), `buildableBy`
+      (Ausdrucks-Index), `deathWeapon`, `firstMount`/`mountCount`, `veterancy`, `flags` Bit 0 = `turnInPlace`.
+      Neue Sektionen: Unit-Erweiterung (Kosten, Wrack, Hitbox), Waffen, Projektile, Waffen-Mounts, Zielprioritäten,
+      Kategorie-Ausdrücke (Bytecode-Pool + Quelltexte), Props, Fraktionen. **v1 bleibt lesbar** (`decodeSimBin` füllt die
+      v2-Defaults, `table.version === 1`); andere Versionen werden mit „unsupported version N (this build reads 1..2)“
+      abgelehnt. Die `SimBpTable`-API ist quellkompatibel erweitert. Der simHash des Spiel-Bundles ändert sich damit
+      (0xD4135AF1 → 0x49678DEF); die L2-Goldens nimmt ms3-p2 mit neuem `SIM_BUILD` auf (Regel aus 12).
+    - **Kategorie-Ausdrücke** werden dedupliziert, nach Code-Units sortiert (Index = Position) und als @faf/rules-Bytecode
+      in sim.bin abgelegt; Decoder und Encoder prüfen den Bytecode (`validateCategoryCode`).
+    - **view.json v2:** je Visual `icon` (Registry `ICON_IDS`, Pflicht für Spiel-Einheiten), `iconThreshold`, `tech`
+      (0–3), `categories` (Namen in Bit-Reihenfolge), `selectionRadius` (= 1,2 × max(radius, max(footprint)/2), auf
+      1/100 WU gerundet, überschreibbar), `sizeClass`, `hotkeySlot`, `fx`, Platzhalter-`turret {hull, size, offset}`,
+      dazu die Effekt-Tabelle. `parseViewJson` liest v1 (hebt auf die v2-Form an) und v2. Kategorien stehen jetzt auch in
+      der View – eine Kategorieänderung ändert beide Hashes.
+    - **iconThreshold-Semantik:** projizierte Bildschirmhöhe in CSS-Pixeln des Auswahlkreises der Einheit
+      (Durchmesser 2 × `selectionRadius` in der Entfernung der Einheit, bei der Kamera-FOV und Viewport-Höhe in CSS-px).
+      Unter `iconThreshold` ersetzt das Icon das Mesh vollständig, ab 1,5 × `iconThreshold` ist nur das Mesh sichtbar,
+      dazwischen Crossfade (Band aus ms3-p3). Default 14 px; der MS1-Würfel behält 8, Strukturen nutzen 10.
+    - **Größenklassen-Regel:** Mobile Land-Einheiten nutzen `sizeClass` 0–3 (Nav-Klasse = max(1, sizeClass),
+      `navClassOf` aus ms3-p0) und ihr Kollisionsradius muss in die Klasse passen: `radius ≤ max(0,5; sizeClass − 0,5)` WU
+      (Klasse s verlangt Clearance ≥ s, d. h. s − 1 freie Zellen um die Zelle der Einheit). Default-Kollisionsmasse je
+      Klasse 1/2/4/8 (Blueprint `motion.mass` überschreibt), `turnInPlace` Default für Land, `brake` Default 2 × accel.
+    - **Tech-Baum „zyklusfrei“** heißt: jede Einheit ist von einer Wurzel (nicht baubare Einheit oder Fraktions-Start)
+      über Bau-/Upgrade-Kanten erreichbar; FA-übliche Zyklen (Ingenieur ↔ Fabrik), die an einer Wurzel hängen, sind
+      erlaubt. Geschlossene Zyklen ohne Zugang von außen werden mit Pfad gemeldet, `upgradesTo`-Ketten müssen für sich
+      zyklusfrei sein. Behavior- und Toggle-Registry sind in MS3 leer; `test:`-Blueprints sind von Icon-, TECH- und
+      i18n-Pflicht ausgenommen.
+
+
+## Nachtrag 2026-09-29: Konsolidierung und vorbereitete Integration
+
+30. **Ein aktiver Projektordner.** Entwicklung und alle Start-/Prüfbefehle laufen aus
+    `flow-and-fire` auf `main`. Die sieben ursprünglichen Arbeitskopien bleiben als ignorierte
+    Archive unter `.worktrees/` erhalten, einschließlich ihrer uncommitteten Inhalte. Der lokale
+    SHA-256-Vergleich meldet keine Abweichungen. Historische Track-Pläne beschreiben ihre damaligen
+    Worktrees; README und Konsolidierungsbericht geben die aktuellen Arbeitsanweisungen vor.
+    Kein Commit, Push oder Wechsel der Branch gehört zu dieser Zusammenführung.
+
+31. **SPK3: HPA* und Korridor-Repath bleiben Standard bei 20.000 Expansionen pro Tick.** Zwei
+    lokale Läufe auf Apple M5 Pro bewältigten 200 Einzelanfragen auf 512/1.024 WU in 5/9 Ticks;
+    die funktionalen MS3-Abnahmen bestehen. Der Chunk-Eintritt-Vergleich erzeugt im Basisbau
+    85 statt 40 Zusatzanfragen auf 512 WU und 31 statt 21 auf 1.024 WU. Native Lazy-Refinement
+    und Kollisionsschutz bleiben in der Benchmark-Alternative aktiv. Die Stempelzeiten enthalten
+    Korridor-Erkennung und belegen keinen CPU-Gewinn durch Indexentfernung; Korridor-Schnitt bleibt
+    daher die Produktionsstrategie. PathService-p95 liegt abhängig von Fremdlast teils über 5 ms,
+    Zeitwerte bleiben ohne `FAF_PERF_GATE=1` advisory. Der 1.000-Unit-Tick-Benchmark liegt in
+    Node/Chromium/Firefox/WebKit unter 8 ms. Ein Give-up im 1.024-WU-Basisbau-Spike bleibt
+    dokumentiert; Traversal-Abnahme: 197/200 ohne Stall über 30 Ticks, keine blockierten Positionen.
+    Details: [MS3 P5](status/ms3-p5-bench.md). Die Messentscheidung ändert kein Sim-Verhalten.
+
+32. **KI als isolierter Adapter und Arena.** `@faf/ai` importiert fixed/protocol/rules und erhält
+    ausschließlich erlaubte Perception-Daten. Intel, Opening, Economy, Tech, Defense, Factory,
+    Engineer und Platoon arbeiten mit Profil-, APM- und Operationsbudgets. Die lokale Arena nutzt
+    eine eigene Welt; ihre Turniere erfüllen keine Abnahme gegen die echte Fixed-Point-Sim.
+    Abweichungen der Opening-Zeiten bleiben gegenüber unveränderten expect sichtbar. MS6/MS9/MS10
+    übernehmen die Perception-, Command- und Host-Verträge und wiederholen die Szenarien gegen die
+    echte Sim. Welt-Tick ±2 % und Referenz-Hardware bleiben unbelegt.
+
+33. **HUD als Präsentationspaket.** `@faf/hud` konsumiert Snapshots und gibt UI-Commands aus; die
+    Galerie verwendet lokale Demo-Daten. Locale-Keys, Snapshot- und Action-Verträge bleiben für
+    die Integration stabil. MS4/MS6 binden Ressourcen, Auswahl und Produktion an reale Frames und
+    Befehle; MS9/MS11/MS14 übernehmen Menüs, Alerts, Minimap und Settings. Die strikten lokalen
+    Performance-Gates verwenden dieselbe Warmup-Grenze und dokumentierte Browser-Uhr-Auflösung;
+    sie belegen die Galerie auf der Messmaschine.
+
+34. **Editor als eigenständiges Werkzeug.** three.js bleibt im Marker-Editor, ohne Import der
+    Spielsimulation oder des Spiel-Renderers. `PFLD` erweitert das Kartenformat additiv; bestehende
+    Karten ohne Felder bleiben bytegleich. Feldexpansion rechnet integer-only in Q20.12-Rohwerten,
+    Feldnamen verändern den Sim-Hash nicht. Die Algo-Version gehört in den Hash. Unbekannte Chunks
+    bleiben beim Bearbeiten erhalten; der Download ist das exportierte Ergebnis und überschreibt
+    keine mitgelieferte Karte.
+
+35. **Audio als Blatt-Paket vor MS5.** `@faf/audio` importiert kein Workspace-Paket.
+    Manifest-Kategorie `voice` läuft auf dem Bus `alerts`. Loop-Grenzen werden in Sekunden geführt,
+    damit Resampling ihre Dauer erhält. Die Dekodierkette lautet native `decodeAudioData`,
+    WebCodecs, dynamisch geladener WASM-Opus-Fallback. Eine höhere Priorität verdrängt die leiseste
+    niedrigere Stimme, begrenzte Ausblend-Tails leben höchstens 12 ms. Alerts bleiben unräumlich,
+    behalten ihre Position aber als Kamerasprungziel. Harte JS-Zeitgrenzen werden ausschließlich
+    mit `FAF_AUDIO_PERF_GATE=1` aktiviert. `baseLatency` und `outputLatency` sind Browserfelder,
+    keine gemessene Geräte-Reaktionszeit. Automatisierte Browserprüfungen verbinden den realen
+    Mixer mit einem MediaStream-Ausgang ohne Lautsprecherverbindung. MS5 liefert echte Event-IDs
+    und den FrameReader-Adapter.
+
+36. **FX im Lab qualifizieren und über öffentliche Render-Ports integrieren.** `@faf/render-fx`
+    liest den aktuellen Frame-Vertrag und reserviert eigene UBO-/Textur-Bindungen. Partikel,
+    Beams/Trails, Schilde, Scorch, HDR/Post und CSM laufen in einer eigenen Lab-Shell ohne Sim.
+    MS5/MS7/MS13/MS14 übernehmen Event-Routing, Pass-Reihenfolge, Terrain-Binning und Schatten in
+    den Spiel-Renderer. Fehlende GPU-Timer bleiben n/v. Die lokale Auswertung umfasst 40 ruhige
+    Originalfälle und zwei unveränderte ruhige Wiederholungen mit expliziter Rohdaten-Herkunft.
+    Chromium erreicht im Medium-Gefecht etwa 60 FPS, die gemeldeten Schild- und CSM-Zeiten
+    überschreiten ihre Ziele. Diese Messung belegt keine Referenz-iGPU-Abnahme.
+
+37. **Replay-Dateien, lokale Keyframes und getrennte Messprozesse.** `.rtsreplay` speichert
+    versionierte Metadaten, Spielsetup, Commands, Regel-/Regions-Hashes und Markierungen im
+    geprüften Chunk-Container. Komprimierung verwendet deflate-raw Level 6, mem 4; Keyframes bleiben
+    lokale Wiedergabe-Caches. Build, Blueprint-, Karten- und Layout-Identität werden vor dem Start
+    geprüft. Der Konverter erhält vollständige Hash-Belege aus `.faflog`; CLI und Player melden
+    die erste Abweichung mit Tick und Regionen. Kalt- und Warmläufe verwenden getrennte frische
+    Node-Prozesse, der Warmlauf erhält einen vollständigen ungemessenen Durchlauf. Dateicaches
+    werden nicht geleert. Aufzeichnung, OPFS-Export und Player sind vorhanden; die Spieloberfläche
+    und Wiedergabe unter `/b/<buildHash>/` gehören weiterhin zu MS11.
+
+Detailbelege: [Konsolidierung](status/consolidation.md), [KI](status/track-ai.md),
+[HUD](status/track-hud.md), [Editor](status/track-editor.md), [Audio](status/track-audioeng.md),
+[FX](status/track-renderfx.md), [Replay](status/track-replay/p6.md).

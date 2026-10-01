@@ -13,10 +13,17 @@
  *           | codec 0: ceil(layerCount/4) RGBA8 planes of resolution² texels; codec 1: opaque payload
  *   PROP    u32 count | per prop: u16 idLen | id (UTF-8) | zero pad to 4 | i32 x | i32 z
  *           | u16 yaw (Ang16) | u16 scalePermille
+ *   PFLD?   prop fields (TRACK-EDITOR, additive; layout and expansion in propfields.ts):
+ *           u32 fieldCount | per field: u16 nameLen | name | pad4 | u8 kind | u8 shapeKind
+ *           | u16 flags | u32 seed | u16 density | u16 maxSlope | u16 scaleMin | u16 scaleMax
+ *           | u32 reclaimMassMilli | u32 reclaimEnergyMilli | u16 entryCount | u16 pointCount
+ *           | entries (u16 idLen | id | pad4 | u16 weight | u16 reserved) | circle (i32 x, z, r)
+ *           or polygon (pointCount × i32 x, z). Absent chunk ⇔ `propFields` absent; written iff
+ *           `propFields !== undefined` (maps without fields stay byte-identical).
  *   PREV?   u16 w | u16 h | w·h RGBA8
  *
  * mapSimHash covers exactly the simulation-relevant fields (see mapSimHash below); name, light,
- * strata, splat, preview and unknown chunks never change it.
+ * strata, splat, preview, prop field names and unknown chunks never change it.
  *
  * Determinism contract (PLAN §3.12): integers only — this module runs in the sim worker.
  */
@@ -25,6 +32,17 @@ import { xxHash32 } from '@faf/fixed';
 import { readContainer, writeContainer, isFourCC, type ContainerChunk } from './container.ts';
 import { FormatError } from './errors.ts';
 import { decodeUtf8, encodeUtf8 } from '@faf/protocol';
+import { MAP_MAX_PROP_ID_BYTES, MAP_MAX_PROPS, PROP_ID_RE, type MapProp } from './mapprop.ts';
+import {
+  decodePropFieldsChunk,
+  encodePropFieldsChunk,
+  PROPFIELD_ALGO_VERSION,
+  propFieldsSimBytes,
+  validatePropFields,
+  type MapPropField,
+} from './propfields.ts';
+
+export { MAP_MAX_PROP_ID_BYTES, MAP_MAX_PROPS, type MapProp };
 
 export const RTSMAP_MAGIC = 'RTSM';
 export const RTSMAP_FORMAT_VERSION = 1;
@@ -39,15 +57,13 @@ export const MAP_MIN_HEIGHT_SCALE_RAW = 1;
 export const MAP_MAX_HEIGHT_SCALE_RAW = 32;
 export const MAP_MAX_ARMIES = 16;
 export const MAP_MAX_SPOTS = 1024;
-export const MAP_MAX_PROPS = 65536;
 export const MAP_MAX_STRATA = 8;
 export const MAP_MAX_NAME_BYTES = 128;
-export const MAP_MAX_PROP_ID_BYTES = 128;
 export const MAP_MAX_SPLAT_RESOLUTION = 4096;
 export const MAP_MAX_PREVIEW_SIZE = 1024;
 
 /** Known chunk ids in their fixed write order. */
-export const RTSMAP_CHUNK_ORDER = ['META', 'HGT ', 'SPLT', 'PROP', 'PREV'] as const;
+export const RTSMAP_CHUNK_ORDER = ['META', 'HGT ', 'SPLT', 'PROP', 'PFLD', 'PREV'] as const;
 export type RtsMapChunkId = (typeof RTSMAP_CHUNK_ORDER)[number];
 
 export type SpotKind = 'mass' | 'hydro';
@@ -114,17 +130,6 @@ export interface MapSplatKtx2 {
 
 export type MapSplat = MapSplatRaw | MapSplatKtx2;
 
-export interface MapProp {
-  /** Namespace blueprint id, e.g. 'core:rock_01'. */
-  readonly id: string;
-  readonly x: number;
-  readonly z: number;
-  /** Ang16. */
-  readonly yaw: number;
-  /** Uniform scale in 1/1000 (1..65535). */
-  readonly scalePermille: number;
-}
-
 export interface MapPreview {
   readonly width: number;
   readonly height: number;
@@ -147,6 +152,11 @@ export interface RtsMap {
   readonly splat: MapSplat | null;
   /** Order is preserved (it is part of mapSimHash). */
   readonly props: readonly MapProp[];
+  /**
+   * Prop fields (PFLD chunk, see propfields.ts). Absent ⇔ the file has no PFLD chunk; present
+   * (also with 0 fields) ⇔ PFLD is written. Order is preserved (part of mapSimHash).
+   */
+  readonly propFields?: readonly MapPropField[];
   readonly preview: MapPreview | null;
   readonly unknownChunks: readonly UnknownChunk[];
 }
@@ -210,8 +220,6 @@ function checkRgb(chunk: RtsMapChunkId, what: string, v: unknown): Rgb {
   if (!Array.isArray(v) || v.length !== 3) fail(chunk, `${what} must be [r, g, b]`);
   return [checkInt(chunk, `${what}[0]`, v[0], 0, 255), checkInt(chunk, `${what}[1]`, v[1], 0, 255), checkInt(chunk, `${what}[2]`, v[2], 0, 255)];
 }
-
-const PROP_ID_RE = /^[a-z0-9_]+:[a-z0-9_./-]+$/;
 
 /** Throws FormatError('bad-value') unless `map` satisfies every invariant of the format. */
 export function validateRtsMap(map: RtsMap): void {
@@ -287,6 +295,8 @@ export function validateRtsMap(map: RtsMap): void {
     checkInt('PROP', `props[${i}].yaw`, p.yaw, 0, 0xffff);
     checkInt('PROP', `props[${i}].scalePermille`, p.scalePermille, 1, 0xffff);
   }
+
+  validatePropFields(map);
 
   const pv = map.preview;
   if (pv !== null) {
@@ -579,6 +589,7 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
   let heights: Uint16Array | null = null;
   let splat: MapSplat | null = null;
   let props: MapProp[] | null = null;
+  let propFields: MapPropField[] | undefined;
   let preview: MapPreview | null = null;
   const unknownChunks: UnknownChunk[] = [];
   let last = -1;
@@ -610,6 +621,9 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
       case 'PROP':
         props = decodeProps(ch.data, at);
         break;
+      case 'PFLD':
+        propFields = decodePropFieldsChunk(ch.data, at);
+        break;
       default:
         preview = decodePreview(ch.data, at);
         break;
@@ -618,7 +632,8 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
   if (meta === null) throw new FormatError('missing-chunk', 'required chunk META is missing', 'META');
   if (heights === null) throw new FormatError('missing-chunk', "required chunk 'HGT ' is missing", 'HGT ');
   if (props === null) throw new FormatError('missing-chunk', 'required chunk PROP is missing', 'PROP');
-  const map: RtsMap = { meta, heights, splat, props, preview, unknownChunks };
+  const map: RtsMap =
+    propFields === undefined ? { meta, heights, splat, props, preview, unknownChunks } : { meta, heights, splat, props, propFields, preview, unknownChunks };
   validateRtsMap(map);
   // Canonical META only: guarantees read -> write is byte-identical.
   const canon = encodeUtf8(metaToCanonicalJson(meta));
@@ -642,6 +657,7 @@ export function rtsMapChunks(map: RtsMap): ContainerChunk[] {
     { id: 'HGT ', data: encodeHeightsChunk(map.meta.sizeWu, map.heights) },
     map.splat === null ? null : { id: 'SPLT', data: encodeSplat(map.splat) },
     { id: 'PROP', data: encodePropsChunk(map.props) },
+    map.propFields === undefined ? null : { id: 'PFLD', data: encodePropFieldsChunk(map.propFields) },
     map.preview === null ? null : { id: 'PREV', data: encodePreview(map.preview) },
   ];
   // Effective anchor: the chunk it followed, or the nearest present chunk before that one.
@@ -689,6 +705,8 @@ export interface CreateRtsMapParams {
   readonly starts?: readonly MapStart[];
   readonly spots?: readonly MapSpot[];
   readonly props?: readonly MapProp[];
+  /** Default absent (no PFLD chunk). */
+  readonly propFields?: readonly MapPropField[];
   readonly light?: MapLight;
   readonly strata?: readonly MapStratum[];
   readonly splat?: MapSplat | null;
@@ -729,7 +747,7 @@ export function createRtsMap(p: CreateRtsMapParams): RtsMap {
   ])
     .slice()
     .sort((a, b) => a.army - b.army);
-  const map: RtsMap = {
+  const base: RtsMap = {
     meta: {
       v: RTSMAP_META_VERSION,
       name: p.name ?? 'untitled',
@@ -747,6 +765,10 @@ export function createRtsMap(p: CreateRtsMapParams): RtsMap {
     preview: p.preview ?? null,
     unknownChunks: p.unknownChunks ?? [],
   };
+  const map: RtsMap =
+    p.propFields === undefined
+      ? base
+      : { meta: base.meta, heights, splat: base.splat, props: base.props, propFields: p.propFields, preview: base.preview, unknownChunks: base.unknownChunks };
   validateRtsMap(map);
   return map;
 }
@@ -787,14 +809,19 @@ export const MAP_SIM_HASH_TAG = 'FAFMAPS1';
  *   | u32 startCount | startCount × (u32 army, i32 x, i32 z)
  *   | u32 spotCount | spotCount × (u32 kind (0 mass, 1 hydro), i32 x, i32 z)
  *   | 'HGT ' payload | PROP payload
- * Name, light, strata, SPLT, PREV and unknown chunks are presentation-only and excluded.
+ *   [only if propFields is present and non-empty:
+ *    'PFLD' | u32 PROPFIELD_ALGO_VERSION | propFieldsSimBytes (PFLD layout without names)]
+ * Name, light, strata, SPLT, PREV, prop field names and unknown chunks are presentation-only and
+ * excluded. Without prop fields the bytes are exactly those of MS2 (golden hashes unchanged).
  */
 export function mapSimBytes(map: RtsMap): Uint8Array {
   const m = map.meta;
   const hgt = encodeHeightsChunk(m.sizeWu, map.heights);
   const prop = encodePropsChunk(map.props);
+  const fields = map.propFields;
+  const pfld = fields === undefined || fields.length === 0 ? null : propFieldsSimBytes(fields);
   const head = 8 + 16 + 4 + m.starts.length * 12 + 4 + m.spots.length * 12;
-  const out = new Uint8Array(head + hgt.length + prop.length);
+  const out = new Uint8Array(head + hgt.length + prop.length + (pfld === null ? 0 : 8 + pfld.length));
   const dv = dvOf(out);
   for (let i = 0; i < 8; i++) out[i] = MAP_SIM_HASH_TAG.charCodeAt(i);
   let p = 8;
@@ -820,6 +847,12 @@ export function mapSimBytes(map: RtsMap): Uint8Array {
   }
   out.set(hgt, p);
   out.set(prop, p + hgt.length);
+  if (pfld !== null) {
+    const q = p + hgt.length + prop.length;
+    for (let i = 0; i < 4; i++) out[q + i] = 'PFLD'.charCodeAt(i);
+    dv.setUint32(q + 4, PROPFIELD_ALGO_VERSION, true);
+    out.set(pfld, q + 8);
+  }
   return out;
 }
 
@@ -829,7 +862,10 @@ export function mapSimHash(map: RtsMap): number {
   return xxHash32(b, 0, b.length, 0);
 }
 
-/** The map as the simulation sees it (input of createWorld). Shares the arrays of `map`. */
+/**
+ * The map as the simulation sees it (input of createWorld). Shares the arrays of `map`. Prop fields
+ * are not part of it yet (sim integration of expandPropFields is MS8/E8).
+ */
 export function mapSimData(map: RtsMap): MapSimData {
   const m = map.meta;
   return {

@@ -6,6 +6,10 @@
 import { RENDER_PRESET_NAMES, parsePresetName, type RenderPresetName } from '@faf/client';
 
 export interface ConsoleApi {
+  obstacle?(x: number, z: number, w: number, h: number, remove: boolean): number;
+  paths?(): string[];
+  selectBlueprint?(name: string): number;
+  watch?(): string[];
   /** Resolves a blueprint name (`core:cube`) or numeric sim id; null if unknown. */
   resolveBlueprint(name: string): number | null;
   /** Default blueprint for `spawn` without bp. */
@@ -60,6 +64,9 @@ export const CONSOLE_HELP: readonly string[] = [
   'map                    – Karte: Name, Größe, Wasser, Starts, Spots, mapSimHash',
   'camera <x> <z> [dist]  – Kamera auf (x, z) WU setzen, optional Abstand in WU',
   'preset [name]          – Render-Preset low|medium|high|ultra (ohne Name: aktuelles)',
+  'obstacle <x> <z> <w> <h> [remove]  - Footprint setzen/entfernen',
+  'paths | watch          - Pfadstatistik / beobachtete Ziele; watch schaltet Linien',
+  'select <bp-id>         - eigenen Blueprint auswählen',
   'help                   – diese Hilfe',
 ];
 
@@ -102,6 +109,18 @@ export function runConsoleCommand(line: string, api: ConsoleApi): ConsoleResult 
     case 'help':
     case '?':
       return ok(...CONSOLE_HELP);
+    case 'paths': return ok(...(api.paths?.() ?? []));
+    case 'watch': return ok(...(api.watch?.() ?? []));
+    case 'select': {
+      if (args[0] === undefined || api.resolveBlueprint(args[0]) === null) return fail('select: gültiger Blueprint erwartet');
+      return ok(`select: ${api.selectBlueprint?.(args[0]) ?? 0} Einheiten`);
+    }
+    case 'obstacle': {
+      const nums = args.slice(0, 4).map(parseIntStrict);
+      const [x, z, w, h] = nums;
+      if (nums.length !== 4 || x == null || z == null || w == null || h == null || x < 0 || z < 0 || w < 1 || h < 1 || x + w > api.mapSizeWu() || z + h > api.mapSizeWu() || (args[4] !== undefined && args[4] !== 'remove')) return fail('obstacle: x z w h innerhalb der Karte erwartet');
+      return ok(`obstacle: seq ${api.obstacle?.(x, z, w, h, args[4] === 'remove') ?? -1}`);
+    }
     case 'spawn': {
       const n = args[0] === undefined ? null : parseIntStrict(args[0]);
       if (n === null || n < 1 || n > MAX_SPAWN) return fail(`spawn: Anzahl 1–${MAX_SPAWN} erwartet`);

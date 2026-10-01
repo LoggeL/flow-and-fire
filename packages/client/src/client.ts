@@ -14,7 +14,7 @@
  * Input is handled in the DOM event handlers: a right click picks the ground, sends the Move
  * command and adds the click marker immediately, so the marker is drawn in the very next rAF.
  * A waypoint line from the group's centre to the target stays until the command's seq is
- * confirmed by `FrameHeader.ackSeq`.
+ * confirmed by an applied-sequence host notification or `FrameHeader.ackSeq`.
  *
  * Pause (A5): the sim tick stands still, but camera, input, selection and command sending keep
  * working; alpha is frozen at 1.
@@ -23,8 +23,11 @@
  * are reused, the unit bytes are a cached view into the transport's buffer.
  */
 import type { CtlMessage, FrameReader, HostMessage } from '@faf/protocol';
+import { UNIT_RECORD_BYTES, UNIT_OFF_HANDLE, UNIT_OFF_PREV_POS, UNIT_OFF_CUR_POS, UnitFlags } from '@faf/protocol';
 import {
   RtsCamera,
+  DynamicDecals,
+  DEFAULT_ARMY_COLORS,
   type OverlayMarker,
   type OverlaySegment,
   type RenderStats,
@@ -35,7 +38,10 @@ import {
   type VisualTable,
 } from '@faf/render';
 import type { ActionMap } from './actions.ts';
+import { RigPoseAdapter } from './rig-pose.ts';
+import { MovePredictionAdapter, type MovePredictionMotion } from './move-prediction.ts';
 import { CameraController, type CameraState } from './camera-controller.ts';
+import { ControlGroups } from './control-groups.ts';
 import { CommandBuilder, seqAcked } from './commands.ts';
 import { FrameStream, type FrameStreamOptions } from './frames.ts';
 import { FullscreenController, PointerConfinement, type FullscreenDocument, type FullscreenRoot, type LockableCanvas } from './fullscreen.ts';
@@ -56,6 +62,7 @@ export interface RendererLike {
   setTerrain?(desc: TerrainDesc | null): void;
   /** Terrain decals (spot rings). */
   setTerrainDecals?(decals: readonly TerrainDecal[]): unknown;
+  setDynamicDecals?(decals: DynamicDecals): unknown;
 }
 
 /** requestAnimationFrame abstraction (tests drive frames manually). */
@@ -79,6 +86,8 @@ export interface GameClientCallbacks {
   onHostMessage?(m: HostMessage): void;
   /** A new frame was accepted (called inside the rAF, before rendering). */
   onFrame?(client: GameClient): void;
+  /** Every presentation frame after camera/frame updates, including a paused simulation. */
+  onPresent?(client: GameClient, nowMs: number): void;
   /** Every input action, after the client handled it. */
   onAction?(a: Action): void;
   /** Fullscreen entered/left. */
@@ -86,6 +95,8 @@ export interface GameClientCallbacks {
 }
 
 export interface GameClientOptions {
+  /** Replay clients permit viewing controls, but never emit simulation commands. */
+  readonly readOnlyCommands?: boolean;
   readonly canvas: ClientCanvas;
   readonly renderer: RendererLike;
   readonly link: SimLink;
@@ -117,6 +128,8 @@ export interface GameClientOptions {
   /** Focused-element probe for the focus rule; default document.activeElement. */
   readonly focusProbe?: () => unknown;
   readonly frameStream?: FrameStreamOptions;
+  /** Public compiled motion table enables bounded visual-only first-Move prediction (SPK6). */
+  readonly movePrediction?: MovePredictionMotion;
   /** Click marker color (0xRRGGBB). */
   readonly markerColor?: number;
   /** Waypoint line color (0xRRGGBB). */
@@ -203,9 +216,19 @@ function defaultRaf(): RafLike {
 }
 
 export class GameClient {
+  readonly readOnlyCommands: boolean;
+  private actionInterceptor: ((action: Action) => boolean) | null = null;
   readonly camera: RtsCamera;
   readonly cameraController: CameraController;
   readonly selection: Selection;
+  readonly controlGroups = new ControlGroups();
+  readonly dynamicDecals = new DynamicDecals();
+  showPaths = true;
+  private watchVersion = 0;
+  private inspectionTick = -1;
+  private visuals: VisualTable;
+  private readonly watchLines: MutableSegment[] = Array.from({ length: 2048 }, () => ({ ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, color: 0x40ff60, widthWU: 0.12 }));
+  private readonly combinedLines: OverlaySegment[] = [];
   readonly commands: CommandBuilder;
   readonly stream: FrameStream;
   readonly metrics: ClientMetrics;
@@ -236,6 +259,9 @@ export class GameClient {
   private readonly lineColor: number;
   private readonly unsubscribeHost: () => void;
   private readonly unsubscribeAck: () => void;
+  private readonly unsubscribeIssued: () => void;
+  private readonly movePredictionMotion: MovePredictionMotion | undefined;
+  private readonly prediction = new MovePredictionAdapter();
 
   private readonly markerPool: MutableMarker[] = [];
   private readonly markers: OverlayMarker[] = [];
@@ -249,9 +275,14 @@ export class GameClient {
   private readonly pos = new Float64Array(3);
 
   private rafId = -1;
+  private readonly rig = new RigPoseAdapter();
+  private rigDirty = true;
   private running = false;
   private disposed = false;
   private lastNow = Number.NaN;
+  private presentationCap: 30 | 60 | 120 | 'monitor' = 'monitor';
+  private lastPresentedMs = Number.NaN;
+  private presentationRequested = false;
   private pauseWanted: boolean | null = null;
   private pauseWantedAt = 0;
   private readonly loop = (ts: number): void => {
@@ -261,6 +292,8 @@ export class GameClient {
   };
 
   constructor(opts: GameClientOptions) {
+    this.readOnlyCommands = opts.readOnlyCommands ?? false;
+    this.movePredictionMotion = opts.movePrediction;
     this.canvas = opts.canvas;
     this.renderer = opts.renderer;
     this.link = opts.link;
@@ -268,7 +301,8 @@ export class GameClient {
     this.callbacks = opts.callbacks ?? {};
     this.rafImpl = opts.raf;
     this.nowFn = opts.now ?? (() => performance.now());
-    this.markerColor = opts.markerColor ?? 0x40ff60;
+    const team = DEFAULT_ARMY_COLORS[(opts.playerArmy < 0 ? 0 : opts.playerArmy) % DEFAULT_ARMY_COLORS.length]!;
+    this.markerColor = opts.markerColor ?? ((Math.round(team[0] * 255) << 16) | (Math.round(team[1] * 255) << 8) | Math.round(team[2] * 255));
     this.lineColor = opts.lineColor ?? 0x40ff60;
 
     const map = opts.map ?? ClientMap.testPlane();
@@ -280,7 +314,9 @@ export class GameClient {
     if (opts.camera === undefined) this.cameraController.centerOnMap();
     this.commanderVisuals = opts.commanderVisuals ?? null;
     this.selection = new Selection(opts.playerArmy);
-    this.commands = new CommandBuilder(opts.link, opts.playerArmy);
+    this.visuals = opts.visuals;
+    this.selection.visuals = opts.visuals;
+    this.commands = new CommandBuilder(opts.link, opts.playerArmy, this.readOnlyCommands);
     this.stream = new FrameStream(opts.link.frames, opts.frameStream);
     this.metrics = new ClientMetrics();
     this.metrics.sources = {
@@ -303,6 +339,10 @@ export class GameClient {
     };
     this.metrics.setVisualRadii(visualCornerRadii(opts.visuals));
     this.unsubscribeAck = this.commands.onAck((seq, _op, _lat, ackMs) => this.metrics.onAck(seq, ackMs));
+    this.unsubscribeIssued = this.commands.onIssued((seq, op, flags, units, payload, now) => {
+      this.prediction.issued(op, flags, units, payload, seq, now, this.lastFrame, this.stream.lastAlpha,
+        this.playerArmy, this.movePredictionMotion, this.pauseWanted === true || this.paused);
+    });
 
     for (let i = 0; i < MAX_MARKERS; i++) {
       this.markerPool.push({ x: 0, y: 0, z: 0, startMs: 0, color: this.markerColor, radiusWU: MARKER_RADIUS_WU, durationMs: MARKER_DURATION_MS });
@@ -324,6 +364,8 @@ export class GameClient {
     this.renderer.setVisuals(opts.visuals);
     this.unsubscribeHost = opts.link.onHostMessage((m) => {
       this.lastHostMessage = m;
+      if (m.t === 'ready' || m.t === 'error') { this.rig.reset(); this.rigDirty = true; }
+      if (m.t === 'ack' && m.army === this.playerArmy) this.onAppliedAck(m.ackSeq, this.nowFn());
       this.callbacks.onHostMessage?.(m);
     });
     const keyTarget = opts.keyTarget ?? (globalThis as unknown as InputEventTarget);
@@ -341,7 +383,12 @@ export class GameClient {
               viewport: () => ({ width: this.camera.viewportWidth, height: this.camera.viewportHeight }),
               container: fs.root,
             });
-      this.unsubscribeFullscreen = this.fullscreen.onChange((a) => this.callbacks.onFullscreenChange?.(a));
+      this.unsubscribeFullscreen = this.fullscreen.onChange((a) => {
+        const keyboard = (globalThis.navigator as Navigator & { keyboard?: { lock(keys: string[]): Promise<void>; unlock(): void } } | undefined)?.keyboard;
+        if (a) void keyboard?.lock(['Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9']).catch(() => undefined);
+        else keyboard?.unlock();
+        this.callbacks.onFullscreenChange?.(a);
+      });
     } else {
       this.fullscreen = null;
       this.confinement = null;
@@ -366,7 +413,11 @@ export class GameClient {
    * terrain following, heightmap picking.
    */
   setMap(map: ClientMap): void {
+    this.prediction.reset();
+    this.rig.reset();
+    this.rigDirty = true;
     this.map = map;
+    this.selection.mapSizeWu = map.sizeWu;
     this.renderer.setTerrain?.(map.toTerrainDesc());
     this.renderer.setTerrainDecals?.(map.spotDecals());
     this.bounds = map.bounds;
@@ -408,13 +459,13 @@ export class GameClient {
     const cv = this.commanderVisuals;
     if (r !== null && cv !== null) {
       for (let i = 0; i < r.unitCount; i++) {
-        if (!isOwnUnit(r, i, this.playerArmy) || cv[r.unitVisual(i)] !== 1) continue;
+        if (!isOwnUnit(r, i, this.viewArmy) || cv[r.unitVisual(i)] !== 1) continue;
         interpolatedPos(r, i, this.stream.lastAlpha, this.pos);
         this.jumpTo(this.pos[0]!, this.pos[2]!);
         return { x: this.pos[0]!, z: this.pos[2]! };
       }
     }
-    const start = this.map.startOf(this.playerArmy);
+    const start = this.map.startOf(this.viewArmy);
     const b = this.bounds;
     const x = start !== null ? start.x : (b.minX + b.maxX) / 2;
     const z = start !== null ? start.z : (b.minZ + b.maxZ) / 2;
@@ -465,8 +516,15 @@ export class GameClient {
     return this.stream.hasFrame ? this.stream.reader : null;
   }
 
+  /** Replay inspection follows only the accepted perspective; command identity never changes. */
+  get viewArmy(): number {
+    return this.readOnlyCommands ? this.lastFrame?.viewer ?? this.playerArmy : this.playerArmy;
+  }
+
   /** Sends a control message to the host. */
   sendCtl(msg: CtlMessage): void {
+    if (this.readOnlyCommands && !['pause', 'resume', 'step', 'speed', 'watch', 'exportLog'].includes(msg.t)) return;
+    if (msg.t === 'pause' || msg.t === 'resume' || msg.t === 'speed') this.prediction.reset();
     if (msg.t === 'pause' || msg.t === 'resume') {
       this.pauseWanted = msg.t === 'pause';
       this.pauseWantedAt = this.nowFn();
@@ -498,7 +556,7 @@ export class GameClient {
     const out: number[] = [];
     const r = this.lastFrame;
     if (r === null) return out;
-    for (let i = 0; i < r.unitCount; i++) if (isOwnUnit(r, i, this.playerArmy)) out.push(r.unitHandle(i));
+    for (let i = 0; i < r.unitCount; i++) if (isOwnUnit(r, i, this.viewArmy)) out.push(r.unitHandle(i));
     return out;
   }
 
@@ -509,7 +567,15 @@ export class GameClient {
     const h = handle >>> 0;
     for (let i = 0; i < r.unitCount; i++) {
       if (r.unitHandle(i) !== h) continue;
-      interpolatedPos(r, i, this.stream.lastAlpha, this.pos);
+      const drawn = this.prediction.rendered;
+      if (drawn.byteLength >= (i + 1) * UNIT_RECORD_BYTES && drawn.getUint32(i * UNIT_RECORD_BYTES + UNIT_OFF_HANDLE, true) === h) {
+        const a = (r.unitFlags(i) & UnitFlags.NoInterp) !== 0 ? 1 : this.stream.lastAlpha;
+        for (let c = 0; c < 3; c++) {
+          const prev = drawn.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_PREV_POS + c * 4, true);
+          const cur = drawn.getInt32(i * UNIT_RECORD_BYTES + UNIT_OFF_CUR_POS + c * 4, true);
+          this.pos[c] = prev + (cur - prev) * a;
+        }
+      } else interpolatedPos(r, i, this.stream.lastAlpha, this.pos);
       this.syncViewport();
       if (!this.camera.project(this.pos[0]!, this.pos[1]!, this.pos[2]!, this.tmp)) return null;
       return { x: this.tmp[0]!, y: this.tmp[1]! };
@@ -531,12 +597,12 @@ export class GameClient {
    * Programmatic move (E2E hooks, console): sends Move for `handles` (default: the selection) to
    * (x, z) raw with the same immediate feedback and measurement as a right click.
    */
-  moveTo(xRaw: number, zRaw: number, handles?: ArrayLike<number>, clickMs?: number): number {
+  moveTo(xRaw: number, zRaw: number, handles?: ArrayLike<number>, clickMs?: number, queue = false): number {
     const b = this.bounds;
     const x = Math.min(b.maxX, Math.max(b.minX, Math.round(xRaw)));
     const z = Math.min(b.maxZ, Math.max(b.minZ, Math.round(zRaw)));
     const units = handles ?? this.selection.selected();
-    return this.issueMove(units, handles === undefined, x, z, false, clickMs ?? this.nowFn());
+    return this.issueMove(units, handles === undefined, x, z, queue, clickMs ?? this.nowFn());
   }
 
   /** Stop for the current selection. Returns the seq or −1. */
@@ -554,6 +620,15 @@ export class GameClient {
     return this.commands.kill(handles ?? this.selection.selected(), this.nowFn());
   }
 
+  /** Limits GPU presentation only; frame polling, acknowledgements and input still run every rAF. */
+  setFrameCap(cap: 30 | 60 | 120 | 'monitor'): boolean {
+    if (this.disposed || (cap !== 'monitor' && cap !== 30 && cap !== 60 && cap !== 120)) return false;
+    this.presentationCap = cap;
+    return true;
+  }
+
+  get frameCap(): 30 | 60 | 120 | 'monitor' { return this.presentationCap; }
+
   // ---- lifecycle ------------------------------------------------------------------------------
 
   /** Starts the rAF loop. */
@@ -566,6 +641,9 @@ export class GameClient {
 
   /** Stops the loop (the client stays usable; `start()` resumes). */
   stop(): void {
+    this.prediction.reset();
+    this.rig.reset();
+    this.rigDirty = true;
     if (!this.running) return;
     this.running = false;
     if (this.rafId >= 0) this.raf().cancel(this.rafId);
@@ -583,6 +661,7 @@ export class GameClient {
     this.fullscreen?.dispose();
     this.unsubscribeHost();
     this.unsubscribeAck();
+    this.unsubscribeIssued();
   }
 
   /**
@@ -603,36 +682,131 @@ export class GameClient {
 
     // Newest frame.
     const s = this.stream;
-    if (s.poll(now)) this.onNewFrame(now);
+    const newFrame = s.poll(now);
+    if (newFrame) this.onNewFrame(now);
     const alpha = s.alpha(now);
 
     this.expireMarkers(now);
 
     const v = this.view;
     if (s.hasFrame) {
-      v.units.bytes = s.units();
+      if (newFrame || this.rigDirty) {
+        this.rig.update(s.reader, s.units(), s.parts(), this.visuals);
+        this.rigDirty = false;
+      }
+      v.units.bytes = this.rig.units;
       v.units.count = s.unitCount;
     } else {
+      this.prediction.reset();
+      this.rig.reset();
+      this.rigDirty = true;
       v.units.bytes = this.emptyUnits;
       v.units.count = 0;
     }
-    v.units.version = s.frameCount;
-    v.parts.bytes = s.parts();
-    v.parts.count = s.partCount;
-    v.parts.version = s.frameCount;
+    v.units.version = this.rig.version;
+    v.parts.bytes = s.hasFrame ? this.rig.parts : this.emptyUnits;
+    v.parts.count = s.hasFrame ? this.rig.partCount : 0;
+    v.parts.version = this.rig.version;
     this.updateHover();
     v.highlight = this.selection.highlight;
     v.highlightVersion = this.selection.highlightVersion;
     v.alpha = alpha;
     v.timeMs = now;
+    this.syncSelection();
+    this.updateOrdersAndDecals(alpha);
+    this.callbacks.onPresent?.(this, now);
+    v.overlays.lines = this.combinedLines;
+    const interval = this.presentationCap === 'monitor' ? 0 : 1000 / this.presentationCap;
+    if (!newFrame && !this.presentationRequested && Number.isFinite(this.lastPresentedMs) && now - this.lastPresentedMs + 1e-6 < interval) {
+      m.endRaf(this.nowFn());
+      return;
+    }
+    this.presentationRequested = false;
+    this.lastPresentedMs = now;
+    if (s.hasFrame) {
+      this.prediction.update(s.reader, this.rig.units, this.rig.parts, alpha, now, newFrame,
+        this.movePredictionMotion, this.map, this.visuals, this.pauseWanted === true || s.paused);
+      v.units.bytes = this.prediction.units;
+      v.parts.bytes = this.prediction.parts;
+      v.units.version = v.parts.version = this.rig.version + this.prediction.version;
+    }
     this.renderer.render(v);
 
     const drawn = this.nowFn();
-    m.onRendered(drawn, this.lastFrame, alpha, this.camera);
+    m.onRendered(drawn, this.lastFrame, alpha, this.camera, this.prediction.rendered);
     m.endRaf(this.nowFn());
   }
 
   // ---- internals ------------------------------------------------------------------------------
+
+  setVisuals(visuals: VisualTable): void {
+    this.prediction.reset();
+    this.rig.reset();
+    this.rigDirty = true;
+    this.presentationRequested = true;
+    this.visuals = visuals;
+    this.selection.visuals = visuals;
+    this.metrics.setVisualRadii(visualCornerRadii(visuals));
+    this.renderer.setVisuals(visuals);
+  }
+
+  /** Actual render-pose diagnostics, derived solely from the accepted visible frame. */
+  rigPose(handle: number): ReturnType<RigPoseAdapter['inspect']> {
+    const f = this.lastFrame;
+    return f === null ? null : this.rig.inspect(f, handle, this.stream.lastAlpha);
+  }
+
+  get rigPoseStats(): Readonly<RigPoseAdapter['stats']> { return this.rig.stats; }
+
+  /** Updates the worker watch list only when the selection changes. */
+  syncSelection(): void {
+    if (this.watchVersion === this.selection.version) return;
+    this.watchVersion = this.selection.version;
+    this.sendCtl({ t: 'watch', handles: Array.from(this.selection.handles.subarray(0, Math.min(64, this.selection.count))) });
+    this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
+  }
+
+  private updateOrdersAndDecals(alpha: number): void {
+    const r = this.lastFrame;
+    const d = this.dynamicDecals;
+    d.clear();
+    this.combinedLines.length = 0;
+    for (let i = 0; i < this.lines.length; i++) this.combinedLines.push(this.lines[i]!);
+    if (r === null) return;
+    const sel = this.selection;
+    for (let k = 0; k < sel.count; k++) {
+      const i = sel.indices[k]!;
+      interpolatedPos(r, i, alpha, this.pos);
+      d.ring(this.pos[0]!, this.pos[2]!, this.visuals[r.unitVisual(i)]?.selectionRadius ?? 0.7, this.markerColor);
+    }
+    let n = 0;
+    if (this.showPaths) for (let w = 0; w < r.watchCount; w++) {
+      const h = r.watchHandle(w);
+      if (!sel.has(h)) continue;
+      let index = -1;
+      for (let k = 0; k < sel.count; k++) if (sel.handles[k] === h) { index = sel.indices[k]!; break; }
+      if (index < 0) continue;
+      interpolatedPos(r, index, alpha, this.pos);
+      let x = this.pos[0]!; let z = this.pos[2]!;
+      const points = r.watchPointCount(w);
+      const targets = r.watchTargetCount(w);
+      for (let k = 0; k < points + targets; k++) {
+        const point = k < points;
+        const q = k - points;
+        const tx = point ? r.watchPointX(w, k) : r.watchTargetX(w, q);
+        const tz = point ? r.watchPointZ(w, k) : r.watchTargetZ(w, q);
+        if (n < this.watchLines.length) {
+          const line = this.watchLines[n++]!;
+          line.ax = x; line.ay = this.heightAtRaw(x, z); line.az = z;
+          line.bx = tx; line.by = this.heightAtRaw(tx, tz); line.bz = tz;
+          this.combinedLines.push(line);
+        }
+        if (!point) d.disc(tx, tz, 0.6, this.markerColor, 0.7);
+        x = tx; z = tz;
+      }
+    }
+    this.renderer.setDynamicDecals?.(d);
+  }
 
   private raf(): RafLike {
     return this.rafImpl ?? defaultRaf();
@@ -685,10 +859,30 @@ export class GameClient {
 
   private onNewFrame(now: number): void {
     const s = this.stream;
+    const army = this.viewArmy;
+    if (this.readOnlyCommands && (army !== this.selection.playerArmy || s.reader.tick < this.inspectionTick)) {
+      this.selection.playerArmy = army;
+      this.selection.clear();
+    }
+    this.inspectionTick = s.reader.tick;
     this.selection.onFrame(s.reader);
-    this.commands.acknowledge(s.ackSeq, now);
+    this.controlGroups.prune(s.reader, army);
+    this.onAppliedAck(s.ackSeq, now);
+    if (this.pauseWanted !== null && (s.paused === this.pauseWanted || now - this.pauseWantedAt > 1000)) {
+      this.pauseWanted = null;
+    }
+    this.callbacks.onFrame?.(this);
+  }
+
+  /** Applied sequence from a committed tick, received directly or through the frame fallback. */
+  private onAppliedAck(ackSeq: number, now: number): void {
+    // Zero means no command; observers use 0xffffffff. Commands reserve sequence zero.
+    if (!Number.isInteger(ackSeq) || ackSeq <= 0 || ackSeq > 0xffff) return;
+    const last = this.commands.lastAckSeq;
+    if (last !== 0 && !seqAcked(ackSeq, last)) return;
+    const confirmed = this.commands.acknowledge(ackSeq, now);
     // Waypoint lines disappear once their command is confirmed.
-    const ack = s.ackSeq & 0xffff;
+    const ack = ackSeq;
     let w = 0;
     for (let i = 0; i < this.lines.length; i++) {
       const seq = this.lineSeqs[i]!;
@@ -702,10 +896,7 @@ export class GameClient {
     }
     this.lines.length = w;
     this.lineSeqs.length = w;
-    if (this.pauseWanted !== null && (s.paused === this.pauseWanted || now - this.pauseWantedAt > 1000)) {
-      this.pauseWanted = null;
-    }
-    this.callbacks.onFrame?.(this);
+    if (confirmed > 0) this.presentationRequested = true;
   }
 
   private expireMarkers(now: number): void {
@@ -755,8 +946,10 @@ export class GameClient {
 
   private issueMove(units: ArrayLike<number>, fromSelection: boolean, x: number, z: number, queue: boolean, clickMs: number): number {
     if (units.length === 0) return -1;
+    this.presentationRequested = true;
     const now = this.nowFn();
     const seq = this.commands.move(units, x, this.heightAtRaw(x, z), z, queue, now);
+    if (seq < 0) return seq;
     this.addMarker(x, z, now);
     // Waypoint line from the group's displayed centre.
     const r = this.lastFrame;
@@ -789,11 +982,13 @@ export class GameClient {
       }
       if (n > 0) this.addLine(seq, Math.round(sx / n), Math.round(sy / n), Math.round(sz / n), x, z);
     }
-    this.metrics.beginClick(clickMs, seq, units, r, this.stream.lastAlpha);
+    this.metrics.beginClick(clickMs, seq, units, r, this.stream.lastAlpha, this.prediction.rendered);
     return seq;
   }
 
   private handleAction(a: Action): void {
+    this.presentationRequested = true;
+    if (this.actionInterceptor?.(a)) return;
     switch (a.type) {
       case 'grabStart':
         this.syncViewport();
@@ -832,6 +1027,22 @@ export class GameClient {
         this.selection.clickSelect(this.camera, this.stream.lastAlpha, a.x, a.y, a.additive);
         this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
         break;
+      case 'doubleClickSelect': {
+        const h = this.selection.clickSelect(this.camera, this.stream.lastAlpha, a.x, a.y, false);
+        if (h >= 0) this.selection.selectTypeOnScreen(this.camera, this.stream.lastAlpha, h, a.additive);
+        break;
+      }
+      case 'clearSelection':
+        this.selection.clear();
+        break;
+      case 'controlGroup': {
+        if (a.save) this.controlGroups.save(a.slot, this.selection.selected(), a.additive);
+        else {
+          const center = this.controlGroups.recall(a.slot, this.selection, this.lastFrame, a.additive, a.timeStamp);
+          if (center !== null) this.jumpTo(center.x, center.z);
+        }
+        break;
+      }
       case 'selectAll':
         this.selection.selectAll();
         this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
@@ -856,6 +1067,20 @@ export class GameClient {
         this.callbacks.onToggleConsole?.();
         break;
     }
+    this.syncSelection();
     this.callbacks.onAction?.(a);
+  }
+
+  /** HUD world modes can consume targeting clicks before selection/movement. */
+  setActionInterceptor(interceptor: ((action: Action) => boolean) | null): void {
+    this.actionInterceptor = interceptor;
+  }
+
+  /** UI selection commands use the same highlight/watch publication as mouse selection. */
+  selectHandles(handles: ArrayLike<number>, additive = false): void {
+    this.presentationRequested = true;
+    this.selection.set(handles, additive);
+    this.syncSelection();
+    this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
   }
 }

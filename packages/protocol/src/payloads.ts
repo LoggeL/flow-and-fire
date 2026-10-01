@@ -6,6 +6,8 @@
  * Move          (12 B): i32 x | i32 y | i32 z                      (Fx raw, world position)
  * CheatSpawn    (18 B): u8 sub=1 | u16 bp | u8 army | u16 count | i32 x | i32 z | i32 spread
  * CheatKill     ( 1 B): u8 sub=2                                   (targets = envelope units)
+ * CheatFootprint(14 B): u8 sub=3 | i32 cellX | i32 cellZ | u16 w | u16 h | i8 delta
+ *                       (nav cells = WU; delta +1 adds, −1 removes the rectangle; MS3 obstacles)
  */
 
 import { asFx, type Fx } from '@faf/fixed';
@@ -14,6 +16,7 @@ import { CheatSub } from './ops.ts';
 export const MOVE_PAYLOAD_BYTES = 12;
 export const CHEAT_SPAWN_PAYLOAD_BYTES = 18;
 export const CHEAT_KILL_PAYLOAD_BYTES = 1;
+export const CHEAT_FOOTPRINT_PAYLOAD_BYTES = 14;
 
 export interface MovePayload {
   x: Fx;
@@ -172,9 +175,123 @@ export function isCheatKill(bytes: Uint8Array): boolean {
   return bytes.length === CHEAT_KILL_PAYLOAD_BYTES && bytes[0] === CheatSub.Kill;
 }
 
+// ---- CheatFootprint ----------------------------------------------------------------------------
+
+export interface CheatFootprintPayload {
+  /** Lower-left cell (WU, may lie partly outside the map; the sim clips). */
+  cellX: number;
+  cellZ: number;
+  /** Size in cells (u16; the sim accepts 1..64). */
+  w: number;
+  h: number;
+  /** +1 adds the footprint, −1 removes it. */
+  delta: 1 | -1;
+}
+
+/** Writes a CheatFootprint payload at `off`. */
+export function writeCheatFootprint(dv: DataView, off: number, cellX: number, cellZ: number, w: number, h: number, delta: number): void {
+  dv.setUint8(off, CheatSub.Footprint);
+  dv.setInt32(off + 1, cellX, true);
+  dv.setInt32(off + 5, cellZ, true);
+  dv.setUint16(off + 9, w, true);
+  dv.setUint16(off + 11, h, true);
+  dv.setInt8(off + 13, delta);
+}
+
+export function encodeCheatFootprint(p: CheatFootprintPayload): Uint8Array {
+  checkRange('cellX', p.cellX, I32_MIN, I32_MAX);
+  checkRange('cellZ', p.cellZ, I32_MIN, I32_MAX);
+  checkRange('w', p.w, 0, 0xffff);
+  checkRange('h', p.h, 0, 0xffff);
+  if (p.delta !== 1 && p.delta !== -1) throw new RangeError(`delta must be 1 or -1: ${String(p.delta)}`);
+  const out = new Uint8Array(CHEAT_FOOTPRINT_PAYLOAD_BYTES);
+  writeCheatFootprint(new DataView(out.buffer), 0, p.cellX, p.cellZ, p.w, p.h, p.delta);
+  return out;
+}
+
+export function decodeCheatFootprint(bytes: Uint8Array): CheatFootprintPayload {
+  const dv = need(bytes, CHEAT_FOOTPRINT_PAYLOAD_BYTES, 'CheatFootprint');
+  if (readCheatSub(dv, 0) !== CheatSub.Footprint) throw new RangeError('not a CheatFootprint payload');
+  const d = readCheatFootprintDelta(dv, 0);
+  if (d !== 1 && d !== -1) throw new RangeError(`CheatFootprint delta must be 1 or -1, got ${d}`);
+  return readCheatFootprintInto(dv, 0, { cellX: 0, cellZ: 0, w: 0, h: 0, delta: 1 });
+}
+
+export function readCheatFootprintX(dv: DataView, off: number): number {
+  return dv.getInt32(off + 1, true);
+}
+export function readCheatFootprintZ(dv: DataView, off: number): number {
+  return dv.getInt32(off + 5, true);
+}
+export function readCheatFootprintW(dv: DataView, off: number): number {
+  return dv.getUint16(off + 9, true);
+}
+export function readCheatFootprintH(dv: DataView, off: number): number {
+  return dv.getUint16(off + 11, true);
+}
+/** Raw delta byte (i8); valid payloads carry +1 or −1. */
+export function readCheatFootprintDelta(dv: DataView, off: number): number {
+  return dv.getInt8(off + 13);
+}
+
+/** Reads a CheatFootprint payload into `out` (no allocation; delta other than ±1 reads as −1 if negative, else +1). */
+export function readCheatFootprintInto(dv: DataView, off: number, out: CheatFootprintPayload): CheatFootprintPayload {
+  out.cellX = readCheatFootprintX(dv, off);
+  out.cellZ = readCheatFootprintZ(dv, off);
+  out.w = readCheatFootprintW(dv, off);
+  out.h = readCheatFootprintH(dv, off);
+  out.delta = readCheatFootprintDelta(dv, off) < 0 ? -1 : 1;
+  return out;
+}
+
 /** Expected payload length of a Cheat sub-command, or −1 if unknown. */
 export function cheatPayloadBytes(sub: number): number {
   if (sub === CheatSub.Spawn) return CHEAT_SPAWN_PAYLOAD_BYTES;
   if (sub === CheatSub.Kill) return CHEAT_KILL_PAYLOAD_BYTES;
+  if (sub === CheatSub.Footprint) return CHEAT_FOOTPRINT_PAYLOAD_BYTES;
   return -1;
 }
+
+/** Build (12 bytes): blueprint u16, yaw Ang16 u16, centre x/z raw Fx i32. */
+export const BUILD_PAYLOAD_BYTES = 12;
+export interface BuildPayload { bp: number; yaw: number; x: Fx; z: Fx }
+export function writeBuild(dv:DataView,off:number,bp:number,yaw:number,x:number,z:number):void {
+  dv.setUint16(off,bp,true);dv.setUint16(off+2,yaw,true);dv.setInt32(off+4,x,true);dv.setInt32(off+8,z,true);
+}
+export function encodeBuild(p: BuildPayload): Uint8Array {
+  checkRange('bp', p.bp, 0, 65534); checkRange('yaw', p.yaw, 0, 65535);
+  checkRange('x', p.x, I32_MIN, I32_MAX); checkRange('z', p.z, I32_MIN, I32_MAX);
+  const out = new Uint8Array(BUILD_PAYLOAD_BYTES), dv = new DataView(out.buffer);
+  dv.setUint16(0,p.bp,true); dv.setUint16(2,p.yaw,true); dv.setInt32(4,p.x,true); dv.setInt32(8,p.z,true); return out;
+}
+export function decodeBuild(bytes: Uint8Array): BuildPayload {
+  const dv = need(bytes,BUILD_PAYLOAD_BYTES,'Build');
+  return {bp:dv.getUint16(0,true),yaw:dv.getUint16(2,true),x:asFx(dv.getInt32(4,true)),z:asFx(dv.getInt32(8,true))};
+}
+/** Explicit state setters for pause (0/1) and priority (0 high,1 normal,2 low). */
+export function encodeSetPriority(priority: number): Uint8Array { checkRange('priority',priority,0,2); return Uint8Array.of(priority); }
+export function encodeTogglePause(paused: boolean): Uint8Array { return Uint8Array.of(paused ? 1 : 0); }
+
+/** Attack, Guard, Assist and Repair: generation-bearing target handle u32. */
+export const TARGET_PAYLOAD_BYTES = 4;
+export function encodeTarget(target: number): Uint8Array {
+  checkRange('target', target, 0, 0xffffffff);
+  const out = new Uint8Array(4); new DataView(out.buffer).setUint32(0, target, true); return out;
+}
+export function decodeTarget(bytes: Uint8Array): number { return need(bytes,4,'Target').getUint32(0,true); }
+/** FactoryQueue: unit blueprint u16 and number of copies u16 (1..32). */
+export const FACTORY_QUEUE_PAYLOAD_BYTES = 4;
+export interface FactoryQueuePayload { bp: number; count: number }
+export function encodeFactoryQueue(p: FactoryQueuePayload): Uint8Array {
+  checkRange('bp',p.bp,0,65534); checkRange('count',p.count,1,32);
+  const out=new Uint8Array(4),dv=new DataView(out.buffer);dv.setUint16(0,p.bp,true);dv.setUint16(2,p.count,true);return out;
+}
+export function decodeFactoryQueue(bytes: Uint8Array): FactoryQueuePayload { const dv=need(bytes,4,'FactoryQueue');return {bp:dv.getUint16(0,true),count:dv.getUint16(2,true)}; }
+
+/** Queue editing retains the paid current job. index addresses the transmitted queue including it. */
+export interface FactoryQueueEditPayload { action:0|1|2; index:number; bp:number;count:number }
+export function encodeFactoryQueueEdit(p:FactoryQueueEditPayload):Uint8Array {
+ checkRange('action',p.action,0,2);checkRange('index',p.index,0,31);checkRange('bp',p.bp,0,65534);checkRange('count',p.count,p.action===0?0:1,32);
+ const bytes=new Uint8Array(6),d=new DataView(bytes.buffer);d.setUint8(0,p.action);d.setUint8(1,p.index);d.setUint16(2,p.bp,true);d.setUint16(4,p.count,true);return bytes;
+}
+export function decodeFactoryQueueEdit(bytes:Uint8Array):FactoryQueueEditPayload {const d=need(bytes,6,'FactoryQueueEdit');const p={action:d.getUint8(0),index:d.getUint8(1),bp:d.getUint16(2,true),count:d.getUint16(4,true)};checkRange('action',p.action,0,2);checkRange('index',p.index,0,31);checkRange('count',p.count,p.action===0?0:1,32);return {...p,action:p.action as 0|1|2};}

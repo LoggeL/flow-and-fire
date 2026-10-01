@@ -4,6 +4,43 @@ Konvention: Jedes Arbeitspaket schreibt sein Fragment nach `docs/status/<Paket-I
 Folgepakete, Abweichungen, bekannte Grenzen). Am Meilensteinende konsolidiert das Abschlusspaket die Fragmente in
 diese Datei; die Fragmente bleiben als Detailbelege liegen.
 
+## Aktueller Stand: gemeinsamer Workspace (2026-09-30)
+
+Seit dem anschließenden Auftrag ist das [Goal für die offenen Spielintegrationen](status/integration-goal.md)
+aktiv. Es ergänzt die Sim-Grundlagen und verbindet die eigenständigen Tracks mit dem Spiel.
+Die nachfolgenden Zahlen beschreiben die abgeschlossene Konsolidierungsabnahme vor diesen Änderungen.
+
+Alle sieben Tracks sind in `flow-and-fire` auf `main` zusammengeführt. Im anschließenden Goal
+startet die normale Oberfläche mit Gefechtskonfiguration und einem echten Commander pro
+Spieler. Integer-Wirtschaft, Bau, Fabrikproduktion, Kampf, Siegbedingungen und gefilterte Sicht
+liegen in der Sim. HUD-Befehle, KI-Worker, Audio, Kampf-FX und der Replay-Browser sind an diesen
+Spielpfad angeschlossen. Die gemeinsame Browser- und Zeitabnahme läuft noch. Der explizite
+Sandbox-Modus erhält die MS3-Pathing-Prüfung. KI-Arena, Audio-Demo, Marker-Editor, HUD-Galerie,
+FX-Lab und Replay-CLI laufen weiter aus demselben Root.
+
+Der [Konsolidierungsbericht](status/consolidation.md) ist die aktuelle gemeinsame Abnahmeübersicht.
+Er enthält Ergebnisse, Reproduktionsbefehle, bekannte Grenzen und den Nachweis zur Erhaltung der
+Original-Arbeitskopien. Die nachfolgenden MS1-/MS2-Abschnitte sind historische Meilensteinberichte;
+frühere Aussagen wie "kein Pathing" beschreiben den damaligen Stand.
+
+| Bereich | Aktueller Beleg | Grenzen und Folgearbeit |
+|---|---|---|
+| [MS3](status/ms3-p6-e2e.md) | 168 Spiel-Browserfälle bestanden, sechs begründete Skips; globale Statik, Units, Build und Assets bestanden | kalte PathService-Zeiten teils über 5 ms; seq-p95 101,565..111,740 ms und erster bewegter Pixel in Startansicht 235,3..255 ms über den 100-/150-ms-Zielen; Referenz-Hardware nicht abgenommen |
+| [KI](status/track-ai.md) | 221 Tests, neun strikte Kalibrierungen, 210 Turnier- und 120 Difficulty-Spiele abgeschlossen; vier Think-/Scheduler-Gates bestanden | lokaler Arena-Welt-Tick-Vergleich außerhalb ±2 %; echte Sim-Anbindung später; Opening- und Energie-Ausreißer dokumentiert |
+| [Audio](status/track-audioeng.md) | 307 Unit-Tests, 21 stumme Browserfälle und 18 strikte Browser-Messfälle bestanden; 200 Schüsse/s mit Browser-p95 0,18..0,33 ms unter 0,5 ms | Anbindung an Kampfereignisse und Messung am vollständigen Spielpfad später |
+| [Editor](status/track-editor.md) | 292 Unit-, 48 funktionale und 3 Messspec-Tests bestanden; globale Statik/Unit-Matrix bestanden | lokale Werkzeugprüfung abgeschlossen; Referenz-Hardware nicht abgenommen |
+| [HUD](status/track-hud.md) | 273 Unit-Tests, 196 Stories und zwei strikte Benchmarkläufe bestanden | echte Sim-Anbindung später |
+| [FX](status/track-renderfx.md) | 210 Unit-Tests, 18 vollständige Smokes, 28 Browserfälle (2 begründete Skips), 42 ausgewertete ruhige Messfälle und drei Galerie-Aufnahmen | GPU-Zeitziele für Schilde und Lighting-CSM verfehlt; Spiel-Anbindung später |
+| [Replay](status/track-replay.md) | neun aktuelle Goldens, Player/CLI/OPFS, Hash-/Seek-Tests, zwei 30-Minuten-Prozessbenchmarks, MS3-Keyframes und Größen-/Golden-CLIs bestanden | Spieloberfläche, Browser-Wiedergabe und echter Tab-Kill-Test folgen MS11; striktes Cross-Engine-PathService-Zeitgate verfehlt |
+
+Install mit `--frozen-lockfile`, Typecheck, Lint/Paketgrenzen, Gesamtbuild und Assetcheck sind bestanden.
+Auch die vollständige Unit-Matrix mit 2.921 Tests in 269 Dateien ist bestanden.
+Spiel-E2E ist mit 168 bestandenen Fällen und sechs begründeten Skips abgeschlossen.
+Gemeinsamer Paket-Benchmark, Quickläufe und Render-Smoke sind ebenfalls beendet. Der Cross-Engine-Lauf
+bestätigt 180 Hashketten- und 180 Replay-Durchläufe sowie alle Burst-Funktionsgates; der mit
+`FAF_PERF_GATE=1` ausgeführte Befehl endet wegen des 5-ms-Zeitgates mit Exit 1. Lokale
+Messmaschine ist Apple M5 Pro. iGPU, nativer Safari und Referenz-Laptop sind nicht abgenommen.
+
 ## Stand MS1 – Spikes & deterministisches Skelett
 
 **Stand 2026-09-29 (nach Review-Nachbesserung): MS1 abgeschlossen; alle Abnahmekriterien erfüllt bis auf zwei

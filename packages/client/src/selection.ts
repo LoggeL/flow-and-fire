@@ -1,29 +1,15 @@
-/**
- * Selection of own units (MS1 preview of C1, accepted in MS3).
- *
- * - Default mode `allOwn`: every own unit of the current frame is selected (1,000 cubes react to
- *   a right click right away). This implicit selection is not highlighted.
- * - Box select (left drag) and click select (nearest own unit within a pixel radius) switch to the
- *   explicit mode; Shift adds to the current selection. A click on empty ground clears it.
- *   Ctrl/Cmd+A returns to `allOwn`.
- * - Box/click tests use the positions as they are on screen: interpolated with the current
- *   alpha, projected on the CPU (no GPU readback).
- *
- * Output: `handles` (selected units in frame order, `count` entries) and `highlight` (one byte per
- * UnitRecord of the frame, 1 = selected) for the renderer. Both are rebuilt on each new frame and
- * on each selection change; the rebuild does not allocate.
- */
+/** Own-unit selection with matching mesh/icon screen geometry and explicit empty startup. */
 import { FrameReader, UnitFlags } from '@faf/protocol';
-import type { RtsCamera } from '@faf/render';
+import { iconScreenRect, unitIconFade, strategicZoom, iconProjectionScale, eyeDistanceWU, type RtsCamera, type VisualTable } from '@faf/render';
 
 export type SelectionMode = 'allOwn' | 'explicit';
 
 /** Flags of records that are never selectable (not a live own unit). */
 const UNSELECTABLE = UnitFlags.Wreck | UnitFlags.Ghost | UnitFlags.Blip;
 
-/** True if record `i` is a selectable unit of `army`. */
+/** True for a full live unit of `army`; army -1 permits observer inspection of any visible army. */
 export function isOwnUnit(r: FrameReader, i: number, army: number): boolean {
-  return r.unitArmy(i) === army && (r.unitFlags(i) & UNSELECTABLE) === 0;
+  return (army === -1 || r.unitArmy(i) === army) && (r.unitFlags(i) & UNSELECTABLE) === 0;
 }
 
 /**
@@ -46,7 +32,9 @@ export function interpolatedPos(r: FrameReader, i: number, alpha: number, out: F
 }
 
 export class Selection {
-  mode: SelectionMode = 'allOwn';
+  mode: SelectionMode = 'explicit';
+  visuals: VisualTable = [];
+  mapSizeWu = 1024;
   /** Selected handles in frame order (first `count` entries valid). */
   handles = new Uint32Array(1024);
   /** Record index (in the current frame) of each selected handle. */
@@ -62,17 +50,19 @@ export class Selection {
   version = 0;
   /** Default click radius in CSS pixels. */
   clickRadiusPx = 14;
-  /** Also highlight the implicit `allOwn` selection (default false: only explicit selections glow). */
-  highlightImplicit = false;
+  /** Also highlight the explicit select-all mode (used by Ctrl+A and test hooks). */
+  highlightImplicit = true;
 
   private readonly explicit = new Set<number>();
   private readonly p = new Float64Array(3);
   private readonly s = new Float64Array(4);
+  private readonly rect = new Float64Array(4);
+  private readonly zoom = { level: 0 as 0 | 1 | 2, iconForce: 0, z1: 0, z2: 0 };
   private reader: FrameReader | null = null;
 
   constructor(public playerArmy: number) {}
 
-  /** Selects all own units (default mode). */
+  /** Selects all own units, including later own units while this mode stays active. */
   selectAll(): void {
     this.mode = 'allOwn';
     this.explicit.clear();
@@ -133,11 +123,8 @@ export class Selection {
       const n = r.unitCount;
       for (let i = 0; i < n; i++) {
         if (!isOwnUnit(r, i, this.playerArmy)) continue;
-        interpolatedPos(r, i, alpha, this.p);
-        if (!camera.project(this.p[0]!, this.p[1]!, this.p[2]!, this.s)) continue;
-        const sx = this.s[0]!;
-        const sy = this.s[1]!;
-        if (sx >= lx && sx <= hx && sy >= ly && sy <= hy) {
+        if (!this.screenRect(camera, i, alpha, this.rect)) continue;
+        if (this.rect[2]! >= lx && this.rect[0]! <= hx && this.rect[3]! >= ly && this.rect[1]! <= hy) {
           this.explicit.add(r.unitHandle(i));
           hits++;
         }
@@ -165,7 +152,8 @@ export class Selection {
         const dx = this.s[0]! - x;
         const dy = this.s[1]! - y;
         const d2 = dx * dx + dy * dy;
-        if (d2 <= bestD2) {
+        const inIcon = this.iconVisible(camera, i) && this.screenRect(camera, i, alpha, this.rect) && x >= this.rect[0]! && x <= this.rect[2]! && y >= this.rect[1]! && y <= this.rect[3]!;
+        if ((inIcon || d2 <= radiusPx * radiusPx) && (best < 0 || d2 <= bestD2)) {
           bestD2 = d2;
           best = i;
         }
@@ -179,10 +167,49 @@ export class Selection {
     let handle = -1;
     if (best >= 0 && r !== null) {
       handle = r.unitHandle(best);
-      this.explicit.add(handle);
+      if (additive && this.explicit.has(handle)) this.explicit.delete(handle);
+      else this.explicit.add(handle);
     }
     this.refresh();
     return handle;
+  }
+
+  /** The exact icon square, or projected mesh selection radius (CSS pixels). */
+  screenRect(camera: RtsCamera, i: number, alpha: number, out: Float64Array | number[]): boolean {
+    const r = this.reader;
+    if (r === null) return false;
+    interpolatedPos(r, i, alpha, this.p);
+    if (this.iconVisible(camera, i)) return iconScreenRect(camera, this.p[0]!, this.p[1]!, this.p[2]!, out);
+    if (!camera.project(this.p[0]!, this.p[1]!, this.p[2]!, this.s)) return false;
+    const radius = this.visuals[r.unitVisual(i)]?.selectionRadius ?? 0.5;
+    const px = radius * iconProjectionScale(camera.viewportHeight, camera.fovY) / Math.max(0.001, eyeDistanceWU(camera, this.p[0]!, this.p[1]!, this.p[2]!));
+    out[0] = this.s[0]! - px; out[1] = this.s[1]! - px;
+    out[2] = this.s[0]! + px; out[3] = this.s[1]! + px;
+    return true;
+  }
+
+  /** Double click selects matching visuals that intersect the viewport. */
+  selectTypeOnScreen(camera: RtsCamera, alpha: number, handle: number, additive = false): void {
+    const r = this.reader;
+    if (r === null) return;
+    let visual = -1;
+    for (let i = 0; i < r.unitCount; i++) if (r.unitHandle(i) === handle) visual = r.unitVisual(i);
+    if (visual < 0) return;
+    if (!additive) this.explicit.clear();
+    else if (this.mode === 'allOwn') this.copyCurrentInto();
+    this.mode = 'explicit';
+    for (let i = 0; i < r.unitCount; i++) {
+      if (r.unitVisual(i) !== visual || !isOwnUnit(r, i, this.playerArmy) || !this.screenRect(camera, i, alpha, this.rect)) continue;
+      if (this.rect[2]! >= 0 && this.rect[0]! <= camera.viewportWidth && this.rect[3]! >= 0 && this.rect[1]! <= camera.viewportHeight) this.explicit.add(r.unitHandle(i));
+    }
+    this.refresh();
+  }
+
+  private iconVisible(camera: RtsCamera, i: number): boolean {
+    const visual = this.visuals[this.reader!.unitVisual(i)];
+    if (visual?.icon === undefined) return false;
+    strategicZoom(camera.distance, this.mapSizeWu, this.zoom);
+    return unitIconFade(camera, this.p[0]!, this.p[1]!, this.p[2]!, visual.selectionRadius ?? 0.5, visual.iconThreshold ?? 14, this.zoom.iconForce) > 0;
   }
 
   // ---- internals ------------------------------------------------------------------------------

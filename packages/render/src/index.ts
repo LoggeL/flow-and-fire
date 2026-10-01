@@ -1,4 +1,5 @@
-// Public API of @faf/render (PLAN §3.7, MS1 + MS2: terrain, water, decals, probe, presets, P2).
+// Public API of @faf/render (PLAN §3.7, MS1 + MS2: terrain, water, decals, probe, presets, P2;
+// MS3: strategic zoom, IconPass + MSDF atlas, HP bars, dynamic decals, placeholder turrets).
 export * from './rhi/types.ts';
 export { createWebGL2Device, validateStreams } from './webgl2/device.ts';
 export type { DeviceCanvas, WebGL2Device, WebGL2DeviceOptions } from './webgl2/device.ts';
@@ -6,7 +7,7 @@ export { ContextLossRegistry } from './webgl2/registry.ts';
 export type { ContextEventTarget, RegisteredResource, RegistryHooks } from './webgl2/registry.ts';
 export { std140Layout, Std140Writer } from './std140.ts';
 export type { Std140Field, Std140FieldLayout, Std140Layout, Std140Type } from './std140.ts';
-export { RtsCamera, RAW_PER_WU, createRay, intersectGround } from './camera.ts';
+export { RtsCamera, RAW_PER_WU, createRay, intersectGround, nearPlaneForHeight, NEAR_PER_HEIGHT, NEAR_MIN_WU, NEAR_MAX_WU } from './camera.ts';
 export type { CameraOptions, Ray } from './camera.ts';
 export {
   UNIT_INSTANCE_STRIDE,
@@ -38,7 +39,7 @@ export {
   CYL_LOD_SEGMENTS,
   MAX_MESH_PARTS,
 } from './mesh/placeholder.ts';
-export type { MeshData, MeshPart, PlaceholderHull, PlaceholderSpec } from './mesh/placeholder.ts';
+export type { MeshData, MeshPart, PlaceholderHull, PlaceholderSpec, PlaceholderTurret } from './mesh/placeholder.ts';
 export {
   UnitPass,
   mergeMeshes,
@@ -50,7 +51,54 @@ export {
 } from './passes/units.ts';
 export type { UnitPartsView, UnitVisualMeshes } from './passes/units.ts';
 export { InstanceCuller, LOD_LEVELS, DEFAULT_LOD_DISTANCES, KEY_CULLED, KEY_DROPPED } from './units/culling.ts';
-export type { CullStats } from './units/culling.ts';
+export type { CullStats, StrategicCull } from './units/culling.ts';
+export {
+  VisualDataTexture,
+  VISUAL_DATA_GLSL,
+  VISUAL_DATA_ROWS,
+  VISUAL_DATA_WIDTH,
+  UNIT_VISUAL_DATA,
+  UNIT_ICON_ATLAS,
+} from './units/visual-data.ts';
+export type { VisualStrategic } from './units/visual-data.ts';
+export {
+  ICON_FADE_BAND,
+  DEFAULT_ICON_THRESHOLD_PX,
+  ICON_SIZE_PX,
+  ICON_TECH_STRIP,
+  ZOOM_Z1_FACTOR,
+  ZOOM_Z2_FACTOR,
+  ZOOM_Z1_MIN_WU,
+  ZOOM_Z2_MIN_WU,
+  ZOOM_FORCE_START,
+  DEFAULT_MAP_SIZE_WU,
+  HP_BAR_WIDTH_PX,
+  HP_BAR_HEIGHT_PX,
+  HP_BAR_GAP_PX,
+  STRATEGIC_GLSL,
+  strategicZoom,
+  zoomFlags,
+  iconProjectionScale,
+  unitProjectedPx,
+  iconFade,
+  eyeDistanceWU,
+  unitIconFade,
+  iconScreenRect,
+} from './strategic.ts';
+export type { StrategicZoom, ZoomFlags, ZoomLevel } from './strategic.ts';
+export {
+  ICON_GLYPH_FALLBACK,
+  ICON_GLYPH_TECH,
+  ICON_GLYPH_BLIP,
+  ICON_GLYPH_GHOST,
+  MAX_ICON_GLYPHS,
+  iconGlyphIndex,
+  validateIconAtlas,
+} from './icons/atlas.ts';
+export type { IconAtlasGlyph, IconAtlasMetrics } from './icons/atlas.ts';
+export { IconPass, RING_ATTR, UNIT_RING_GLSL, UNIT_RING_STREAMS } from './passes/icons.ts';
+export { HpBarPass, hpBarMask, hpBarVisible, HP_BAR_ALL, HP_BAR_DAMAGED, HP_BAR_SELECTED } from './passes/hpbars.ts';
+export type { HpBarMode } from './passes/hpbars.ts';
 export { Frustum, OUTSIDE, INTERSECTS, INSIDE } from './frustum.ts';
 export type { CullResult } from './frustum.ts';
 export {
@@ -79,6 +127,12 @@ export {
 export { PatchCuller, cullChunksBruteForce } from './terrain/patches.ts';
 export {
   DecalBinner,
+  DecalLayer,
+  DynamicDecals,
+  DECAL_KIND_RING,
+  DECAL_KIND_DISC,
+  DECAL_KIND_RECT,
+  DYNAMIC_RING_WIDTH_WU,
   MAX_TERRAIN_DECALS,
   MAX_DECALS_PER_CHUNK,
   DECALS_PER_ROW,
@@ -90,6 +144,8 @@ export type { DecalBinStats, TerrainDecal, TerrainDecalKind } from './terrain/de
 export { TerrainPass, TerrainHeightResources, PATCH_INDEX_COUNT, TERRAIN_EDGE_FADE_WU, TERRAIN_EDGE_DARKEN } from './passes/terrain.ts';
 export type { TerrainPassOptions } from './passes/terrain.ts';
 export { WaterPass, WATER_BORDER_WU, WATER_FOAM_DEPTH_WU, WATER_FULL_DEPTH_MAX_WU, waterFullDepthWu } from './passes/water.ts';
+export { VISIBILITY_FOG_CELL_WU, VISIBILITY_FOG_TRANSITION_MS, VISIBILITY_FOG_BRIGHTNESS } from './passes/visibility-fog.ts';
+export type { VisibilityFogSnapshot, VisibilityFogStats } from './passes/visibility-fog.ts';
 export { HeightProbe, PROBE_WIDTH, PROBE_HEIGHT, PROBE_BATCH } from './passes/probe.ts';
 export {
   RENDER_PRESETS,
@@ -126,3 +182,6 @@ export type {
   VisualEntry,
   VisualTable,
 } from './renderer.ts';
+
+export type { RendererExtension, RendererExtensionFactory, RendererExtensionResources, OpaqueDepthView } from './extension.ts';
+export type { OpaqueShaderExtension } from './opaque-extension.ts';

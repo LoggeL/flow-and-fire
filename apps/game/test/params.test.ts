@@ -5,6 +5,7 @@ describe('URL parameters', () => {
   it('defaults', () => {
     expect(parseParams('')).toEqual({
       transport: 'auto',
+      spawn: 'tanks',
       seed: DEFAULT_SEED,
       cubes: DEFAULT_CUBES,
       enemyCubes: DEFAULT_ENEMY_CUBES,
@@ -13,12 +14,13 @@ describe('URL parameters', () => {
       preset: 'medium',
       units: 0,
     });
-    expect(DEFAULT_CUBES).toBe(1000);
+    expect(DEFAULT_CUBES).toBe(150);
   });
 
   it('parses transport, seed, cubes, enemy, autostart', () => {
     expect(parseParams('?transport=sab&seed=7&cubes=12&enemy=0&autostart=0')).toEqual({
       transport: 'sab',
+      spawn: 'cubes',
       seed: 7,
       cubes: 12,
       enemyCubes: 0,
@@ -36,7 +38,7 @@ describe('URL parameters', () => {
     const p = parseParams('?transport=pigeon&seed=-3&cubes=abc&enemy=99999');
     expect(p.transport).toBe('auto');
     expect(p.seed).toBe(DEFAULT_SEED);
-    expect(p.cubes).toBe(DEFAULT_CUBES);
+    expect(p.cubes).toBe(1000);
     expect(p.enemyCubes).toBe(8192);
     expect(parseParams('seed=99999999999').seed).toBe(0xffffffff);
   });
@@ -68,4 +70,10 @@ describe('URL parameters', () => {
     expect(fallback.kind).toBe('transfer');
     expect(fallback.note).toMatch(/not cross-origin isolated/);
   });
+});
+
+it('spawn none suppresses start armies; tanks are the default and explicit cubes remain compatible', () => {
+  expect(parseParams('spawn=none')).toMatchObject({ spawn: 'none', cubes: 0, enemyCubes: 0 });
+  expect(parseParams('spawn=tanks')).toMatchObject({ spawn: 'tanks', cubes: 150, enemyCubes: 150 });
+  expect(parseParams('spawn=cubes')).toMatchObject({ spawn: 'cubes', cubes: 1000, enemyCubes: 24 });
 });

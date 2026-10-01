@@ -1,0 +1,20 @@
+import { expect, test } from './support.ts';
+test('gesture unlock, battle limits, alert jump and persisted mixing', async ({ page }, info) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto('/?shots=200&seconds=12&seed=41'); await page.evaluate(() => window.__fafAudioDemo.ready);
+  expect(await page.evaluate(() => window.__fafAudioDemo.engine.context.destination instanceof MediaStreamAudioDestinationNode)).toBe(true);
+  expect(await page.evaluate(() => window.__fafAudioDemo.engine.state)).toBe('locked');
+  await page.getByRole('button', { name: 'Klicken zum Aktivieren des Tons' }).click();
+  await expect.poll(() => page.evaluate(() => window.__fafAudioDemo.engine.state)).toBe('running');
+  await page.waitForTimeout(10000); const st = await page.evaluate(() => window.__fafAudioDemo.stats());
+  expect(st.scenario.weaponFire).toBeGreaterThanOrEqual(1900); expect(st.maxVoicesSeen).toBeLessThanOrEqual(32);
+  for (const c of Object.keys(st.maxByCategorySeen) as (keyof typeof st.maxByCategorySeen)[]) expect(st.maxByCategorySeen[c]).toBeLessThanOrEqual(st.categoryLimits[c]);
+  expect(Object.values(st.engine.dropped).reduce((a, b) => a + b, 0) + st.engine.stolen).toBeGreaterThan(0);
+  info.annotations.push({ type: 'main-js-p95-ms', description: String(st.engine.mainJs.p95) }); if (process.env['FAF_AUDIO_PERF_GATE'] === '1') expect(st.engine.mainJs.p95).toBeLessThanOrEqual(.5);
+  await page.locator('aside').evaluate(el => { el.style.height = 'auto'; el.scrollTop = 0; });
+  await page.screenshot({ path: `test-results/demo-${info.project.name}.png`, fullPage: true });
+  await page.locator('aside').evaluate(el => { el.style.height = ''; });
+  const before = st.camera; await page.getByRole('button', { name: 'Springen' }).first().click(); const after = await page.evaluate(() => window.__fafAudioDemo.stats().camera); expect(after.focusX !== before.focusX || after.focusZ !== before.focusZ).toBe(true);
+  await page.locator('#bus-sfx').evaluate(el => { (el as HTMLInputElement).value = '0.37'; }); await page.locator('#bus-sfx').dispatchEvent('input'); await page.locator('#mute').check();
+  await page.reload(); await page.evaluate(() => window.__fafAudioDemo.ready); expect(await page.locator('#bus-sfx').inputValue()).toBe('0.37'); await expect(page.locator('#mute')).toBeChecked(); expect(errors).toEqual([]);
+});

@@ -198,6 +198,7 @@ export function replayLog(input: Uint8Array | ArrayBuffer | ParsedCommandLog, op
     playerArmy: h.playerArmy,
     map,
     buildHash: h.buildHash,
+    ...(h.initialization === undefined ? {} : { initialization: h.initialization }),
     sources: [source],
     ...(options.keyframes !== undefined ? { keyframes: options.keyframes } : {}),
   });

@@ -1,0 +1,177 @@
+/*
+ * Top HUD zone (ui.md §5.1–§5.3, §5.11, §5.12): resource bar, flow details, match status, pause banner,
+ * alert feed, tooltip contents. Ported 1:1 from docs/design/ui-mockups/assets/hud.css (sections
+ * "Ressourcenleiste", "Flow-Details", "Status", "Pause-/Speed-Banner", "Alerts"); additions are marked
+ * "added" and cover states the mockup does not draw (stall soon, cap reached, sim lag, context loss,
+ * reduced motion, buttons instead of divs).
+ */
+
+/* ---------- Ressourcenleiste (oben links) ---------- */
+.eco { position: absolute; left: var(--hud-gutter); top: var(--hud-gutter); display: flex; gap: var(--sp-1); }
+.res {
+  width: 19.5rem; height: var(--hud-top-h);
+  display: grid; grid-template-columns: 2.25rem 1fr auto; grid-template-rows: 1fr auto auto; column-gap: var(--sp-2);
+  padding: 0.375rem var(--sp-3) 0.375rem var(--sp-2);
+}
+.res__glyph { grid-row: 1 / 4; display: grid; place-items: center; }
+.res__glyph .ff-gi { width: 1.625rem; height: 1.625rem; }
+.res--mass .res__glyph { color: var(--mass); }
+.res--energy .res__glyph { color: var(--energy); }
+.res__store { align-self: end; font-size: var(--fs-num); font-weight: var(--fw-semi); color: var(--text-hi); line-height: 1; white-space: nowrap; }
+.res__store small { font-size: var(--fs-cap); color: var(--text-lo); font-weight: var(--fw-reg); margin-left: 0.125rem; }
+.res__net { grid-row: 1; grid-column: 3; align-self: end; justify-self: end; font-size: var(--fs-num); font-weight: var(--fw-bold); line-height: 1; min-width: 4.5ch; text-align: right; }
+.res__net.is-pos { color: var(--ok); }
+.res__net.is-neg { color: var(--crit); }
+.res__net.is-zero { color: var(--text-mid); }
+.res__bar { grid-column: 2 / 4; height: 0.3125rem; margin: 0.3125rem 0 0.25rem; }
+.res__flow { grid-column: 2 / 4; display: flex; gap: var(--sp-3); font-size: var(--fs-micro); color: var(--text-mid); white-space: nowrap; line-height: 1; }
+.res__flow b { font-weight: var(--fw-semi); }
+.res__flow .in { color: var(--ok); }
+.res__flow .out { color: #e9a295; }
+.res__flow .eff { margin-left: auto; color: var(--text-lo); }
+.res__flow .eff b { color: var(--text); }
+.res .ff-badge { position: absolute; right: var(--sp-3); top: -0.0625rem; z-index: 2; }
+.res.is-stall { --panel-line: var(--crit); }
+.res.is-stall .res__bar > i { --bar: var(--crit); }
+.res.is-stall .res__flow .eff b { color: var(--crit); }
+.res.is-stall::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(255,90,69,0.18), transparent 60%); animation: ff-stallpulse calc(var(--pulse) * 1.2) ease-in-out infinite alternate; pointer-events: none; }
+@keyframes ff-stallpulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+/* added: the meter is a <button> (click toggles flow details, ui.md §5.1, §8.5) */
+button.res { border: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; contain: layout paint style; }
+.res > span { display: block; }
+.res:hover { --panel-line: var(--copper-500); }
+.res.is-open { --panel-line: var(--copper-500); }
+.res:focus-visible, .res.is-focus { outline: none; --panel-line: var(--ceramic-50); }
+/* added: overflow (mockup class is-full) and stall keep their frame on hover/open */
+.res.is-overflow, .res.is-overflow:hover { --panel-line: var(--warn); }
+.res.is-stall:hover, .res.is-stall.is-open { --panel-line: var(--crit); }
+/* added: stall soon – net pulses yellow (opacity only), badge with triangle + text (never colour alone) */
+.res__net.is-soon { color: var(--warn); animation: ff-netpulse var(--pulse) ease-in-out infinite alternate; }
+@keyframes ff-netpulse { from { opacity: 1; } to { opacity: 0.45; } }
+/* added: reduced motion – no pulsing; the stall gradient stays static and gets a double frame (ui.md §3.6) */
+:root[data-motion="reduce"] .res.is-stall::after { opacity: 1; box-shadow: inset 0 0 0 2px var(--crit); }
+:root[data-motion="reduce"] .res__net.is-soon { opacity: 1; text-decoration: underline double; }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .res.is-stall::after { opacity: 1; box-shadow: inset 0 0 0 2px var(--crit); }
+  :root:not([data-motion="full"]) .res__net.is-soon { opacity: 1; text-decoration: underline double; }
+}
+
+/* ---------- Flow-Details (Aufklappfeld unter der Ressourcenleiste, E2/E3/E13) ---------- */
+.flow {
+  position: absolute; left: var(--hud-gutter); top: calc(var(--hud-gutter) + var(--hud-top-h) + var(--sp-1));
+  width: calc(39rem + var(--sp-1));
+}
+.flow__body { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.flow__col { background: #141210; padding: var(--sp-2) var(--sp-3); display: grid; gap: 0.3125rem; align-content: start; }
+.flow__row { display: grid; grid-template-columns: 1.25rem 1fr 3.25rem 3.5rem 1.5rem; gap: var(--sp-2); align-items: center; font-size: var(--fs-cap); }
+.flow__row .ff-si { width: 1.125rem; height: 1.25rem; }
+.flow__row .num { text-align: right; }
+.flow__row .ff-bar { height: 0.25rem; }
+.flow__row .want { color: var(--text-lo); }
+.flow__row.is-paused { opacity: 0.55; }
+.flow__row.is-paused .num:first-of-type { text-decoration: line-through; }
+.flow__pause { width: 1.375rem; height: 1.375rem; border: 1px solid var(--line-strong); background: var(--iron-850); display: grid; place-items: center; color: var(--text-mid); padding: 0; }
+.flow__pause:hover { border-color: var(--copper-500); color: var(--text-hi); }
+.flow__pause.is-on { border-color: var(--ember-600); color: var(--ember-300); background: var(--ember-900); }
+.flow__pause .ff-gi { width: 0.875rem; height: 0.875rem; }
+.flow__head { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.06em; }
+.flow__foot { display: flex; gap: var(--sp-3); align-items: center; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-micro); color: var(--text-lo); background: #141210; border-top: 1px solid var(--line); }
+
+/* added: token classes instead of inline colours, row label ellipsis, bottleneck marker, read-only state */
+.flow__res--mass { color: var(--mass); }
+.flow__res--energy { color: var(--energy); }
+.flow__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow__row.is-bottleneck .flow__got { color: var(--warn); }
+.flow__row.is-bottleneck .flow__got::before {
+  content: ""; display: inline-block; width: 0.5rem; height: 0.4375rem; margin-right: 0.1875rem; vertical-align: 0.0625rem;
+  background: var(--warn); clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.flow__empty { font-size: var(--fs-cap); color: var(--text-lo); }
+.flow__paused { display: inline-flex; align-items: center; gap: 0.25rem; }
+.flow__paused .ff-gi { width: 0.75rem; height: 0.75rem; }
+.flow__prio b { color: var(--text); font-weight: var(--fw-semi); }
+.flow__hint { margin-left: auto; display: inline-flex; align-items: center; gap: 0.25rem; }
+.flow__ro { width: 1.375rem; }
+
+/* ---------- Status oben rechts (Timer, Speed, Cap, Score, Menü) ---------- */
+.status { position: absolute; right: var(--hud-gutter); top: var(--hud-gutter); display: flex; height: 2.5rem; }
+.status__inner { display: flex; align-items: stretch; height: 100%; }
+.stat { display: flex; align-items: center; gap: 0.375rem; padding: 0 var(--sp-3); font-size: var(--fs-data); color: var(--text); white-space: nowrap; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; padding-left: var(--sp-4); }
+.stat .ff-gi { width: 1rem; height: 1rem; color: var(--text-lo); }
+.stat b { font-weight: var(--fw-semi); color: var(--text-hi); }
+.stat--timer b { font-size: var(--fs-label); letter-spacing: 0.02em; }
+.stat--speed.is-changed b { color: var(--ember-300); }
+.stat--cap.is-near b { color: var(--warn); }
+.stat--score { gap: var(--sp-2); }
+.score-chip { display: inline-flex; align-items: center; gap: 0.3125rem; }
+.score-chip i { width: 0.625rem; height: 0.625rem; background: var(--team, var(--team-self)); box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+.status__menu { width: 2.5rem; border: 0; border-left: 1px solid var(--line); background: none; color: var(--text-mid); display: grid; place-items: center; }
+.status__menu:hover { color: var(--text-hi); background: var(--surface-hover); }
+
+/* added: speed step buttons (− / +), cap reached, level icons, score chips without inline colours */
+.stat--speed { gap: 0.25rem; padding-right: var(--sp-2); }
+.stat__step {
+  width: 1.25rem; height: 1.25rem; padding: 0; border: 1px solid var(--line); background: var(--iron-850); color: var(--text-mid);
+  display: grid; place-items: center; font: var(--fw-bold) var(--fs-cap)/1 var(--font-mono); cursor: pointer;
+}
+.stat__step:hover { border-color: var(--copper-500); color: var(--text-hi); }
+.stat__step:focus-visible { outline: none; border-color: var(--ceramic-50); }
+.stat__step:active { background: var(--surface-press); border-color: var(--ember-600); }
+.stat--speed.is-changed .ff-gi { color: var(--ember-300); }
+.stat--cap.is-near .ff-gi { color: var(--warn); }
+.stat--cap.is-reached b, .stat--cap.is-reached .ff-gi { color: var(--crit); }
+.score-chip--self { --team: var(--team-self); }
+.score-chip--enemy { --team: var(--team-enemy); }
+.status__menu { cursor: pointer; }
+.status__menu:focus-visible { outline: 1px solid var(--ceramic-50); outline-offset: -1px; }
+
+/* ---------- Pause-/Speed-Banner (oben Mitte) ---------- */
+.banner { position: absolute; left: 50%; top: var(--hud-gutter); transform: translateX(-50%); min-width: 17rem; text-align: center; padding: 0.375rem var(--sp-5) 0.5rem; }
+.banner__title { font-family: var(--font-display); font-size: 1.375rem; font-weight: var(--fw-bold); letter-spacing: 0.24em; color: var(--ember-100); line-height: 1.1; padding-left: 0.24em; }
+.banner__sub { font-size: var(--fs-micro); color: var(--text-mid); letter-spacing: 0.02em; }
+.banner--speed .banner__title { font-size: var(--fs-label); letter-spacing: 0.12em; }
+
+/* added: small info banners (sim lag, context loss) carry a level symbol next to the text */
+.banner__sub .ff-key { margin: 0 0.125rem; }
+.banner--note { padding: 0.375rem var(--sp-4); }
+.banner--note .banner__title { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); font-size: var(--fs-body); letter-spacing: 0.04em; padding-left: 0; color: var(--text-hi); }
+.banner--note .ff-level .ff-gi { width: 1rem; height: 1rem; }
+.banner--lag { --panel-line: var(--warn); }
+.banner--context { --panel-line: var(--info); }
+
+/* ---------- Alerts (rechts oben, unter dem Status) ---------- */
+.alerts { position: absolute; right: var(--hud-gutter); top: calc(var(--hud-gutter) + 2.5rem + var(--sp-2)); display: grid; gap: var(--sp-1); justify-items: end; z-index: var(--z-alerts); }
+.alerts__more { font-size: var(--fs-micro); color: var(--text-lo); padding-right: var(--sp-1); }
+
+/* added: the "N older" line is a button (Shift+Space cycles, mouse too), alert internals */
+button.alerts__more { border: 0; background: none; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; }
+button.alerts__more:hover { color: var(--text-hi); }
+.alerts__more .ff-key { height: 1rem; }
+.ff-alert__ico .ff-gi { width: 1.125rem; height: 1.125rem; }
+.ff-alert__jump { cursor: pointer; }
+.ff-alert__jump .ff-gi { width: 0.875rem; height: 0.875rem; }
+.ff-alert__jump .ff-key { height: 1rem; min-width: 1rem; }
+.ff-alert__jump:focus-visible { outline: none; border-color: var(--ceramic-50); }
+.ff-alert__title, .ff-alert__meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root[data-motion="reduce"] .ff-alert.is-new::after { display: none; }
+
+/* ---------- Tooltip-Inhalte (UnitTooltip / ResourceTooltip, Rahmen = TooltipFrame) ---------- */
+.ff-tip .ff-si { width: 2rem; height: 2.25rem; }
+.ff-tip__head .ff-resglyph .ff-gi { width: 1.75rem; height: 1.75rem; }
+.ff-tip__mass b { color: var(--mass); }
+.ff-tip__energy b { color: var(--energy); }
+.ff-tip__foot .ff-key { height: 1rem; }
+.tip-lock { display: flex; align-items: center; gap: 0.375rem; color: var(--text-mid); }
+.tip-lock .ff-gi { color: var(--text-lo); flex: none; }
+.tip-lock--disabled { color: var(--text-mid); }
+.tip-res__list { display: grid; gap: 0.1875rem; }
+.tip-res__list + .tip-res__list { margin-top: var(--sp-2); }
+.tip-res__h { font-size: var(--fs-micro); color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.06em; }
+.tip-res__row { display: flex; justify-content: space-between; gap: var(--sp-2); color: var(--text); }
+.tip-res__row .num { color: var(--text-hi); }
+.tip-res__state { display: flex; align-items: center; gap: 0.375rem; color: var(--text); }
+.tip-res__state.is-crit { color: var(--crit); }
+.tip-res__state.is-warn { color: var(--warn); }
+.res > .res__flow{display:flex}

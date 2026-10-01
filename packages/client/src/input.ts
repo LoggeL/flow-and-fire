@@ -21,7 +21,7 @@
  * is produced and held keys are released. Only toggleConsole passes, so the console key closes the
  * console even while its input line is focused.
  */
-import { ActionMap, PAN_ACTIONS, type KeyAction } from './actions.ts';
+import { ActionMap, PAN_ACTIONS, controlGroupChord, type KeyAction } from './actions.ts';
 import { CursorFsm, cursorCss, type CursorEvent } from './cursor-fsm.ts';
 import type { PointerConfinement } from './fullscreen.ts';
 
@@ -59,6 +59,9 @@ export type Action =
     }
   | { readonly type: 'clickSelect'; readonly x: number; readonly y: number; readonly additive: boolean }
   | { readonly type: 'selectAll' }
+  | { readonly type: 'clearSelection' }
+  | { readonly type: 'controlGroup'; readonly slot: number; readonly save: boolean; readonly additive: boolean; readonly timeStamp: number }
+  | { readonly type: 'doubleClickSelect'; readonly x: number; readonly y: number; readonly additive: boolean }
   | { readonly type: 'moveCommand'; readonly x: number; readonly y: number; readonly queue: boolean; readonly timeStamp: number }
   | { readonly type: 'stop'; readonly timeStamp: number }
   | { readonly type: 'togglePause' }
@@ -76,6 +79,13 @@ export interface DragBox {
   readonly y0: number;
   readonly x1: number;
   readonly y1: number;
+}
+
+/** Canvas-local Shift placement gesture. Only commit may enqueue simulation commands. */
+export interface BuildGesture {
+  readonly phase: 'start' | 'update' | 'commit' | 'cancel';
+  readonly x0: number; readonly y0: number; readonly x: number; readonly y: number;
+  readonly dragged: boolean; readonly timeStamp: number;
 }
 
 export interface InputOptions {
@@ -134,6 +144,7 @@ function defaultHasFocus(): boolean {
 /** Actions fired on keydown (non-pan), mapped to Action objects (allocated once). */
 const INSTANT: Partial<Record<KeyAction, Action>> = {
   selectAll: { type: 'selectAll' },
+  clearSelection: { type: 'clearSelection' },
   togglePause: { type: 'togglePause' },
   stepOnce: { type: 'stepOnce' },
   toggleConsole: { type: 'toggleConsole' },
@@ -143,7 +154,17 @@ const INSTANT: Partial<Record<KeyAction, Action>> = {
 };
 
 export class InputController {
-  readonly actions: ActionMap;
+  actions: ActionMap;
+  private suspended = false;
+  /** Opening a modal cancels its active gesture and held keys immediately. */
+  setSuspended(value: boolean): void {
+    if (this.suspended === value) return;
+    this.suspended = value;
+    if (value) {
+      this.releaseAll();
+      this.syncCursorStyle();
+    }
+  }
   readonly cursor: CursorFsm;
   /** Pointer position relative to the canvas in CSS px (virtual cursor while confined). */
   pointerX = 0;
@@ -175,6 +196,9 @@ export class InputController {
   private heldCount = 0;
   private leftPointer = -1;
   private leftAdditive = false;
+  private buildGestureHandler: ((gesture: BuildGesture) => void) | null = null;
+  private buildPointer = -1;
+  private buildDragged = false;
   private startX = 0;
   private startY = 0;
   private middlePointer = -1;
@@ -203,6 +227,14 @@ export class InputController {
     this.listen(surface, 'pointermove', (ev) => this.onPointerMove(ev as PointerEvent));
     this.listen(surface, 'pointerup', (ev) => this.onPointerUp(ev as PointerEvent));
     this.listen(surface, 'pointercancel', (ev) => this.onPointerCancel(ev as PointerEvent));
+    this.listen(surface, 'lostpointercapture', (ev) => { if ((ev as PointerEvent).pointerId === this.buildPointer) this.cancelBuildGesture(); });
+    this.listen(surface, 'dblclick', (ev) => {
+      if (this.suspended || this.typingFocused() || this.buildGestureHandler !== null) return;
+      const e = ev as MouseEvent;
+      if (e.button !== 0) return;
+      this.local(e);
+      this.emit({ type: 'doubleClickSelect', x: this.pointerX, y: this.pointerY, additive: e.shiftKey });
+    });
     this.listen(surface, 'wheel', (ev) => this.onWheel(ev as WheelEvent), { passive: false });
     this.listen(surface, 'contextmenu', (ev) => ev.preventDefault());
     // Middle-click autoscroll starts on mousedown (not pointerdown) in Chromium/Windows; paste on auxclick (X11).
@@ -263,7 +295,7 @@ export class InputController {
    */
   updateEdge(viewWidth: number, viewHeight: number): void {
     const confined = this.confined;
-    const allowed = this.edgePanEnabled && this.windowFocused && (this.pointerInside || confined) && !this.typingFocused();
+    const allowed = !this.suspended && this.edgePanEnabled && this.windowFocused && (this.pointerInside || confined) && !this.typingFocused();
     let ex = 0;
     let ey = 0;
     if (allowed) {
@@ -286,12 +318,33 @@ export class InputController {
 
   /** Releases all held keys and buttons (e.g. when focus moves into a text field). */
   releaseAll(): void {
+    this.cancelBuildGesture();
     this.clearHeld();
     this.finish(this.cursor.cancel());
     this.leftPointer = -1;
     this.middlePointer = -1;
     this.edgeX = 0;
     this.edgeY = 0;
+  }
+
+  /** Armed by the actual HUD placement mode, never by selection or an ordinary Shift box. */
+  setBuildGestureHandler(handler: ((gesture: BuildGesture) => void) | null): void {
+    if (handler === this.buildGestureHandler) return;
+    this.cancelBuildGesture();
+    this.buildGestureHandler = handler;
+  }
+
+  get buildingDrag(): boolean { return this.buildPointer >= 0; }
+
+  cancelBuildGesture(): void {
+    if (this.buildPointer < 0) return;
+    const pointer = this.buildPointer;
+    this.buildPointer = -1;
+    this.leftPointer = -1;
+    this.cursor.cancel();
+    this.surface.releasePointerCapture?.(pointer);
+    this.buildGestureHandler?.(this.buildGesture('cancel', 0));
+    this.syncCursorStyle();
   }
 
   dispose(): void {
@@ -318,6 +371,7 @@ export class InputController {
   }
 
   private axis(nowMs: number, c: 0 | 1): number {
+    if (this.buildPointer >= 0) return 0;
     if (this.heldCount === 0) return 0;
     if (this.typingFocused()) {
       this.clearHeld();
@@ -348,7 +402,12 @@ export class InputController {
   }
 
   private emit(a: Action): void {
+    if (a.type === 'togglePause' || a.type === 'toggleConsole' || a.type === 'clearSelection') this.cancelBuildGesture();
     this.onAction(a);
+  }
+
+  private buildGesture(phase: BuildGesture['phase'], timeStamp: number): BuildGesture {
+    return { phase, x0: this.startX, y0: this.startY, x: this.pointerX, y: this.pointerY, dragged: this.buildDragged, timeStamp };
   }
 
   private finish(e: CursorEvent): void {
@@ -357,6 +416,7 @@ export class InputController {
   }
 
   private onPointerDown(ev: PointerEvent): void {
+    if (this.suspended) return;
     // Canvas takes the keyboard focus (hotkeys work again after clicking out of a text field).
     this.surface.focus?.({ preventScroll: true });
     // A press in fullscreen is the user gesture that may lock the pointer.
@@ -365,6 +425,10 @@ export class InputController {
     this.pointerInside = true;
     const x = this.pointerX;
     const y = this.pointerY;
+    if (this.buildPointer >= 0) {
+      if (ev.button === BTN_RIGHT) this.cancelBuildGesture();
+      else { ev.preventDefault(); return; }
+    }
     if (ev.button === BTN_MIDDLE) {
       ev.preventDefault();
       const e = this.cursor.middleDown(ev.ctrlKey || ev.metaKey);
@@ -385,6 +449,11 @@ export class InputController {
       this.startX = x;
       this.startY = y;
       if (!this.confined) this.surface.setPointerCapture?.(ev.pointerId);
+      if (ev.shiftKey && this.buildGestureHandler !== null && this.cursor.leftPressed) {
+        this.buildPointer = ev.pointerId;
+        this.buildDragged = false;
+        this.buildGestureHandler(this.buildGesture('start', ev.timeStamp));
+      }
     } else if (ev.button === BTN_RIGHT) {
       ev.preventDefault();
       this.emit({ type: 'moveCommand', x, y, queue: ev.shiftKey, timeStamp: ev.timeStamp });
@@ -396,6 +465,21 @@ export class InputController {
     this.pointerInside = true;
     const x = this.pointerX;
     const y = this.pointerY;
+    if (this.buildPointer >= 0) {
+      if (this.suspended || this.typingFocused()) { this.cancelBuildGesture(); return; }
+      if (ev.pointerId !== this.buildPointer) return;
+      // A mouse's additional button press is pointermove, not another pointerdown:
+      // left+right reports buttons=3, then releasing right reports buttons=1.
+      if ((ev.buttons & 2) !== 0) {
+        ev.preventDefault();
+        this.cancelBuildGesture();
+        this.emit({ type: 'moveCommand', x, y, queue: ev.shiftKey, timeStamp: ev.timeStamp });
+        return;
+      }
+      if (Math.hypot(x - this.startX, y - this.startY) >= this.cursor.dragThresholdPx) this.buildDragged = true;
+      this.buildGestureHandler?.(this.buildGesture('update', ev.timeStamp));
+      return;
+    }
     const st = this.cursor.state;
     if ((st === 'grabPan' || st === 'rotate') && ev.pointerId === this.middlePointer) {
       const dx = x - this.lastX;
@@ -417,6 +501,19 @@ export class InputController {
 
   private onPointerUp(ev: PointerEvent): void {
     this.local(ev);
+    if (this.buildPointer >= 0) {
+      if (ev.pointerId !== this.buildPointer || ev.button !== BTN_LEFT) return;
+      if (this.suspended || this.typingFocused()) { this.cancelBuildGesture(); return; }
+      if (Math.hypot(this.pointerX - this.startX, this.pointerY - this.startY) >= this.cursor.dragThresholdPx) this.buildDragged = true;
+      const pointer = this.buildPointer;
+      this.buildPointer = -1;
+      this.leftPointer = -1;
+      this.cursor.leftUp();
+      this.surface.releasePointerCapture?.(pointer);
+      this.buildGestureHandler?.(this.buildGesture('commit', ev.timeStamp));
+      this.syncCursorStyle();
+      return;
+    }
     if (ev.button === BTN_MIDDLE) {
       const e = this.cursor.middleUp();
       if (e !== 'none') {
@@ -453,6 +550,7 @@ export class InputController {
   }
 
   private onPointerCancel(ev: PointerEvent): void {
+    if (ev.pointerId === this.buildPointer) { this.cancelBuildGesture(); return; }
     if (ev.pointerId === this.middlePointer || ev.pointerId === this.leftPointer) {
       this.finish(this.cursor.cancel());
       this.middlePointer = -1;
@@ -463,7 +561,7 @@ export class InputController {
 
   private onWheel(ev: WheelEvent): void {
     ev.preventDefault();
-    if (this.typingFocused()) return;
+    if (this.suspended || this.typingFocused() || this.buildPointer >= 0) return;
     this.local(ev);
     // deltaMode: 0 = pixels (≈ 100 per notch), 1 = lines (≈ 3 per notch), 2 = pages.
     const raw = ev.deltaMode === 1 ? ev.deltaY / 3 : ev.deltaMode === 2 ? ev.deltaY : ev.deltaY / 100;
@@ -472,14 +570,32 @@ export class InputController {
   }
 
   private onKeyDown(ev: KeyboardEvent): void {
+    if (ev.defaultPrevented) return;
     const map = this.actions;
     if (map.is('toggleConsole', ev)) {
       ev.preventDefault();
       if (!ev.repeat) this.emit(INSTANT.toggleConsole!);
       return;
     }
+    if (this.suspended) return;
     if (this.typingFocused() || isTextInputElement(ev.target)) {
+      this.cancelBuildGesture();
       if (this.heldCount > 0) this.clearHeld();
+      return;
+    }
+    // Shift owns the placement gesture, so it may accompany the configured pause chord.
+    // Keep every other modifier exact, and retain normal matching outside this gesture.
+    if (this.buildPointer >= 0 && (map.is('togglePause', ev) || (ev.shiftKey && map.is('togglePause', {
+      code: ev.code, ctrlKey: ev.ctrlKey, altKey: ev.altKey, shiftKey: false, metaKey: ev.metaKey,
+    })))) {
+      ev.preventDefault();
+      if (!ev.repeat) this.emit(INSTANT.togglePause!);
+      return;
+    }
+    const group = controlGroupChord(ev);
+    if (group !== null) {
+      ev.preventDefault();
+      if (!ev.repeat) this.emit({ type: 'controlGroup', ...group, timeStamp: ev.timeStamp });
       return;
     }
     const matched = map.match(ev);

@@ -8,14 +8,22 @@
     "noEmit": true,
     "incremental": true,
     "tsBuildInfoFile": "node_modules/.cache/tsc/tests.tsbuildinfo",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node", "vite/client"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node",
+      "vite/client"
+    ]
   },
   "include": [
     "packages/*/test/**/*.ts",
     "packages/*/bench/**/*.ts",
     "packages/*/scripts/**/*.ts",
     "apps/*/test/**/*.ts",
+    "apps/*/bench/**/*.ts",
     "apps/*/scripts/**/*.ts",
     "apps/*/vite.config.ts",
     "packages/*/vite.config.ts",
@@ -28,6 +36,11 @@
     "content/models/**/*.ts",
     "content/icons/**/*.ts",
     "vitest.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "apps/*/playwright.config.ts",
+    "apps/*/test/**/*.tsx",
+    "packages/*/test/**/*.tsx",
+    "apps/*/e2e/**/*.ts",
+    "packages/*/smoke/**/*.ts"
   ]
 }

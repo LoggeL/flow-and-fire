@@ -1,0 +1,10 @@
+Generator: built-in image_gen.imagegen
+transparent_background: false
+Edit target: references/supreme-commander-fa-gamesurge-air.jpg
+Source page: https://www.gamesurge.com/pc/reviews/scforgedalliance-2.shtml
+Original image URL: https://www.gamesurge.com/pc/scforgedalliance/air.jpg
+Role: genuine Forged Alliance gameplay screenshot, minimal UI adaptation reference
+
+Exact final prompt:
+
+Edit this actual Supreme Commander: Forged Alliance gameplay screenshot, not a new interpretation. Preserve the battlefield, terrain, camera, vehicles, lighting and original screenshot composition. Make only minimal UI changes for Flow & Fire. Keep the original compact dark glass HUD panels, narrow luminous pale cyan beveled metal outlines, clipped corners, tiny functional typography, green mass and amber energy meters. Keep the original top-left stacked resource meters and slim top-right time/unit-cap bar in their exact positions. Remove the top-center media controls and all right-edge unit portrait/control-group pictures; fill those removed areas with the existing battlefield. No minimap. The bottom-left six-command panel keeps its original location, proportions, beveled border and crisp flat order glyphs; reduce its unused lower blank height, keeping one compact row of Move, Attack, Patrol, Stop, Assist, Reclaim commands with small labels. Remove the large empty full-width bottom unit-picture panel and all its unit thumbnail art, faction tabs and arrows. Replace that panel with only a short narrow text-only selection panel immediately to the right of the command panel, aligned to the bottom edge, reading '4 UNITS SELECTED' and '4 INTERCEPTORS'. The rest of the bottom edge shows the original battlefield. Do not draw selected unit pictures anywhere in the HUD. Do not add title banners, logos, decorative panels, massive borders, new widgets, new battlefield art or new sci-fi design language. This must visibly remain the original Forged Alliance screenshot with a few necessary controls removed or reduced, not a repaint or a modern dashboard redesign. UI mockup, precise restrained screenshot edit.

@@ -33,6 +33,7 @@ const MIME = {
   '.ogg': 'audio/ogg',
   '.mp3': 'audio/mpeg',
   '.opus': 'audio/ogg',
+  '.webm': 'audio/webm',
 };
 
 function parseArgs(argv) {

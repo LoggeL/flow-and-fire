@@ -68,7 +68,11 @@ function camera(): RtsCamera {
   return cam;
 }
 
-const VISUALS = [{ spec: { hull: 'box', size: [1, 1, 1] } }, { spec: { hull: 'cyl', size: [1, 2, 1] } }] as const;
+// iconThreshold 0: these tests are about the mesh passes (no strategic icons in the small fake viewport).
+const VISUALS = [
+  { spec: { hull: 'box', size: [1, 1, 1] }, iconThreshold: 0 },
+  { spec: { hull: 'cyl', size: [1, 2, 1] }, iconThreshold: 0 },
+] as const;
 
 function liveTextures(gl: FakeCanvas['gl'], internal: number): { obj: FakeGlObject; width: number; height: number }[] {
   const out: { obj: FakeGlObject; width: number; height: number }[] = [];
@@ -226,9 +230,10 @@ describe('Renderer with terrain (fake WebGL2)', () => {
     expect(() => r.probeTerrainHeights(xz, before)).toThrow(/lost/);
     gl.resetCalls();
     gl.restore();
-    // heightmap, albedo array, 2 splat planes, 3 decal textures, parts, pivots, probe target
+    // heightmap, albedo array, 2 splat planes, 2 × 3 decal textures (static + dynamic), parts, pivots,
+    // visual data, icon atlas, probe target
     expect(gl.created('texture')).toBe(texturesBefore);
-    expect(texturesBefore).toBe(10);
+    expect(texturesBefore).toBe(15);
     expect(gl.created('buffer')).toBe(buffersBefore);
     expect(gl.created('program')).toBe(programsBefore);
     // Heightmap content re-uploaded in the new generation.

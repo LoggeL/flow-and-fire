@@ -6,9 +6,12 @@
  *   readRtsMap; missing = test plane), frame transport (SAB triple buffer or transfer ping-pong),
  *   command-log recorder (OPFS when available), keyframes, scheduler; replies `ready`.
  * - `cmd` ⇒ LocalSource: applied in the next tick that runs (also while paused).
- * - `ctl` ⇒ pause/resume/speed/step/viewer/watch/debug/devReload/exportLog.
- * - per slice one frame (viewer from ctl.viewer, paused bit, optional debug section with phase
- *   times); `stats` every 10 ticks, `status` on state changes.
+ * - `ctl` ⇒ pause/resume/speed/step/viewer/watch/debug/devReload/exportLog. MS3: `watch` handles
+ *   go into the frame's Watch section; `devReload` may carry a new sim.bin (compatible blueprint
+ *   table swapped in, log tainted, new simId) and is answered with `status` (or `error`).
+ * - per slice one frame (viewer from ctl.viewer, paused bit, Watch section, path statistics,
+ *   optional debug section with phase times); `stats` every 10 ticks (incl. path counters),
+ *   `status` on state changes.
  */
 
 import {
@@ -32,7 +35,8 @@ import {
   type StatusMsg,
   type TransportKind,
 } from '@faf/protocol';
-import { ACTIVE_PHASES, PhaseId, writeFrame, type FrameMeta } from '@faf/sim';
+import { ACTIVE_PHASES, PhaseId, WH_STUCK_GIVEUPS, WorldInitStage, hasMatchEnded, writeFrame, type FrameMeta, type WorldInitProbe, type PhaseProbe } from '@faf/sim';
+import { AiWaitMetrics, createGameAiSources, type GameAiOptions, type GameAiStatus, type AiThinkSample } from './ai/index.ts';
 import { performanceClock, type Clock, type Wakeup } from './clock.ts';
 import { SimCore } from './core.ts';
 import { SIM_BUILD } from './identity.ts';
@@ -64,6 +68,7 @@ export const DEBUG_PHASE_TIMES_BYTES = 4 + 4 * METRIC_COUNT;
 
 /** `status` with host details (extra fields are structured-clone safe). */
 export interface HostStatusMsg extends StatusMsg {
+  readonly ai: HostAiMetrics | null;
   /** Where the command log is stored. */
   readonly recorder: RecorderStorage;
   /** Why OPFS is not used / failed (null if fine or still opening). */
@@ -76,6 +81,16 @@ export interface HostStatusMsg extends StatusMsg {
   /** Frames the transport dropped (overwritten / no free buffer). */
   readonly framesDropped: number;
   readonly logBytes: number;
+  /** simHash of the blueprint table in use (changes with a dev reload). */
+  readonly simHash: number;
+  /** Session identity (changes with a dev reload). */
+  readonly simId: number;
+  /** Dev reloads applied so far. */
+  readonly devReloads: number;
+  /** Host time of the last applied dev reload, from the ctl message to the status (ms; 0 = none). */
+  readonly devReloadMs: number;
+  /** Nav precompute when the world was created (static passability + derived regions), ms. */
+  readonly navPrecomputeMs: number;
 }
 
 /** `ready` with identity details. */
@@ -90,10 +105,23 @@ export interface HostReadyMsg extends ReadyMsg {
   readonly mapSizeWu: number;
   readonly seed: number;
   readonly tick: number;
+  /** Nav precompute at load: static passability / derived regions (ms, host clock). */
+  readonly navStaticMs: number;
+  readonly navDerivedMs: number;
+}
+
+/** Sim-wide pathfinding counters (also in every frame header, v2). */
+export interface HostPathStats {
+  pending: number;
+  requestsIssued: number;
+  repathsTriggered: number;
+  expansionsLastTick: number;
+  stuckGiveUps: number;
 }
 
 /** `stats` with a few extra percentiles and the command pipeline counters. */
 export interface HostStatsMsg extends StatsMsg {
+  readonly ai: HostAiMetrics | null;
   readonly tick: number;
   readonly tickP99Us: number;
   readonly hashTickP50Us: number;
@@ -106,6 +134,16 @@ export interface HostStatsMsg extends StatsMsg {
    * (pipeline invariant: 1 — applied in the next tick that runs, inputDelay 0; SPK6).
    */
   readonly cmdApplyTicksMax: number;
+  /** Pathfinding counters at the stats tick (MS3). */
+  readonly path: HostPathStats;
+}
+
+export interface HostAiMetrics {
+  readonly distinctWaitingTicks: number;
+  readonly waitRetries: number;
+  readonly waitIdsDropped: number;
+  readonly monotonic: boolean;
+  readonly armies: readonly GameAiStatus[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -118,6 +156,7 @@ const NO_TRANSFER: ArrayBuffer[] = [];
 export interface HostInitMessage extends InitMessage {
   /** Start with the scheduler paused (deterministic E2E, `?autostart=0`). */
   readonly startPaused?: boolean;
+  readonly initialization?: import('./log-format.ts').LogInitialization;
 }
 
 /**
@@ -127,6 +166,8 @@ export interface HostInitMessage extends InitMessage {
 export type HostPost = (msg: HostMessage, transfer: ArrayBuffer[]) => void;
 
 export interface SimHostOptions {
+  /** Browser workers by default; focused tests may supply the same-brain message port. */
+  readonly ai?: Omit<GameAiOptions, 'initialization'>;
   /** Sends a message to the main thread. */
   readonly post: HostPost;
   /** Port to the main thread (required for the transfer transport; frameReturn arrives here). */
@@ -154,8 +195,13 @@ export class SimHost implements SchedulerTarget {
   private readonly clock: Clock;
   readonly stats: PhaseStats;
   readonly probe: TimingProbe;
+  private readonly tickProbe: PhaseProbe;
+  private ackPostFailed = false;
+  private ackPostError: unknown;
 
   private coreRef: SimCore | null = null;
+  private aiRef: ReturnType<typeof createGameAiSources> | null = null;
+  private readonly aiWaits = new AiWaitMetrics();
   private producerRef: FrameProducer | null = null;
   private schedulerRef: Scheduler | null = null;
   private transportKind: TransportKind = 'transfer';
@@ -164,17 +210,23 @@ export class SimHost implements SchedulerTarget {
   private readonly debugBuf = new Uint8Array(DEBUG_PHASE_TIMES_BYTES);
   private readonly debugDv = new DataView(this.debugBuf.buffer);
   private viewerArmy = -1;
+  private commandArmy = -1;
   private debugFlags = 0;
   private readonly watchHandles = new Uint32Array(MAX_WATCH);
   private watchCount = 0;
   private frameSeq = 0;
   private republishPending = false;
   private recorderNote: string | null = null;
+  private persistenceEnabled = true;
+  private persistenceEpoch = 0;
+  private persistencePending: Promise<void> | null = null;
+  private closing = false;
   private portListener: ((ev: object) => void) | null = null;
   private disposed = false;
   private lastStatusKey = '';
   private readonly summary = emptySummary();
   private readonly statsMsg: MutableStatsMsg = {
+    ai: null,
     t: 'stats',
     tick: 0,
     tickP50Us: 0,
@@ -186,6 +238,7 @@ export class SimHost implements SchedulerTarget {
     samples: 0,
     cmdBatchesApplied: 0,
     cmdApplyTicksMax: 0,
+    path: { pending: 0, requestsIssued: 0, repathsTriggered: 0, expansionsLastTick: 0, stuckGiveUps: 0 },
     phases: [...ACTIVE_PHASES, PhaseId.HashTick, Metric.Frame, Metric.Host].map((id) => ({ id, name: METRIC_NAMES[id]!, p50Us: 0, p95Us: 0 })),
   };
   /** Tick at which the oldest not yet applied `cmd` batch arrived (−1 = none queued). */
@@ -193,6 +246,11 @@ export class SimHost implements SchedulerTarget {
   private cmdBatchesApplied = 0;
   private cmdQueued = 0;
   private cmdApplyTicksMax = 0;
+  private lastPostedAck = 0;
+  private navStaticMs = 0;
+  private navDerivedMs = 0;
+  private devReloads = 0;
+  private devReloadMs = 0;
 
   constructor(options: SimHostOptions) {
     this.options = options;
@@ -200,6 +258,18 @@ export class SimHost implements SchedulerTarget {
     this.clock = options.clock ?? performanceClock;
     this.stats = new PhaseStats(options.statsWindow ?? 256);
     this.probe = new TimingProbe(this.clock, this.stats);
+    // One stable observer, never a per-tick wrapper. Cleanup is the last authoritative phase;
+    // Output afterward only reads state and updates the derived hash log.
+    this.tickProbe = {
+      begin: phase => this.probe.begin(phase),
+      end: phase => {
+        this.probe.end(phase);
+        if (phase === PhaseId.Cleanup && !this.core.replaying) {
+          try { this.postCommittedAck(); }
+          catch (error) { this.ackPostFailed = true; this.ackPostError = error; }
+        }
+      },
+    };
   }
 
   // ---- accessors ------------------------------------------------------------------------------
@@ -228,6 +298,18 @@ export class SimHost implements SchedulerTarget {
     return this.core.tick;
   }
 
+  /** Host-only observations. Raw samples are copied only when qualification requests them. */
+  aiDiagnostics(): (HostAiMetrics & {readonly waitingTickIds: readonly number[]; readonly samples: readonly {army:number;samples:readonly AiThinkSample[]}[]}) | null {
+    const metrics = this.aiMetrics();
+    return metrics === null ? null : {...metrics, waitingTickIds:this.aiWaits.ids(), samples:this.aiRef!.samples};
+  }
+
+  private aiMetrics(): HostAiMetrics | null {
+    if (this.aiRef === null) return null;
+    return {distinctWaitingTicks:this.aiWaits.distinct, waitRetries:this.aiWaits.retries,
+      waitIdsDropped:this.aiWaits.dropped, monotonic:this.aiWaits.monotonic, armies:this.aiRef.status};
+  }
+
   get paused(): boolean {
     return this.scheduler.paused;
   }
@@ -254,7 +336,7 @@ export class SimHost implements SchedulerTarget {
 
   /** Entry point for every message from the main thread (worker `message` event data). */
   handleMessage(data: unknown): void {
-    if (this.disposed || isFrameReturnMsg(data)) return;
+    if (this.disposed || this.closing || isFrameReturnMsg(data)) return;
     try {
       const msg = parseMainToHostMessage(data);
       if (msg === null) {
@@ -280,16 +362,41 @@ export class SimHost implements SchedulerTarget {
     if (msg.transport === 'transfer' && this.options.port === undefined) throw new Error("transport 'transfer' needs a port");
     // A broken map (CRC, truncation, bad values) throws FormatError here and becomes an `error`
     // message with the reader's reason; the host stays uninitialized.
-    const core = new SimCore({
+    // Nav precompute timing (static passability, derived regions) for the status (MS3).
+    const clock = this.clock;
+    const t0 = [0, 0, 0];
+    const dur = [0, 0, 0];
+    const initProbe: WorldInitProbe = {
+      begin: (stage) => {
+        t0[stage] = clock.now();
+      },
+      end: (stage) => {
+        dur[stage] = clock.now() - t0[stage]!;
+      },
+    };
+    let core: SimCore | undefined;
+    const ai = msg.initialization?.slots?.some(slot => slot.controller === 'ai') === true
+      ? createGameAiSources({ ...this.options.ai, initialization: msg.initialization,
+          onResult: (army, result) => { const active = this.coreRef ?? core; if (result.aborted && active !== undefined && !this.closing && !this.disposed) active.recorder?.mark(active.tick, MarkKind.AiTimeout, army); this.options.ai?.onResult?.(army, result); } }) : null;
+    try {
+      core = new SimCore({
       simBin: new Uint8Array(msg.simBin),
       ...(msg.map !== undefined ? { map: new Uint8Array(msg.map) } : {}),
       seed: msg.seed,
       armyCount: msg.armyCount,
       playerArmy: msg.playerArmy,
       buildHash: msg.buildHash,
+      ...(msg.initialization !== undefined ? { initialization: msg.initialization } : {}),
+      ...(ai !== null ? { localSource: ai.local, sources: ai.sources } : {}),
       keyframes: this.options.keyframes ?? {},
+      initProbe,
       ...(this.options.logCapacity !== undefined ? { recorder: { initialCapacity: this.options.logCapacity } } : {}),
-    });
+      });
+      ai?.bind(core);
+    } catch (error) { ai?.dispose(); throw error; }
+    this.aiRef = ai;
+    this.navStaticMs = dur[WorldInitStage.NavStatic]!;
+    this.navDerivedMs = dur[WorldInitStage.NavDerived]!;
     const producer = createFrameProducer({
       kind: msg.transport,
       capacity: msg.frameCapacity,
@@ -300,6 +407,7 @@ export class SimHost implements SchedulerTarget {
     this.producerRef = producer;
     this.transportKind = msg.transport;
     this.viewerArmy = msg.playerArmy;
+    this.commandArmy = msg.playerArmy;
     const port = this.options.port;
     if (msg.transport === 'transfer' && port !== undefined) {
       // Registered after the producer's own listener, so a returned buffer is already pooled.
@@ -326,15 +434,20 @@ export class SimHost implements SchedulerTarget {
       mapSizeWu: core.world.mapSizeWu,
       seed: core.world.seed >>> 0,
       tick: core.tick,
+      navStaticMs: this.navStaticMs,
+      navDerivedMs: this.navDerivedMs,
     };
     this.post(ready, []);
-    this.openPersistence(core);
+    this.persistenceEnabled = msg.persistentRecording !== false;
+    if (this.persistenceEnabled) this.openPersistence(core);
+    else this.recorderNote = 'persistence disabled';
     this.publishFrame();
     this.postStatus(true);
     if (this.options.autoStart !== false) this.schedulerRef.start();
   }
 
   private openPersistence(core: SimCore): void {
+    const epoch = ++this.persistenceEpoch;
     const rec = core.recorder;
     const provider = this.options.opfs === undefined ? opfsRoot : this.options.opfs;
     if (rec === null) return;
@@ -342,8 +455,9 @@ export class SimHost implements SchedulerTarget {
       this.recorderNote = 'persistence disabled';
       return;
     }
-    provider()
+    const pending = provider()
       .then((root) => {
+        if (this.disposed || !this.persistenceEnabled || epoch !== this.persistenceEpoch) return null;
         if (root === null) {
           this.recorderNote = 'OPFS unavailable: memory only';
           return null;
@@ -352,7 +466,7 @@ export class SimHost implements SchedulerTarget {
       })
       .then((sink) => {
         if (sink === null) return;
-        if (this.disposed) {
+        if (this.disposed || !this.persistenceEnabled || epoch !== this.persistenceEpoch) {
           sink.close();
           return;
         }
@@ -360,15 +474,18 @@ export class SimHost implements SchedulerTarget {
         else this.recorderNote = null;
       })
       .catch((e: unknown) => {
-        this.recorderNote = `OPFS unavailable: ${e instanceof Error ? e.message : String(e)}`;
+        if (epoch === this.persistenceEpoch) this.recorderNote = `OPFS unavailable: ${e instanceof Error ? e.message : String(e)}`;
       })
       .finally(() => {
-        if (!this.disposed) this.postStatus(true);
+        if (this.persistencePending === pending) this.persistencePending = null;
+        if (!this.disposed && !this.closing) this.postStatus(true);
       });
+    this.persistencePending = pending;
   }
 
   /** Queues a command batch (tick 0) for the next tick. Accepted while paused. */
   submit(batch: ArrayBuffer | Uint8Array): void {
+    if (this.disposed || this.closing) return;
     const core = this.core;
     if (core.replaying) throw new Error('commands are not accepted while re-simulating recorded ticks');
     if (!core.acceptsLocal) throw new Error('this session takes its commands from custom sources');
@@ -379,11 +496,19 @@ export class SimHost implements SchedulerTarget {
 
   /** Applies a control message. */
   ctl(msg: CtlMessage): void {
+    if (this.disposed || this.closing) return;
     const core = this.core;
     const s = this.scheduler;
     const rec = core.replaying ? null : core.recorder;
     const tick = core.tick;
     switch (msg.t) {
+      case 'recording': {
+        if (core.replaying || msg.enabled === this.persistenceEnabled) break;
+        this.persistenceEnabled = msg.enabled;
+        if (msg.enabled) this.openPersistence(core);
+        else { this.persistenceEpoch++; rec?.detachSink(); this.recorderNote = 'persistence disabled'; }
+        this.postStatus(true); break;
+      }
       case 'pause':
         if (s.pause()) {
           rec?.mark(tick, MarkKind.Pause);
@@ -420,16 +545,28 @@ export class SimHost implements SchedulerTarget {
         const n = Math.min(h.length, MAX_WATCH);
         for (let i = 0; i < n; i++) this.watchHandles[i] = h[i]! >>> 0;
         this.watchCount = n;
+        // Paused selection still needs fresh authoritative detail without running a tick.
+        if (s.paused) this.publishFrame();
         break;
       }
       case 'debug':
         this.debugFlags = msg.flags >>> 0;
         if (s.paused) this.publishFrame();
         break;
-      case 'devReload':
-        rec?.mark(tick, MarkKind.DevReload);
+      case 'devReload': {
+        const c0 = this.clock.now();
+        if (msg.simBin !== undefined) {
+          // Throws (⇒ `error` message, nothing changed) if the table is not compatible.
+          core.devReload(new Uint8Array(msg.simBin));
+        } else {
+          rec?.mark(tick, MarkKind.DevReload);
+        }
+        this.devReloads++;
+        this.devReloadMs = this.clock.now() - c0;
         this.postStatus(true);
+        if (s.paused) this.publishFrame();
         break;
+      }
       case 'exportLog': {
         const r = core.recorder;
         if (r === null) throw new Error('no command log recorded');
@@ -437,7 +574,21 @@ export class SimHost implements SchedulerTarget {
         this.post({ t: 'log', bytes }, [bytes]);
         break;
       }
+      case 'shutdown': {
+        void this.closeSession().catch(error => { this.postError(error); this.dispose(); });
+        break;
+      }
     }
+  }
+
+  /** Freeze commands before waiting for an in-flight OPFS open, then persist the final END. */
+  private async closeSession(): Promise<void> {
+    this.closing = true;
+    this.aiRef?.dispose(); this.schedulerRef?.dispose();
+    if (this.persistencePending !== null) await this.persistencePending;
+    if (this.disposed) return;
+    this.coreRef?.recorder?.finish(this.core.tick);
+    this.dispose(); this.post({ t: 'closed' }, []);
   }
 
   // ---- tick loop (SchedulerTarget) -------------------------------------------------------------
@@ -449,7 +600,12 @@ export class SimHost implements SchedulerTarget {
     const h0 = c.now();
     const probe = this.probe;
     probe.lastUs.fill(0);
-    if (!core.runTick(probe)) return false;
+    this.ackPostFailed = false;
+    if (!core.runTick(this.tickProbe)) {
+      if (this.aiRef !== null && !core.replaying) this.aiWaits.blocked(core.tick + 1);
+      return false;
+    }
+    if (hasMatchEnded(core.world) && core.world.projectiles.liveCount === 0) this.schedulerRef?.pause();
     if (this.cmdArrivalTick >= 0 && core.local.queued === 0) {
       // Every batch that arrived since cmdArrivalTick went into this tick.
       const d = core.tick - this.cmdArrivalTick;
@@ -464,7 +620,20 @@ export class SimHost implements SchedulerTarget {
     probe.lastUs[Metric.Host] = hostUs;
     this.stats.record(Metric.Host, hostUs);
     if (core.tick % STATS_EVERY_TICKS === 0) this.postStats();
+    // A failed ACK transport must not interrupt derived Output, recording, keyframes or the
+    // actual command-application counters. Surface it after all committed-tick bookkeeping.
+    if (this.ackPostFailed) throw this.ackPostError;
     return true;
+  }
+
+  /** Observes the sequence actually processed by the completed authoritative phases. */
+  private postCommittedAck(): void {
+    if (this.commandArmy < 0) return;
+    const core = this.core;
+    const ackSeq = core.world.armies.col.lastAckSeq[this.commandArmy]!;
+    if (ackSeq <= 0 || ackSeq > 0xffff || ackSeq === this.lastPostedAck) return;
+    this.post({ t: 'ack', army: this.commandArmy, tick: core.tick, ackSeq }, NO_TRANSFER);
+    this.lastPostedAck = ackSeq;
   }
 
   sliceEnd(_ticksRun: number): void {
@@ -510,7 +679,7 @@ export class SimHost implements SchedulerTarget {
     meta.speedPermille = s.speedPermille;
     meta.flags = s.paused ? FrameFlags.Paused : 0;
     const target = producer.begin();
-    let len = writeFrame(core.world, this.viewerArmy, this.writer, target, meta);
+    let len = writeFrame(core.world, this.viewerArmy, this.writer, target, meta, this.watchHandles, this.watchCount);
     if ((this.debugFlags & DebugFlags.PhaseTimes) !== 0) len = this.appendPhaseTimes(target, len);
     const dropped = producer.dropped;
     producer.commit(len);
@@ -560,6 +729,7 @@ export class SimHost implements SchedulerTarget {
     }
     st.summarize(Metric.Tick, sum);
     msg.tick = this.coreRef!.tick;
+    msg.ai = this.aiMetrics();
     msg.tickP50Us = Math.round(sum.p50);
     msg.tickP95Us = Math.round(sum.p95);
     msg.tickP99Us = Math.round(sum.p99);
@@ -570,6 +740,14 @@ export class SimHost implements SchedulerTarget {
     msg.frameP95Us = Math.round(st.percentile(Metric.Frame, 0.95));
     msg.cmdBatchesApplied = this.cmdBatchesApplied;
     msg.cmdApplyTicksMax = this.cmdApplyTicksMax;
+    const w = this.coreRef!.world;
+    const nav = w.nav;
+    const ps = msg.path;
+    ps.pending = nav.pendingCount;
+    ps.requestsIssued = nav.requestsIssued;
+    ps.repathsTriggered = nav.repathsTriggered;
+    ps.expansionsLastTick = nav.expansionsLastTick;
+    ps.stuckGiveUps = w.header.i32[WH_STUCK_GIVEUPS]!;
     this.post(msg, NO_TRANSFER);
   }
 
@@ -580,6 +758,7 @@ export class SimHost implements SchedulerTarget {
     const rec = core.recorder;
     return {
       t: 'status',
+      ai: this.aiMetrics(),
       tick: core.tick,
       paused: s.paused,
       speed: s.speedFactor,
@@ -591,6 +770,11 @@ export class SimHost implements SchedulerTarget {
       waiting: s.waitingForSource,
       framesDropped: this.producerRef?.dropped ?? 0,
       logBytes: rec?.byteLength ?? 0,
+      simHash: core.world.bp.simHash >>> 0,
+      simId: core.simId >>> 0,
+      devReloads: this.devReloads,
+      devReloadMs: this.devReloadMs,
+      navPrecomputeMs: this.navStaticMs + this.navDerivedMs,
     };
   }
 
@@ -598,7 +782,7 @@ export class SimHost implements SchedulerTarget {
   private postStatus(force: boolean): void {
     if (this.coreRef === null || this.disposed) return;
     const st = this.status();
-    const key = `${st.paused}|${st.speed}|${st.ticksBehind}|${st.recorder}|${st.recorderNote}|${st.tainted}|${st.waiting}|${this.scheduler.queuedSteps}|${st.tick}`;
+    const key = `${st.paused}|${st.speed}|${st.ticksBehind}|${st.recorder}|${st.recorderNote}|${st.tainted}|${st.waiting}|${this.scheduler.queuedSteps}|${st.tick}|${st.simId}|${st.devReloads}`;
     if (!force && key === this.lastStatusKey) return;
     this.lastStatusKey = key;
     this.post(st, []);
@@ -617,7 +801,9 @@ export class SimHost implements SchedulerTarget {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.persistenceEpoch++;
     this.schedulerRef?.dispose();
+    this.aiRef?.dispose();
     this.producerRef?.close();
     if (this.portListener !== null) this.options.port?.removeEventListener('message', this.portListener);
     this.coreRef?.recorder?.close();

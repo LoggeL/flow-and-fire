@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/silent-test.ts';
 import { attachJson, captureErrors, SERVERS, expectNoErrors, HOLLOW_RIDGE, openGame, waitTick, writeReport } from './support/game.ts';
 import { settle } from './support/terrain.ts';
 

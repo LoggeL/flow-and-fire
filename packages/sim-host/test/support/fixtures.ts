@@ -1,14 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { decodeSimBin } from '@faf/blueprints/simbin';
 import { asArmyId, asTick, fx, type Handle } from '@faf/fixed';
 import { encodeBatch, encodeCheatKill, encodeCheatSpawn, encodeMove, Op, type CommandEnvelope } from '@faf/protocol';
 import { unitHandles, type World } from '@faf/sim';
 import type { HeadlessSim } from '../../src/index.ts';
 
-/** The checked-in game bundle (core:cube = sim id 0). */
+/** The current checked-in game bundle; entity indices are resolved from IDs. */
 export function gameSimBin(): Uint8Array {
   return new Uint8Array(readFileSync(fileURLToPath(new URL('../../../../content/generated/sim.bin', import.meta.url))));
 }
+
+const GAME_CUBE_BP = decodeSimBin(gameSimBin()).indexOf('core:cube');
+if (GAME_CUBE_BP < 0) throw new Error('Missing core:cube fixture blueprint');
 
 /** content/maps/hollow-ridge.rtsmap bytes (fresh copy). */
 export function hollowRidgeBytes(): Uint8Array {
@@ -31,7 +35,7 @@ export function gameSimBinBuffer(): ArrayBuffer {
   return out;
 }
 
-export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, seq: number, byArmy = army): CommandEnvelope {
+export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, seq: number, byArmy = army, bp = GAME_CUBE_BP): CommandEnvelope {
   return {
     tick: asTick(0),
     army: asArmyId(byArmy),
@@ -39,7 +43,7 @@ export function spawnCmd(army: number, count: number, xWu: number, zWu: number, 
     op: Op.Cheat,
     flags: 0,
     units: [],
-    payload: encodeCheatSpawn({ bp: 0, army, count, x: fx(xWu), z: fx(zWu), spread: fx(spreadWu) }),
+    payload: encodeCheatSpawn({ bp, army, count, x: fx(xWu), z: fx(zWu), spread: fx(spreadWu) }),
   };
 }
 

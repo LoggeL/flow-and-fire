@@ -10,4 +10,8 @@ export * from './identity.ts';
 export * from './core.ts';
 export * from './host.ts';
 export * from './headless.ts';
-export { startSimWorker, type StartSimWorkerOptions, type WorkerScopeLike } from './worker.ts';
+export { startSimWorker, type StartSimWorkerOptions, type WorkerScopeLike } from './worker-host.ts';
+export * from './replay/index.ts';
+
+
+export * from './ai/index.ts';

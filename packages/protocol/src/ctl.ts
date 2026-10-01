@@ -58,10 +58,24 @@ export interface DebugMsg {
 }
 export interface DevReloadMsg {
   readonly t: 'devReload';
+  /**
+   * Optional new blueprint table (`sim.bin` bytes, transferred; Vite HMR, MS3). The host decodes
+   * it, checks compatibility (existing ids unchanged and in order, new ones only appended) and
+   * swaps the blueprint table; without it only the MARK is recorded. Either way the command log
+   * becomes tainted.
+   */
+  readonly simBin?: ArrayBuffer;
 }
+
+/** Size bounds of `DevReloadMsg.simBin` (at least a sim.bin header, at most 64 MiB). */
+export const DEV_RELOAD_SIM_BIN_MIN_BYTES = 32;
+export const DEV_RELOAD_SIM_BIN_MAX_BYTES = 64 * 1024 * 1024;
 export interface ExportLogMsg {
   readonly t: 'exportLog';
 }
+/** End a live session after durably writing its final tick. */
+export interface ShutdownMsg { readonly t: 'shutdown' }
+export interface RecordingMsg { readonly t: 'recording'; readonly enabled: boolean }
 
 /** Control messages (ctl channel). */
 export type CtlMessage =
@@ -73,7 +87,9 @@ export type CtlMessage =
   | WatchMsg
   | DebugMsg
   | DevReloadMsg
-  | ExportLogMsg;
+  | ExportLogMsg
+  | RecordingMsg
+  | ShutdownMsg;
 
 /** A command batch (tick 0; the host stamps the application tick). `batch` is transferred. */
 export interface CmdMessage {
@@ -100,6 +116,7 @@ export interface InitMessage {
    * validated in the sim worker; its mapSimHash enters the simId (PLAN §3.1).
    */
   readonly map?: ArrayBuffer;
+  readonly persistentRecording?: boolean;
 }
 
 export type MainToHostMessage = InitMessage | CtlMessage | CmdMessage;
@@ -141,8 +158,11 @@ export interface ErrorMsg {
   readonly t: 'error';
   readonly message: string;
 }
+export interface ClosedMsg { readonly t: 'closed' }
+/** Sent only after the simulation has applied commands, independent of render frame polling. */
+export interface AppliedAckMsg { readonly t: 'ack'; readonly army: number; readonly tick: number; readonly ackSeq: number }
 
-export type HostMessage = ReadyMsg | StatusMsg | StatsMsg | LogMsg | ErrorMsg;
+export type HostMessage = ReadyMsg | StatusMsg | StatsMsg | LogMsg | ErrorMsg | ClosedMsg | AppliedAckMsg;
 
 // ---- helpers ---------------------------------------------------------------------------------
 
@@ -177,11 +197,19 @@ export function parseCtlMessage(x: unknown): CtlMessage | null {
   switch (x.t) {
     case 'pause':
     case 'resume':
-    case 'devReload':
     case 'exportLog':
+    case 'shutdown':
       return x as unknown as CtlMessage;
+    case 'devReload': {
+      const b = x.simBin;
+      if (b === undefined) return x as unknown as DevReloadMsg;
+      if (!(b instanceof ArrayBuffer) || b.byteLength < DEV_RELOAD_SIM_BIN_MIN_BYTES || b.byteLength > DEV_RELOAD_SIM_BIN_MAX_BYTES) return null;
+      return x as unknown as DevReloadMsg;
+    }
     case 'speed':
       return typeof x.speed === 'number' && Number.isFinite(x.speed) ? (x as unknown as SpeedMsg) : null;
+    case 'recording':
+      return typeof x.enabled === 'boolean' ? x as unknown as RecordingMsg : null;
     case 'step':
       return isInt(x.ticks, 1, 0x7fffffff) ? (x as unknown as StepMsg) : null;
     case 'viewer':
@@ -214,6 +242,7 @@ export function parseInitMessage(x: unknown): InitMessage | null {
     if (!(x.map instanceof ArrayBuffer)) return null;
     if (x.map.byteLength < INIT_MAP_MIN_BYTES || x.map.byteLength > INIT_MAP_MAX_BYTES) return null;
   }
+  if (x.persistentRecording !== undefined && typeof x.persistentRecording !== 'boolean') return null;
   return x as unknown as InitMessage;
 }
 

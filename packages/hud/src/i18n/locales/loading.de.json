@@ -1,0 +1,17 @@
+{
+  "ui.loading.title": "Gefecht wird vorbereitet",
+  "ui.loading.manifest": "Manifest",
+  "ui.loading.assets": "Assets",
+  "ui.loading.map": "Karte → Sim",
+  "ui.loading.simWorker": "Sim-Worker",
+  "ui.loading.aiWorker": "KI-Worker",
+  "ui.loading.cache": "Cache",
+  "ui.loading.network": "Netz",
+  "ui.loading.pending": "Wartet",
+  "ui.loading.active": "Lädt",
+  "ui.loading.done": "Bereit",
+  "ui.loading.error": "Fehler",
+  "ui.loading.hint": "Mit Umschalt hängst du Befehle an die Befehlskette an.",
+  "ui.loading.total": "Gesamtfortschritt",
+  "ui.loading.menu": "Ins Hauptmenü"
+}

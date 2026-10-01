@@ -84,16 +84,17 @@ describe('command log format + recorder', () => {
     expect(parseCommandLog(r.bytes).lastTick).toBe(20);
   });
 
-  it('header v2 carries mapSimHash (byte layout pinned)', () => {
+  it('header v4 carries mapSimHash and empty setup (byte layout pinned)', () => {
     const r = new CommandLogRecorder(HEADER);
     const b = r.bytes;
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
-    expect(LOG_VERSION).toBe(2);
-    expect(LOG_FIXED_HEADER_BYTES).toBe(36);
-    expect(dv.getUint16(4, true)).toBe(2);
+    expect(LOG_VERSION).toBe(4);
+    expect(LOG_FIXED_HEADER_BYTES).toBe(40);
+    expect(dv.getUint16(4, true)).toBe(4);
     expect(dv.getUint32(32, true)).toBe(0x90ec94f0);
     const parsed = parseCommandLog(r.export(0));
-    expect(parsed.version).toBe(2);
+    expect(dv.getUint32(36, true)).toBe(0);
+    expect(parsed.version).toBe(4);
     expect(parsed.header).toEqual(HEADER);
     expect(parseLogHeader(b).headerBytes).toBe(dv.getUint16(6, true));
   });
@@ -123,10 +124,38 @@ describe('command log format + recorder', () => {
     expect(log.hashes).toEqual([{ tick: 10, hash: 0xabcdef01 }]);
     expect(log.endTick).toBe(12);
     // Unknown versions are refused.
-    dv.setUint16(4, 3, true);
-    expect(() => parseCommandLog(v1)).toThrow(/version 3/);
+    dv.setUint16(4, 5, true);
+    expect(() => parseCommandLog(v1)).toThrow(/version 5/);
     dv.setUint16(4, 0, true);
     expect(() => parseCommandLog(v1)).toThrow(CommandLogError);
+  });
+
+  it('reads an independently encoded v2 header as an empty-world setup', () => {
+    const name = new TextEncoder().encode('old-v2'), bytes = new Uint8Array(44), dv = new DataView(bytes.buffer);
+    dv.setUint32(0, 0x4c464146, true); dv.setUint16(4, 2, true); dv.setUint16(6, 44, true);
+    dv.setUint32(8, HEADER.simId, true); dv.setUint32(12, HEADER.layoutHash, true); dv.setUint32(16, HEADER.seed, true);
+    dv.setUint32(20, HEADER.bpSimHash, true); dv.setUint16(24, HEADER.mapSizeWu, true);
+    dv.setUint8(26, HEADER.armyCount); dv.setInt8(27, HEADER.playerArmy); dv.setUint16(28, HEADER.hashInterval, true);
+    dv.setUint16(30, name.length, true); dv.setUint32(32, HEADER.mapSimHash, true); bytes.set(name, 36);
+    const log = parseCommandLog(bytes);
+    expect(log.version).toBe(2); expect(log.header).toEqual({ ...HEADER, buildHash: 'old-v2' });
+    expect(log.header.initialization).toBeUndefined(); expect(log.lastTick).toBe(0);
+  });
+  it('FAFL v4 retains full setup and still reads an independent faction-only v3 header', () => {
+    const initialization = { kind:'skirmish' as const, faction:0, slots:[
+      {start:7,team:1,faction:0,controller:'human' as const},
+      {start:2,team:2,faction:0,controller:'ai' as const,difficulty:'hard' as const,aixFactorQ16:98304},
+    ], rules:{unitCap:550,fog:'revealed' as const,victory:'supremacy' as const} };
+    const full=new CommandLogRecorder({...HEADER,armyCount:2,initialization});
+    expect(parseCommandLog(full.bytes).header.initialization).toEqual(initialization);
+    const wrong=full.bytes.slice(); new DataView(wrong.buffer).setUint32(36,0xffffffff,true);
+    expect(()=>parseCommandLog(wrong)).toThrow(CommandLogError);
+    const old=new Uint8Array(44),view=new DataView(old.buffer);
+    view.setUint32(0,0x4c464146,true);view.setUint16(4,3,true);view.setUint16(6,44,true);
+    view.setUint16(24,512,true);view.setUint8(26,2);view.setUint16(30,3,true);
+    view.setUint8(36,1);view.setUint8(37,0);old.set(new TextEncoder().encode('old'),40);
+    const parsed=parseLogHeader(old);expect(parsed.version).toBe(3);expect(parsed.header.initialization).toEqual({kind:'skirmish',faction:0});
+    old[38]=1;expect(()=>parseLogHeader(old)).toThrow(/initialization/);
   });
 
   it('only cheat / devReload / restore marks taint the log', () => {

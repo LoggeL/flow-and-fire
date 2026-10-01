@@ -1,0 +1,9 @@
+# TRACK-AI tai-p6: Host, Turniere und Benchmarks
+
+`@faf/ai/host` exportiert AiHost mit injiziertem Clock/Notabbruch, `packStatic`/`unpackStatic`, MessagePortLike, `runAiWorker` und AsyncAiSource. Die Wire-Daten enthalten Blueprint-Listen/Registry-Namen und Perception-Bytes, keine klonbaren Funktionen. Der Empfänger rekonstruiert die Blueprint-Methoden. Ein abgebrochener Think erzeugt `aiTimeout`-Telemetrie und Callback für einen späteren Recorder-MARK.
+
+Der Node-Adapter lädt die Factory aus einem Modul-Spezifier, schickt initiale Static/Profile/Openings und transferiert Snapshot-/Batch-Bytes. PendingAiSource hält den Fälligkeitstakt, bis das Resultat da ist. Worker werden in `finally` beendet. Der Turnier-Pool hat höchstens vier Worker; mit `--host worker` wird der äußere Pool auf eins begrenzt, damit verschachtelte AI-Worker die Grenze nicht überschreiten.
+
+CLI: `tournament --suite ms9|diff|quick --games N --workers 1..4 --maps setons,hollow-ridge,tessera --host sync|worker --brain module#factory --out file.json --md report.md`. MS9 plant 210 Spiele, Difficulty 120 und Quick 12. Eine Army pro Spiegelspiel wird nach Seed-Parität ausgewählt; Crash-Spiele bleiben im Wilson-Nenner. JSON enthält alle Jobs/Seeds, Metriken, Eröffnungen, Paarungen mit Wilson/Elo, Karten-/Eröffnungsgruppen, Gates und Ausreißer. MS9 verlässt mit Exit 1 bei Gate-Verstoß, Difficulty ist ein Bericht. Ergebnisse in `results/*.json` sind ignoriert; Markdown-Abnahmen bleiben versionierbar.
+
+Bench misst Think-Perzentile, Operationen je Manager, Welt-Tick und Ticks/s, 2 x 300 Einheiten sowie echte 3x-Echtzeit-Slices mit maximal drei Ticks. Das SPK7-Analogon lief über 3000 Ticks/1000 Slices mit einem Wartetakt (0,0333 %) und p95-Wartezeit 4,169 ms (finale Messung 2026-09-30). Der Browser-Worker, der echte Sim-Scheduler und MARK-Persistenz bleiben Integrationsaufgaben.

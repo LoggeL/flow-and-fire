@@ -1,0 +1,24 @@
+{
+  "name": "@faf/nav",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testmap": "./bench/testmap.ts",
+    "./check": "./bench/corridor-check.ts"
+  },
+  "scripts": {
+    "bench": "node --expose-gc --import tsx bench/spk3.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/heap": "workspace:*",
+    "@faf/rules": "workspace:*"
+  },
+  "devDependencies": {
+    "@faf/formats": "workspace:*",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15"
+  }
+}

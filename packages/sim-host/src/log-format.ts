@@ -33,7 +33,7 @@
  */
 
 import { xxHash32 } from '@faf/fixed';
-import { decodeUtf8, encodeUtf8 } from '@faf/protocol';
+import { decodeSkirmishInitialization, encodeSkirmishInitialization, validateSkirmishInitialization, decodeUtf8, encodeUtf8, type SkirmishInitialization } from '@faf/protocol';
 
 /**
  * mapSimHash that MS1 used for its flat test plane (no map file): xxHash32 of a canonical
@@ -46,12 +46,14 @@ export function legacyTestPlaneMapSimHash(mapSizeWu: number): number {
 }
 
 export const LOG_MAGIC = 0x4c464146; // 'FAFL' little-endian
-/** Version written by the recorder (2: + mapSimHash). */
-export const LOG_VERSION = 2;
+/** Version 4 records complete deterministic skirmish slots and rules. */
+export const LOG_VERSION = 4;
 /** Oldest version the reader accepts (1: MS1, test plane only). */
 export const LOG_MIN_VERSION = 1;
 /** Fixed header size of the current version (buildHash follows). */
-export const LOG_FIXED_HEADER_BYTES = 36;
+export const LOG_FIXED_HEADER_BYTES = 40;
+/** Fixed header size of version 2 (mapSimHash, no initialization). */
+export const LOG_V2_FIXED_HEADER_BYTES = 36;
 /** Fixed header size of version 1. */
 export const LOG_V1_FIXED_HEADER_BYTES = 32;
 export const LOG_ENTRY_HEADER_BYTES = 16;
@@ -77,15 +79,19 @@ export const MarkKind = {
   Step: 6,
   /** The arena was restored from a snapshot at this tick (history before it is not in the log). */
   Restore: 7,
+  /** AI exceeded its committed-manager time budget; value = army. */
+  AiTimeout: 8,
 } as const;
 export type MarkKind = (typeof MarkKind)[keyof typeof MarkKind];
 
-export const MARK_NAMES: readonly string[] = ['', 'pause', 'resume', 'speed', 'cheat', 'devReload', 'step', 'restore'];
+export const MARK_NAMES: readonly string[] = ['', 'pause', 'resume', 'speed', 'cheat', 'devReload', 'step', 'restore', 'aiTimeout'];
 
 /** True for marks that taint a log (not valid for ranked/verification purposes). */
 export function isTaintMark(kind: number): boolean {
   return kind === MarkKind.Cheat || kind === MarkKind.DevReload || kind === MarkKind.Restore;
 }
+
+export type LogInitialization = SkirmishInitialization;
 
 export interface LogHeader {
   readonly simId: number;
@@ -99,6 +105,8 @@ export interface LogHeader {
   readonly buildHash: string;
   /** formats mapSimHash of the map the log was recorded on (u32; v1 logs: legacyTestPlaneMapSimHash). */
   readonly mapSimHash: number;
+  /** Absent means the historical empty world; skirmish setup runs before tick 0. */
+  readonly initialization?: LogInitialization;
 }
 
 export function align4(n: number): number {
@@ -107,9 +115,12 @@ export function align4(n: number): number {
 
 /** Encodes the log header. */
 export function encodeLogHeader(h: LogHeader): Uint8Array {
+  if (h.initialization !== undefined) validateSkirmishInitialization(h.initialization, h.armyCount);
+  const setup = h.initialization === undefined ? new Uint8Array(0) : encodeSkirmishInitialization(h.initialization);
   const bh = encodeUtf8(h.buildHash);
   if (bh.length > 0xffff) throw new RangeError('buildHash too long');
-  const total = align4(LOG_FIXED_HEADER_BYTES + bh.length);
+  const total = align4(LOG_FIXED_HEADER_BYTES + bh.length + setup.length);
+  if (total > 0xffff) throw new RangeError('log header too long');
   const out = new Uint8Array(total);
   const dv = new DataView(out.buffer);
   dv.setUint32(0, LOG_MAGIC, true);
@@ -125,7 +136,9 @@ export function encodeLogHeader(h: LogHeader): Uint8Array {
   dv.setUint16(28, h.hashInterval, true);
   dv.setUint16(30, bh.length, true);
   dv.setUint32(32, h.mapSimHash >>> 0, true);
+  dv.setUint32(36, setup.length, true);
   out.set(bh, LOG_FIXED_HEADER_BYTES);
+  out.set(setup, LOG_FIXED_HEADER_BYTES + bh.length);
   return out;
 }
 
@@ -159,7 +172,7 @@ export interface LogHashEntry {
 
 export interface ParsedCommandLog {
   readonly header: LogHeader;
-  /** Header version of the file (1 = MS1 test-plane log, 2 = current). */
+  /** Header version of the file (1 = MS1, 2 = map, 3 = basic setup, 4 = full setup). */
   readonly version: number;
   readonly bytes: Uint8Array;
   readonly commands: readonly LogCmdEntry[];
@@ -191,7 +204,7 @@ function decodeHeaderText(bytes: Uint8Array, offset: number, length: number): st
 }
 
 /**
- * Parses only the header (versions 1 and 2). Throws CommandLogError if it is not a command log.
+ * Parses only the header (versions 1 to 4). Throws CommandLogError if it is not a command log.
  * A version-1 header (MS1) gets mapSimHash = legacyTestPlaneMapSimHash(mapSizeWu): MS1 only knew
  * the flat test plane.
  */
@@ -201,13 +214,27 @@ export function parseLogHeader(bytes: Uint8Array): { header: LogHeader; headerBy
   if (dv.getUint32(0, true) !== LOG_MAGIC) throw new CommandLogError('not a command log (magic)');
   const ver = dv.getUint16(4, true);
   if (ver < LOG_MIN_VERSION || ver > LOG_VERSION) throw new CommandLogError(`unsupported command log version ${ver}`);
-  const fixed = ver === 1 ? LOG_V1_FIXED_HEADER_BYTES : LOG_FIXED_HEADER_BYTES;
+  const fixed = ver === 1 ? LOG_V1_FIXED_HEADER_BYTES : ver === 2 ? LOG_V2_FIXED_HEADER_BYTES : LOG_FIXED_HEADER_BYTES;
   const headerBytes = dv.getUint16(6, true);
   const bhLen = dv.getUint16(30, true);
-  if (headerBytes !== align4(fixed + bhLen) || headerBytes > bytes.length) {
+  if (bytes.length < fixed) throw new CommandLogError('command log header too short');
+  const setupLength = ver === 4 ? dv.getUint32(36, true) : 0;
+  if (headerBytes !== align4(fixed + bhLen + setupLength) || headerBytes > bytes.length || headerBytes < fixed) {
     throw new CommandLogError('corrupt command log header');
   }
   const mapSizeWu = dv.getUint16(24, true);
+  let initialization: LogInitialization | undefined;
+  if (ver === 3) {
+    const kind = dv.getUint8(36), faction = dv.getUint8(37);
+    if (dv.getUint16(38, true) !== 0 || kind > 1 || (kind === 0 && faction !== 0)) {
+      throw new CommandLogError('corrupt command log initialization');
+    }
+    if (kind === 1) initialization = { kind: 'skirmish', faction };
+  }
+  if (ver === 4 && setupLength !== 0) {
+    try { initialization = decodeSkirmishInitialization(bytes.subarray(fixed + bhLen, fixed + bhLen + setupLength)); validateSkirmishInitialization(initialization, dv.getUint8(26)); }
+    catch { throw new CommandLogError('corrupt command log initialization'); }
+  }
   const header: LogHeader = {
     simId: dv.getUint32(8, true),
     layoutHash: dv.getUint32(12, true),
@@ -219,6 +246,7 @@ export function parseLogHeader(bytes: Uint8Array): { header: LogHeader; headerBy
     hashInterval: dv.getUint16(28, true),
     buildHash: decodeHeaderText(bytes, fixed, bhLen),
     mapSimHash: ver === 1 ? legacyTestPlaneMapSimHash(mapSizeWu) : dv.getUint32(32, true),
+    ...(initialization !== undefined ? { initialization } : {}),
   };
   return { header, headerBytes, version: ver };
 }

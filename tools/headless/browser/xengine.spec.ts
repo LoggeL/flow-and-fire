@@ -6,8 +6,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { compareChains, parseGolden } from '../src/goldens.ts';
+import { hex32 } from '../src/goldens.ts';
+import { readRtsReplay } from '@faf/formats';
+import { REPLAY_PATHS } from '../src/replay/assets.ts';
 import { SCENARIO_NAMES } from '../src/scenarios.ts';
-import { GOLDENS_DIR, openHarness, runSeriesIn, writeRaw } from './harness.ts';
+import { GOLDENS_DIR, REPO_DIR, openHarness, runSeriesIn, writeRaw } from './harness.ts';
 
 for (const scenario of SCENARIO_NAMES) {
   test(`hash chain ${scenario} (cold + warm) equals golden`, async ({ page }, info) => {
@@ -30,6 +33,28 @@ for (const scenario of SCENARIO_NAMES) {
     for (const [k, chain] of series.warmupChains.entries()) {
       const d = compareChains(golden, chain);
       expect(d.equal, `${info.project.name} warm-up ${k + 1}: first divergent tick ${d.firstDivergentTick} — ${d.detail}`).toBe(true);
+    }
+  });
+}
+
+for (const replay of REPLAY_PATHS) {
+  const scenario = replay.slice(replay.lastIndexOf('/') + 1).replace(/\.rtsreplay$/, '');
+  test(`replay ${scenario} (cold + warm + seek) equals golden`, async ({ page }, info) => {
+    const golden = parseGolden(readFileSync(resolve(GOLDENS_DIR, `${scenario}.json`), 'utf8'));
+    const recorded = readRtsReplay(new Uint8Array(readFileSync(resolve(REPO_DIR, replay))));
+    await openHarness(page);
+    const series = await runSeriesIn(page, { kind: 'replayVerify', replay }, info.project.name);
+    writeRaw(`xengine-${info.project.name}-replay-${scenario}`, series);
+    expect(series.engine.crossOriginIsolated).toBe(true);
+    expect(series.warmupResults.length).toBe(3);
+    for (const r of [series.cold, ...series.warmupResults, series.warm]) {
+      if (r.kind !== 'replayVerify') throw new Error(`unexpected result kind ${r.kind}`);
+      expect(r.divergences).toEqual([]);
+      expect(r.trail).toEqual(Array.from(recorded.hashes.hashes, hex32));
+      const d = compareChains(golden, { ...r, scenario });
+      expect(d.equal, d.detail).toBe(true);
+      expect(r.compared).toBe(golden.trail.length);
+      expect(r.seekFullHash).toBe(r.finalFullHash);
     }
   });
 }

@@ -8,9 +8,22 @@
  * LODs (P2): {@link createPlaceholderLods} builds 3 levels (cylinders with 16/8/4 segments, boxes
  * 24/24/8 vertices). {@link combineParts} merges several meshes into one merged-part mesh with part
  * pivots and parents (PLAN §3.7 "Merged-Part-Mesh").
+ *
+ * Turret (MS3, view.json v2 `placeholder.turret`): a spec with `turret {hull, size, offset}` becomes a
+ * two-part merged-part mesh – part 0 = hull, part 1 = turret (+ a short barrel pointing +x, same part)
+ * with its pivot at `offset` (turret base center in hull space) – so PartStream entry `partBase` turns
+ * it. LOD 2 drops the barrel.
  */
 
 export type PlaceholderHull = 'box' | 'cyl';
+
+export interface PlaceholderTurret {
+  readonly hull: PlaceholderHull;
+  /** Turret extent in WU (x forward, y height, z side). */
+  readonly size: readonly [number, number, number];
+  /** Turret base center in hull mesh space (WU), usually `[x, hullHeight, z]`; also the rotation pivot. */
+  readonly offset: readonly [number, number, number];
+}
 
 export interface PlaceholderSpec {
   readonly hull: PlaceholderHull;
@@ -18,6 +31,8 @@ export interface PlaceholderSpec {
   readonly size: readonly [number, number, number];
   /** Base color (linear 0..1); used by the renderer's visual table. */
   readonly color?: readonly [number, number, number];
+  /** Optional turret (part 1). */
+  readonly turret?: PlaceholderTurret;
 }
 
 export interface MeshData {
@@ -30,6 +45,10 @@ export interface MeshData {
    * part k ≥ 1 rotates with PartStream entry `partBase + k − 1` (if `k ≤ partCount`) around its pivot.
    */
   readonly partIds: Uint8Array;
+  /** Optional modelkit linear RGB palette, three components per vertex. */
+  readonly colors?: Float32Array;
+  /** Optional team, emissive, metal, AO channels, four normalized u8 components per vertex. */
+  readonly mask?: Uint8Array;
   readonly indices: Uint16Array | Uint32Array;
   readonly vertexCount: number;
   readonly indexCount: number;
@@ -221,17 +240,40 @@ function buildCylinder(sx: number, sy: number, sz: number, segments = CYL_SEGMEN
  * `lod` 1/2 gives coarser levels (cylinder 8/4 segments, box LOD 2 = 8 shared vertices).
  */
 export function createPlaceholderMesh(spec: PlaceholderSpec, lod: 0 | 1 | 2 = 0): MeshData {
-  const [sx, sy, sz] = spec.size;
-  if (!(sx > 0 && sy > 0 && sz > 0)) throw new Error(`placeholder: size must be positive, got ${spec.size.join(',')}`);
-  if (spec.hull === 'box') return lod === 2 ? buildBoxLow(sx, sy, sz) : buildBox(sx, sy, sz);
+  const hull = buildHull(spec.hull, spec.size, lod, 'placeholder');
+  const t = spec.turret;
+  if (t === undefined) return hull;
+  const turret = buildHull(t.hull, t.size, lod, 'placeholder turret');
+  const [ox, oy, oz] = t.offset;
+  if (![ox, oy, oz].every(Number.isFinite)) throw new Error(`placeholder turret: offset must be finite, got ${t.offset.join(',')}`);
+  const parts: MeshPart[] = [
+    { mesh: hull, partId: 0 },
+    { mesh: turret, partId: 1, offset: [ox, oy, oz], pivot: [ox, oy, oz] },
+  ];
+  if (lod < 2) {
+    // Barrel: forward (+x) from the turret front, a third of the turret height, same part.
+    const len = Math.max(t.size[0] * 0.8, 0.05);
+    const thick = Math.max(Math.min(t.size[1], t.size[2]) * 0.3, 0.02);
+    const barrel = buildBox(len, thick, thick);
+    parts.push({ mesh: barrel, partId: 1, offset: [ox + t.size[0] * 0.45 + len / 2, oy + t.size[1] * 0.5 - thick / 2, oz] });
+  }
+  return combineParts(parts);
+}
+
+function buildHull(hull: PlaceholderHull, size: readonly [number, number, number], lod: 0 | 1 | 2, what: string): MeshData {
+  const [sx, sy, sz] = size;
+  if (!(sx > 0 && sy > 0 && sz > 0)) throw new Error(`${what}: size must be positive, got ${size.join(',')}`);
+  if (hull === 'box') return lod === 2 ? buildBoxLow(sx, sy, sz) : buildBox(sx, sy, sz);
   return buildCylinder(sx, sy, sz, CYL_LOD_SEGMENTS[lod]);
 }
 
 /** The three placeholder LODs of a spec (P2: "Platzhalter-LODs", cylinders 16/8/4 segments). */
 export function createPlaceholderLods(spec: PlaceholderSpec): [MeshData, MeshData, MeshData] {
   const lod0 = createPlaceholderMesh(spec, 0);
-  // Boxes share LOD 0 and 1 (same 24-vertex mesh, stored once in the unit VBO).
-  const lod1 = spec.hull === 'box' ? lod0 : createPlaceholderMesh(spec, 1);
+  // Boxes share LOD 0 and 1 (same 24-vertex mesh, stored once in the unit VBO); with a cylinder turret
+  // the levels differ.
+  const shared = spec.hull === 'box' && (spec.turret === undefined || spec.turret.hull === 'box');
+  const lod1 = shared ? lod0 : createPlaceholderMesh(spec, 1);
   return [lod0, lod1, createPlaceholderMesh(spec, 2)];
 }
 
