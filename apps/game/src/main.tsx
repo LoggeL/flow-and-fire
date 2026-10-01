@@ -85,7 +85,13 @@ const ports: GameHudPorts = {
     setLoad({ ...load.peek(), phase: 'ready', progress: 100 });
   },
   openReplay() { replayLibrary(); replayOpen.value = true; },
-  surrender() { const game=gameSig.peek(); if(game!==null&&!game.replayMode)game.client.commands.issue(Op.SelfDestruct,game.client.ownHandles(),new Uint8Array(0),false,performance.now()); },
+  surrender() {
+    const game = gameSig.peek();
+    if (game === null || game.replayMode) return;
+    game.client.commands.issue(Op.SelfDestruct, game.client.ownHandles(), new Uint8Array(0), false, performance.now());
+    // Accepted commands need a simulation tick, including when surrendering from pause.
+    game.client.sendCtl({ t: 'resume' });
+  },
   saveReplay() {
     const game = gameSig.peek();
     if (game === null || game.replayMode) return;
