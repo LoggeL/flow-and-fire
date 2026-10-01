@@ -7,9 +7,9 @@
   "format": "faf-hashes",
   "projectiles": 5,
   "props": 3,
-  "simBinBytes": 4160,
-  "simHash": "0x8321662B",
-  "units": 14,
-  "viewHash": "0xB345D635",
+  "simBinBytes": 4468,
+  "simHash": "0x026C51C8",
+  "units": 16,
+  "viewHash": "0x93FD84AD",
   "weapons": 9
 }

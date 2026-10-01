@@ -1,11 +1,11 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.1-upgrades",
+  "simBuild": "faf-sim/ms6.2-economy-upgrades",
   "scenario": "choke-3wu",
   "ticks": 600,
   "seed": "0x5eed0007",
-  "simHash": "0x8321662b",
+  "simHash": "0x026c51c8",
   "layoutHash": "0xbdf1cf8d",
   "map": "inline:nav-choke-128-3",
   "mapSimHash": "0xafbd4675",

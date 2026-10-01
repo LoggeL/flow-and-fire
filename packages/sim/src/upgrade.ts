@@ -20,10 +20,16 @@ export function clearUpgradeWork(w: World, u: number): void {
   U.buildRemainder.zero(u);
 }
 
-/** Self upgrades are deliberately limited to the commander's declared successor. */
+/** Commander successors and compatible stationary extractors retain their occupied site. */
 export function canUpgrade(w: World, source: number, target: number): boolean {
-  return source >= 0 && target >= 0 && target < w.bp.count && hasCategory(w, source, 'COMMAND') &&
-    hasCategory(w, target, 'COMMAND') && w.bp.upgradesTo(source) === target;
+  if (source < 0 || source >= w.bp.count || target < 0 || target >= w.bp.count || w.bp.upgradesTo(source) !== target) return false;
+  if (hasCategory(w, source, 'COMMAND') && hasCategory(w, target, 'COMMAND')) return true;
+  const bp = w.bp;
+  return hasCategory(w, source, 'MASSEXTRACTION') && hasCategory(w, target, 'MASSEXTRACTION') &&
+    hasCategory(w, source, 'STRUCTURE') && hasCategory(w, target, 'STRUCTURE') &&
+    bp.speed[source] === 0 && bp.speed[target] === 0 && bp.layerCol[source] === bp.layerCol[target] &&
+    bp.footprintWCol[source] === bp.footprintWCol[target] && bp.footprintHCol[source] === bp.footprintHCol[target] &&
+    bp.spotKindCol[source] === bp.spotKindCol[target];
 }
 
 /** Commit only after full payment; damage remains the same absolute amount. */
@@ -31,7 +37,7 @@ export function completeUpgrade(w: World, u: number, target: number): void {
   const U = w.units.col, previous = U.bp[u]!;
   U.hp[u] = Math.min(w.bp.maxHpCol[target]!, U.hp[u]! + w.bp.maxHpCol[target]! - w.bp.maxHpCol[previous]!);
   U.bp[u] = target;
-  // Successors use the same motion and weapons; reset the previous mount's aim and reload pose.
+  // Commander successors retain their weapons; extractor successors retain their footprint. Reset mount pose.
   w.weapons.i32.fill(0, u * 80, (u + 1) * 80);
   clearUpgradeWork(w, u);
 }

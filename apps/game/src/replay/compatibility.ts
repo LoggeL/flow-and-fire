@@ -24,6 +24,16 @@ export function stageReplayBuildTransfer(bytes: Uint8Array, buildHash: string): 
   sessionStorage.setItem(`${TRANSFER_PREFIX}${id}`, btoa(binary));
   return `${replayBuildRoute(buildHash)}?replayTransfer=${encodeURIComponent(id)}`;
 }
+
+/** Persist first: closing the current session may clear its replay controller or fail. */
+export async function handoffReplayBuild(
+  bytes: Uint8Array, buildHash: string, closeCurrentSession: () => Promise<void>, navigate: (route: string) => void,
+): Promise<void> {
+  const route = stageReplayBuildTransfer(bytes, buildHash);
+  await closeCurrentSession();
+  navigate(route);
+}
+
 /** Read without deleting: a failed map/asset load must leave the requested recording recoverable. */
 export function transferredReplay(search = location.search): Uint8Array | null {
   const id = new URLSearchParams(search).get('replayTransfer');

@@ -74,9 +74,10 @@ pnpm --filter @faf/game run serve --host 0.0.0.0 --port 4173 --coi
 | Einheit auswählen / Auswahlrahmen | Linksklick / linke Maustaste ziehen |
 | Auswahl ergänzen | Shift + Auswahl |
 | Alle eigenen Einheiten auswählen | Strg/⌘ + A |
-| Kontextbefehl | Rechtsklick: bewegen, angreifen, reparieren, Bau unterstützen oder bewachen; Fabriken setzen auf freiem Boden ihren Sammelpunkt |
+| Kontextbefehl | Rechtsklick: bewegen, angreifen, reparieren, Bau unterstützen oder bewachen; ausgewählte Fabriken setzen ihren sichtbaren Sammelpunkt am angeklickten Ort |
 | Befehl einreihen | Shift + Rechtsklick |
 | Bauen | Bauoption im HUD wählen, dann gültigen Standort anklicken; Shift + Ziehen legt eine Baureihe an, Shift hält den Baumodus aktiv |
+| Masseextraktor ausbauen | Einen fertigen Extraktor auswählen, im HUD T2 oder T3 wählen; Fortschritt, Pause und Abbruch stehen dort |
 | Bau- oder Befehlsmodus abbrechen | Esc oder Rechtsklick |
 | Auswahl stoppen | S kurz drücken |
 | Kontrollgruppe speichern / aufrufen | Strg oder Alt + Ziffer / Ziffer; doppelt drücken zentriert die Kamera |

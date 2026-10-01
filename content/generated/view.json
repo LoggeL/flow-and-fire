@@ -349,6 +349,40 @@
       "selectionRadius": 1.2,
       "sizeClass": 2,
       "tech": 1
+    },
+    {
+      "categories": ["ECONOMIC", "MASSEXTRACTION", "SIZE4", "STRUCTURE", "TECH2"],
+      "descKey": "unit.core.str_t2_mex.desc",
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:str_t2_mex",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t2_mex",
+      "nameKey": "unit.core.str_t2_mex.name",
+      "placeholder": {
+        "hull": "box",
+        "size": [1.8, 1, 1.8]
+      },
+      "selectionRadius": 1.2,
+      "sizeClass": 2,
+      "tech": 2
+    },
+    {
+      "categories": ["ECONOMIC", "MASSEXTRACTION", "SIZE4", "STRUCTURE", "TECH3"],
+      "descKey": "unit.core.str_t3_mex.desc",
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:str_t3_mex",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t3_mex",
+      "nameKey": "unit.core.str_t3_mex.name",
+      "placeholder": {
+        "hull": "box",
+        "size": [1.8, 1, 1.8]
+      },
+      "selectionRadius": 1.2,
+      "sizeClass": 2,
+      "tech": 3
     }
   ]
 }

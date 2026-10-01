@@ -30,7 +30,8 @@ export const MAX_MAP_SIZE_WU = 4096;
  * footprint cheat, passability per size class instead of the MS2 deep-water-only rule);
  * ms3.0 → ms4.0 (integer milli flow, priority/stall state, Q16 construction and building footprints).
  */
-export const SIM_BUILD = 'faf-sim/ms6.1-upgrades';
+// ms6.2: paid stationary mass-extractor successors; prior builds remain available for replays.
+export const SIM_BUILD = 'faf-sim/ms6.2-economy-upgrades';
 
 /**
  * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is

@@ -5,6 +5,17 @@ type Capabilities = Pick<SimBpTable, 'speedPerTick' | 'mountCount' | 'buildPower
 export interface ContextOrder { readonly op: number; readonly units: readonly number[]; readonly target?: number }
 const HIDDEN = UnitFlags.Ghost | UnitFlags.Blip;
 
+/** Completed own factories from accepted records, shared by explicit and contextual rally input. */
+export function completedFactoryHandles(frame: FrameReader, bp: Capabilities, selected: ArrayLike<number>, ownArmy: number): number[] {
+  const bit = bp.categoryNames.indexOf('FACTORY');
+  if (bit < 0) return [];
+  const handles = new Set(Array.from(selected)), result: number[] = [];
+  for (let i = 0; i < frame.unitCount; i++) if (handles.has(frame.unitHandle(i)) && frame.unitArmy(i) === ownArmy &&
+      frame.unitBuild(i) === 255 && !(frame.unitFlags(i) & (HIDDEN | UnitFlags.Wreck)) &&
+      (bp.categoryWord(frame.unitVisual(i), bit >>> 5) & (1 << (bit & 31))) !== 0) result.push(frame.unitHandle(i));
+  return result;
+}
+
 /** Accepted-frame target hit only. Selection and hidden simulation state are never touched. */
 export function contextTarget(
   frame: FrameReader, x: number, y: number,
@@ -42,21 +53,24 @@ export function contextOrders(
   const builder = (i: number): boolean => mobile(i) && bp.buildPowerQ16PerTickCol[frame.unitVisual(i)]! > 0;
   const order = (op: number, indices: number[], handle?: number): readonly ContextOrder[] => indices.length ?
     [{ op, units: indices.map(i => frame.unitHandle(i)), ...(handle === undefined ? {} : { target: handle }) }] : [];
+  const factories = completedFactoryHandles(frame, bp, selected, ownArmy);
+  const rally: readonly ContextOrder[] = groundValid && factories.length ? [{ op: Op.SetRally, units: factories }] : [];
+  const withRally = (orders: readonly ContextOrder[]): readonly ContextOrder[] => [...rally, ...orders];
   const ground = (): readonly ContextOrder[] => groundValid ? [
-    ...order(Op.SetRally, actors.filter(i => category(i, 'FACTORY'))),
+    ...rally,
     ...order(Op.Move, actors.filter(i => mobile(i) && !category(i, 'FACTORY'))),
   ] : [];
   if (target === null || target < 0 || target >= frame.unitCount || (frame.unitFlags(target) & HIDDEN)) return ground();
-  const handle = frame.unitHandle(target), others = actors.filter(i => frame.unitHandle(i) !== handle);
+  const handle = frame.unitHandle(target), others = actors.filter(i => frame.unitHandle(i) !== handle && !category(i, 'FACTORY'));
   if (frame.unitFlags(target) & UnitFlags.Wreck) {
     const reclaimers = others.filter(i => builder(i) && category(i, 'RECLAIM'));
-    return reclaimers.length ? order(Op.Reclaim, reclaimers, handle) : ground();
+    return reclaimers.length ? withRally(order(Op.Reclaim, reclaimers, handle)) : ground();
   }
   if (!allied(frame.unitArmy(target))) {
     const armed = others.filter(i => bp.mountCount(frame.unitVisual(i)) > 0);
-    return armed.length ? order(Op.Attack, armed, handle) : ground();
+    return armed.length ? withRally(order(Op.Attack, armed, handle)) : ground();
   }
-  if (frame.unitBuild(target) < 255) return order(Op.Assist, others.filter(builder), handle);
-  if (frame.unitHp(target) < 255) return order(Op.Repair, others.filter(builder), handle);
-  return order(Op.Guard, others.filter(mobile), handle);
+  if (frame.unitBuild(target) < 255) return withRally(order(Op.Assist, others.filter(builder), handle));
+  if (frame.unitHp(target) < 255) return withRally(order(Op.Repair, others.filter(builder), handle));
+  return withRally(order(Op.Guard, others.filter(mobile), handle));
 }

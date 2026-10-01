@@ -7,6 +7,8 @@ export default defineFaction({
   units: [
     'core:cmd_commander',
     'core:str_t1_mex',
+    'core:str_t2_mex',
+    'core:str_t3_mex',
     'core:str_t1_pgen',
     'core:str_t1_estorage',
     'core:fac_land_t1',

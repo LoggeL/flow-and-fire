@@ -63,6 +63,12 @@ async function disposeSession(immediate = false): Promise<void> {
   if (immediate) previous?.dispose();
   else await previous?.close();
 }
+async function beforeHistoricalReplayNavigation(): Promise<void> {
+  // disposeSession clears the signals; retain the bridge whose eager load must be cancelled.
+  const previous = gameSig.peek();
+  try { await disposeSession(); }
+  finally { await previous?.audio.dispose(); }
+}
 function report(error: unknown): void { actionError.value = error instanceof Error ? error.message : String(error); }
 
 const ports: GameHudPorts = {
@@ -114,7 +120,8 @@ function Root() {
     {(replayOpen.value || game !== null) && assets !== null ? <ReplayPanel library={replayLibrary()} controller={replaySig.value} open={replayOpen.value}
       assets={{ simBin: assets.simBin, map: assets.mapBytes }}
       exportCurrentLog={game !== null && !game.replayMode ? () => game.exportLog(false) : null}
-      onOpen={bytes => startSession(undefined, bytes)} onExit={() => { ports.leaveGame(); }} resolveAssets={recordingAssets}/> : null}
+      onOpen={bytes => startSession(undefined, bytes)} onExit={() => { ports.leaveGame(); }} resolveAssets={recordingAssets}
+      beforeHistoricalNavigate={beforeHistoricalReplayNavigation}/> : null}
     {actionError.value !== null ? <div class="live-action-error" role="alert">{actionError.value}<button onClick={() => { actionError.value = null; }}>Schließen</button></div> : null}
     {state.phase !== 'ready' ? <LoadingScreen state={state} mapName={params.value.map}/> : null}
   </>;

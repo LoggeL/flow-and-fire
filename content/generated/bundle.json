@@ -135,13 +135,13 @@
         "color": [0.25, 0.5, 0.9],
         "id": "core:faction_core",
         "startUnit": "core:cmd_commander",
-        "units": ["core:cmd_commander", "core:str_t1_mex", "core:str_t1_pgen", "core:str_t1_estorage", "core:fac_land_t1", "core:eng_t1", "core:lnd_t1_scout", "core:lnd_t1_tank", "core:lnd_t1_arty", "core:lnd_t2_tank", "core:lnd_t3_heavy"]
+        "units": ["core:cmd_commander", "core:str_t1_mex", "core:str_t2_mex", "core:str_t3_mex", "core:str_t1_pgen", "core:str_t1_estorage", "core:fac_land_t1", "core:eng_t1", "core:lnd_t1_scout", "core:lnd_t1_tank", "core:lnd_t1_arty", "core:lnd_t2_tank", "core:lnd_t3_heavy"]
       },
       "id": "core:faction_core",
       "index": 0,
       "simUnits": {
         "startUnit": 0,
-        "units": [0, 12, 13, 11, 5, 4, 7, 8, 6, 9, 10]
+        "units": [0, 12, 14, 15, 13, 11, 5, 4, 7, 8, 6, 9, 10]
       },
       "source": "content/blueprints/core/factions/faction_core.ts"
     }
@@ -374,7 +374,7 @@
       "source": "content/blueprints/core/props/nature.ts"
     }
   ],
-  "simHash": "0x8321662B",
+  "simHash": "0x026C51C8",
   "units": [
     {
       "blueprint": {
@@ -1667,6 +1667,7 @@
             "turnInPlace": false,
             "turnRateDeg": 0
           },
+          "upgradesTo": "core:str_t2_mex",
           "veterancy": "none",
           "wreck": {
             "hpFraction": 0.5,
@@ -1722,7 +1723,7 @@
         "spotKind": 0,
         "turnInPlace": false,
         "turnRatePerTick": 0,
-        "upgradesTo": -1,
+        "upgradesTo": 14,
         "veterancy": 0,
         "vision": 65536,
         "wreckHp": 2048,
@@ -1821,10 +1822,197 @@
         "wreckMass": 3686
       },
       "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["STRUCTURE", "ECONOMIC", "MASSEXTRACTION", "TECH2", "SIZE4"],
+        "id": "core:str_t2_mex",
+        "sim": {
+          "economy": {
+            "buildPower": 15,
+            "buildTime": 900,
+            "energy": 5400,
+            "energyUpkeep": 9,
+            "mass": 900,
+            "massIncome": 6,
+            "spotKind": "mass"
+          },
+          "health": {
+            "max": 2100
+          },
+          "intel": {
+            "vision": 20
+          },
+          "motion": {
+            "accel": 0,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.3,
+            "radius": 1,
+            "sizeClass": 2,
+            "speed": 0,
+            "turnInPlace": false,
+            "turnRateDeg": 0
+          },
+          "upgradesTo": "core:str_t3_mex",
+          "veterancy": "none",
+          "wreck": {
+            "hpFraction": 0.5,
+            "massFraction": 0.9
+          }
+        },
+        "view": {
+          "descKey": "unit.core.str_t2_mex.desc",
+          "icon": "structure_generic",
+          "iconThreshold": 10,
+          "lod": [80, 240],
+          "mesh": "units/varkan/str_t2_mex",
+          "nameKey": "unit.core.str_t2_mex.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [1.8, 1, 1.8]
+          }
+        }
+      },
+      "id": "core:str_t2_mex",
+      "simId": 14,
+      "simUnits": {
+        "accelPerTick": 0,
+        "brakePerTick": 0,
+        "buildPowerQ16PerTick": 98304,
+        "buildRangeRaw": 20480,
+        "buildTime": 900,
+        "buildableBy": -1,
+        "categoryMask": ["0x000B0810", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": -1,
+        "ecoFlags": 0,
+        "energyCost": 5400,
+        "energyIncomeMilliPerTick": 0,
+        "energyStorageMilli": 0,
+        "energyUpkeepMilliPerTick": 900,
+        "firstMount": 0,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [8192, 8192, 8192],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 900,
+        "massIncomeMilliPerTick": 600,
+        "massStorageMilli": 0,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 2100,
+        "maxSlope": 1229,
+        "mountCount": 0,
+        "radius": 4096,
+        "sizeClass": 2,
+        "speedPerTick": 0,
+        "spotKind": 0,
+        "turnInPlace": false,
+        "turnRatePerTick": 0,
+        "upgradesTo": 15,
+        "veterancy": 0,
+        "vision": 81920,
+        "wreckHp": 2048,
+        "wreckMass": 3686
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["STRUCTURE", "ECONOMIC", "MASSEXTRACTION", "TECH3", "SIZE4"],
+        "id": "core:str_t3_mex",
+        "sim": {
+          "economy": {
+            "buildPower": 0,
+            "buildTime": 2900,
+            "energy": 31000,
+            "energyUpkeep": 54,
+            "mass": 4500,
+            "massIncome": 18,
+            "spotKind": "mass"
+          },
+          "health": {
+            "max": 7000
+          },
+          "intel": {
+            "vision": 20
+          },
+          "motion": {
+            "accel": 0,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.3,
+            "radius": 1,
+            "sizeClass": 2,
+            "speed": 0,
+            "turnInPlace": false,
+            "turnRateDeg": 0
+          },
+          "veterancy": "none",
+          "wreck": {
+            "hpFraction": 0.5,
+            "massFraction": 0.9
+          }
+        },
+        "view": {
+          "descKey": "unit.core.str_t3_mex.desc",
+          "icon": "structure_generic",
+          "iconThreshold": 10,
+          "lod": [80, 240],
+          "mesh": "units/varkan/str_t3_mex",
+          "nameKey": "unit.core.str_t3_mex.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [1.8, 1, 1.8]
+          }
+        }
+      },
+      "id": "core:str_t3_mex",
+      "simId": 15,
+      "simUnits": {
+        "accelPerTick": 0,
+        "brakePerTick": 0,
+        "buildPowerQ16PerTick": 0,
+        "buildRangeRaw": 20480,
+        "buildTime": 2900,
+        "buildableBy": -1,
+        "categoryMask": ["0x00130810", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": -1,
+        "ecoFlags": 0,
+        "energyCost": 31000,
+        "energyIncomeMilliPerTick": 0,
+        "energyStorageMilli": 0,
+        "energyUpkeepMilliPerTick": 5400,
+        "firstMount": 0,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [8192, 8192, 8192],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 4500,
+        "massIncomeMilliPerTick": 1800,
+        "massStorageMilli": 0,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 7000,
+        "maxSlope": 1229,
+        "mountCount": 0,
+        "radius": 4096,
+        "sizeClass": 2,
+        "speedPerTick": 0,
+        "spotKind": 0,
+        "turnInPlace": false,
+        "turnRatePerTick": 0,
+        "upgradesTo": -1,
+        "veterancy": 0,
+        "vision": 81920,
+        "wreckHp": 2048,
+        "wreckMass": 3686
+      },
+      "source": "content/blueprints/core/units/economy.ts"
     }
   ],
   "version": 2,
-  "viewHash": "0xB345D635",
+  "viewHash": "0x93FD84AD",
   "weapons": [
     {
       "blueprint": {

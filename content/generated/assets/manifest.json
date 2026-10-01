@@ -1,16 +1,16 @@
 {
   "assets": {
     "content/sim.bin": {
-      "bytes": 4160,
-      "hash": "sha256-Z5bZmjI0gPYbfGDUv3h4ZMjfX24sR0Kcy8wP3nXNT+s=",
+      "bytes": 4468,
+      "hash": "sha256-JhAWh/gYXBGkTSItt01RT7O8Ligv4e9Xhat52eiwZpU=",
       "kind": "simbin",
-      "url": "content/sim.6796d99a.bin"
+      "url": "content/sim.26101687.bin"
     },
     "content/view.json": {
-      "bytes": 9619,
-      "hash": "sha256-SWeyijXpO+lMTLFx6P6+QfLkWw1T8G6NaynSWbIcTWM=",
+      "bytes": 10617,
+      "hash": "sha256-dMG2QKuSAIw/Coo/q6Pmsw95MGPHcDz+0kBl6zkWCDA=",
       "kind": "viewjson",
-      "url": "content/view.4967b28a.json"
+      "url": "content/view.74c1b640.json"
     },
     "icons/atlas": {
       "bytes": 147456,
@@ -179,6 +179,28 @@
       "hash": "sha256-Xk35ib9mm1gJkDBCGxQyo7lp6okV2CyqDBFG+SlQdh0=",
       "kind": "model",
       "url": "models/units/varkan/str_t1_pgen.5e4df989.glb"
+    },
+    "units/varkan/str_t2_mex": {
+      "bytes": 15656,
+      "fallback": {
+        "bytes": 44968,
+        "hash": "sha256-arnYrRz8T0yDZIuuJwWt+WoLX2okq7Q7hZkQgyitzlQ=",
+        "url": "models/units/varkan/str_t2_mex.6ab9d8ad.raw.glb"
+      },
+      "hash": "sha256-3yGHJQu2G/VKSNemGQb6cS3V+cd9NvjK3hqrry/OLzo=",
+      "kind": "model",
+      "url": "models/units/varkan/str_t2_mex.df218725.glb"
+    },
+    "units/varkan/str_t3_mex": {
+      "bytes": 17396,
+      "fallback": {
+        "bytes": 55868,
+        "hash": "sha256-jZFtAz7PCed4ic0HDFHrXpLk0q6H2c55fSQzW22nBT8=",
+        "url": "models/units/varkan/str_t3_mex.8d916d03.raw.glb"
+      },
+      "hash": "sha256-wRxkOcnhRKssNreuPXJrKRH+rTgGWWixk9OEmF78jxI=",
+      "kind": "model",
+      "url": "models/units/varkan/str_t3_mex.c11c6439.glb"
     }
   },
   "version": 1

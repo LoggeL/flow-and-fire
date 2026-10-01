@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { ReplayController } from './controller.ts';
 import { downloadReplay, type RecordedGame, type ReplayAssets, type ReplayLibrary } from './library.ts';
 import './replay.css';
-import { historicalReplayBuildAvailable, stageReplayBuildTransfer } from './compatibility.ts';
+import { handoffReplayBuild, historicalReplayBuildAvailable } from './compatibility.ts';
 import { visibleReplayWorkError } from './startup-failure.ts';
 
 export interface ReplayPanelProps {
@@ -13,6 +13,8 @@ export interface ReplayPanelProps {
   readonly exportCurrentLog: (() => Promise<ArrayBuffer>) | null;
   readonly onOpen: (bytes: Uint8Array) => void | Promise<void>;
   readonly onExit: (() => void) | null;
+  /** Settle current-session and audio disposal before leaving for a retained build. */
+  readonly beforeHistoricalNavigate: () => Promise<void>;
   /** Resolve the recorded map, never silently substitute the currently displayed map. */
   readonly resolveAssets?: (recording: RecordedGame) => Promise<ReplayAssets>;
 }
@@ -85,7 +87,8 @@ export function ReplayPanel(props: ReplayPanelProps) {
         {failure !== null ? <p role="alert" class="replay-error">{failure.message}{failure.route !== null ? <> Aufzeichnung benötigt den Build unter {failure.route}.
           <button disabled={busy} onClick={() => void work(async () => {
             if (failure.buildHash === null || !(await historicalReplayBuildAvailable(failure.buildHash))) throw new Error(`Der aufgezeichnete Build unter ${failure.route} ist hier nicht verfügbar. Die Replay-Datei bleibt erhalten.`);
-            location.assign(stageReplayBuildTransfer(controller!.bytes, failure.buildHash));
+            await handoffReplayBuild(controller!.bytes, failure.buildHash, props.beforeHistoricalNavigate,
+              route => location.assign(route));
           })}>Aufgezeichneten Build öffnen</button></> : null}</p> : null}
         {busy ? <p role="status">Replay wird verarbeitet…</p> : null}
         {workError !== null ? <p role="alert" class="replay-error">{workError}</p> : null}

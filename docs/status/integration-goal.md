@@ -12,18 +12,23 @@ Die Veröffentlichung ist erfolgt: [Spiel](https://flow-and-fire.logge.top/?menu
 [Start- und Bedienungsanleitung](../../README.md). Docker läuft auf der HomeBox.
 Commit, Push und Updates dieses Projekts sind vom Nutzer beauftragt.
 
-## Jetzt abschließen
+## Aktueller Lieferumfang
 
-1. Historische Spiel-Builds in einem dauerhaften Docker-Volume erhalten, damit bestehende
-   Replays nach einem Image-Update ihre ursprüngliche Version öffnen können.
-2. Die echte Aufnahme aus dem bisherigen öffentlichen Build nach dem Update importieren,
-   zum ursprünglichen Build wechseln und dort Seek, Wiedergabe und Export prüfen.
-3. Die neue Version bereitstellen und ihren tatsächlichen Spielstart prüfen.
+1. Fabrik-Rally korrekt an die Simulation senden und den akzeptierten Punkt sichtbar
+   markieren. Neu produzierte Einheiten müssen tatsächlich dorthin laufen.
+2. Masseextraktoren über T1 → T2 → T3 ausbauen können: sichtbare Kosten und Fortschritt,
+   echte Ressourcenabrechnung, Pause und Abbruch, unveränderte Massequelle und Handle.
+3. Die groben Sichtkanten auf Terrain und Wasser weich und runder darstellen.
+4. Beim Öffnen eines historischen Replays die bisherige Session samt Audio zuerst
+   schließen. Das bereits bereitgestellte Docker-Archiv erhält die Original-Builds.
+5. Diese Korrekturen im tatsächlichen Spiel prüfen und als zusammenhängendes Update auf
+   der HomeBox bereitstellen.
 
-Dieser Schritt ist abgeschlossen, wenn der neue Container gesund ist, der alte Build
-unverändert erreichbar bleibt und die historische Aufnahme auf Chromium, Firefox und
-WebKit ohne Hash-Abweichungen läuft. Die automatisierten Prüfungen bleiben stumm.
-Danach wird das ausgelieferte Ergebnis mit den noch offenen Einschränkungen gemeldet.
+Dieser Schritt ist abgeschlossen, wenn die betroffenen Sim-/HUD-Verträge bestehen,
+die drei Browser-Engines die Spielabläufe bestätigen, der neue Container gesund ist und
+die echte alte Aufnahme weiterhin unverändert geöffnet, gesucht, abgespielt und
+exportiert werden kann. Die automatisierten Prüfungen bleiben stumm. Danach wird das
+ausgelieferte Ergebnis mit den noch offenen Einschränkungen gemeldet.
 
 ## Arbeitsweise für weitere Schritte
 

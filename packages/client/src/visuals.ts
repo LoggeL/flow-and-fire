@@ -23,6 +23,8 @@ export interface RigBinding {
   readonly gait?: 1 | -1;
 }
 export interface RigVisualEntry extends VisualEntry {
+  /** Compiled public category, used only to present accepted factory rally watches. */
+  readonly factory?: boolean;
   readonly modelParts?: readonly ModelPartInfo[];
   /** Index = mesh part id. Unbound parts retain their authored rest pose. */
   readonly rig?: readonly (RigBinding | undefined)[];
@@ -76,6 +78,7 @@ export function visualTableFromView(view: ViewBundle, models?: ModelLookup): Vis
       : meshes === undefined && ph.turret !== undefined ? [undefined, { mount: 0, yaw: true, pitch: true }] : undefined;
     return {
       spec,
+      factory: v.categories.includes('FACTORY'),
       ...(modelParts !== undefined ? { modelParts } : {}),
       ...(rig !== undefined ? { rig } : {}),
       ...(v.icon !== undefined ? { icon: v.icon } : {}),

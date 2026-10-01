@@ -30,5 +30,9 @@
   "unit.core.eng_t1.name": "T1 Ingenieur",
   "unit.core.eng_t1.desc": "Baut und repariert T1-Strukturen und unterstützt Fabriken.",
   "unit.core.str_t1_estorage.name": "T1 Energiespeicher",
-  "unit.core.str_t1_estorage.desc": "Speichert 5000 Energie für große Verbraucher."
+  "unit.core.str_t1_estorage.desc": "Speichert 5000 Energie für große Verbraucher.",
+  "unit.core.str_t2_mex.name": "Zapfstelle II",
+  "unit.core.str_t2_mex.desc": "Masseextraktor T2: fördert 6 Masse pro Sekunde auf derselben Massequelle.",
+  "unit.core.str_t3_mex.name": "Zapfstelle III",
+  "unit.core.str_t3_mex.desc": "Masseextraktor T3: fördert 18 Masse pro Sekunde auf derselben Massequelle."
 }

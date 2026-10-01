@@ -130,6 +130,8 @@ describe('render-only articulated poses', () => {
     const visuals = visualTableFromView(view, models);
     const find = (id: string) => visuals[view.visuals.findIndex(v => v.id === id)] as RigVisualEntry;
     const cmd = find('core:cmd_commander'), heavy = find('core:lnd_t3_heavy'), arty = find('core:lnd_t1_arty');
+    expect(find('core:fac_land_t1').factory).toBe(true);
+    expect(cmd.factory).toBe(false); expect(heavy.factory).toBe(false);
     expect(cmd.rig![1]).toMatchObject({ gait: 1 }); expect(cmd.rig![2]).toMatchObject({ gait: -1 }); expect(cmd.rig![5]).toBeUndefined();
     expect(cmd.rig![3]).toEqual({ mount: 0, yaw: true, pitch: false });
     expect(cmd.rig![4]).toEqual({ mount: 0, yaw: false, pitch: true });

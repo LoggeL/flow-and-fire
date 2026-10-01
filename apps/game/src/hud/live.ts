@@ -17,7 +17,7 @@ import { FrameHudAlerts } from './alerts.ts';
 import { frameFlowConsumers, frameFactoryAssistance } from './flow.ts';
 import { FrameBuildIntents, equalQueuedGhosts, type QueuedBuildGhost } from './build-intents.ts';
 import { WorldCursor, gameCursor, type GameCursor } from '../cursors.ts';
-import { contextOrders, contextTarget } from './context-orders.ts';
+import { completedFactoryHandles, contextOrders, contextTarget } from './context-orders.ts';
 export { restoreSettings } from '../session-settings.ts';
 
 export interface GameHudPorts {
@@ -34,6 +34,11 @@ export interface CommanderUpgradeState {
   readonly progress: number; readonly paused: boolean; readonly stalled: boolean; readonly enabled: boolean; readonly controllable: boolean;
   readonly mass: number; readonly energy: number; readonly buildPower: number; readonly hpMax: number;
   readonly targetBuildPower: number; readonly targetHpMax: number; readonly remainingS: number | null;
+}
+export interface ExtractorUpgradeState extends Omit<CommanderUpgradeState, 'stage'> {
+  readonly tier: number; readonly targetTier: number | null;
+  readonly massIncome: number; readonly targetMassIncome: number;
+  readonly energyUpkeep: number; readonly targetEnergyUpkeep: number;
 }
 /** Commander successor blueprints share the base command card and roster capabilities. */
 function presentationUnit(id: string) {
@@ -69,6 +74,7 @@ export class GameHudController {
   private readonly frameBuildIntents = new FrameBuildIntents();
   readonly result = signal<MatchResult | null>(null);
   readonly commanderUpgrade = signal<CommanderUpgradeState | null>(null);
+  readonly extractorUpgrade = signal<ExtractorUpgradeState | null>(null);
   readonly commands: HudCommands;
   private placement: { bp: number; typeId: string; slot: SlotCode; yaw: number } | null = null;
   private armedOrder: OrderId | 'rally' | null = null;
@@ -141,10 +147,12 @@ export class GameHudController {
       clearQueue: () => this.factoryIssue(Op.FactoryQueueEdit, encodeFactoryQueueEdit({action:0,index:0,bp:0,count:0})),
       toggleRepeat: () => this.factoryIssue(Op.FactoryRepeat, Uint8Array.of(m.factory.queue.peek()?.repeat ? 0 : 1)),
       togglePauseProduction: () => this.factoryIssue(Op.TogglePause, encodeTogglePause(!m.factory.queue.peek()?.paused)),
-      armRally: () => { this.update(); this.cancelMode(); this.armedOrder = 'rally'; this.updateOrders(); },
+      armRally: () => { const frame = game?.client.lastFrame;
+        if (!game || !frame || game.client.readOnlyCommands || completedFactoryHandles(frame, game.bp, game.client.selection.selected(), game.client.playerArmy).length === 0) return;
+        this.update(); this.cancelMode(); this.armedOrder = 'rally'; this.updateOrders(); },
       pauseConsumer: (handle: number, paused: boolean) => game?.client.commands.issue(Op.TogglePause,[handle],encodeTogglePause(paused),false,performance.now()),
       setCamera: (x: number, z: number) => game?.client.jumpTo(x * 4096, z * 4096),
-      minimapOrder: (x: number, z: number, shift: boolean) => game?.client.moveTo(x * 4096, z * 4096, undefined, undefined, shift),
+      minimapOrder: (x: number, z: number, shift: boolean) => this.issueGroundOrder(x * 4096, z * 4096, shift),
       setMinimapMode: (mode: 'terrain' | 'tactical') => { m.minimap.mode.value = mode; },
       toggleResources: () => { m.minimap.showResources.value = !m.minimap.showResources.peek(); },
       showWholeMap: () => { if (game) game.client.jumpTo(game.map.sizeWu * 2048, game.map.sizeWu * 2048, game.client.camera.maxDistance); },
@@ -258,6 +266,17 @@ export class GameHudController {
     this.model.card.armedSlot.value = slot; this.model.card.placingTypeId.value = typeId; this.model.card.flashSlot.value = slot; this.flashUntil=performance.now()+140; this.updateGhost();
   }
   cancelMode(): void { this.game?.client.input.setBuildGestureHandler(null); this.clearDragGhosts(); this.placement = null; this.armedOrder = null; this.ghost.value = null; this.model.card.armedSlot.value = null; this.model.card.placingTypeId.value = null; this.updateOrders(); }
+  private issueGroundOrder(x: number, z: number, queue: boolean, timeStamp = performance.now()): void {
+    if (this.screen.peek() !== 'game' || this.model.menus.gameMenu.open.peek()) return;
+    if (this.placement || this.armedOrder) { this.cancelMode(); return; }
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    const orders = contextOrders(frame, game.bp, game.client.selection.selected(), game.client.playerArmy, army => this.allied(army), null, true);
+    for (const order of orders) {
+      if (order.op === Op.Move) game.client.moveTo(x, z, order.units, timeStamp, queue);
+      else if (order.op === Op.SetRally) game.client.commands.issue(Op.SetRally, order.units, encodeMove({ x: x as never, y: game.client.heightAtRaw(x, z) as never, z: z as never }), queue, timeStamp);
+    }
+  }
   private worldAction(action: Action): boolean {
     if (this.screen.peek() !== 'game' || this.model.menus.gameMenu.open.peek()) return !['toggleConsole', 'toggleFullscreen'].includes(action.type);
     if (action.type === 'moveCommand' && (this.placement || this.armedOrder)) { this.cancelMode(); return true; }
@@ -467,7 +486,9 @@ export class GameHudController {
   private issueArmed(px:number,py:number,x:number,y:number,z:number,queue:boolean):void {
     const game=this.game,r=game?.client.lastFrame,id=this.armedOrder;if(!game||!r||!id)return;
     if(id==='move'){game.client.moveTo(x,z,undefined,undefined,queue);return;}
-    const ground:{[key:string]:number}={patrol:Op.Patrol,attackGround:Op.AttackGround,rally:Op.SetRally};
+    if(id==='rally'){const factories=completedFactoryHandles(r,game.bp,game.client.selection.selected(),game.client.playerArmy);
+      if(factories.length>0)game.client.commands.issue(Op.SetRally,factories,encodeMove({x:x as never,y:y as never,z:z as never}),queue,performance.now());return;}
+    const ground:{[key:string]:number}={patrol:Op.Patrol,attackGround:Op.AttackGround};
     if(ground[id]!==undefined){game.client.commands.issue(ground[id]!,game.client.selection.selected(),encodeMove({x:x as never,y:y as never,z:z as never}),queue,performance.now());return;}
     const index=this.visibleTarget(px,py,i=>{
       const flags=r.unitFlags(i);
@@ -525,7 +546,7 @@ export class GameHudController {
       m.strip.groups.value = c.controlGroups.snapshot().map(handles => ({count:handles.length,iconTypeId: null}));
       this.updateOrders();
     });
-    if (force || now - this.lastEcoAt >= 100) { this.lastEcoAt = now; this.updateEconomy(r); this.updateFactoryProgress(r); this.updateCommanderUpgrade(r); }
+    if (force || now - this.lastEcoAt >= 100) { this.lastEcoAt = now; this.updateEconomy(r); this.updateFactoryProgress(r); this.updateCommanderUpgrade(r); this.updateExtractorUpgrade(r); }
   }
   private jumpToAlert(id: number): void {
     const item = this.frameAlerts?.find(id);
@@ -619,6 +640,69 @@ export class GameHudController {
       active, queued, progress, paused, stalled,
       controllable: !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
       enabled: target >= 0 && !queued && !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
+      mass: target >= 0 ? game.bp.massCostCol[target]! : 0, energy: target >= 0 ? game.bp.energyCostCol[target]! : 0,
+      buildPower: game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536, hpMax: game.bp.maxHpCol[bp]!,
+      targetBuildPower: target >= 0 ? game.bp.buildPowerQ16PerTickCol[target]! * 10 / 65536 : game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536,
+      targetHpMax: target >= 0 ? game.bp.maxHpCol[target]! : game.bp.maxHpCol[bp]!,
+      remainingS: active && target >= 0 && !paused && effectivePower !== null && effectivePower > 0 ? (1 - progress) * game.bp.buildTimeCol[target]! / effectivePower : null,
+    };
+  }
+
+  startExtractorUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateExtractorUpgrade(frame);
+    const state = this.extractorUpgrade.peek();
+    if (!state?.enabled || !state.targetTypeId) return;
+    const bp = game.bp.indexOf(state.targetTypeId), payload = new Uint8Array(2);
+    if (bp < 0) return;
+    new DataView(payload.buffer).setUint16(0, bp, true);
+    this.cancelMode();
+    game.client.commands.issue(Op.Upgrade, [state.handle], payload, false, performance.now());
+  }
+  pauseExtractorUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateExtractorUpgrade(frame);
+    const state = this.extractorUpgrade.peek();
+    if (state?.active && state.controllable) game.client.commands.issue(Op.TogglePause, [state.handle], encodeTogglePause(!state.paused), false, performance.now());
+  }
+  cancelExtractorUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateExtractorUpgrade(frame);
+    const state = this.extractorUpgrade.peek();
+    if (state?.queued && state.controllable) game.client.commands.issue(Op.Stop, [state.handle], new Uint8Array(0), false, performance.now());
+  }
+  private updateExtractorUpgrade(frame: FrameReader | null): void {
+    const game = this.game, indices = this.selectedIndices();
+    if (!game || !frame || indices.length !== 1) { this.extractorUpgrade.value = null; return; }
+    const i = indices[0]!, bp = frame.unitVisual(i), id = game.bp.ids[bp]!;
+    if (id !== 'core:str_t1_mex' && id !== 'core:str_t2_mex' && id !== 'core:str_t3_mex') {
+      this.extractorUpgrade.value = null; return;
+    }
+    const handle = frame.unitHandle(i), watch = this.watchIndex(handle), successor = game.bp.upgradesTo(bp);
+    let queued = false;
+    if (watch >= 0) for (let k = 0; k < frame.watchTargetCount(watch); k++) queued ||= frame.watchTargetType(watch, k) === WatchOrderType.Upgrade;
+    const active = watch >= 0 && frame.watchTargetCount(watch) > 0 && frame.watchTargetType(watch, 0) === WatchOrderType.Upgrade && frame.watchFactoryBp(watch) >= 0;
+    const target = active ? frame.watchFactoryBp(watch) : successor, progress = active ? frame.watchFactoryProgress(watch) / 65536 : 0;
+    const paused = (frame.unitFlags(i) & UnitFlags.Paused) !== 0, stalled = active && !paused && (frame.unitFlags(i) & UnitFlags.Stalled) !== 0;
+    let effectivePower: number | null = null;
+    if (active && frame.flowTick === frame.tick) for (let f = 0; f < frame.flowCount; f++) if (frame.flowHandle(f) === handle) {
+      for (let e = 0; e < frame.ecoCount; e++) if (frame.ecoArmy(e) === frame.flowArmy(f))
+        effectivePower = Math.floor(frame.flowEffectivePower(f) * frame.ecoRatio(e, frame.flowPriority(f)) / 65536) * 10 / 65536;
+    }
+    this.extractorUpgrade.value = {
+      handle, currentTypeId: id, targetTypeId: target >= 0 ? game.bp.ids[target]! : null,
+      tier: id === 'core:str_t1_mex' ? 1 : id === 'core:str_t2_mex' ? 2 : 3,
+      targetTier: target < 0 ? null : game.bp.ids[target] === 'core:str_t2_mex' ? 2 : 3,
+      massIncome: game.bp.massIncomeMilliPerTickCol[bp]! / 100,
+      targetMassIncome: game.bp.massIncomeMilliPerTickCol[target >= 0 ? target : bp]! / 100,
+      energyUpkeep: game.bp.energyUpkeepMilliPerTickCol[bp]! / 100,
+      targetEnergyUpkeep: game.bp.energyUpkeepMilliPerTickCol[target >= 0 ? target : bp]! / 100,
+      active, queued, progress, paused, stalled,
+      controllable: !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
+      enabled: target >= 0 && frame.unitBuild(i) === 255 && !queued && !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
       mass: target >= 0 ? game.bp.massCostCol[target]! : 0, energy: target >= 0 ? game.bp.energyCostCol[target]! : 0,
       buildPower: game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536, hpMax: game.bp.maxHpCol[bp]!,
       targetBuildPower: target >= 0 ? game.bp.buildPowerQ16PerTickCol[target]! * 10 / 65536 : game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536,

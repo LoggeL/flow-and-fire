@@ -6,7 +6,7 @@ import { ClientMap, GameClient } from '@faf/client';
 import { CmdFlags, FrameFlags, FrameReader, FrameWriter, Op, UnitFlags, decodeBatch } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import type { Game } from '../src/game.ts';
-import { contextOrders, contextTarget } from '../src/hud/context-orders.ts';
+import { completedFactoryHandles, contextOrders, contextTarget } from '../src/hud/context-orders.ts';
 import { GameHudController } from '../src/hud/live.ts';
 import { FakeSimLink } from '../../../packages/client/test/support/fake-sim-link.ts';
 import { FakeCanvas, FakeRenderer, FakeTarget, ManualRaf, pointer } from '../../../packages/client/test/support/fakes.ts';
@@ -39,6 +39,24 @@ function decide(units: readonly Unit[], selected: number[], target: number | nul
 }
 
 describe('context matrix from actual compiled capabilities and accepted frame records', () => {
+  it.each([
+    [friend, Op.Guard, [42, 43]],
+    [{ ...friend, build: 80 }, Op.Assist, [42]],
+    [{ ...friend, hp: 80 }, Op.Repair, [42]],
+    [enemy, Op.Attack, [43]],
+  ] as const)('keeps factory point rally separate from mobile target order %j', (target, op, actors) => {
+    expect(decide([factory, engineer, tank, target], [44, 42, 43], 3)).toEqual([
+      { op: Op.SetRally, units: [44] }, { op, units: actors, target: target.handle },
+    ]);
+    expect(decide([factory, target], [44], 1)).toEqual([{ op: Op.SetRally, units: [44] }]);
+    expect(decide([factory, target], [44], 1, false)).toEqual([]);
+  });
+  it('explicit rally actors exclude unfinished, hidden, foreign, wreck and stale handles', () => {
+    const units = [factory, { ...factory, handle: 45, build: 80 }, { ...factory, handle: 46, army: 1 },
+      { ...factory, handle: 47, flags: UnitFlags.Ghost }, { ...factory, handle: 48, flags: UnitFlags.Blip },
+      { ...factory, handle: 49, flags: UnitFlags.Wreck }, engineer];
+    expect(completedFactoryHandles(acceptedFrame(units).frame, bp, [42, 44, 45, 46, 47, 48, 49, 999], 0)).toEqual([44]);
+  });
   it('partitions mixed factory/mobile ground commands, excludes static structures and foreign/stale actors', () => {
     expect(decide([engineer, tank, factory, { handle: 45, id: 'core:str_t1_pgen' }, { ...tank, handle: 46, army: 1 }], [42, 43, 44, 45, 46, 999], null)).toEqual([
       { op: Op.SetRally, units: [44] }, { op: Op.Move, units: [42, 43] },
@@ -104,6 +122,43 @@ function nativeRig(units: readonly Unit[], selected: number[], readOnly = false,
   return { link, canvas, client, controller, clickTarget, commands, dispose };
 }
 describe('native input through the real HUD interceptor and wire encoder', () => {
+  it('right-clicking a friendly unit with a sole factory emits its terrain point rally', () => {
+    const f = nativeRig([factory, friend], [44]);
+    try {
+      const pixel = f.client.unitScreenPos(friend.handle)!, pick = f.client.pickAt(pixel.x, pixel.y)!;
+      f.clickTarget(friend.handle);
+      expect(f.commands().map(c => [c.op, c.units])).toEqual([[Op.SetRally, [44]]]);
+      const command = f.commands()[0]!, payload = new DataView(command.payload.buffer, command.payload.byteOffset, command.payload.byteLength);
+      expect(payload.getInt32(0, true)).toBe(Math.round(pick.x)); expect(payload.getInt32(8, true)).toBe(Math.round(pick.z));
+    } finally { f.dispose(); }
+  });
+  it('minimap orders partition completed factories and mobiles, retaining Shift queue', () => {
+    const f = nativeRig([factory, engineer, { ...factory, handle: 45, build: 80 }], [44, 42, 45]);
+    try {
+      f.controller.commands.minimapOrder(45, 24, true);
+      expect(f.commands().map(c => [c.op, c.units, c.flags])).toEqual([
+        [Op.SetRally, [44], CmdFlags.Queue], [Op.Move, [42], CmdFlags.Queue],
+      ]);
+      for (const c of f.commands()) {
+        const payload = new DataView(c.payload.buffer, c.payload.byteOffset, c.payload.byteLength);
+        expect(payload.getInt32(0, true)).toBe(45 * 4096); expect(payload.getInt32(8, true)).toBe(24 * 4096);
+      }
+    } finally { f.dispose(); }
+  });
+  it('armed rally sends only completed own factories and respects replay read-only', () => {
+    const f = nativeRig([factory, engineer, { ...factory, handle: 45, build: 80 }], [44, 42, 45]);
+    try {
+      f.controller.commands.armRally();
+      f.canvas.dispatch(pointer('pointerdown', 900, 400)); f.canvas.dispatch(pointer('pointerup', 900, 400));
+      expect(f.commands().map(c => [c.op, c.units])).toEqual([[Op.SetRally, [44]]]);
+    } finally { f.dispose(); }
+    const replay = nativeRig([factory], [44], true);
+    try {
+      replay.controller.commands.armRally(); replay.controller.commands.minimapOrder(45, 24, false);
+      replay.canvas.dispatch(pointer('pointerdown', 900, 400)); replay.canvas.dispatch(pointer('pointerup', 900, 400));
+      expect(replay.commands()).toEqual([]);
+    } finally { replay.dispose(); }
+  });
   it.each([
     [{ ...enemy }, Op.Attack, [43]],
     [{ ...friend, hp: 100 }, Op.Repair, [42]],

@@ -153,7 +153,8 @@ export class VisibilityFogPass {
       if (this.texture !== null) this.dev.destroyTexture(this.texture);
       this.bytes = new Uint8Array(dim * dim * 4);
       this.rect = { x: 0, y: 0, width: dim, height: dim };
-      this.texture = this.dev.createTexture({ label: 'visibility.cells', width: dim, height: dim, format: 'rgba8', filter: 'nearest', wrap: 'clamp', restore: h => this.dev.writeTexture(h, this.rect, this.bytes) });
+      // Soften the coarse cell boundary on both surfaces; the uploaded server mask stays exact.
+      this.texture = this.dev.createTexture({ label: 'visibility.cells', width: dim, height: dim, format: 'rgba8', filter: 'linear', wrap: 'clamp', restore: h => this.dev.writeTexture(h, this.rect, this.bytes) });
       this.group = this.dev.createBindGroup({ label: 'visibility', buffers: [{ slot: SLOT_PASS, buffer: this.ubo }], textures: [{ unit: 1, texture: this.texture }] });
     }
     const allVisible = visible === cells.length;

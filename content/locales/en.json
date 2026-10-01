@@ -30,5 +30,9 @@
   "unit.core.eng_t1.name": "T1 Engineer",
   "unit.core.eng_t1.desc": "Builds and repairs T1 structures and assists factories.",
   "unit.core.str_t1_estorage.name": "T1 Energy Storage",
-  "unit.core.str_t1_estorage.desc": "Stores 5000 energy for large consumers."
+  "unit.core.str_t1_estorage.desc": "Stores 5000 energy for large consumers.",
+  "unit.core.str_t2_mex.name": "Tap II",
+  "unit.core.str_t2_mex.desc": "Tier 2 mass extractor: extracts 6 mass per second at the same deposit.",
+  "unit.core.str_t3_mex.name": "Tap III",
+  "unit.core.str_t3_mex.desc": "Tier 3 mass extractor: extracts 18 mass per second at the same deposit."
 }

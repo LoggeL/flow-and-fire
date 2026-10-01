@@ -39,6 +39,7 @@ import {
 } from '@faf/render';
 import type { ActionMap } from './actions.ts';
 import { RigPoseAdapter } from './rig-pose.ts';
+import { AcceptedRallyOverlay } from './rally-overlay.ts';
 import { MovePredictionAdapter, type MovePredictionMotion } from './move-prediction.ts';
 import { CameraController, type CameraState } from './camera-controller.ts';
 import { ControlGroups } from './control-groups.ts';
@@ -229,6 +230,7 @@ export class GameClient {
   private visuals: VisualTable;
   private readonly watchLines: MutableSegment[] = Array.from({ length: 2048 }, () => ({ ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, color: 0x40ff60, widthWU: 0.12 }));
   private readonly combinedLines: OverlaySegment[] = [];
+  private readonly rallyOverlay = new AcceptedRallyOverlay();
   readonly commands: CommandBuilder;
   readonly stream: FrameStream;
   readonly metrics: ClientMetrics;
@@ -805,6 +807,7 @@ export class GameClient {
         x = tx; z = tz;
       }
     }
+    if (this.showPaths) this.rallyOverlay.update(r, sel, this.playerArmy, this.visuals, alpha, this.map, d, this.combinedLines);
     this.renderer.setDynamicDecals?.(d);
   }
 

@@ -1,11 +1,11 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.1-upgrades",
+  "simBuild": "faf-sim/ms6.2-economy-upgrades",
   "scenario": "ridge-group-offset",
   "ticks": 3600,
   "seed": "0x5eed0005",
-  "simHash": "0x8321662b",
+  "simHash": "0x026c51c8",
   "layoutHash": "0x435e2624",
   "map": "content/maps/hollow-ridge.rtsmap",
   "mapSimHash": "0x90ec94f0",
