@@ -43,6 +43,8 @@ FLOW_FIRE_PORT=8090 docker compose up -d --build
 
 Für HomeBox, Updates und HTTPS siehe [Deployment](docs/deployment.md).
 
+Docker bewahrt ausgelieferte Builds im persistenten Volume `flow-and-fire-releases`, damit Replays weiterhin ihren ursprünglichen Build laden können. Normales `docker compose down` erhält dieses Archiv.
+
 ## Lokal entwickeln
 
 Benötigt **Node.js >=24**, **pnpm 11.10.0** und einen Browser mit WebGL2. Alle Befehle laufen aus dem Repository-Root.

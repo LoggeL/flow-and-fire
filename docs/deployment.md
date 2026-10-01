@@ -110,9 +110,41 @@ docker compose -f compose.yaml -f compose.homebox.yaml ps
 
 Für einen Rücksprung einen bekannten Commit in einem separaten Checkout bereitstellen oder das zuvor gesicherte Image verwenden. Dazu dessen Commit und Build-Kennung vor dem Update festhalten. Keine ungesicherten lokalen Änderungen durch einen Reset überschreiben.
 
-Alte versionierte Builds sind für Replays relevant, die den ursprünglichen Build benötigen. Ein frischer Container enthält nur die Dateien seines gebauten Images. Eine langfristige Replay-Archivierung braucht daher zusätzlich ein bewusst gepflegtes Archiv der früheren Build-Verzeichnisse; der normale Image-Neubau garantiert das nicht.
+## Persistentes Build-Archiv für Replays
 
-Stoppen:
+Das Image enthält seinen unveränderlichen Build unter `/app/payload`. Der Container startet weiterhin als Nutzer `node` mit schreibgeschütztem Root-Dateisystem. Nur das benannte Volume `flow-and-fire-releases` unter `/app/releases` ist für das Release-Archiv beschreibbar. Bei einem neuen Volume übernimmt Docker die im Image vorbereitete Verzeichniszuordnung zu UID/GID 1000.
+
+Vor dem Serverstart prüft der Archiver den aktuellen Build und die SHA-256-Identitäten aller bereits archivierten Releases. Er kopiert einen neuen Build zunächst in ein Staging-Verzeichnis und installiert das vollständige `/b/<buildHash>/`-Verzeichnis durch Umbenennen. Identitätsdateien liegen separat unter `.identities`; die ursprünglichen Asset-Bäume bleiben unverändert. Ein einzelner atomarer `current`-Zeiger veröffentlicht danach `index.html` und `build.json`. Der Server liefert weiterhin `/`, `/build.json` und alle alten `/b/<buildHash>/`-Routen mit den vorhandenen Cache- und Isolation-Headern aus.
+
+Ein bereits vorhandener Build-Hash mit anderen Asset- oder Einstiegsbytes wird abgelehnt. Auch beschädigte oder nicht registrierte ältere Releases verhindern den Start. Der Archiver überschreibt keinen alten Build und übernimmt keine unvollständigen Staging-Verzeichnisse. Abgebrochene Vorbereitungen können private Staging- oder Zeigerdateien hinterlassen; diese werden nicht automatisch bereinigt. Es darf nur ein Archiver gleichzeitig auf das Volume schreiben.
+
+Normales `docker compose up`, Image-Neubau und `docker compose down` erhalten das Volume. **`docker compose down -v` oder `docker volume rm flow-and-fire-releases` löschen das Archiv absichtlich.** Es gibt keine automatische Aufbewahrungsfrist und keine automatische Löschung alter Releases. Für langfristige Verfügbarkeit das vollständige Volume einschließlich Identitäten und Zeigern sichern. Browseraufnahmen bleiben weiterhin getrennt auf dem Spielerrechner.
+
+### Bestehendes Image vor dem ersten Umstieg importieren
+
+Ein früherer Build muss einmal aus seinem tatsächlichen Image importiert werden, bevor dieses durch den neuen Container ersetzt wird. Das folgende Beispiel verwendet das bereits ausgelieferte Image `flow-and-fire:af8a6a3f88d6` und die neuen Archiver-Dateien aus dem Repository-Root. Es baut kein Image und startet keinen Webserver.
+
+Nur für das neue, leere Archiv-Volume zunächst die Eigentümerschaft vorbereiten. Dieser einmalige Hilfscontainer darf ausschließlich die Volume-Wurzel auf UID/GID 1000 setzen; der Spielcontainer selbst läuft weiterhin ohne Root-Rechte:
+
+```sh
+docker volume create flow-and-fire-releases
+docker run --rm --read-only --user 0:0 --cap-drop ALL --cap-add CHOWN --security-opt no-new-privileges:true --mount type=volume,src=flow-and-fire-releases,dst=/app/releases --entrypoint node flow-and-fire:af8a6a3f88d6 -e "require('node:fs').chownSync('/app/releases',1000,1000)"
+docker run --rm --read-only --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges:true --mount type=volume,src=flow-and-fire-releases,dst=/app/releases --mount type=bind,src="$PWD/deploy",dst=/archive-tools,readonly --entrypoint node flow-and-fire:af8a6a3f88d6 /archive-tools/start.mjs --archive-only --payload /app/dist --releases /app/releases
+```
+
+Der letzte Befehl liest die alten Originalbytes aus `/app/dist` und protokolliert Build-Kennung und Identitätsdigest. Ein Fehler muss vor dem Rollout geklärt werden. Keine alten Verzeichnisse durch einfaches Kopieren nach `/b/` einschleusen, weil dabei die geprüfte Identitätsregistrierung fehlt. Nach erfolgreichem Import das neue Image mit den oben beschriebenen Compose-Befehlen bauen und starten. Die tatsächliche Archivmigration und historische Replay-Wiedergabe werden getrennt vom bisherigen öffentlichen Spielstart geprüft.
+
+Für ein bereits gebautes Image mit Archiver ist derselbe Import ohne gemountete Skripte möglich: `node /app/start.mjs --archive-only --payload <geprüftes-altes-dist> --releases /app/releases`. Der alte Payload muss dafür lesbar und das Archiv-Volume schreibbar im Hilfscontainer gemountet sein.
+
+Die kleinen Dateisystemverträge lassen sich lokal prüfen:
+
+```sh
+node --test deploy/release-archive.test.mjs
+```
+
+Sie ersetzen nicht die Docker-Ownership-/HTTP-Prüfung und die Wiedergabe eines echten historischen Replays im Browser.
+
+## Stoppen
 
 ```sh
 docker compose down
