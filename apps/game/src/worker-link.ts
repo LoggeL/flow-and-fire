@@ -29,7 +29,8 @@ export interface WorkerLike extends PortLike {
   terminate(): void;
 }
 
-const HOST_TAGS = new Set(['ready', 'status', 'stats', 'log', 'error', 'closed', 'ack']);
+const HOST_TAG_LIST: readonly HostMessage['t'][] = ['ready', 'status', 'stats', 'log', 'error', 'closed', 'ack', 'matchStats'];
+const HOST_TAGS = new Set<string>(HOST_TAG_LIST);
 
 function isHostMessage(x: unknown): x is HostMessage {
   return typeof x === 'object' && x !== null && HOST_TAGS.has((x as { t?: unknown }).t as string);

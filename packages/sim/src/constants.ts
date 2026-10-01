@@ -31,7 +31,9 @@ export const MAX_MAP_SIZE_WU = 4096;
  * ms3.0 → ms4.0 (integer milli flow, priority/stall state, Q16 construction and building footprints).
  */
 // ms6.2: paid stationary mass-extractor successors; prior builds remain available for replays.
-export const SIM_BUILD = 'faf-sim/ms6.2-economy-upgrades';
+// ms6.3: paid land-factory successors (no production while upgrading, Stop cancels only the
+// upgrade), radar blips in frames, point defense and radar content.
+export const SIM_BUILD = 'faf-sim/ms6.3-factory-tiers-radar';
 
 /**
  * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is

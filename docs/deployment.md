@@ -38,7 +38,7 @@ Die `.env` wird von Compose gelesen und gehört zur lokalen Deployment-Konfigura
 
 ## Auf HomeBox bereitstellen
 
-Das Spiel läuft unter [flow-and-fire.logge.top](https://flow-and-fire.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. Der öffentliche Browserstart ist geprüft: Gefecht gegen Normal-KI, Commander-Auswahl und Bewegung, Fabrik-Baumodus und Ressourcen-HUD ohne Lade- oder Laufzeitfehler. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
+Das Spiel läuft unter [faf.logge.top](https://faf.logge.top/?menu=1), erreichbar über den vorhandenen Traefik-Proxy. Der öffentliche Browserstart ist geprüft: Gefecht gegen Normal-KI, Commander-Auswahl und Bewegung, Fabrik-Baumodus und Ressourcen-HUD ohne Lade- oder Laufzeitfehler. Die Audioausgabe blieb dabei strikt ohne Lautsprecherverbindung. Das öffentliche Repository liegt unter [LoggeL/flow-and-fire](https://github.com/LoggeL/flow-and-fire).
 
 Für einen neuen Checkout auf HomeBox:
 
@@ -68,8 +68,8 @@ Für das HomeBox-Setup:
 
 ```sh
 curl --fail http://localhost:8188/build.json
-curl --fail https://flow-and-fire.logge.top/build.json
-curl --head https://flow-and-fire.logge.top/
+curl --fail https://faf.logge.top/build.json
+curl --head https://faf.logge.top/
 ```
 
 ## HTTPS und Reverse Proxy

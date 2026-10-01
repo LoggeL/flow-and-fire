@@ -10,8 +10,10 @@
   "ui.menu.empty": "No matches yet",
   "ui.menu.replay": "Watch replay",
   "ui.menu.rematch": "Rematch",
-  "ui.menu.locked": "From MS11",
-  "ui.menu.post": "After MVP",
+  "ui.menu.locked": "Unavailable",
+  "ui.menu.post": "In preparation",
   "ui.menu.language": "Language",
-  "ui.menu.build": "Build {build} · Sim {sim} · {transport} · {preset}"
+  "ui.menu.build": "Build {build}",
+  "ui.menu.sim": "Sim {sim}",
+  "ui.menu.preset": "Graphics {preset}"
 }

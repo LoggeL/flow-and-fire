@@ -7,7 +7,7 @@ export default defineUnit({
   categories: ['LAND', 'MOBILE', 'DIRECTFIRE', 'TECH2'],
   sim: {
     health: { max: 900 },
-    economy: { mass: 198, energy: 990, buildTime: 880 },
+    economy: { mass: 198, energy: 990, buildTime: 880, buildableBy: 'FACTORY & LAND & (TECH2 | TECH3)' },
     motion: { speed: 2.8, accel: 2.2, turnRateDeg: 75, sizeClass: 2, radius: 0.75, maxSlope: 0.55 },
     hitbox: [1.4, 0.5, 1.0],
     intel: { vision: 24 },

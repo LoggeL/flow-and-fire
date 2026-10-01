@@ -34,5 +34,13 @@
   "unit.core.str_t2_mex.name": "Zapfstelle II",
   "unit.core.str_t2_mex.desc": "Masseextraktor T2: fördert 6 Masse pro Sekunde auf derselben Massequelle.",
   "unit.core.str_t3_mex.name": "Zapfstelle III",
-  "unit.core.str_t3_mex.desc": "Masseextraktor T3: fördert 18 Masse pro Sekunde auf derselben Massequelle."
+  "unit.core.str_t3_mex.desc": "Masseextraktor T3: fördert 18 Masse pro Sekunde auf derselben Massequelle.",
+  "unit.core.fac_land_t2.name": "Landwerk II",
+  "unit.core.fac_land_t2.desc": "Ausgebautes Landwerk: baut zusätzlich T2-Landeinheiten.",
+  "unit.core.fac_land_t3.name": "Landwerk III",
+  "unit.core.fac_land_t3.desc": "Voll ausgebautes Landwerk: baut zusätzlich T3-Landeinheiten.",
+  "unit.core.str_t1_pd.name": "Riegel I",
+  "unit.core.str_t1_pd.desc": "Geschützturm gegen Bodenziele; Reichweite über der von T1-Panzern, unter der von Artillerie.",
+  "unit.core.str_t1_radar.name": "Horcher I",
+  "unit.core.str_t1_radar.desc": "Radar: zeigt gegnerische Einheiten im Umkreis als Signal, solange es mit Energie läuft."
 }

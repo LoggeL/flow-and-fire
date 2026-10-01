@@ -1,11 +1,11 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.2-economy-upgrades",
+  "simBuild": "faf-sim/ms6.3-factory-tiers-radar",
   "scenario": "cubes-1000-move",
   "ticks": 2000,
   "seed": "0x5eed0001",
-  "simHash": "0x026c51c8",
+  "simHash": "0x249a86a9",
   "layoutHash": "0xdfd920cf",
   "map": "testplane:512",
   "mapSimHash": "0xecdb4513",

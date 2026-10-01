@@ -5,6 +5,7 @@ import { UnitBits, MoverBits, MoverState } from './constants.ts';
 import { clearOrders, pushOrder } from './orders.ts';
 import { isActive } from './liveness.ts';
 import { spawnUnit } from './unit-storage.ts';
+import { upgradeTarget } from './upgrade.ts';
 import type { World } from './world.ts';
 export function isFactory(w:World,u:number):boolean {return hasCategory(w,w.units.col.bp[u]!,'FACTORY');}
 export function clearProduction(w:World,u:number,cancelActive=false):void {
@@ -31,7 +32,8 @@ function pop(w:World,u:number):void {
 export function productionPhase(w:World,complete=false):void {
   const U=w.units.col,B=w.bp;
   for(let u=0;u<w.units.highWater;u++){
-    if((U.productionHead[u]!<0&&(U.buildTarget[u]!|0)===-1)||!isActive(w,u)||!isFactory(w,u)||(U.flags[u]!&UnitBits.UnderConstruction)!==0||U.ecoPaused[u]===1)continue;
+    // A factory upgrading itself keeps its queue but neither starts nor finishes products.
+    if((U.productionHead[u]!<0&&(U.buildTarget[u]!|0)===-1)||!isActive(w,u)||!isFactory(w,u)||(U.flags[u]!&UnitBits.UnderConstruction)!==0||U.ecoPaused[u]===1||upgradeTarget(w,u)>=0)continue;
     let t=w.units.resolve(U.buildTarget[u]!|0);
     if(t>=0&&!isActive(w,t)){U.buildTarget[u]=HANDLE_NONE;pop(w,u);t=-1;}
     if(complete){

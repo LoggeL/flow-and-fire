@@ -34,6 +34,8 @@ export function hasGhostIcon(icon: string): boolean {
 const RUNTIME_ICONS: Readonly<Record<string, IconId>> = {
   'core:eng_t1': 'eng_build_t1',
   'core:fac_land_t1': 'struct_fac_land_t1',
+  'core:fac_land_t2': 'struct_fac_land_t2',
+  'core:fac_land_t3': 'struct_fac_land_t3',
   'core:str_t1_estorage': 'struct_estore_t1',
   'core:cmd_commander_engineering': 'cmd_commander',
   'core:cmd_commander_armored': 'cmd_commander',

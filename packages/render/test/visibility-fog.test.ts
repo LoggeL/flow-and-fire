@@ -4,6 +4,9 @@ import { createRenderer, type RenderView } from '../src/renderer.ts';
 import type { TerrainDesc } from '../src/terrain/heightfield.ts';
 import { GL } from '../src/webgl2/gl-const.ts';
 import { FakeCanvas } from './support/fake-gl.ts';
+import { VISIBILITY_FOG_BRIGHTNESS } from '../src/passes/visibility-fog.ts';
+
+const EXPLORED = Math.round(VISIBILITY_FOG_BRIGHTNESS[1] * 255);
 
 function terrain(waterLevelRaw: number | null = 6 * 4096): TerrainDesc {
   return { sizeWu: 128, dim: 129, heights: new Uint16Array(129 * 129).fill(512), heightScaleRaw: 32, waterLevelRaw,
@@ -35,7 +38,7 @@ describe('server visibility on actual renderer/RHI surfaces', () => {
     expect(s.renderer.stats.drawsByPass.fog).toBe(2);
     expect([...s.canvas.gl.state.textures.values()].filter(t => t.internalFormat === GL.R16UI)).toHaveLength(1);
     const data = s.fogTexture().uploads.at(-1)!.data as Uint8Array;
-    expect(Array.from(data.subarray(0, 12))).toEqual([10, 10, 0, 255, 89, 89, 1, 255, 255, 255, 2, 255]);
+    expect(Array.from(data.subarray(0, 12))).toEqual([10, 10, 0, 255, EXPLORED, EXPLORED, 1, 255, 255, 255, 2, 255]);
     // The actual RHI texture blends neighbouring brightness values at cell edges in either
     // zoom direction, while the uploaded state bytes and authoritative counts above stay exact.
     expect(s.fogTexture().params.get(GL.TEXTURE_MIN_FILTER)).toBe(GL.LINEAR);
@@ -70,7 +73,7 @@ describe('server visibility on actual renderer/RHI surfaces', () => {
     s.cells[0] = 1; s.set(3, 1075); s.render(1075);
     expect(s.renderer.stats.visibilityFog.transition).toBe(0);
     const data = s.fogTexture().uploads.at(-1)!.data as Uint8Array;
-    expect(Array.from(data.subarray(0, 4))).toEqual([133, 89, 1, 255]);
+    expect(Array.from(data.subarray(0, 4))).toEqual([133, EXPLORED, 1, 255]);
     s.cells.fill(0); s.set(2, 1080); s.set(3, 1080);
     expect(s.renderer.stats.visibilityFog.uploads).toBe(3);
     s.render(1225); expect(s.renderer.stats.visibilityFog.transition).toBe(1);

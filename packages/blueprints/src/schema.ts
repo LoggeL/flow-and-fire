@@ -122,7 +122,7 @@ export const UnitSimSchema = Type.Object(
   {
     health: Type.Object({ max: Type.Integer({ minimum: 1, maximum: 10_000_000 }) }, strict),
     motion: MotionSchema,
-    intel: Type.Optional(Type.Object({ vision: Type.Optional(Type.Number({ minimum: 0, maximum: 1024 })) }, strict)),
+    intel: Type.Optional(Type.Object({ vision: Type.Optional(Type.Number({ minimum: 0, maximum: 1024 })), radar: Type.Optional(Type.Number({ minimum: 0, maximum: 1024 })) }, strict)),
     economy: Type.Optional(EconomySchema),
     weapons: Type.Optional(Type.Array(WeaponMountSchema, { maxItems: 16 })),
     hitbox: Type.Optional(Type.Tuple([PositiveSize, PositiveSize, PositiveSize])),

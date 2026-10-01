@@ -29,5 +29,15 @@
   "ui.score.losses": "Units lost",
   "ui.score.built": "Units built",
   "ui.score.best": "Best unit",
-  "ui.score.value": "Value"
+  "ui.score.value": "Value",
+  "ui.score.draw": "Draw",
+  "ui.score.drawLore": "No house holds the field.",
+  "ui.score.massSpent": "Mass spent",
+  "ui.score.energySpent": "Energy spent",
+  "ui.score.structures": "Structures built",
+  "ui.score.massLost": "Mass value lost",
+  "ui.score.enemyTotal": "Enemies (total)",
+  "ui.score.pending": "Finishing statistics …",
+  "ui.score.unavailable": "No statistics were recorded for this match.",
+  "ui.score.incomplete": "Statistics only partially recorded ({from}–{to}). Values cover that span only."
 }

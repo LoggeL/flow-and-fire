@@ -4,6 +4,7 @@ import { mapSimHash, readRtsMap } from '@faf/formats';
 import type { SkirmishMap } from '@faf/hud';
 import type { GameAssets } from './game.ts';
 import { fetchManifest, loadSessionAssets, type LoadState, type SessionAssets } from './loading.ts';
+import { mapPreviewUrl } from './map-preview.ts';
 
 export interface SessionMap {
   readonly menu: SkirmishMap;
@@ -12,7 +13,7 @@ export interface SessionMap {
 
 /** Menu and replay map identities come from the same verified bytes used by the simulation. */
 export function describeSessionMap(id: string, bytes: Uint8Array): SessionMap {
-  const parsed = readRtsMap(bytes), map = ClientMap.fromBytes(bytes);
+  const parsed = readRtsMap(bytes), map = ClientMap.fromBytes(bytes), preview = mapPreviewUrl(map);
   return {
     simHash: mapSimHash(parsed) >>> 0,
     menu: {
@@ -20,6 +21,8 @@ export function describeSessionMap(id: string, bytes: Uint8Array): SessionMap {
       massSpots: map.spots.filter(spot => spot.kind === 'mass').length,
       hydroSpots: map.spots.filter(spot => spot.kind !== 'mass').length,
       startPositions: map.starts.map(start => [start.x / (map.sizeWu * 4096), start.z / (map.sizeWu * 4096)] as const),
+      spotPositions: map.spots.map(spot => ({ x: spot.x / (map.sizeWu * 4096), z: spot.z / (map.sizeWu * 4096), kind: spot.kind })),
+      ...(preview !== undefined ? { previewUrl: preview } : {}),
     },
   };
 }

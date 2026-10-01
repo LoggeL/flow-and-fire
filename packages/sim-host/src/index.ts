@@ -6,6 +6,7 @@ export * from './recorder.ts';
 export * from './opfs.ts';
 export * from './keyframes.ts';
 export * from './stats.ts';
+export * from './match-stats.ts';
 export * from './identity.ts';
 export * from './core.ts';
 export * from './host.ts';

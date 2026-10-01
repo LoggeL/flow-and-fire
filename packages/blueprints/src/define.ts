@@ -104,7 +104,8 @@ export interface UnitBlueprint {
       /** Braking deceleration in WU/s² (default: SPK2 factor × accel, see DEFAULT_BRAKE_FACTOR). */
       readonly brake?: number;
     };
-    readonly intel?: { readonly vision?: number };
+    /** `radar`: radius (WU) in which enemy units outside sight appear as anonymous blips. */
+    readonly intel?: { readonly vision?: number; readonly radar?: number };
     /** Build cost; `buildableBy` is a category expression over the builder's categories. */
     readonly economy?: {
       readonly mass: number;

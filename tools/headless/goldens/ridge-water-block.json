@@ -1,11 +1,11 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.2-economy-upgrades",
+  "simBuild": "faf-sim/ms6.3-factory-tiers-radar",
   "scenario": "ridge-water-block",
   "ticks": 2000,
   "seed": "0x5eed0004",
-  "simHash": "0x026c51c8",
+  "simHash": "0x249a86a9",
   "layoutHash": "0x435e2624",
   "map": "content/maps/hollow-ridge.rtsmap",
   "mapSimHash": "0x90ec94f0",

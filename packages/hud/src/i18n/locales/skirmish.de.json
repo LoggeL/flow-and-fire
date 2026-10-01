@@ -40,5 +40,8 @@
   "ui.skirmish.relation": "Eigen / Feind",
   "ui.skirmish.cvd": "Farbenblind-sicher",
   "ui.skirmish.mapStats": "{size} WU · {starts} Starts · {mass} Massepunkte",
-  "ui.skirmish.startPosition": "Startposition {n}"
+  "ui.skirmish.startPosition": "Startposition {n}",
+  "ui.skirmish.aixLabel": "Wirtschaftsbonus (AIx)",
+  "ui.skirmish.aixFactor": "Bonusfaktor",
+  "ui.skirmish.aixOff": "kein Bonus"
 }

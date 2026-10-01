@@ -99,12 +99,14 @@ describe('WorkerSimLink', () => {
     producer.commit(writeFrame(buf, 42));
     host.postMessage({ t: 'status', tick: 42, paused: false, speed: 1, ticksBehind: 0 });
     host.postMessage({ t: 'somethingElse' });
-    await until(() => seen.length === 1 && link.frames.poll() !== null);
-    expect(seen[0]!.t).toBe('status');
+    // End-of-match totals are a regular host message (it was dropped by the tag filter before).
+    host.postMessage({ t: 'matchStats', stats: { fromTick: 1, toTick: 2, complete: true, sampleTicks: 100, armies: [] } });
+    await until(() => seen.length === 2 && link.frames.poll() !== null);
+    expect(seen.map(m => m.t)).toEqual(['status', 'matchStats']);
     off();
     host.postMessage({ t: 'error', message: 'late' });
     await new Promise((r) => setTimeout(r, 20));
-    expect(seen).toHaveLength(1);
+    expect(seen).toHaveLength(2);
     link.close();
   });
 

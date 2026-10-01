@@ -135,11 +135,16 @@ describe('core content (MS6)', () => {
     expect(t.speedPerTick(scout)).toBeGreaterThan(t.speedPerTick(t.indexOf('core:lnd_t1_tank')));
     expect(t.speedPerTick(t.indexOf('core:lnd_t1_arty'))).toBeLessThan(t.speedPerTick(t.indexOf('core:lnd_t1_tank')));
     expect(t.deathWeapon(heavy)).toBe(t.weaponIndexOf('core:wpn_death_heavy'));
-    // Tech tree: the T1 factory (root) builds the T1 units; T2/T3 are not buildable before their
-    // factories exist (MS6/MS8).
-    const f1 = t.indexOf('core:fac_land_t1');
-    for (const id of ['core:lnd_t1_scout', 'core:lnd_t1_tank', 'core:lnd_t1_arty']) expect(t.canBuild(f1, t.indexOf(id)), id).toBe(true);
-    expect(t.buildableByExpr(heavy)).toBe(-1);
+    // Tech tree (ms6.3): the T1 factory builds the T1 units; its paid upgrades Landwerk II/III add
+    // the T2 tank and the T3 heavy tank while still building every lower tier.
+    const f1 = t.indexOf('core:fac_land_t1'), f2 = t.indexOf('core:fac_land_t2'), f3 = t.indexOf('core:fac_land_t3');
+    expect([t.upgradesTo(f1), t.upgradesTo(f2), t.upgradesTo(f3)]).toEqual([f2, f3, -1]);
+    for (const id of ['core:lnd_t1_scout', 'core:lnd_t1_tank', 'core:lnd_t1_arty']) for (const f of [f1, f2, f3]) expect(t.canBuild(f, t.indexOf(id)), id).toBe(true);
+    expect([t.canBuild(f1, t.indexOf('core:lnd_t2_tank')), t.canBuild(f2, t.indexOf('core:lnd_t2_tank')), t.canBuild(f3, t.indexOf('core:lnd_t2_tank'))]).toEqual([false, true, true]);
+    expect([t.canBuild(f1, heavy), t.canBuild(f2, heavy), t.canBuild(f3, heavy)]).toEqual([false, false, true]);
+    expect([t.buildableByExpr(f2), t.buildableByExpr(f3)]).toEqual([-1, -1]);
+    for (const id of ['core:str_t1_pd', 'core:str_t1_radar']) expect(t.canBuild(t.indexOf('core:cmd_commander'), t.indexOf(id)), id).toBe(true);
+    expect(t.radarCol[t.indexOf('core:str_t1_radar')]).toBeGreaterThan(0);
     expect(t.ids).toEqual(r.result.units.map((u) => u.id));
     for (const id of ['core:cmd_commander', 'core:eng_t1', 'core:str_t1_mex', 'core:str_t1_pgen', 'core:str_t1_estorage']) {
       expect(t.indexOf(id), id).toBeGreaterThanOrEqual(0);

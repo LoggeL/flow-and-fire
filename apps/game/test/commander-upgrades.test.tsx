@@ -70,6 +70,16 @@ describe('visible commander enhancement controls', () => {
     expect(getByTestId('commander-upgrades').textContent).toContain('Waiting for resources');
   });
 
+  it('explains the idle economy of a paused upgrade and that cancelling resumes the commander', () => {
+    const { getByTestId, queryByTestId, controller } = fixture({ ...available, active: true, queued: true, enabled: false, progress: .35 });
+    expect(queryByTestId('commander-upgrade-paused-note')).toBeNull();
+    expect(getByTestId('commander-upgrade-cancel').textContent).toBe('Cancel');
+    act(() => { controller.commanderUpgrade.value = { ...available, active: true, queued: true, paused: true, enabled: false, progress: .35 }; });
+    expect(getByTestId('commander-upgrade-paused-note').textContent).toContain('income and build power are idle');
+    expect(getByTestId('commander-upgrade-cancel').textContent).toBe('Cancel & resume');
+    expect(getByTestId('commander-upgrade-cancel').getAttribute('title')).toContain('resumes the unit');
+  });
+
   it('keeps queued upgrades distinguishable and removes controls when no commander is selected', () => {
     const { getByTestId, queryByTestId, controller } = fixture({ ...available, queued: true, enabled: false });
     expect(getByTestId('commander-upgrades').textContent).toContain('Queued');

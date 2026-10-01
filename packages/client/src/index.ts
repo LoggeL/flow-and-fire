@@ -36,7 +36,7 @@ export type {
 } from './fullscreen.ts';
 export { TEST_PLANE_SIZE_WU, clampRaw, mapBoundsWU, wuToRaw } from './picking.ts';
 export type { MapBounds } from './picking.ts';
-export { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL } from './map.ts';
+export { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL, MASS_SPOT_PAD_DECAL } from './map.ts';
 export type { TerrainHeightSource } from './map.ts';
 export { TerrainPicker, PICK_BISECT_WU, PICK_MAX_STEP_WU } from './terrain-picker.ts';
 export type { PickableTerrain } from './terrain-picker.ts';

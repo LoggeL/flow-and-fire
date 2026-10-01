@@ -57,6 +57,8 @@
  *   FACR  faction records (8 B): 0 startUnit u16, 2 unitCount u16, 4 unitFirst u32 (into FACU)
  *   FACU  faction unit list (u16 unit sim ids)
  *   FACI  faction ids
+ *   UINT  unit intel, one per unit (4 B): 0 radar radius i32 (Fx). Optional: written only when a
+ *         unit has radar; absent means no radar anywhere.
  *
  * String tables (category names, ids): per entry u8 length + printable ASCII; zero-padded to 4 B.
  *
@@ -131,6 +133,7 @@ export const SIM_BIN_RECORD_BYTES = {
   CEXT: 8,
   PRPR: 24,
   FACR: 8,
+  UINT: 4,
 } as const;
 
 function tag(s: string): number {
@@ -155,6 +158,7 @@ export const SimBinSection = {
   FACR: tag('FACR'),
   FACU: tag('FACU'),
   FACI: tag('FACI'),
+  UINT: tag('UINT'),
 } as const;
 
 /** One unit entry in sim units (already converted: Fx, Ang16, per tick). */
@@ -198,6 +202,8 @@ export interface SimBinUnit {
   readonly energyUpkeepMilliPerTick?: number;
   readonly ecoFlags?: number;
   readonly spotKind?: number;
+  /** Radar radius (Fx), 0 = none. Written to the optional UINT section. */
+  readonly radar?: number;
   readonly massCost: number;
   readonly energyCost: number;
   readonly buildTime: number;
@@ -398,6 +404,7 @@ export function encodeSimBin(data: SimBinData): Uint8Array {
     checkInt(`${u.id}.maxHp`, u.maxHp, 1, I32);
     checkInt(`${u.id}.radius`, u.radius, 1, I32);
     checkInt(`${u.id}.vision`, u.vision, 0, I32);
+    checkInt(`${u.id}.radar`, u.radar ?? 0, 0, I32);
     checkInt(`${u.id}.maxSlope`, u.maxSlope, 0, I32);
     checkInt(`${u.id}.footprintW`, u.footprintW, 1, 255);
     checkInt(`${u.id}.footprintH`, u.footprintH, 1, 255);
@@ -638,6 +645,14 @@ export function encodeSimBin(data: SimBinData): Uint8Array {
     SimBinSection.FACI,
     factions.map((f) => f.id),
   );
+  // Optional, appended last: content without radar keeps its exact previous bytes.
+  if (units.some((u) => (u.radar ?? 0) > 0)) {
+    records(SimBinSection.UINT, units, R.UINT, (dv, o, i) => {
+      const u = units[i]!;
+      checkInt(`${u.id}.radar`, u.radar ?? 0, 0, I32);
+      dv.setInt32(o, u.radar ?? 0, true);
+    });
+  }
 
   // ---- layout ------------------------------------------------------------------------------------
   const dirOffset = SIM_BIN_HEADER_BYTES;
@@ -806,6 +821,8 @@ export class SimBpTable {
   readonly energyUpkeepMilliPerTickCol: Int32Array;
   readonly ecoFlagsCol: Int32Array;
   readonly spotKindCol: Int32Array;
+  /** Radar radius (Fx) per unit; 0 = none (UINT section). */
+  readonly radarCol: Int32Array;
   readonly massCostCol: Int32Array;
   readonly energyCostCol: Int32Array;
   readonly buildTimeCol: Int32Array;
@@ -915,6 +932,7 @@ export class SimBpTable {
     this.ecoFlagsCol = new Int32Array(count);
     this.spotKindCol = new Int32Array(count);
     this.spotKindCol.fill(-1);
+    this.radarCol = new Int32Array(count);
     this.massCostCol = new Int32Array(count);
     this.energyCostCol = new Int32Array(count);
     this.buildTimeCol = new Int32Array(count);
@@ -1283,7 +1301,7 @@ export function decodeSimBin(bytes: Uint8Array): SimBpTable {
   checkSorted(ids.list, 'unit ids');
 
   // ---- v2 section directory ----------------------------------------------------------------------
-  const sec = new Array<SectionEntry>(16).fill(NO_SECTION);
+  const sec = new Array<SectionEntry>(17).fill(NO_SECTION);
   const known = [
     SimBinSection.UEXT,
     SimBinSection.WPNR,
@@ -1301,6 +1319,7 @@ export function decodeSimBin(bytes: Uint8Array): SimBpTable {
     SimBinSection.FACU,
     SimBinSection.FACI,
     SimBinSection.UECO,
+    SimBinSection.UINT,
   ];
   let dataEnd = ids.end;
   if (version === 1) {
@@ -1328,7 +1347,8 @@ export function decodeSimBin(bytes: Uint8Array): SimBpTable {
     }
     if (align4(dataEnd) !== total) throw new RangeError('sim.bin: trailing bytes');
   }
-  const [UEXT, WPNR, WPNI, PRJR, PRJI, MNTR, PRIO, CEXT, CEXC, CEXS, PRPR, PRPI, FACR, FACU, FACI, UECO] = sec as [
+  const [UEXT, WPNR, WPNI, PRJR, PRJI, MNTR, PRIO, CEXT, CEXC, CEXS, PRPR, PRPI, FACR, FACU, FACI, UECO, UINT] = sec as [
+    SectionEntry,
     SectionEntry,
     SectionEntry,
     SectionEntry,
@@ -1353,6 +1373,8 @@ export function decodeSimBin(bytes: Uint8Array): SimBpTable {
   recs(UEXT, R.UEXT, 'UEXT');
   recs(UECO, R.UECO, 'UECO');
   if (UECO.count !== 0 && UECO.count !== count) throw new RangeError('sim.bin: UECO count mismatch');
+  recs(UINT, R.UINT, 'UINT');
+  if (UINT.count !== 0 && UINT.count !== count) throw new RangeError('sim.bin: UINT count mismatch');
   recs(WPNR, R.WPNR, 'WPNR');
   recs(PRJR, R.PRJR, 'PRJR');
   recs(MNTR, R.MNTR, 'MNTR');
@@ -1501,6 +1523,11 @@ export function decodeSimBin(bytes: Uint8Array): SimBpTable {
     const v9 = dv.getInt32(o + 36, true);
     if (v9 < -1 || v9 > 1) throw new RangeError('sim.bin: invalid UECO field');
     t.spotKindCol[i] = v9;
+  }
+  for (let i = 0; i < UINT.count; i++) {
+    const radar = dv.getInt32(UINT.offset + i * UINT.stride, true);
+    if (radar < 0) throw new RangeError('sim.bin: invalid UINT field');
+    t.radarCol[i] = radar;
   }
   if (version === 1) {
     // v1 hit box default: the collision diameter.

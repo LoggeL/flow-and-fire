@@ -19,7 +19,7 @@
  *   of cut paths in the next PathService phase); units on freshly blocked cells are moved to the
  *   nearest free cell.
  */
-import { canUpgrade } from './upgrade.ts';
+import { canUpgrade, headIsUpgrade } from './upgrade.ts';
 import { resolveWreck } from './reclaim.ts';
 import { canSeePosition } from './intel.ts';
 import { allied, visibleTo, hasCategory } from './intel.ts';
@@ -324,8 +324,10 @@ function applyStop(w: World, i: number): void {
   for (let k = 0; k < n; k++) {
     const u = SC.units[k]!;
     const r = U.mover[u]!;
+    // Stopping a factory's own upgrade cancels only the upgrade; its production queue stays.
+    const upgrading = isFactory(w, u) && headIsUpgrade(w, u);
     if (!queue) clearOrders(w, u, r);
-    if(isFactory(w,u)&&(w.stage.flags[i]!&CmdFlags.Queue)===0)clearProduction(w,u,true);
+    if(isFactory(w,u)&&(w.stage.flags[i]!&CmdFlags.Queue)===0&&!upgrading)clearProduction(w,u,true);
     pushOrder(w, u, r, OrderType.Stop, U.x[u]!, U.z[u]!, NO_REF, 0);
   }
 }

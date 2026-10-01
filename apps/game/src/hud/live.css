@@ -5,10 +5,29 @@
 .live-hud .live-unavailable {margin:10vh auto;padding:2rem;width:40rem;max-width:90vw;}
 .live-action-error {position:absolute;top:6rem;left:50%;transform:translateX(-50%);max-width:70vw;background:var(--surface-1);border:1px solid var(--crit);padding:.6rem;pointer-events:auto;z-index:120;}
 .live-action-error button {margin-left:1rem;}
+/* Briefing and credits use the menu shell and panels; content stays in one readable column grid. */
+.live-hud .live-info-screen {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));align-content:start;gap:1rem;width:min(72rem,calc(100% - 3rem));margin:1.2rem auto;}
+.live-hud .live-info-panel {height:auto;}
+.live-hud .live-info-panel ul {display:grid;gap:.5rem;margin:0;padding:.7rem 1.1rem .9rem 1.6rem;line-height:1.45;color:var(--text);}
+.live-hud .live-info-panel p {margin:.7rem 1.1rem;line-height:1.45;color:var(--text);}
+.live-hud .live-info-panel small {color:var(--text-mid);}
+.live-hud .live-info-panel a {color:var(--ember-300,#f0c08a);}
+.live-hud .live-info-meta {font-family:var(--font-mono,monospace);font-size:var(--fs-cap);color:var(--text-mid);}
+.live-hud .key-reference h3 {margin:1rem 0 .35rem;font-size:var(--fs-body);color:var(--text-hi);}
+.live-hud .key-reference p {margin:.2rem 0 .5rem;line-height:1.4;}
+.live-hud .key-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.3rem 1rem;margin:0;}
+.live-hud .key-list>div {display:flex;gap:.6rem;align-items:baseline;}
+.live-hud .key-list dt {flex:none;min-width:6rem;}
+.live-hud .key-list dd {margin:0;color:var(--text);}
+.live-hud .key-note {color:var(--text-mid);font-size:var(--fs-cap);}
+.live-hud .score-coverage {margin:.4rem 0 .8rem;padding:.45rem .7rem;border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--text);}
 .live-build-ghost {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;}
 .live-build-ghost polygon {stroke-width:2;fill:#49bb6533;stroke:#5cfa87;}
 .live-build-ghost polygon.invalid {fill:#c63f4433;stroke:#ff555b;}
 .live-build-ghost text {fill:white;font-size:13px;paint-order:stroke;stroke:black;stroke-width:3px;}
+.live-build-ghost .live-build-volume polygon {fill:var(--ghost-role,#5cfa87);fill-opacity:.13;stroke:var(--ghost-role,#5cfa87);stroke-opacity:.7;stroke-width:1;stroke-linejoin:round;}
+.live-build-ghost .live-build-volume polygon.roof {fill-opacity:.24;stroke-width:1.5;}
+.live-build-ghost .live-build-volume.invalid polygon {fill:#c63f44;stroke:#ff555b;fill-opacity:.12;}
 .live-queued-build-ghosts {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .live-queued-build-ghosts polygon {fill:#66bde51a;stroke:#94d1eb;stroke-width:1.5;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;}
 .live-queued-build-ghosts polygon.blocked {fill:#c63f4414;stroke:#df8b87;}
@@ -84,6 +103,7 @@
 .live-hud .live-game-presentation .live-upgrade-heading>span {font-size:var(--fs-micro);}
 .live-hud .live-game-presentation .live-upgrade-start {display:flex;align-items:center;gap:.4rem;width:100%;min-height:44px;padding:.3rem .4rem;border:1px solid var(--line);background:var(--surface-2);color:var(--text-hi);font:inherit;text-align:left;cursor:pointer;}
 .live-hud .live-game-presentation .live-upgrade-start>img {width:32px;height:32px;object-fit:contain;flex:none;}
+.live-hud .live-game-presentation .live-upgrade-start>.live-build-glyph {position:static;transform:none;width:32px;height:32px;flex:none;}
 .live-hud .live-game-presentation .live-upgrade-target {display:grid;gap:.15rem;min-width:0;flex:1;}
 .live-hud .live-game-presentation .live-upgrade-target>b {font-weight:normal;}
 .live-hud .live-game-presentation .live-upgrade-target>small {font-size:var(--fs-micro);color:var(--text-mid);line-height:1.2;}
@@ -99,6 +119,11 @@
 .live-hud .live-game-presentation .live-upgrade-running-actions>button {min-height:2rem;padding:.2rem .4rem;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;cursor:pointer;}
 .live-hud .live-game-presentation .live-upgrade-running-actions>button:disabled {opacity:.55;cursor:default;}
 .live-hud .live-game-presentation .live-upgrade-complete {color:var(--text-hi);}
+.live-hud .live-game-presentation .live-upgrade-paused-note {grid-column:1/-1;font-size:var(--fs-micro);line-height:1.25;color:var(--warn);}
+.live-hud .live-game-presentation .live-paused-row {display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.15rem .15rem .15rem .4rem;border:1px solid var(--warn);border-left-width:3px;background:var(--warn-bg);color:var(--warn);font-size:var(--fs-cap);}
+.live-hud .live-game-presentation .live-paused-row>button {flex:none;min-height:1.6rem;padding:.1rem .5rem;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text-hi);font:inherit;cursor:pointer;}
+.live-hud .live-game-presentation .live-paused-row>button:hover {background:var(--surface-hover);}
+.live-hud .live-game-presentation .live-paused-row>button:focus-visible {outline:2px solid var(--line-strong);outline-offset:2px;}
 .live-hud .live-game-presentation .live-primary-orders {padding:.55rem .65rem;}
 .live-hud .live-game-presentation .live-primary-order-row {display:flex;gap:.25rem;}
 .live-hud .live-game-presentation .live-primary-order {position:relative;width:3.8rem;height:4.3rem;}
@@ -117,6 +142,12 @@
 .live-hud .live-game-presentation .groups {gap:3px;flex-wrap:wrap;}
 .live-hud .live-game-presentation .groups:not(:has(.grp:not(.is-empty))),.live-hud .live-game-presentation .grp.is-empty {display:none;}
 .live-hud .live-game-presentation .grp {width:2.3rem;height:1.6rem;background:var(--surface-0);}
+.live-hud .live-game-presentation .live-groups {display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:.15rem .3rem;background:var(--surface-0);box-shadow:inset 0 0 0 1px #add2c660;}
+.live-hud .live-game-presentation .live-groups-caption {font-size:var(--fs-micro);color:var(--text-mid);margin-right:.2rem;}
+.live-hud .live-game-presentation .live-group {display:flex;align-items:center;gap:.25rem;height:1.6rem;padding:0 .4rem 0 .2rem;border:1px solid var(--line);background:var(--surface-2);color:var(--text-hi);font:inherit;font-size:var(--fs-cap);cursor:pointer;}
+.live-hud .live-game-presentation .live-group kbd {min-width:1.05rem;padding:0 .2rem;border:1px solid var(--line-strong);border-radius:2px;background:#0b100d;color:var(--ember-300);font:inherit;font-size:var(--fs-micro);text-align:center;}
+.live-hud .live-game-presentation .live-group:hover,.live-hud .live-game-presentation .live-group.is-active {border-color:var(--ember-500);background:var(--surface-select);}
+.live-hud .live-game-presentation .live-group:focus-visible {outline:2px solid var(--line-strong);outline-offset:2px;}
 .live-hud .live-game-presentation .grp .ff-si {display:none;}
 .live-hud .live-game-presentation .grp.is-active {border-color:var(--ember-500);background:var(--surface-select);}
 .live-hud .live-game-presentation .filters .ff-order {width:1.5rem;height:1.6rem;}
@@ -143,6 +174,9 @@
 .live-hud .live-game-presentation .live-queue-product>.ff-si,.live-hud .live-game-presentation .fqi>.ff-si {width:1.4rem;height:1.6rem;flex:none;}
 .live-hud .live-game-presentation .fq__now .ff-bar {height:.3rem;margin:0;}
 .live-hud .live-game-presentation .fq__list {display:flex;flex-wrap:wrap;gap:.2rem;max-height:4rem;overflow:auto;}
+/* Factory controls sit above the bounded queue; the panel follows the window height instead of clipping. */
+.live-hud .live-game-presentation .live-selection-panel.is-factory {max-height:min(19rem,calc(100vh - 9rem));}
+.live-hud .live-game-presentation .live-selection-panel.is-factory .fq__list {max-height:4.1rem;}
 .live-hud .live-game-presentation .fqi {position:static;width:auto;height:auto;display:flex;align-items:center;gap:.4rem;padding:.25rem .4rem;border:1px solid var(--line);color:var(--text);font:inherit;font-size:var(--fs-cap);}
 .live-hud .live-game-presentation .fqi:disabled {opacity:.55;cursor:default;}
 .live-hud .live-game-presentation .fqi b {position:static;font-size:inherit;}
@@ -162,6 +196,7 @@
 .live-hud .live-game-presentation .card__grid {display:flex;flex-wrap:wrap;gap:var(--cell-gap);width:max-content;max-width:calc(5 * var(--cell) + 4 * var(--cell-gap) + .8rem);height:auto;padding:.4rem;overflow:auto;}
 .live-hud .live-game-presentation .card__grid .ff-cell {flex:none;height:5.3rem;min-height:44px;cursor:pointer;}
 .live-hud .live-game-presentation .card__grid .ff-cell__icon {display:block;top:.7rem;width:2rem;height:2.2rem;}
+.live-hud .live-game-presentation .card__grid .live-build-glyph {top:.55rem;width:2.5rem;height:2.5rem;filter:drop-shadow(0 1px 0 #000a);}
 .live-hud .live-game-presentation .card__grid .ff-cell__key {top:.25rem;left:.3rem;font-size:var(--fs-cap);z-index:1;}
 .live-hud .live-game-presentation .card__grid .ff-cell__name {bottom:.55rem;left:.3rem;right:.3rem;font-size:var(--fs-cap);line-height:1.2;max-height:2.4em;white-space:normal;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;color:var(--text-hi);text-decoration:none;}
 /* The content glyph already includes tech marks. Decorative tier rails must not cross text. */

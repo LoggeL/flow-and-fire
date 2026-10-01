@@ -19,6 +19,8 @@ export const LIVE_VARKAN_MODELS: Readonly<Record<string, string>> = {
   'core:lnd_t2_tank': 'lnd_t2_tank', 'core:lnd_t3_heavy': 'lnd_t3_bot',
   'core:str_t1_estorage': 'str_t1_estore', 'core:str_t1_mex': 'str_t1_mex',
   'core:str_t1_pgen': 'str_t1_pgen',
+  'core:fac_land_t2': 'str_t2_fac_land', 'core:fac_land_t3': 'str_t3_fac_land',
+  'core:str_t1_pd': 'str_t1_pd', 'core:str_t1_radar': 'str_t1_radar',
 };
 
 export function fromModelkit(id: string, built: BuiltModel, viewScale = 1): ModelDef {

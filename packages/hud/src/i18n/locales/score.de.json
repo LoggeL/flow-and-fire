@@ -29,5 +29,15 @@
   "ui.score.losses": "Einheiten verloren",
   "ui.score.built": "Einheiten gebaut",
   "ui.score.best": "Beste Einheit",
-  "ui.score.value": "Wert"
+  "ui.score.value": "Wert",
+  "ui.score.draw": "Unentschieden",
+  "ui.score.drawLore": "Kein Haus hält das Feld.",
+  "ui.score.massSpent": "Masse verbaut",
+  "ui.score.energySpent": "Energie verbraucht",
+  "ui.score.structures": "Gebäude errichtet",
+  "ui.score.massLost": "Verlorener Massewert",
+  "ui.score.enemyTotal": "Gegner (gesamt)",
+  "ui.score.pending": "Statistik wird abgeschlossen …",
+  "ui.score.unavailable": "Für diese Partie wurde keine Statistik erfasst.",
+  "ui.score.incomplete": "Statistik nur teilweise erfasst ({from}–{to}). Die Werte gelten nur für diesen Abschnitt."
 }

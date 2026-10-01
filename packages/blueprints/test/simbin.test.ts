@@ -153,7 +153,9 @@ describe('sim.bin v2', () => {
     const dir = dv.getUint32(32, true);
     const n = dv.getUint16(36, true);
     const tags = Array.from({ length: n }, (_, i) => dv.getUint32(dir + i * 16, true));
-    expect(tags).toEqual(Object.values(SimBinSection));
+    // UINT (radar) is optional: content without radar keeps its exact previous layout.
+    expect(tags).toEqual(Object.values(SimBinSection).filter((tag) => tag !== SimBinSection.UINT));
+    expect(decodeSimBin(r.simBin).radarCol.every((v) => v === 0)).toBe(true);
     expect(String.fromCharCode(...r.simBin.subarray(dir, dir + 4))).toBe('UEXT');
     // Unknown tags are skipped, so renaming the mandatory UEXT section leaves its data unread.
     const copy = r.simBin.slice();
@@ -162,6 +164,19 @@ describe('sim.bin v2', () => {
     expect(unitsOff).toBe(dir + n * 16);
     cdv.setUint32(dir + 0 * 16, 0x58585858, true); // UEXT → 'XXXX'
     expect(() => decodeSimBin(copy)).toThrow(/UEXT count ≠ unit count/);
+  });
+
+  it('appends the optional UINT radar section only when a unit has radar, and decodes it', () => {
+    const r = richBundle();
+    // Units only (no weapons/expressions): drop their references so the minimal table is valid.
+    const plain = r.units.map((u) => ({ ...u.sim, firstMount: 0, mountCount: 0, deathWeapon: -1, buildableBy: -1, upgradesTo: -1 }));
+    const units = plain.map((u, i) => (i === 1 ? { ...u, radar: 4096 * 116 } : u));
+    const bin = encodeSimBin({ units, categoryNames: r.categories });
+    const dv = new DataView(bin.buffer, bin.byteOffset), dir = dv.getUint32(32, true), n = dv.getUint16(36, true);
+    expect(dv.getUint32(dir + (n - 1) * 16, true)).toBe(SimBinSection.UINT);
+    const t = decodeSimBin(bin);
+    expect(Array.from(t.radarCol)).toEqual(units.map((_, i) => (i === 1 ? 4096 * 116 : 0)));
+    expect(() => encodeSimBin({ units: units.map((u, i) => (i === 1 ? { ...u, radar: -1 } : u)), categoryNames: r.categories })).toThrow(/radar/);
   });
 
   it('is deterministic: two compilations give identical bytes', () => {

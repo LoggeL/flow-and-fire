@@ -14,18 +14,26 @@ export function upgradeTarget(w: World, u: number): number {
   return target >= 0 && target < w.bp.count && canUpgrade(w, U.bp[u]!, target) ? target : -1;
 }
 
+/** The current (head) order is an upgrade request, begun or not. */
+export function headIsUpgrade(w: World, u: number): boolean {
+  const head = w.units.col.orderHead[u]!;
+  return head >= 0 && (w.orders.i32[head * ORDER_RECORD_WORDS + ORD_TYPE_FLAGS]! & 255) === OrderType.Upgrade;
+}
+
 export function clearUpgradeWork(w: World, u: number): void {
   const U = w.units.col;
   U.repairDone.zero(u); U.repairPaidMass.zero(u); U.repairPaidEnergy.zero(u);
   U.buildRemainder.zero(u);
 }
 
-/** Commander successors and compatible stationary extractors retain their occupied site. */
+/** Commander successors and compatible stationary extractors or factories retain their occupied site. */
 export function canUpgrade(w: World, source: number, target: number): boolean {
   if (source < 0 || source >= w.bp.count || target < 0 || target >= w.bp.count || w.bp.upgradesTo(source) !== target) return false;
   if (hasCategory(w, source, 'COMMAND') && hasCategory(w, target, 'COMMAND')) return true;
   const bp = w.bp;
-  return hasCategory(w, source, 'MASSEXTRACTION') && hasCategory(w, target, 'MASSEXTRACTION') &&
+  const sameRole = (hasCategory(w, source, 'MASSEXTRACTION') && hasCategory(w, target, 'MASSEXTRACTION')) ||
+    (hasCategory(w, source, 'FACTORY') && hasCategory(w, target, 'FACTORY'));
+  return sameRole &&
     hasCategory(w, source, 'STRUCTURE') && hasCategory(w, target, 'STRUCTURE') &&
     bp.speed[source] === 0 && bp.speed[target] === 0 && bp.layerCol[source] === bp.layerCol[target] &&
     bp.footprintWCol[source] === bp.footprintWCol[target] && bp.footprintHCol[source] === bp.footprintHCol[target] &&

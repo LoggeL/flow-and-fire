@@ -2,7 +2,7 @@
 
 Die sieben begonnenen Tracks sind im gemeinsamen Projektordner integriert. Die
 spielbare Entwicklungsversion läuft auf der HomeBox:
-[Flow & Fire starten](https://flow-and-fire.logge.top/?menu=1).
+[Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
 und Bedienung. Der ausgelieferte Spielbuild ist `48ecd86e71a1`, Sim-Version
@@ -26,6 +26,13 @@ Einheiten-/Gebäudeglyphen, Cursors, Favicon und die erzeugten ACU-Upgradeicons 
 angeschlossen. Ausgewählte Fabriken zeigen den akzeptierten Rally-Punkt, und ihre
 produzierten Einheiten laufen dorthin. Masseextraktoren lassen sich mit tatsächlicher
 Ressourcenabrechnung über T1, T2 und T3 ausbauen, pausieren und abbrechen.
+
+Korrektur nach dem Review vom 1. Oktober 2026: Im Build `48ecd86e71a1` ließ die Folge
+Upgrade → Pause → Abbrechen ACU oder Extraktor pausiert zurück (Einkommen und Baukraft
+ruhten). Der HUD-Abbruch sendet jetzt für eine pausierte Upgrade-Einheit `Stop` und
+danach `TogglePause(false)`; generischer Stop bleibt unverändert. Vertrag:
+`apps/game/test/upgrade-cancel-resume.test.ts`. Siehe
+[Fixes vom 1. Oktober](opus-fixes-2026-10-01.md).
 
 ## Nachweise und ihre Grenzen
 

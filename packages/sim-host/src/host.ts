@@ -39,6 +39,7 @@ import { ACTIVE_PHASES, PhaseId, WH_STUCK_GIVEUPS, WorldInitStage, hasMatchEnded
 import { AiWaitMetrics, createGameAiSources, type GameAiOptions, type GameAiStatus, type AiThinkSample } from './ai/index.ts';
 import { performanceClock, type Clock, type Wakeup } from './clock.ts';
 import { SimCore } from './core.ts';
+import { MatchStats } from './match-stats.ts';
 import { SIM_BUILD } from './identity.ts';
 import type { KeyframeOptions } from './keyframes.ts';
 import { MarkKind } from './log-format.ts';
@@ -243,6 +244,8 @@ export class SimHost implements SchedulerTarget {
   };
   /** Tick at which the oldest not yet applied `cmd` batch arrived (−1 = none queued). */
   private cmdArrivalTick = -1;
+  private matchStats: MatchStats | null = null;
+  private matchStatsPosted = false;
   private cmdBatchesApplied = 0;
   private cmdQueued = 0;
   private cmdApplyTicksMax = 0;
@@ -404,6 +407,7 @@ export class SimHost implements SchedulerTarget {
       port: this.options.port,
     });
     this.coreRef = core;
+    this.matchStats = new MatchStats(msg.armyCount);
     this.producerRef = producer;
     this.transportKind = msg.transport;
     this.viewerArmy = msg.playerArmy;
@@ -604,6 +608,12 @@ export class SimHost implements SchedulerTarget {
     if (!core.runTick(this.tickProbe)) {
       if (this.aiRef !== null && !core.replaying) this.aiWaits.blocked(core.tick + 1);
       return false;
+    }
+    if (!core.replaying) this.matchStats?.observe(core.world);
+    // Totals leave the worker in the first tick after the match ended (the client may pause the
+    // session right then, before trailing projectiles land); the running HUD never sees them.
+    if (!this.matchStatsPosted && this.matchStats !== null && !core.replaying && hasMatchEnded(core.world)) {
+      this.matchStatsPosted = true; this.matchStats.settle(core.world); this.post({ t: 'matchStats', stats: this.matchStats.snapshot() }, []);
     }
     if (hasMatchEnded(core.world) && core.world.projectiles.liveCount === 0) this.schedulerRef?.pause();
     if (this.cmdArrivalTick >= 0 && core.local.queued === 0) {

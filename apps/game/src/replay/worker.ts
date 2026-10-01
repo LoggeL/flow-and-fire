@@ -1,4 +1,4 @@
-import { BrowserReplayHost, convertCommandLog, listRecordedLogs, opfsRoot, parseCommandLog, readLogFile } from '@faf/sim-host';
+import { BrowserReplayHost, convertCommandLog, listRecordedLogs, LOG_DIR_NAME, opfsRoot, parseCommandLog, readLogFile } from '@faf/sim-host';
 import { mapSimHash, readRtsMap, readRtsReplay } from '@faf/formats';
 import type { PortLike } from '@faf/protocol';
 import type { ReplayTaskRequest } from './library.ts';
@@ -34,6 +34,13 @@ async function task(req: ReplayTaskRequest): Promise<void> {
           }
         }
         value = files; break;
+      }
+      case 'delete': {
+        if (!/^log-[A-Za-z0-9-]+\.faflog$/.test(req.name)) throw new Error('Invalid recording name');
+        const root = await opfsRoot(); if (root === null) throw new Error('OPFS is unavailable in this browser');
+        const dir = await root.getDirectoryHandle(LOG_DIR_NAME, { create: false });
+        // An open sync access handle (the running match) makes removal fail; that error is surfaced.
+        await dir.removeEntry(req.name); value = null; break;
       }
       case 'export': case 'convert': {
         let bytes: Uint8Array;

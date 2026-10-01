@@ -12,7 +12,7 @@ weitergeführt. Fortschritt bedeutet eine nutzbare Verbesserung im laufenden Spi
 eine behobene Lücke beim Starten, Speichern und Bereitstellen. Bereits funktionierende
 Integrationen werden weiterverwendet.
 
-Die Veröffentlichung ist erfolgt: [Spiel](https://flow-and-fire.logge.top/?menu=1),
+Die Veröffentlichung ist erfolgt: [Spiel](https://faf.logge.top/?menu=1),
 [öffentliches Repository](https://github.com/LoggeL/flow-and-fire) und
 [Start- und Bedienungsanleitung](../../README.md). Docker läuft auf der HomeBox.
 Commit, Push und Updates dieses Projekts sind vom Nutzer beauftragt.

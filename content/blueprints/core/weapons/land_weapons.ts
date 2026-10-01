@@ -15,6 +15,12 @@ export default [
     sim: { range: 18, damage: 30, reloadSec: 1.4, muzzleVelocity: 30, projectile: 'core:prj_shell_light', salvo: 1 },
     view: { fx: { muzzle: 'core:fx_muzzle_small', impact: 'core:fx_explosion_small' } },
   }),
+  // Riegel I turret: outranges T1 tanks (18), is outranged by T1 artillery (30).
+  defineWeapon({
+    id: 'core:wpn_bolt_cannon_t1',
+    sim: { range: 24, damage: 45, reloadSec: 1.2, muzzleVelocity: 34, projectile: 'core:prj_shell_light', salvo: 1 },
+    view: { fx: { muzzle: 'core:fx_muzzle_small', impact: 'core:fx_explosion_small' } },
+  }),
   defineWeapon({
     id: 'core:wpn_arty_t1',
     sim: {

@@ -7,6 +7,7 @@
  * the icon square when the unit is shown as an icon (fade ≥ 0.5). Fill color green → yellow → red
  * by `hp / 255`; selected units get a light border.
  */
+import { UnitFlags } from '@faf/protocol';
 import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH, VertexStreamBinding } from '../rhi/types.ts';
 import { HP_BAR_GAP_PX, HP_BAR_HEIGHT_PX, HP_BAR_WIDTH_PX, STRATEGIC_GLSL } from '../strategic.ts';
 import { UNIT_VISUAL_DATA, VISUAL_DATA_GLSL } from '../units/visual-data.ts';
@@ -60,7 +61,9 @@ void main() {
   uint hp = (a_meta.y >> 8u) & 255u;
   bool sel = a_highlight != 0u;
   int mask = int(u_iconParams.z + 0.5);
-  bool show = (mask & ${HP_BAR_ALL}) != 0 || ((mask & ${HP_BAR_SELECTED}) != 0 && sel) || ((mask & ${HP_BAR_DAMAGED}) != 0 && hp < 255u);
+  // Radar blips carry no health information.
+  bool blip = (a_meta.w & ${UnitFlags.Blip}u) != 0u;
+  bool show = !blip && ((mask & ${HP_BAR_ALL}) != 0 || ((mask & ${HP_BAR_SELECTED}) != 0 && sel) || ((mask & ${HP_BAR_DAMAGED}) != 0 && hp < 255u));
   vec3 base = ringBase();
   uint visual = ringVisual();
   float fade = ringFade(base, visualRow(visual, 0));

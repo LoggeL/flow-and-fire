@@ -226,9 +226,11 @@ void main() {
   if (v_authored != 0u) color = pow(max(color, vec3(0.0)), vec3(1.0 / ${UNIT_DISPLAY_GAMMA}));
   if (v_highlight != 0u) {
     vec3 viewDir = normalize(-v_rel);
-    float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 2.0);
-    float pulse = 0.75 + 0.25 * sin(u_camMod.w * 6.0);
-    color = mix(color, vec3(0.55, 1.0, 0.55), 0.25) + vec3(0.35, 1.0, 0.35) * rim * pulse;
+    // A thin rim plus a slight lift keeps team colour and model detail readable; the ground
+    // ring carries the selection, so the body is no longer washed into a translucent green.
+    float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
+    float pulse = 0.8 + 0.2 * sin(u_camMod.w * 6.0);
+    color = color * 1.12 + vec3(0.30, 0.75, 0.42) * rim * pulse * 0.55;
   }
   float dist = length(v_rel);
   float fog = clamp((dist - u_fog.w) / max(u_fog.w, 1.0), 0.0, 0.85);

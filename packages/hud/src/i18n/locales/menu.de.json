@@ -10,8 +10,10 @@
   "ui.menu.empty": "Noch keine Partie",
   "ui.menu.replay": "Replay ansehen",
   "ui.menu.rematch": "Revanche",
-  "ui.menu.locked": "Ab MS11",
-  "ui.menu.post": "Nach dem MVP",
+  "ui.menu.locked": "Nicht verfügbar",
+  "ui.menu.post": "In Vorbereitung",
   "ui.menu.language": "Sprache",
-  "ui.menu.build": "Build {build} · Sim {sim} · {transport} · {preset}"
+  "ui.menu.build": "Build {build}",
+  "ui.menu.sim": "Sim {sim}",
+  "ui.menu.preset": "Grafik {preset}"
 }

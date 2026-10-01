@@ -34,5 +34,13 @@
   "unit.core.str_t2_mex.name": "Tap II",
   "unit.core.str_t2_mex.desc": "Tier 2 mass extractor: extracts 6 mass per second at the same deposit.",
   "unit.core.str_t3_mex.name": "Tap III",
-  "unit.core.str_t3_mex.desc": "Tier 3 mass extractor: extracts 18 mass per second at the same deposit."
+  "unit.core.str_t3_mex.desc": "Tier 3 mass extractor: extracts 18 mass per second at the same deposit.",
+  "unit.core.fac_land_t2.name": "Land Works II",
+  "unit.core.fac_land_t2.desc": "Upgraded land works: additionally builds tier 2 land units.",
+  "unit.core.fac_land_t3.name": "Land Works III",
+  "unit.core.fac_land_t3.desc": "Fully upgraded land works: additionally builds tier 3 land units.",
+  "unit.core.str_t1_pd.name": "Bolt I",
+  "unit.core.str_t1_pd.desc": "Turret against ground targets; outranges tier 1 tanks, outranged by artillery.",
+  "unit.core.str_t1_radar.name": "Listener I",
+  "unit.core.str_t1_radar.desc": "Radar: shows enemy units in a wide radius as blips while it is powered."
 }

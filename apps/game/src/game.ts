@@ -35,6 +35,7 @@ import {
   frameCapacityBytes,
   type CtlMessage,
   type HostMessage,
+  type MatchStatsSnapshot,
   type TransportKind,
 } from '@faf/protocol';
 import type { HostInitMessage, HostReadyMsg, HostStatsMsg, HostStatusMsg } from '@faf/sim-host';
@@ -46,7 +47,7 @@ import { MAX_CUBES_PER_ARMY, chooseTransport, type GameParams } from './params.t
 import { WorkerSimLink, type WorkerLike } from './worker-link.ts';
 import { installGameAudio, GAME_AUDIO_EVENT_TYPES, listenerFromCamera, type GameAudioBridge } from './audio/index.ts';
 import { installGameFx, type GameFx } from './fx/index.ts';
-import { postOptionsForPreset } from '@faf/render-fx';
+import { presetSettings } from './preset-settings.ts';
 import { storedSettings } from './session-settings.ts';
 import { FrameVisibility } from './visibility.ts';
 import { isReplayStartupCompatibilityNotice } from './replay/startup-failure.ts';
@@ -57,8 +58,12 @@ export const PLAYER_ARMY = 0;
 export const ENEMY_ARMY = 1;
 /** Armies in the session: the player and one passive second army. */
 export const ARMY_COUNT = 2;
-/** Initial camera distance (WU): the whole start army is in view. */
-export const START_CAMERA_DISTANCE = 105;
+/** Initial camera distance (WU) at ≥ 900 CSS px: the whole start plateau and its exits are in view while the commander still renders as a model (screen comparison 105/135/165 WU, 2026-10-01). */
+export const START_CAMERA_DISTANCE = 135;
+/** Smaller viewports start closer so the commander stays above its strategic-icon threshold. */
+export function startCameraDistance(viewportHeightCss: number): number {
+  return Math.max(105, Math.min(START_CAMERA_DISTANCE, START_CAMERA_DISTANCE * viewportHeightCss / 900));
+}
 
 export interface HudCursor {
   readonly x: number;
@@ -168,6 +173,8 @@ export class Game {
   private settings: SettingsValues = DEFAULT_SETTINGS;
   get runtimeSettings(): SettingsValues { return { ...this.settings, ...this.audio.hudSettings() }; }
   readonly result = signal<{ readonly verdict: 'victory' | 'defeat' | 'draw'; readonly durationS: number } | null>(null);
+  /** Authoritative totals, delivered by the host only after a live match ended. */
+  readonly matchStats = signal<MatchStatsSnapshot | null>(null);
   private readonly audioListener = { focusX: 0, focusZ: 0, height: 1, viewHalfWidth: 1, rightX: 1, rightZ: 0 };
   bp: SimBpTable;
   readonly hmr: { changedAt: number; appliedAt: number | null; elapsedMs: number | null; error: string | null; reloads: number } = { changedAt: 0, appliedAt: null, elapsedMs: null, error: null, reloads: 0 };
@@ -292,7 +299,7 @@ export class Game {
         onFullscreenChange: () => this.refreshHud(),
       },
     });
-    this.client.jumpTo(this.layout.own.x, this.layout.own.z, START_CAMERA_DISTANCE);
+    this.client.jumpTo(this.layout.own.x, this.layout.own.z, startCameraDistance(opts.canvas.clientHeight || 900));
     this.audio = installGameAudio({ gestureTarget: document, playerArmy: this.playerArmy,
       replayMode: this.replayMode, eventTypes: GAME_AUDIO_EVENT_TYPES, visualName: visual => this.bp.weaponIds[visual] });
     this.fx = installGameFx({ renderer: this.renderer, getFrame: () => this.client.lastFrame,
@@ -414,12 +421,10 @@ export class Game {
   /** Switches the render preset (splat layers, LOD bias, water quality, render scale). */
   setPreset(name: RenderPresetName): void {
     this.renderer.setPreset(name);
-    const shadowCascades = name === 'high' || name === 'ultra' ? 2 : 0;
-    const bloom = postOptionsForPreset(this.renderer.preset).bloom;
-    this.fx.setHudSetting('shadowCascades', shadowCascades);
-    this.fx.setHudSetting('bloom', bloom);
-    this.settings = { ...this.settings, preset: name, renderScale: this.renderer.preset.renderScale,
-      splatLayers: this.renderer.preset.splatLayers, shadowCascades, bloom };
+    const implied = presetSettings(name);
+    this.fx.setHudSetting('shadowCascades', implied.shadowCascades);
+    this.fx.setHudSetting('bloom', implied.bloom);
+    this.settings = { ...this.settings, ...implied, renderScale: this.renderer.preset.renderScale, splatLayers: this.renderer.preset.splatLayers };
     this.hud.value = { ...this.hud.value, preset: this.renderer.preset.name };
   }
 
@@ -495,7 +500,9 @@ export class Game {
       this.visibility.accept(frame, this.renderer, performance.now());
       this.audio.onFrame(frame);
       if (frame.matchEndTick > 0 && this.playerArmy >= 0) {
-        this.result.value = { verdict: frame.matchWinningMask === 0 ? 'draw' : (frame.matchWinningMask & (1 << this.playerArmy)) !== 0 ? 'victory' : 'defeat', durationS: frame.matchEndTick / 10 };
+        const verdict = frame.matchWinningMask === 0 ? 'draw' : (frame.matchWinningMask & (1 << this.playerArmy)) !== 0 ? 'victory' : 'defeat', durationS = frame.matchEndTick / 10;
+        const current = this.result.peek();
+        if (current?.verdict !== verdict || current.durationS !== durationS) this.result.value = { verdict, durationS };
       } else if (this.replayMode) this.result.value = null;
     }
     if (!this.recordHashes) return;
@@ -534,6 +541,9 @@ export class Game {
       }
       case 'stats':
         this.stats.value = m as HostStatsMsg;
+        break;
+      case 'matchStats':
+        if (!this.replayMode) this.matchStats.value = m.stats;
         break;
       case 'log': {
         const waiters = this.logWaiters.splice(0);

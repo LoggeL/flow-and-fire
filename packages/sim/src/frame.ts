@@ -48,6 +48,40 @@ export interface FrameMeta {
 
 const DEFAULT_META: FrameMeta = { seq: 0, tickTimeUs: 0, speedPermille: 1000, flags: 0 };
 
+/** Radar sources considered per frame (scratch, presentation only). */
+const MAX_RADAR_SOURCES = 256;
+// Raw Fx coordinates and radii (i32); squared distances stay exact integers below 2^53.
+const RADAR_X = new Int32Array(MAX_RADAR_SOURCES), RADAR_Z = new Int32Array(MAX_RADAR_SOURCES), RADAR_R = new Int32Array(MAX_RADAR_SOURCES);
+
+/**
+ * Radar is frame presentation, not World state: an enemy unit outside the viewer's sight but
+ * inside a completed, powered (unpaused, enabled) allied radar is written as a blip — position,
+ * heading, army and blueprint index (the renderer culls by its radius and always draws the
+ * anonymous blip glyph), full hp/build bytes, no parts, weapon aim or detail flags.
+ */
+function writeRadarBlips(w: World, viewer: number, writer: FrameWriter): void {
+  const h = w.header.i32;
+  if (viewer < 0 || h[WH_SKIRMISH] === 0 || h[WH_FOG] === 0) return;
+  const units = w.units, U = units.col, radar = w.bp.radarCol, hw = units.highWater;
+  let sources = 0;
+  for (let s = 0; s < hw && sources < MAX_RADAR_SOURCES; s++) {
+    if (units.alive[s] !== 1) continue;
+    const range = radar[U.bp[s]!]!;
+    if (range <= 0 || (U.flags[s]! & (UnitBits.Dead | UnitBits.UnderConstruction)) !== 0 || U.ecoPaused[s] !== 0 || U.ecoEnabled[s] === 0 || !allied(w, viewer, U.army[s]!)) continue;
+    RADAR_X[sources] = U.x[s]!; RADAR_Z[sources] = U.z[s]!; RADAR_R[sources] = range; sources++;
+  }
+  if (sources === 0) return;
+  for (let i = 0; i < hw; i++) {
+    if (units.alive[i] !== 1 || (U.flags[i]! & UnitBits.Dead) !== 0 || visibleTo(w, viewer, i) || allied(w, viewer, U.army[i]!)) continue;
+    const x = U.x[i]!, z = U.z[i]!;
+    let covered = false;
+    for (let k = 0; k < sources && !covered; k++) { const dx = x - RADAR_X[k]!, dz = z - RADAR_Z[k]!, r = RADAR_R[k]!; covered = dx * dx + dz * dz <= r * r; }
+    if (!covered) continue;
+    if (writer.unitCount >= writer.caps.units) return;
+    writer.writeUnit(U.px[i]!, U.py[i]!, U.pz[i]!, x, U.y[i]!, z, U.pyaw[i]!, U.yaw[i]!, U.bp[i]!, U.army[i]!, 255, 255, 0, UnitFlags.Blip, units.handle(i), writer.partCount, 0, 0);
+  }
+}
+
 /** Scales hp to u8: 255 = full, ≥ 1 while alive. */
 export function hpToU8(hp: number, maxHp: number): number {
   if (hp <= 0) return 0;
@@ -161,6 +195,7 @@ export function writeFrame(
       mountAimMask & ((1 << partCount) - 1),
     );
   }
+  writeRadarBlips(w, viewer, writer);
   const R=w.wrecks.col;for(let r=0;r<w.wrecks.highWater;r++)if(w.wrecks.isLive(r)&&canSeePosition(w,viewer,R.x[r]!,R.z[r]!))writer.writeUnit(R.x[r]!,R.y[r]!,R.z[r]!,R.x[r]!,R.y[r]!,R.z[r]!,R.yaw[r]!,R.yaw[r]!,R.bp[r]!,255,255,255,0,UnitFlags.Wreck,wreckHandle(w,r),0,0);
   for(let u=0;u<w.units.highWater;u++)if(w.units.isLive(u)&&visibleTo(w,viewer,u)&&U.ecoPaused[u]===0){const handle=U.buildTarget[u]!|0;if(handle===-1)continue;const t=w.units.resolve(handle);if(t>=0&&visibleTo(w,viewer,t))writer.writeBeam(w.units.handle(u),w.units.handle(t),65535,0,0);}
   const nav = w.nav;

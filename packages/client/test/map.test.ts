@@ -5,7 +5,7 @@ import { DEFAULT_MAP_LIGHT, FormatError, createRtsMap, createTestPlaneMap, write
 import { RAW_PER_WU, computeChunkBounds, sampleTerrainHeightRaw, sunDirection } from '@faf/render';
 import { sampleHeightRaw } from '@faf/rules';
 import { describe, expect, it } from 'vitest';
-import { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL } from '../src/map.ts';
+import { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL, MASS_SPOT_PAD_DECAL } from '../src/map.ts';
 import { REPO_ROOT, hollowRidge, prng } from './support/map.ts';
 
 describe('ClientMap', () => {
@@ -134,15 +134,17 @@ describe('ClientMap', () => {
     expect(d.light).toEqual(m.map.meta.light);
     expect(d.splat).toBeUndefined();
     const decals = m.spotDecals();
-    expect(decals).toHaveLength(18);
-    for (let i = 0; i < decals.length; i++) {
-      const s = m.spots[i]!;
-      const want = s.kind === 'mass' ? MASS_SPOT_DECAL : HYDRO_SPOT_DECAL;
-      expect(decals[i]).toEqual({ ...want, x: s.x, z: s.z });
-      expect(decals[i]!.kind).toBe(s.kind === 'mass' ? 'ring' : 'diamond');
-      expect(decals[i]!.minRadiusPx).toBeGreaterThanOrEqual(4);
+    expect(decals).toHaveLength(16 * 2 + 2);
+    let k = 0;
+    for (const s of m.spots) {
+      if (s.kind === 'mass') {
+        expect(decals[k++]).toEqual({ ...MASS_SPOT_PAD_DECAL, x: s.x, z: s.z });
+        expect(decals[k]).toEqual({ ...MASS_SPOT_DECAL, x: s.x, z: s.z });
+      } else expect(decals[k]).toEqual({ ...HYDRO_SPOT_DECAL, x: s.x, z: s.z });
+      expect(decals[k]!.kind).toBe(s.kind === 'mass' ? 'ring' : 'diamond');
+      expect(decals[k++]!.minRadiusPx).toBeGreaterThanOrEqual(4);
     }
-    expect(m.spotDecals().filter((x) => x.color === 0x40ff50)).toHaveLength(16);
+    expect(m.spotDecals().filter((x) => x.color === MASS_SPOT_DECAL.color)).toHaveLength(16);
     expect(m.spotDecals().filter((x) => x.color === 0x20e0ff)).toHaveLength(2);
   });
 

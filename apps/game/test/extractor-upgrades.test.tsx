@@ -83,6 +83,12 @@ describe('visible extractor upgrade controls', () => {
     expect(getByTestId('extractor-upgrades').textContent).toContain('Waiting for resources');
   });
 
+  it('explains idle mass output while paused and labels the resuming cancel', () => {
+    const { getByTestId } = fixture({ ...available, active: true, queued: true, paused: true, enabled: false, progress: .35 });
+    expect(getByTestId('extractor-upgrade-paused-note').textContent).toContain('mass output and the upgrade are idle');
+    expect(getByTestId('extractor-upgrade-cancel').textContent).toBe('Cancel & resume');
+  });
+
   it('keeps queued upgrades distinguishable and removes controls when no extractor is selected', () => {
     const { getByTestId, queryByTestId, controller } = fixture({ ...available, queued: true, enabled: false });
     expect(getByTestId('extractor-upgrades').textContent).toContain('Queued');

@@ -6,7 +6,7 @@ services:
     labels:
       traefik.enable: "true"
       traefik.docker.network: dokploy-network
-      traefik.http.routers.flow-and-fire.rule: Host(`flow-and-fire.logge.top`)
+      traefik.http.routers.flow-and-fire.rule: Host(`faf.logge.top`) || Host(`flow-and-fire.logge.top`)
       traefik.http.routers.flow-and-fire.entrypoints: websecure
       traefik.http.routers.flow-and-fire.tls: "true"
       traefik.http.services.flow-and-fire.loadbalancer.server.port: "8080"

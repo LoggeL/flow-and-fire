@@ -2,6 +2,7 @@
 // unit-pass skip in Z2, icon geometry shared with the client (iconScreenRect), HP bar mask, atlas +
 // context loss, placeholder turret.
 import { describe, expect, it } from 'vitest';
+import { UnitFlags } from '@faf/protocol';
 import { RtsCamera, nearPlaneForHeight } from '../src/camera.ts';
 import { UnitRecordWriter } from '../src/instance-layout.ts';
 import { createPlaceholderLods, createPlaceholderMesh, meshBoundingRadius } from '../src/mesh/placeholder.ts';
@@ -181,6 +182,24 @@ describe('IconPass and strategic zoom in the renderer (fake WebGL2)', () => {
     const iconOff = FRAME_LAYOUT.offsetOf('iconParams') / 4;
     expect(f[iconOff]).toBe(ICON_SIZE_PX);
     expect(f[iconOff + 1]).toBe(0);
+    r.dispose();
+  });
+
+  it('radar blips never draw a model, even close up: icon-only bucket with the blip glyph', () => {
+    const canvas = new FakeCanvas();
+    const gl = canvas.gl;
+    const r = createRenderer(canvas, { pixelRatio: 1 });
+    r.setVisuals([BOX, BOX]);
+    const k = iconProjectionScale(600, Math.PI / 4), close = (2 * 0.6 * k) / (14 * 1.6);
+    const cam = topDown(100, 100, close);
+    gl.resetCalls();
+    r.render(view(cam, units(1, () => [100, 100], () => ({ flags: UnitFlags.Blip })), 1));
+    expect(r.stats.drawsByPass.units).toBe(0);
+    expect(r.stats.drawsByPass.icons).toBe(1);
+    expect(r.stats.iconOnlyUnits).toBe(1);
+    gl.resetCalls();
+    r.render(view(cam, units(1, () => [100, 100]), 1));
+    expect(r.stats.drawsByPass.units).toBe(1);
     r.dispose();
   });
 

@@ -93,6 +93,8 @@ export interface SettingsSection {
   readonly tab: Signal<SettingsTab>;
   readonly gpuName: Signal<string>;
   readonly detectState: Signal<'idle'|'running'|'done'>;
+  /** The active runtime can play the sound sample (a running game session). */
+  readonly previewAvailable: Signal<boolean>;
   readonly values: Signal<SettingsValues>;
   readonly dirty: Signal<readonly string[]>;
 }
@@ -102,16 +104,18 @@ export function createSettingsSection(): SettingsSection {
     tab: signal<SettingsTab>('graphics'),
     gpuName: signal('Demo GPU'),
     detectState: signal<'idle'|'running'|'done'>('idle'),
+    previewAvailable: signal(true),
     values: signal<SettingsValues>(DEFAULT_SETTINGS),
     dirty: signal<readonly string[]>([]),
   };
 }
 
 export const SETTING_RANGES: Readonly<Partial<Record<SettingKey, readonly [number,number,number]>>> = {
-  renderScale: [.5,1.5,.05], shadowCascades:[0,3,1], particleCap:[1000,64000,1000], volMaster:[0,100,1],volSfx:[0,100,1],volVoice:[0,100,1],volUi:[0,100,1],volMusic:[0,100,1],volAmbient:[0,100,1],
+  // Only values the game runtime applies are offered (no MSAA, ≤ 2 shadow cascades, 4/8 splat layers).
+  renderScale: [.5,1.5,.05], shadowCascades:[0,2,1], particleCap:[1000,64000,1000], volMaster:[0,100,1],volSfx:[0,100,1],volVoice:[0,100,1],volUi:[0,100,1],volMusic:[0,100,1],volAmbient:[0,100,1],
 };
 export const SETTING_CHOICES: Readonly<Partial<Record<SettingKey, readonly (string|number)[]>>> = {
-  preset:['low','medium','high','ultra','custom'],splatLayers:[2,4,8],antialias:['off','fxaa','msaa4'],frameCap:[30,60,120,'monitor'],alertVoice:['voice','gong','off'],keyScheme:['grid','wasd'],teamColors:['house','relation','cvd'],uiScale:['auto',.8,.9,1,1.1,1.25,1.5],reducedMotion:['system','on','off'],locale:['de','en'],tooltips:['short','full','off'],
+  preset:['low','medium','high','ultra','custom'],splatLayers:[4,8],antialias:['off','fxaa'],frameCap:[30,60,120,'monitor'],alertVoice:['voice','gong','off'],keyScheme:['grid','wasd'],teamColors:['house','relation','cvd'],uiScale:['auto',.8,.9,1,1.1,1.25,1.5],reducedMotion:['system','on','off'],locale:['de','en'],tooltips:['full','off'],
 };
 /** Reject invalid values at the boundary; callers retain the previous settings on failure. */
 export function validateSettings(values: SettingsValues): readonly SettingKey[] {

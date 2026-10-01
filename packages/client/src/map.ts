@@ -25,7 +25,9 @@ export const MAP_CHUNK_WU = TERRAIN_PATCH_WU;
  * Mass spot decal (M4): green ring. Radius/width in WU; zoomed out it keeps ≥ 4 px radius (≤ 9 WU)
  * and a ≥ 2 px line, so the spots stay readable as symbols in the whole-map view.
  */
-export const MASS_SPOT_DECAL = { kind: 'ring', radiusWU: 1.6, widthWU: 0.35, color: 0x40ff50, alpha: 0.95, minRadiusPx: 4, maxRadiusWU: 9 } as const;
+export const MASS_SPOT_DECAL = { kind: 'ring', radiusWU: 1.5, widthWU: 0.2, color: 0xb6dc72, alpha: 0.6, minRadiusPx: 4, maxRadiusWU: 9 } as const;
+/** Dark ground pad below the mass ring: reads as a terrain marking rather than a neon overlay. */
+export const MASS_SPOT_PAD_DECAL = { kind: 'disc', radiusWU: 1.9, widthWU: 0.6, color: 0x1c2414, alpha: 0.45 } as const;
 /** Hydrocarbon spot decal (M4): cyan diamond (own shape, not only colour), larger (3×3 plant). */
 export const HYDRO_SPOT_DECAL = { kind: 'diamond', radiusWU: 3.2, widthWU: 0.5, color: 0x20e0ff, alpha: 0.95, minRadiusPx: 6, maxRadiusWU: 14 } as const;
 
@@ -185,9 +187,8 @@ export class ClientMap implements TerrainHeightSource {
    * hydrocarbon = cyan diamond r 3.2 WU (line 0.5 WU), both α 0.95 and with a minimum pixel size.
    */
   spotDecals(): TerrainDecal[] {
-    return this.spots.map((s) => {
-      const d = s.kind === 'mass' ? MASS_SPOT_DECAL : HYDRO_SPOT_DECAL;
-      return { ...d, x: s.x, z: s.z };
-    });
+    return this.spots.flatMap((s): TerrainDecal[] => s.kind === 'mass'
+      ? [{ ...MASS_SPOT_PAD_DECAL, x: s.x, z: s.z }, { ...MASS_SPOT_DECAL, x: s.x, z: s.z }]
+      : [{ ...HYDRO_SPOT_DECAL, x: s.x, z: s.z }]);
   }
 }

@@ -738,6 +738,7 @@ export function compileBlueprints(defs: readonly SourcedDefinition[], options: C
       energyUpkeepMilliPerTick: Math.floor((eco?.energyUpkeep ?? 0) * 100),
       ecoFlags: eco?.stallsOff === true ? 1 : 0,
       spotKind: eco?.spotKind === 'mass' ? 0 : eco?.spotKind === 'hydro' ? 1 : -1,
+      radar: decimalToFx(bp.sim.intel?.radar ?? 0),
       massCost: eco?.mass ?? 0,
       energyCost: eco?.energy ?? 0,
       buildTime: eco?.buildTime ?? 0,

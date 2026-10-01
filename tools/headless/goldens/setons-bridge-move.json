@@ -1,11 +1,11 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.2-economy-upgrades",
+  "simBuild": "faf-sim/ms6.3-factory-tiers-radar",
   "scenario": "setons-bridge-move",
   "ticks": 2000,
   "seed": "0x5eed0005",
-  "simHash": "0x026c51c8",
+  "simHash": "0x249a86a9",
   "layoutHash": "0xc8034fb9",
   "map": "content/maps/setons.rtsmap",
   "mapSimHash": "0x52eccf92",

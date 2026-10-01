@@ -19,21 +19,23 @@ import { writeCompressedGlb, writeRawGlb } from '../../../tools/assets-pipeline/
 describe('existing Varkan art in the real Game asset contracts', () => {
   it('compiles only live references, preserves source scale/parts/LODs, and changes no sim bytes', async () => {
     const content = await compileContent({ includeTest: false });
-    // Explicit commander and T1/T2/T3 extractor content; model generation must preserve these bytes.
-    expect(content.simHash).toBe(0x026c51c8);
+    // ms6.3 content (factory tiers, point defense, radar); model generation must preserve these bytes.
+    expect(content.simHash).toBe(0x249a86a9);
     expect(content.simBin).toEqual(new Uint8Array(await readFile(join(REPO_ROOT, 'content/generated/sim.bin'))));
     for (const [id, unit] of Object.entries(LIVE_VARKAN_MODELS)) {
       expect(content.view.visuals.find(v => v.id === id)?.mesh, id).toBe(`units/varkan/${unit}`);
     }
     const refs = content.view.visuals.flatMap(v => v.mesh === undefined ? [] : [v.mesh]);
-    const models = await referencedModels(refs, REPO_ROOT, new Map([['units/varkan/str_t1_fac_land', [5, 5]]]));
+    // The authored 8×8 land works of every tier are uniformly fitted to the 5×5 sim footprint.
+    const factories = ['units/varkan/str_t1_fac_land', 'units/varkan/str_t2_fac_land', 'units/varkan/str_t3_fac_land'];
+    const models = await referencedModels(refs, REPO_ROOT, new Map(factories.map(id => [id, [5, 5] as const])));
     expect(models.map(m => m.id).sort()).toEqual([...new Set(refs)].sort());
-    expect(models).toHaveLength(14);
+    expect(models).toHaveLength(18);
     expect(models.find(m => m.id === 'units/cube_bot')).toEqual(cubeBot());
     const faction = await loadFaction('varkan');
     for (const model of models.filter(m => m.forward === '+z')) {
       const built = buildEntry(faction, faction.models.find(m => m.def.id === model.sourceModelId)!);
-      const scale = model.id === 'units/varkan/str_t1_fac_land' ? 5 / 8 : 1;
+      const scale = factories.includes(model.id) ? 5 / 8 : 1;
       expect(model.viewScale).toBe(scale);
       expect(model.parts.map(p => [p.name, p.parent, p.pivot, p.anim])).toEqual(built.parts.map(p => [p.name, p.parent, p.pivot.map(v => v * scale), p.anim]));
       expect(model.lods).toHaveLength(3);

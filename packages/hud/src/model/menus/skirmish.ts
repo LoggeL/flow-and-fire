@@ -14,7 +14,13 @@ export interface SkirmishMap {
   readonly available: boolean;
   /** Start positions as fractions of the map (0..1). */
   readonly startPositions: readonly (readonly [number, number])[];
+  /** Resource spots as fractions of the map (0..1), from the map file. */
+  readonly spotPositions?: readonly { readonly x: number; readonly z: number; readonly kind: 'mass' | 'hydro' }[];
+  /** Relief image (data URL) rendered from the actual heightfield; absent = no preview. */
+  readonly previewUrl?: string;
 }
+/** Colour options of a house; the stored value is the option id. */
+export const SKIRMISH_COLORS = ['blue', 'red', 'green', 'orange'] as const;
 
 export type AiDifficulty = 'easy' | 'normal' | 'hard';
 export type SlotController = 'human' | 'ai';
@@ -24,8 +30,9 @@ export interface SkirmishSlot {
   readonly name: string;
   readonly controller: SlotController;
   readonly faction: 'varkan';
-  /** Team colour token name (e.g. "team-blau"). */
+  /** Colour option id (one of SKIRMISH_COLORS). */
   readonly color: string;
+  /** Internal 0-based team; the setup shows it as team + 1. */
   readonly team: number;
   /** Start position index on the map. */
   readonly start: number;

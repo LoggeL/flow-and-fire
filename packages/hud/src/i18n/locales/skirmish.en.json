@@ -40,5 +40,8 @@
   "ui.skirmish.relation": "Own / Enemy",
   "ui.skirmish.cvd": "Colorblind-safe",
   "ui.skirmish.mapStats": "{size} WU · {starts} starts · {mass} mass spots",
-  "ui.skirmish.startPosition": "Start position {n}"
+  "ui.skirmish.startPosition": "Start position {n}",
+  "ui.skirmish.aixLabel": "Economy bonus (AIx)",
+  "ui.skirmish.aixFactor": "Bonus factor",
+  "ui.skirmish.aixOff": "no bonus"
 }

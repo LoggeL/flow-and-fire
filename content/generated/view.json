@@ -162,6 +162,48 @@
       "tech": 1
     },
     {
+      "categories": ["FACTORY", "LAND", "STRUCTURE", "TECH2"],
+      "descKey": "unit.core.fac_land_t2.desc",
+      "fx": {
+        "death": "core:fx_explosion_large"
+      },
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:fac_land_t2",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t2_fac_land",
+      "nameKey": "unit.core.fac_land_t2.name",
+      "placeholder": {
+        "color": [0.55, 0.57, 0.6],
+        "hull": "box",
+        "size": [4.6, 1.5, 4.6]
+      },
+      "selectionRadius": 3,
+      "sizeClass": 3,
+      "tech": 2
+    },
+    {
+      "categories": ["FACTORY", "LAND", "STRUCTURE", "TECH3"],
+      "descKey": "unit.core.fac_land_t3.desc",
+      "fx": {
+        "death": "core:fx_explosion_large"
+      },
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:fac_land_t3",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t3_fac_land",
+      "nameKey": "unit.core.fac_land_t3.name",
+      "placeholder": {
+        "color": [0.55, 0.57, 0.6],
+        "hull": "box",
+        "size": [4.6, 1.8, 4.6]
+      },
+      "selectionRadius": 3,
+      "sizeClass": 3,
+      "tech": 3
+    },
+    {
       "categories": ["ARTILLERY", "INDIRECTFIRE", "LAND", "MOBILE", "TECH1"],
       "descKey": "unit.core.lnd_t1_arty.desc",
       "fx": {
@@ -333,6 +375,32 @@
       "tech": 1
     },
     {
+      "categories": ["DEFENSE", "DIRECTFIRE", "SIZE4", "STRUCTURE", "TECH1"],
+      "descKey": "unit.core.str_t1_pd.desc",
+      "fx": {
+        "death": "core:fx_explosion_small"
+      },
+      "hotkeySlot": "Z",
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:str_t1_pd",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t1_pd",
+      "nameKey": "unit.core.str_t1_pd.name",
+      "placeholder": {
+        "hull": "box",
+        "size": [0.9, 0.5, 0.9],
+        "turret": {
+          "hull": "cyl",
+          "offset": [0, 0.5, 0],
+          "size": [0.6, 0.25, 0.6]
+        }
+      },
+      "selectionRadius": 0.6,
+      "sizeClass": 1,
+      "tech": 1
+    },
+    {
       "categories": ["ECONOMIC", "ENERGYPRODUCTION", "SIZE4", "STRUCTURE", "TECH1"],
       "descKey": "unit.core.str_t1_pgen.desc",
       "hotkeySlot": "W",
@@ -345,6 +413,27 @@
       "placeholder": {
         "hull": "box",
         "size": [1.8, 1, 1.8]
+      },
+      "selectionRadius": 1.2,
+      "sizeClass": 2,
+      "tech": 1
+    },
+    {
+      "categories": ["INTELLIGENCE", "RADAR", "SIZE4", "STRUCTURE", "TECH1"],
+      "descKey": "unit.core.str_t1_radar.desc",
+      "fx": {
+        "death": "core:fx_explosion_small"
+      },
+      "hotkeySlot": "D",
+      "icon": "structure_generic",
+      "iconThreshold": 10,
+      "id": "core:str_t1_radar",
+      "lod": [80, 240],
+      "mesh": "units/varkan/str_t1_radar",
+      "nameKey": "unit.core.str_t1_radar.name",
+      "placeholder": {
+        "hull": "box",
+        "size": [1.8, 2.4, 1.8]
       },
       "selectionRadius": 1.2,
       "sizeClass": 2,

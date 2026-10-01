@@ -162,7 +162,35 @@ export interface ClosedMsg { readonly t: 'closed' }
 /** Sent only after the simulation has applied commands, independent of render frame polling. */
 export interface AppliedAckMsg { readonly t: 'ack'; readonly army: number; readonly tick: number; readonly ackSeq: number }
 
-export type HostMessage = ReadyMsg | StatusMsg | StatsMsg | LogMsg | ErrorMsg | ClosedMsg | AppliedAckMsg;
+/** Authoritative per-army totals of one live match (resources in whole units, ticks at 10 Hz). */
+export interface ArmyMatchStats {
+  readonly army: number;
+  readonly massProduced: number;
+  readonly energyProduced: number;
+  readonly massSpent: number;
+  readonly energySpent: number;
+  readonly unitsBuilt: number;
+  readonly structuresBuilt: number;
+  readonly massBuilt: number;
+  readonly unitsLost: number;
+  readonly massLost: number;
+  readonly firstFactoryTick: number | null;
+  readonly commanderLostTick: number | null;
+  readonly massIncomeSeries: readonly number[];
+  readonly armyValueSeries: readonly number[];
+}
+export interface MatchStatsSnapshot {
+  readonly fromTick: number;
+  readonly toTick: number;
+  /** Every tick between fromTick and toTick was observed exactly once. */
+  readonly complete: boolean;
+  readonly sampleTicks: number;
+  readonly armies: readonly ArmyMatchStats[];
+}
+/** Sent once after a live match ended; never during play (hidden enemy data stays hidden). */
+export interface MatchStatsMsg { readonly t: 'matchStats'; readonly stats: MatchStatsSnapshot }
+
+export type HostMessage = ReadyMsg | StatusMsg | StatsMsg | LogMsg | ErrorMsg | ClosedMsg | AppliedAckMsg | MatchStatsMsg;
 
 // ---- helpers ---------------------------------------------------------------------------------
 

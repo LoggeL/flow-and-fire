@@ -1,5 +1,5 @@
 /** Live HUD adapter. Simulation state comes exclusively from the accepted frame. */
-import { batch, signal } from '@preact/signals';
+import { batch, effect, signal } from '@preact/signals';
 import { ActionMap, buildDragGrid, interpolatedPos, type Action, type BuildGesture } from '@faf/client';
 import { UnitFlags, EcoField, FrameFlags, WatchOrderType, Op, encodeMove, encodeTarget, encodeFactoryQueue, encodeFactoryQueueEdit, encodeTogglePause, type FrameReader } from '@faf/protocol';
 import { terrainCell } from '@faf/nav';
@@ -8,11 +8,29 @@ import {
   COMMAND_NAMES, DEFAULT_SETTINGS, ORDER_IDS, aggregateMultiStats, cardSpec, createHudModel,
   findUnit, nextHotbuildTier, autoScale, resolveGridKey, validateSettings, validateSkirmish,
   type HudCommands, type HudModel, type MenuScreen, type SettingKey, type SettingsValues,
-  mergeQueue, type SkirmishConfig, type SkirmishMap, type SlotCode, type ClickMods, type OrderEntry, type OrderId,
+  mergeQueue, t, SLOT_CODES, type CardCellSpec, type SkirmishConfig, type SkirmishMap, type SlotCode, type ClickMods, type OrderEntry, type OrderId,
 } from '@faf/hud';
 import type { Game } from '../game.ts';
 import { hudTypeId, simTypeId } from './type-ids.ts';
-import { LOCAL_SETTINGS, restoreSettings } from '../session-settings.ts';
+import { buildRole, type BuildRole } from './build-role.ts';
+import { scoreFromStats } from './score.ts';
+import { loadLastMatch, saveLastMatch } from '../last-match.ts';
+import { detectGpu, recommendPreset } from '../gpu-info.ts';
+import { presetSettings } from '../preset-settings.ts';
+import { parsePresetName } from '@faf/render';
+
+const ERROR_VISIBLE_MS = 5000;
+const MESSAGES = {
+  invalidSetting: ['Dieser Wert ist nicht zulässig.', 'This value is not allowed.'],
+  settingUnsupported: ['Diese Einstellung wird hier nicht unterstützt.', 'This setting is not supported here.'],
+  unavailable: ['Diese Aktion ist hier nicht verfügbar.', 'This action is not available here.'],
+  noBuilder: ['Keine ausgewählte Einheit kann das bauen.', 'No selected unit can build this.'],
+  noFactory: ['Keine fertige Fabrik ausgewählt.', 'No completed factory selected.'],
+  noEligibleFactory: ['Keine ausgewählte Fabrik kann das bauen.', 'No selected factory can build this.'],
+  invalidCount: ['Ungültige Anzahl.', 'Invalid count.'],
+  noTarget: ['Kein sichtbares passendes Ziel.', 'No visible valid target.'],
+} as const;
+import { LOCAL_SETTINGS, restoreSettings, uiLocale } from '../session-settings.ts';
 import { FrameHudAlerts } from './alerts.ts';
 import { frameFlowConsumers, frameFactoryAssistance } from './flow.ts';
 import { FrameBuildIntents, equalQueuedGhosts, type QueuedBuildGhost } from './build-intents.ts';
@@ -27,6 +45,8 @@ export interface GameHudPorts {
   surrender?(): void;
   applySetting?<K extends SettingKey>(key: K, value: SettingsValues[K]): boolean;
   saveReplay?(): void;
+  /** Converts the finished live match and opens it in the replay player. */
+  watchMatchReplay?(): void;
 }
 export interface CommanderUpgradeState {
   readonly handle: number; readonly currentTypeId: string; readonly targetTypeId: string | null;
@@ -40,6 +60,12 @@ export interface ExtractorUpgradeState extends Omit<CommanderUpgradeState, 'stag
   readonly massIncome: number; readonly targetMassIncome: number;
   readonly energyUpkeep: number; readonly targetEnergyUpkeep: number;
 }
+export interface FactoryUpgradeState extends Omit<CommanderUpgradeState, 'stage'> {
+  readonly tier: number; readonly targetTier: number | null;
+  /** HUD type ids of mobile units only the successor can produce. */
+  readonly unlocks: readonly string[];
+}
+export interface PausedSelectionState { readonly count: number; readonly total: number; readonly controllable: boolean }
 /** Commander successor blueprints share the base command card and roster capabilities. */
 function presentationUnit(id: string) {
   return findUnit(id) ?? (id.startsWith('core:cmd_commander_') ? findUnit('core:cmd_commander') : undefined);
@@ -49,7 +75,12 @@ export interface MatchResult { readonly verdict: 'victory' | 'defeat' | 'draw'; 
 export interface BuildGhost {
   readonly bp: number; readonly typeId: string; readonly x: number; readonly z: number;
   readonly yaw: number; readonly verdict: number; readonly corners: readonly (readonly [number, number])[];
+  /** Projected roof corners of the class volume preview (same order as corners); empty if clipped. */
+  readonly roof?: readonly (readonly [number, number])[];
+  readonly role?: BuildRole;
 }
+/** Preview volume heights (WU) per build role; a readable massing, not a model claim. */
+const PREVIEW_HEIGHT_WU: Partial<Record<BuildRole, number>> = { mass: 1.6, energy: 2.6, storage: 2.2, factory: 3.2, radar: 5, defense: 2.8 };
 const ORDER_CURSORS: Partial<Record<OrderId | 'rally', GameCursor>> = { move: 'move', rally: 'move', attack: 'attack', attackGround: 'attack', tapshot: 'attack', patrol: 'patrol', assist: 'assist', repair: 'repair', reclaim: 'reclaim' };
 export function gridActionMap(wasd = false): ActionMap {
   return new ActionMap(wasd ? {} : {
@@ -75,6 +106,11 @@ export class GameHudController {
   readonly result = signal<MatchResult | null>(null);
   readonly commanderUpgrade = signal<CommanderUpgradeState | null>(null);
   readonly extractorUpgrade = signal<ExtractorUpgradeState | null>(null);
+  readonly factoryUpgrade = signal<FactoryUpgradeState | null>(null);
+  /** Own paused units in the current selection; foreign or replay units are never offered. */
+  readonly pausedSelection = signal<PausedSelectionState | null>(null);
+  /** The presented viewer has an economy record; false for the all-armies replay view (no 0/0 bar). */
+  readonly ecoAvailable = signal(true);
   readonly commands: HudCommands;
   private placement: { bp: number; typeId: string; slot: SlotCode; yaw: number } | null = null;
   private armedOrder: OrderId | 'rally' | null = null;
@@ -98,15 +134,23 @@ export class GameHudController {
   private readonly contextPosition = new Float64Array(3);
   private readonly contextPixel = new Float64Array(4);
   private cursorQuery = { x: NaN, y: NaN, camera: -1, seq: -1, viewer: -128, handle: -1 };
+  private errorTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly disposers: (() => void)[] = [];
   constructor(readonly game: Game | null, readonly ports?: GameHudPorts) {
     const m = this.model;
+    this.disposers.push(effect(() => { void this.screen.value; this.error.value = null; }));
+    const stats = game?.matchStats;
+    if (stats) this.disposers.push(effect(() => { void stats.value; this.applyScore(); }));
     this.worldCursor = new WorldCursor(game?.canvas ?? null);
     this.frameAlerts = game ? new FrameHudAlerts(m.alerts, visual => {
       const typeId = this.typeId(visual), categories = presentationUnit(typeId)?.categories ?? [];
       return { typeId, commander: categories.includes('COMMAND'), structure: categories.includes('STRUCTURE') };
     }, game.map.sizeWu) : null;
-    m.menus.settings.gpuName.value = '';
+    const gpu = detectGpu();
+    m.menus.settings.gpuName.value = gpu.name ?? '';
+    m.menus.settings.previewAvailable.value = game !== null;
     m.menus.main.replaysAvailable.value = ports?.openReplay !== undefined;
+    if (!game) { const last = loadLastMatch(); m.menus.main.lastMatch.value = last === null ? null : { ...last, hasReplay: ports?.openReplay !== undefined }; }
     const settings = game?.runtimeSettings ?? restoreSettings();
     m.menus.settings.values.value = settings;
     m.locale.value = settings.locale;
@@ -114,13 +158,16 @@ export class GameHudController {
     m.teams.value = settings.teamColors;
     m.reducedMotion.value = settings.reducedMotion;
     if (settings.uiScale !== 'auto') m.scale.value = settings.uiScale;
-    const unavailable = (name: string) => this.fail(`${name}: ${m.locale.peek() === 'en' ? 'not available in this match' : 'in diesem Spiel nicht verfügbar'}`);
+    const unavailable = (_name: string) => this.say('unavailable');
     // Every unsupported operation is explicit. No recording or demo adapter enters the game.
     const entries = Object.fromEntries(COMMAND_NAMES.map(name => [name, () => unavailable(name)]));
     this.commands = Object.assign(entries, {
       navigate: (screen: MenuScreen) => { if (screen === 'replays') { this.invoke('openReplay'); return; } this.screen.value = screen; },
       setLocale: (locale: 'de' | 'en') => this.setSetting('locale', locale),
-      startSkirmish: (config: SkirmishConfig) => { const issue = validateSkirmish(config, m.menus.skirmish.maps.peek()); if (issue) { this.fail(issue); return; }
+      // A recommendation from GPU name and cores, applied like a preset choice; no benchmark claim.
+      previewAudio: () => { game?.audio.preview(); },
+      requestAutodetect: () => { m.menus.settings.detectState.value = 'running'; this.setSetting('preset', recommendPreset(gpu)); m.menus.settings.detectState.value = 'done'; },
+      startSkirmish: (config: SkirmishConfig) => { const issue = validateSkirmish(config, m.menus.skirmish.maps.peek()); if (issue) { this.fail(t(issue as never)); return; }
         if (!this.ports) { unavailable('startSkirmish'); return; } this.ports.startSkirmish(config); },
       updateSkirmish: (patch: Partial<SkirmishConfig>) => { if (patch.mapId !== undefined) m.menus.skirmish.selectedMap.value = patch.mapId; if (patch.slots) m.menus.skirmish.slots.value = patch.slots; if (patch.rules) m.menus.skirmish.rules.value = patch.rules; },
       backToMenu: () => { this.screen.value = game ? 'game' : 'main'; m.menus.gameMenu.open.value = false; },
@@ -133,7 +180,8 @@ export class GameHudController {
       setSetting: <K extends SettingKey>(key: K, value: SettingsValues[K]) => this.setSetting(key, value),
       resetSettings: () => { for (const key of ['preset', 'renderScale', 'shadowCascades', 'splatLayers', 'particleCap', 'bloom', 'antialias', 'frameCap', 'cameraShake', 'volMaster', 'volSfx', 'volVoice', 'volUi', 'volMusic', 'volAmbient', 'alertVoice', 'audibleStall', 'audioInBackground', 'locale', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'pauseInBackground', 'autoSaveReplays'] as const) this.setSetting(key, DEFAULT_SETTINGS[key]); },
       saveReplay: () => { if (this.ports?.saveReplay) this.ports.saveReplay(); else if (game) void game.exportLog().catch(e => this.fail(String(e))); else unavailable('saveReplay'); },
-      watchReplay: () => this.invoke('openReplay'),
+      // From the score screen, open the finished match itself; elsewhere the recording library.
+      watchReplay: () => { if (game && !game.replayMode && this.result.peek() !== null && this.ports?.watchMatchReplay) this.ports.watchMatchReplay(); else this.invoke('openReplay'); },
       rematch: () => this.commands.startSkirmish(this.config()),
       toggleFlowDetails: () => { m.eco.detailsOpen.value = !m.eco.detailsOpen.peek(); },
       jumpToAlert: (id: number) => this.jumpToAlert(id),
@@ -200,18 +248,45 @@ export class GameHudController {
       this.update(true);
     }
   }
-  showResult(result: MatchResult): void { this.result.value=result;this.model.menus.score.durationS.value=result.durationS;if(result.verdict!=='draw')this.model.menus.score.verdict.value=result.verdict;this.cancelMode();this.model.menus.gameMenu.open.value=false;this.screen.value='score'; }
-  fail(message: string): void { this.error.value = message; }
-  private invoke(name: 'leaveGame' | 'surrender' | 'openReplay'): void { const port = this.ports?.[name]; if (port) port(); else this.fail(`${name}: ${this.model.locale.peek() === 'en' ? 'not available' : 'nicht verfügbar'}`); }
+  showResult(result: MatchResult): void {
+    const s = this.model.menus.score;
+    const first = this.result.peek() === null;
+    this.result.value = result; s.durationS.value = result.durationS; s.verdict.value = result.verdict;
+    this.applyScore(); this.cancelMode(); this.model.menus.gameMenu.open.value = false; this.screen.value = 'score';
+    const game = this.game, config = game?.skirmishConfig;
+    if (first && game && !game.replayMode && config) {
+      const ai = config.slots.filter(slot => slot.controller === 'ai' && slot.ai !== null).map(slot => `${this.model.locale.peek() === 'en' ? 'AI' : 'KI'} ${t(`ui.skirmish.${slot.ai!.difficulty}`)}`);
+      saveLastMatch({ mapName: game.map.name, verdict: result.verdict, durationS: result.durationS, opponent: ai.join(', ') });
+    }
+  }
+  /** Score rows from the host's recorded totals only; never derived from instantaneous frame values. */
+  private applyScore(): void {
+    const game = this.game, s = this.model.menus.score; if (!game || this.result.peek() === null) return;
+    const player = game.client.playerArmy, armies = game.skirmishConfig?.slots.map((_, i) => i) ?? [];
+    const view = scoreFromStats(game.matchStats?.peek() ?? null, player, armies.filter(army => army !== player && !this.allied(army)), !game.replayMode);
+    batch(() => { s.rows.value = view.rows; s.series.value = view.series; s.events.value = view.events; s.coverage.value = view.coverage; s.enemyLabel.value = view.enemyLabel; });
+  }
+  /** Visible action errors expire after five seconds and never survive a screen change. */
+  fail(message: string): void {
+    this.error.value = message;
+    if (this.errorTimer !== null) clearTimeout(this.errorTimer);
+    this.errorTimer = setTimeout(() => { this.errorTimer = null; if (this.error.peek() === message) this.error.value = null; }, ERROR_VISIBLE_MS);
+  }
+  private invoke(name: 'leaveGame' | 'surrender' | 'openReplay'): void { const port = this.ports?.[name]; if (port) port(); else this.say('unavailable'); }
+  /** Player-facing, localized action messages; no internal command or blueprint ids. */
+  private say(id: keyof typeof MESSAGES): void { this.fail(MESSAGES[id][this.model.locale.peek() === 'en' ? 1 : 0]); }
   config(): SkirmishConfig { const s = this.model.menus.skirmish; return { mapId: s.selectedMap.peek(), slots: s.slots.peek(), rules: s.rules.peek() }; }
   setSetting<K extends SettingKey>(key: K, value: SettingsValues[K]): void {
     const m = this.model, candidate = { ...m.menus.settings.values.peek(), [key]: value };
-    if (validateSettings(candidate).length > 0) { this.fail('Invalid setting'); return; }
-    const local = ['locale', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme'].includes(key);
-    if (!local && !this.ports?.applySetting?.(key, value)) { this.fail(`${key}: ${m.locale.peek() === 'en' ? 'not supported by the active runtime' : 'von der aktiven Runtime nicht unterstützt'}`); return; }
-    const applied = key === 'preset' && this.game ? this.game.runtimeSettings : candidate;
+    if (validateSettings(candidate).length > 0) { this.say('invalidSetting'); return; }
+    const local = ['locale', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'tooltips'].includes(key);
+    if (!local && !this.ports?.applySetting?.(key, value)) { this.say('settingUnsupported'); return; }
+    const preset = key === 'preset' ? parsePresetName(String(value)) : undefined;
+    // Without a running Game the preset's own values are stored too, so a later match starts with exactly that preset.
+    const applied = key === 'preset' && this.game ? this.game.runtimeSettings : preset !== undefined ? { ...candidate, ...presetSettings(preset) } : candidate;
     m.menus.settings.values.value = applied;
     m.locale.value = candidate.locale; m.keyboardLayout.value = candidate.locale; m.teams.value = candidate.teamColors; m.reducedMotion.value = candidate.reducedMotion;
+    uiLocale.value = candidate.locale;
     m.scale.value = candidate.uiScale === 'auto' ? autoScale(typeof window==='undefined'?1080:window.innerHeight) : candidate.uiScale;
     if (this.game) { this.game.client.input.actions = gridActionMap(candidate.keyScheme === 'wasd'); this.game.client.input.edgePanEnabled = candidate.edgePan; }
     try { localStorage.setItem(LOCAL_SETTINGS, JSON.stringify(applied)); } catch { /* Settings still work for this session. */ }
@@ -244,8 +319,12 @@ export class GameHudController {
     // Input selection can change before the next HUD rAF. Resolve this action against it now.
     this.update();
     const factories = this.factoryIndices();
-    const cell = cardSpec(this.model.card).peek().cells.find(c => c.slot === slot);
+    const cell = this.cardCells().find(c => c.slot === slot);
+    // Hotkeys of cells the card does not show (missing blueprint, locked or empty) do nothing,
+    // exactly like the absent button; the same filter as the rendered build card applies.
+    const shown = (id: string | null | undefined) => { const index = id ? game.bp.indexOf(simTypeId(id)) : -1; return index >= 0 && game.bp.buildableByExpr(index) >= 0 ? index : -1; };
     if (factories.length > 0 && cell?.typeId) {
+      if (shown(cell.typeId) < 0) return;
       if (mods.button === 2) this.queueRemove(cell.typeId, mods.shift ? 5 : 1);
       else this.queueAdd(cell.typeId, mods.shift ? 5 : 1, mods.ctrl);
       return;
@@ -253,17 +332,42 @@ export class GameHudController {
     if (mods.button === 2) { this.cancelMode(); return; }
     const current = this.placement?.slot === slot ? presentationUnit(this.placement.typeId)?.tech ?? null : null;
     const cycle = nextHotbuildTier(slot, current, this.model.card.selectedTypes.peek());
-    const typeId = cycle?.typeId ?? cell?.typeId;
-    if (!typeId || !cell || cell.kind !== 'unit' || cell.locked) { this.fail('Build option unavailable'); return; }
-    const bp = game.bp.indexOf(simTypeId(typeId));
-    if (bp < 0) { this.fail(`${typeId}: ${this.model.locale.peek() === 'en' ? 'blueprint unavailable' : 'Blueprint nicht verfügbar'}`); return; }
+    const typeId = cycle !== null && shown(cycle.typeId) >= 0 ? cycle.typeId : cell?.typeId;
+    if (!typeId || !cell || cell.kind !== 'unit' || cell.locked) return;
+    const bp = shown(typeId);
+    if (bp < 0) return;
     const expr = game.bp.buildableByExpr(bp);
-    const builders = this.selectedIndices().some(i => game.bp.buildPowerQ16PerTickCol[game.client.lastFrame!.unitVisual(i)]! > 0 && expr >= 0 && game.bp.unitMatchesExpr(game.client.lastFrame!.unitVisual(i), expr));
-    if (!builders) { this.fail('No eligible builder'); return; }
+    const builders = this.selectedIndices().some(i => game.bp.buildPowerQ16PerTickCol[game.client.lastFrame!.unitVisual(i)]! > 0 && game.bp.unitMatchesExpr(game.client.lastFrame!.unitVisual(i), expr));
+    if (!builders) { this.say('noBuilder'); return; }
     game.client.input.cancelBuildGesture();
     this.placement = { bp, typeId, slot, yaw: 0 }; this.armedOrder = null;
     game.client.input.setBuildGestureHandler(this.buildGesture);
     this.model.card.armedSlot.value = slot; this.model.card.placingTypeId.value = typeId; this.model.card.flashSlot.value = slot; this.flashUntil=performance.now()+140; this.updateGhost();
+  }
+  /**
+   * Card cells the live HUD shows and the grid keys address. Factories get every compiled unit
+   * they can actually produce (all tiers on one page): on its roster slot when free, otherwise
+   * on the next free grid slot. Builders keep the roster card with its hotbuild tiers.
+   */
+  cardCells(): readonly CardCellSpec[] {
+    const spec = cardSpec(this.model.card).peek(), game = this.game, frame = game?.client.lastFrame;
+    if (spec.page !== 'production' || !game || !frame) return spec.cells;
+    const factories = this.factoryIndices().map(i => frame.unitVisual(i));
+    if (factories.length === 0) return spec.cells;
+    const units: { typeId: string; tier: number; preferred: SlotCode | null }[] = [];
+    for (let u = 0; u < game.bp.count; u++) if (game.bp.speedPerTick(u) > 0 && factories.some(f => game.bp.canBuild(f, u))) {
+      const typeId = this.typeId(u), letter = findUnit(typeId)?.hotbuild?.slot;
+      units.push({ typeId, tier: buildRole(game.bp, u).tier, preferred: letter ? `Key${letter}` as SlotCode : null });
+    }
+    units.sort((a, b) => a.tier - b.tier);
+    const used = new Set<SlotCode>(), cells: CardCellSpec[] = [];
+    for (const unit of units) {
+      const slot = unit.preferred !== null && !used.has(unit.preferred) ? unit.preferred : SLOT_CODES.find(code => !used.has(code));
+      if (slot === undefined) break;
+      used.add(slot);
+      cells.push({ slot, typeId: unit.typeId, tiers: [unit.tier], roleTiers: [unit.tier], shownTier: unit.tier, locked: null, kind: 'unit' });
+    }
+    return cells.sort((a, b) => SLOT_CODES.indexOf(a.slot) - SLOT_CODES.indexOf(b.slot));
   }
   cancelMode(): void { this.game?.client.input.setBuildGestureHandler(null); this.clearDragGhosts(); this.placement = null; this.armedOrder = null; this.ghost.value = null; this.model.card.armedSlot.value = null; this.model.card.placingTypeId.value = null; this.updateOrders(); }
   private issueGroundOrder(x: number, z: number, queue: boolean, timeStamp = performance.now()): void {
@@ -320,10 +424,14 @@ export class GameHudController {
       }
     }
     const verdict = canPlace(world, {x:sx,z:sz,w:game.bp.footprintW(p.bp),h:game.bp.footprintH(p.bp),yaw:p.yaw,maxSlopeRaw:game.bp.maxSlope(p.bp),spotKind:kind});
-    const corners: [number, number][] = []; const tmp = new Float64Array(4);
+    const corners: [number, number][] = [], roof: [number, number][] = []; const tmp = new Float64Array(4);
+    const role = buildRole(game.bp, p.bp).role, lift = (PREVIEW_HEIGHT_WU[role] ?? 2) * 4096;
+    let base = -Infinity;
+    for (const [dx,dz] of [[-w,-h],[w,-h],[w,h],[-w,h]]) base = Math.max(base, game.client.heightAtRaw(sx + dx! * 2048, sz + dz! * 2048));
     for (const [dx,dz] of [[-w,-h],[w,-h],[w,h],[-w,h]]) { const cx = sx + dx! * 2048, cz = sz + dz! * 2048;
-      if (game.client.camera.project(cx, game.client.heightAtRaw(cx,cz), cz, tmp)) corners.push([tmp[0]!,tmp[1]!]); }
-    return {bp:p.bp,typeId:p.typeId,x:sx,z:sz,yaw:p.yaw,verdict,corners};
+      if (game.client.camera.project(cx, game.client.heightAtRaw(cx,cz), cz, tmp)) corners.push([tmp[0]!,tmp[1]!]);
+      if (game.client.camera.project(cx, base + lift, cz, tmp)) roof.push([tmp[0]!,tmp[1]!]); }
+    return {bp:p.bp,typeId:p.typeId,x:sx,z:sz,yaw:p.yaw,verdict,corners,roof:roof.length===4?roof:[],role};
   }
   private selectedBuilderHandles(bp: number): number[] {
     const game = this.game, frame = game?.client.lastFrame; if (!game || !frame) return [];
@@ -415,9 +523,10 @@ export class GameHudController {
       return true;
     }
     const spec = cardSpec(m.card).peek();
-    const action = resolveGridKey({code:event.code,alt:event.altKey,ctrl:event.ctrlKey,shift:event.shiftKey,meta:event.metaKey}, {page:spec.page,cells:spec.cells,scheme:m.menus.settings.values.peek().keyScheme,mode:this.armedOrder?'orderArmed':'idle',textFocus:false,modal:false});
+    const action = resolveGridKey({code:event.code,alt:event.altKey,ctrl:event.ctrlKey,shift:event.shiftKey,meta:event.metaKey}, {page:spec.page,cells:this.cardCells(),scheme:m.menus.settings.values.peek().keyScheme,mode:this.armedOrder?'orderArmed':'idle',textFocus:false,modal:false});
     if (action.kind === 'card') { if (!event.repeat) this.commands.cardActivate(action.slot, {button:0,ctrl:event.ctrlKey,alt:event.altKey,shift:event.shiftKey}); return true; }
     if (action.kind === 'order') { if (!event.repeat && m.orders.states.peek()[action.id]?.enabled) this.commands.activateOrder(action.id, {button:0,ctrl:event.ctrlKey,alt:event.altKey,shift:event.shiftKey}); return true; }
+    if (action.kind === 'selfDestruct') { if (!event.repeat && m.orders.states.peek().selfDestruct?.enabled) this.commands.activateOrder('selfDestruct', {button:0,ctrl:true,alt:false,shift:false}); return true; }
     return false;
   }
   private factoryIndices(): number[] {
@@ -432,14 +541,14 @@ export class GameHudController {
   private factoryIssue(op:number,payload:Uint8Array):void {
     const game=this.game,r=game?.client.lastFrame;if(!game||!r||game.client.readOnlyCommands)return;
     const handles=this.factoryIndices().map(i=>r.unitHandle(i));
-    if(handles.length===0){this.fail('No factory selected');return;}
+    if(handles.length===0){this.say('noFactory');return;}
     game.client.commands.issue(op,handles,payload,false,performance.now());
   }
   private queueAdd(typeId:string,count:number,front:boolean):void {
     const game=this.game,r=game?.client.lastFrame;if(!game||!r||game.client.readOnlyCommands)return;
     const bp=game.bp.indexOf(simTypeId(typeId)),factories=this.factoryIndices().filter(i=>bp>=0&&game.bp.canBuild(r.unitVisual(i),bp));
-    if(factories.length===0){this.fail('queueAdd: No eligible factory');return;}
-    if(!Number.isInteger(count)||count<1||count>32){this.fail('Invalid queue count');return;}
+    if(factories.length===0){this.say('noEligibleFactory');return;}
+    if(!Number.isInteger(count)||count<1||count>32){this.say('invalidCount');return;}
     for(let n=0;n<count;n++)game.client.commands.issue(front?Op.FactoryQueueEdit:Op.FactoryQueue,[r.unitHandle(factories[n%factories.length]!)],
       front?encodeFactoryQueueEdit({action:2,index:0,bp,count:1}):encodeFactoryQueue({bp,count:1}),!front,performance.now());
   }
@@ -496,7 +605,7 @@ export class GameHudController {
       return (id==='attack'||id==='tapshot')?!friendly&&!wreck:(id==='reclaim'?wreck:friendly&&!wreck);
     });
     const target=index===null?-1:r.unitHandle(index);
-    if(target<0){if(id==='attack')game.client.commands.issue(Op.AttackMove,game.client.selection.selected(),encodeMove({x:x as never,y:y as never,z:z as never}),queue,performance.now());else this.fail('No visible eligible target');return;}
+    if(target<0){if(id==='attack')game.client.commands.issue(Op.AttackMove,game.client.selection.selected(),encodeMove({x:x as never,y:y as never,z:z as never}),queue,performance.now());else this.say('noTarget');return;}
     const ops:{[key:string]:number}={attack:Op.Attack,assist:Op.Assist,reclaim:Op.Reclaim,repair:Op.Repair,tapshot:Op.Overcharge};
     const op=ops[id];if(op!==undefined)game.client.commands.issue(op,game.client.selection.selected(),encodeTarget(target),queue,performance.now());
   }
@@ -525,7 +634,10 @@ export class GameHudController {
     if(this.destructAt>0){const left=Math.max(0,Math.ceil((this.destructAt-now)/1000));this.model.orders.selfDestructCountdown.value=left;if(left===0){c.commands.issue(Op.SelfDestruct,this.destructHandles,new Uint8Array(0),false,now);this.destructAt=0;this.destructHandles=[];this.model.orders.selfDestructCountdown.value=null;}}
     this.updateFootprints(r); this.updateGhost(); this.updateQueuedGhosts(r); this.updateMinimapFog(now); this.updateCursor();
     if(m.card.flashSlot.peek()&&now>=this.flashUntil)m.card.flashSlot.value=null;
-    batch(() => { if(force||now-this.lastStatusAt>=1000){this.lastStatusAt=now;m.match.timeS.value = c.tick / 10;m.match.units.value=c.ownHandles().length;m.card.capReached.value=m.match.units.peek()>=game.unitCap;} m.match.speed.value = c.speed; m.match.pause.value = c.paused ? 'user' : 'none'; m.match.contextLost.value = game.hud.peek().contextLost;
+    // The clock follows the accepted frame tick at once (seek, rewind, replay end); whole seconds only.
+    const seconds = Math.floor((r?.tick ?? c.tick) / 10);
+    batch(() => { if (m.match.timeS.peek() !== seconds) m.match.timeS.value = seconds;
+      if(force||now-this.lastStatusAt>=1000){this.lastStatusAt=now;m.match.units.value=c.ownHandles().length;m.card.capReached.value=m.match.units.peek()>=game.unitCap;} m.match.speed.value = c.speed; m.match.pause.value = c.paused ? 'user' : 'none'; m.match.contextLost.value = game.hud.peek().contextLost;
       if (!r) return; const indices = this.selectedIndices(); const key = indices.map(i => r.unitHandle(i)).join(',');
       if (key !== this.lastSelection) { this.cancelMode(); m.card.tab.value = null; this.lastSelection = key; force = true; }
       if (!force && now - this.lastDataAt < 250) return; this.lastDataAt = now;
@@ -543,10 +655,11 @@ export class GameHudController {
       const ownIndices=Array.from({length:r.unitCount},(_,i)=>i).filter(i=>r.unitArmy(i)===viewer);
       m.strip.idleEngineers.value=ownIndices.filter(i=>(r.unitFlags(i)&UnitFlags.Idle)&&presentationUnit(this.typeId(r.unitVisual(i))??'')?.categories.includes('ENGINEER')).length;
       m.strip.idleFactories.value=ownIndices.filter(i=>(r.unitFlags(i)&UnitFlags.Idle)&&presentationUnit(this.typeId(r.unitVisual(i))??'')?.categories.includes('FACTORY')).length;
-      m.strip.groups.value = c.controlGroups.snapshot().map(handles => ({count:handles.length,iconTypeId: null}));
+      // snapshot() is indexed by digit; strip slot i is digit (i + 1) % 10, as in save/recallGroup.
+      const digits = c.controlGroups.snapshot(); m.strip.groups.value = digits.map((_, i) => ({count:digits[(i + 1) % 10]?.length ?? 0,iconTypeId: null}));
       this.updateOrders();
     });
-    if (force || now - this.lastEcoAt >= 100) { this.lastEcoAt = now; this.updateEconomy(r); this.updateFactoryProgress(r); this.updateCommanderUpgrade(r); this.updateExtractorUpgrade(r); }
+    if (force || now - this.lastEcoAt >= 100) { this.lastEcoAt = now; this.updateEconomy(r); this.updateFactoryProgress(r); this.updateCommanderUpgrade(r); this.updateExtractorUpgrade(r); this.updateFactoryUpgrade(r); if (r) this.updatePausedSelection(r); }
   }
   private jumpToAlert(id: number): void {
     const item = this.frameAlerts?.find(id);
@@ -572,10 +685,12 @@ export class GameHudController {
     if(factories.length===0){m.factory.detail.value=null;m.factory.queue.value=null;return;}
     const i=factories[0]!,bp=r.unitVisual(i),handle=r.unitHandle(i),w=this.watchIndex(handle);
     if(w<0){m.factory.detail.value=null;m.factory.queue.value=null;return;}
-    const current=r.watchFactoryBp(w),progress=r.watchFactoryProgress(w)/65536;
+    // While a factory upgrades itself the watch reports the upgrade, not a product.
+    const upgrading=(wi:number)=>r.watchTargetCount(wi)>0&&r.watchTargetType(wi,0)===WatchOrderType.Upgrade;
+    const current=upgrading(w)?-1:r.watchFactoryBp(w),progress=upgrading(w)?0:r.watchFactoryProgress(w)/65536;
     const assist = frameFactoryAssistance(r, handle, r.watchBuildTarget(w), visual => this.flowSubject(visual));
     m.factory.detail.value={handle,typeId:this.typeId(bp),hp:Math.round(r.unitHp(i)/255*game.bp.maxHp(bp)),hpMax:game.bp.maxHp(bp),bpOwn:game.bp.buildPowerQ16PerTickCol[bp]!*10/65536,bpAssist:assist.bpAssist,helpers:assist.helpers,adjacencyPct:0,rally:r.watchRallyX(w)>=0?'point':'none',factoryCount:factories.length};
-    const queue:string[]=[];for(const u of factories){const wi=this.watchIndex(r.unitHandle(u));if(wi<0)continue;for(let k=r.watchFactoryBp(wi)>=0?1:0;k<r.watchFactoryQueueCount(wi);k++){const index=r.watchFactoryQueueBp(wi,k);if(index>=0&&game.bp.ids[index]!==undefined)queue.push(this.typeId(index));}}
+    const queue:string[]=[];for(const u of factories){const wi=this.watchIndex(r.unitHandle(u));if(wi<0)continue;for(let k=r.watchFactoryBp(wi)>=0&&!upgrading(wi)?1:0;k<r.watchFactoryQueueCount(wi);k++){const index=r.watchFactoryQueueBp(wi,k);if(index>=0&&game.bp.ids[index]!==undefined)queue.push(this.typeId(index));}}
     m.factory.queue.value={current:current<0?null:{typeId:this.typeId(current)},blocks:mergeQueue(queue),repeat:r.watchFactoryRepeat(w),paused:(r.unitFlags(i)&UnitFlags.Paused)!==0};
     m.factory.progress.value=progress;
     m.card.queueCounts.value=Object.fromEntries(mergeQueue(queue).map(block=>[block.typeId,block.count]));
@@ -614,7 +729,34 @@ export class GameHudController {
     if (!game || !frame || game.client.readOnlyCommands) return;
     this.updateCommanderUpgrade(frame);
     const state = this.commanderUpgrade.peek();
-    if (state?.queued && state.controllable) game.client.commands.issue(Op.Stop, [state.handle], new Uint8Array(0), false, performance.now());
+    if (state?.queued && state.controllable) this.cancelUpgrade(state.handle, state.paused);
+  }
+  /**
+   * Explicit upgrade cancel only. Upgrade pause and manual pause share the Sim's ecoPaused
+   * flag, so a paused upgrader is resumed after the Stop (lower seq, applied first). Generic
+   * Stop keeps its historical semantics and leaves any manual pause untouched.
+   */
+  private cancelUpgrade(handle: number, paused: boolean): void {
+    const game = this.game!, now = performance.now();
+    game.client.commands.issue(Op.Stop, [handle], new Uint8Array(0), false, now);
+    if (paused) game.client.commands.issue(Op.TogglePause, [handle], encodeTogglePause(false), false, now);
+  }
+  /** Resumes only own, currently paused, selected units. */
+  resumeSelection(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    const handles = this.ownPausedHandles(frame);
+    if (handles.length > 0) game.client.commands.issue(Op.TogglePause, handles, encodeTogglePause(false), false, performance.now());
+  }
+  private ownPausedHandles(frame: FrameReader): number[] {
+    const game = this.game!;
+    return this.selectedIndices().filter(i => frame.unitArmy(i) === game.client.playerArmy && (frame.unitFlags(i) & UnitFlags.Paused) !== 0).map(i => frame.unitHandle(i));
+  }
+  private updatePausedSelection(frame: FrameReader): void {
+    const game = this.game!, paused = game.replayMode ? 0 : this.ownPausedHandles(frame).length;
+    const next = paused === 0 ? null : { count: paused, total: this.selectedIndices().length, controllable: !game.client.readOnlyCommands };
+    const current = this.pausedSelection.peek();
+    if (current?.count !== next?.count || current?.total !== next?.total || current?.controllable !== next?.controllable) this.pausedSelection.value = next;
   }
   private updateCommanderUpgrade(frame: FrameReader | null): void {
     const game = this.game, indices = this.selectedIndices();
@@ -672,7 +814,7 @@ export class GameHudController {
     if (!game || !frame || game.client.readOnlyCommands) return;
     this.updateExtractorUpgrade(frame);
     const state = this.extractorUpgrade.peek();
-    if (state?.queued && state.controllable) game.client.commands.issue(Op.Stop, [state.handle], new Uint8Array(0), false, performance.now());
+    if (state?.queued && state.controllable) this.cancelUpgrade(state.handle, state.paused);
   }
   private updateExtractorUpgrade(frame: FrameReader | null): void {
     const game = this.game, indices = this.selectedIndices();
@@ -711,12 +853,73 @@ export class GameHudController {
     };
   }
 
+  startFactoryUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateFactoryUpgrade(frame);
+    const state = this.factoryUpgrade.peek();
+    if (!state?.enabled || !state.targetTypeId) return;
+    const bp = game.bp.indexOf(simTypeId(state.targetTypeId)), payload = new Uint8Array(2);
+    if (bp < 0) return;
+    new DataView(payload.buffer).setUint16(0, bp, true);
+    this.cancelMode();
+    game.client.commands.issue(Op.Upgrade, [state.handle], payload, false, performance.now());
+  }
+  pauseFactoryUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateFactoryUpgrade(frame);
+    const state = this.factoryUpgrade.peek();
+    if (state?.active && state.controllable) game.client.commands.issue(Op.TogglePause, [state.handle], encodeTogglePause(!state.paused), false, performance.now());
+  }
+  /** Stop cancels only a factory's own upgrade (ms6.3); its production queue is kept. */
+  cancelFactoryUpgrade(): void {
+    const game = this.game, frame = game?.client.lastFrame;
+    if (!game || !frame || game.client.readOnlyCommands) return;
+    this.updateFactoryUpgrade(frame);
+    const state = this.factoryUpgrade.peek();
+    if (state?.queued && state.controllable) this.cancelUpgrade(state.handle, state.paused);
+  }
+  private updateFactoryUpgrade(frame: FrameReader | null): void {
+    const game = this.game, indices = this.selectedIndices();
+    if (!game || !frame || indices.length !== 1) { this.factoryUpgrade.value = null; return; }
+    const i = indices[0]!, bp = frame.unitVisual(i), role = buildRole(game.bp, bp);
+    if (role.role !== 'factory' || game.bp.speedPerTick(bp) !== 0 || frame.unitBuild(i) !== 255) { this.factoryUpgrade.value = null; return; }
+    const handle = frame.unitHandle(i), watch = this.watchIndex(handle), successor = game.bp.upgradesTo(bp);
+    let queued = false;
+    if (watch >= 0) for (let k = 0; k < frame.watchTargetCount(watch); k++) queued ||= frame.watchTargetType(watch, k) === WatchOrderType.Upgrade;
+    const active = watch >= 0 && frame.watchTargetCount(watch) > 0 && frame.watchTargetType(watch, 0) === WatchOrderType.Upgrade && frame.watchFactoryBp(watch) >= 0;
+    const target = active ? frame.watchFactoryBp(watch) : successor, progress = active ? frame.watchFactoryProgress(watch) / 65536 : 0;
+    const paused = (frame.unitFlags(i) & UnitFlags.Paused) !== 0, stalled = active && !paused && (frame.unitFlags(i) & UnitFlags.Stalled) !== 0;
+    let effectivePower: number | null = null;
+    if (active && frame.flowTick === frame.tick) for (let f = 0; f < frame.flowCount; f++) if (frame.flowHandle(f) === handle) {
+      for (let e = 0; e < frame.ecoCount; e++) if (frame.ecoArmy(e) === frame.flowArmy(f))
+        effectivePower = Math.floor(frame.flowEffectivePower(f) * frame.ecoRatio(e, frame.flowPriority(f)) / 65536) * 10 / 65536;
+    }
+    // Mobile units the successor can produce and the current tier cannot: what the upgrade unlocks.
+    const unlocks: string[] = [];
+    if (target >= 0) for (let u = 0; u < game.bp.count; u++) if (game.bp.speedPerTick(u) > 0 && game.bp.canBuild(target, u) && !game.bp.canBuild(bp, u)) unlocks.push(this.typeId(u));
+    const own = frame.unitArmy(i) === game.client.playerArmy && !game.client.readOnlyCommands;
+    const next = {
+      handle, currentTypeId: this.typeId(bp), targetTypeId: target >= 0 ? this.typeId(target) : null,
+      tier: role.tier, targetTier: target >= 0 ? buildRole(game.bp, target).tier : null, unlocks,
+      active, queued, progress, paused, stalled, controllable: own, enabled: target >= 0 && !queued && own,
+      mass: target >= 0 ? game.bp.massCostCol[target]! : 0, energy: target >= 0 ? game.bp.energyCostCol[target]! : 0,
+      buildPower: game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536, hpMax: game.bp.maxHpCol[bp]!,
+      targetBuildPower: game.bp.buildPowerQ16PerTickCol[target >= 0 ? target : bp]! * 10 / 65536,
+      targetHpMax: game.bp.maxHpCol[target >= 0 ? target : bp]!,
+      remainingS: active && target >= 0 && !paused && effectivePower !== null && effectivePower > 0 ? (1 - progress) * game.bp.buildTimeCol[target]! / effectivePower : null,
+    };
+    this.factoryUpgrade.value = next;
+  }
+
   private updateFactoryProgress(frame: FrameReader | null): void {
     const game = this.game, detail = this.model.factory.detail.peek();
     if (!game || !frame || !detail) return;
     const watch = this.watchIndex(detail.handle);
     if (watch < 0) { this.model.factory.remainingS.value = null; return; }
-    const current = frame.watchFactoryBp(watch), progress = frame.watchFactoryProgress(watch) / 65536;
+    const upgrading = frame.watchTargetCount(watch) > 0 && frame.watchTargetType(watch, 0) === WatchOrderType.Upgrade;
+    const current = upgrading ? -1 : frame.watchFactoryBp(watch), progress = upgrading ? 0 : frame.watchFactoryProgress(watch) / 65536;
     const flow = frameFactoryAssistance(frame, detail.handle, frame.watchBuildTarget(watch), visual => this.flowSubject(visual));
     this.model.factory.progress.value = progress;
     this.model.factory.remainingS.value = current < 0 ? 0 : flow.available && flow.bpEffective > 0
@@ -741,6 +944,7 @@ export class GameHudController {
         target.flow.value=target.demand.peek()>0?Math.min(1,target.served.peek()/target.demand.peek()):1;}
         m.eco.consumers.value = frameFlowConsumers(frame, visual => this.flowSubject(visual));
         m.eco.interactive.value = !game.client.readOnlyCommands && frame.flowTick === frame.tick;
+        this.ecoAvailable.value = true;
       }); return;
     }
     this.clearEconomy();
@@ -751,6 +955,7 @@ export class GameHudController {
         target.stored.value=0; target.capacity.value=0; target.income.value=0; target.demand.value=0; target.served.value=0; target.flow.value=1;
       }
       this.model.eco.consumers.value=[]; this.model.eco.interactive.value=false;
+      this.ecoAvailable.value = false;
     });
   }
   private flowSubject(bp: number) {
@@ -805,5 +1010,5 @@ export class GameHudController {
     }
     return q.handle;
   }
-  dispose(): void { this.game?.client.input.setBuildGestureHandler(null); this.clearDragGhosts(); this.worldCursor.dispose(); this.game?.client.setActionInterceptor(null); }
+  dispose(): void { for (const dispose of this.disposers.splice(0)) dispose(); if (this.errorTimer !== null) clearTimeout(this.errorTimer); this.game?.client.input.setBuildGestureHandler(null); this.clearDragGhosts(); this.worldCursor.dispose(); this.game?.client.setActionInterceptor(null); }
 }

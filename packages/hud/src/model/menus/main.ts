@@ -6,7 +6,7 @@ export type MenuScreen = 'main' | 'skirmish' | 'replays' | 'settings' | 'tutoria
 
 export interface LastMatch {
   readonly mapName: string;
-  readonly verdict: 'victory' | 'defeat';
+  readonly verdict: 'victory' | 'defeat' | 'draw';
   readonly durationS: number;
   readonly opponent: string;
   /** A replay of the match is stored and can be watched. */

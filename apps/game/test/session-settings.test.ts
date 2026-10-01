@@ -10,10 +10,16 @@ describe('persisted game settings', () => {
     expect(saved.preset).toBe('low'); expect(saved.renderScale).toBe(0.66);
     expect(validateSettings({ ...saved, preset: 'high' })).toEqual([]);
   });
-  it('rejects corrupt and out-of-range stored values without losing usable defaults', () => {
-    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ ...DEFAULT_SETTINGS, renderScale: 0.49 }) });
-    expect(storedSettings()).toBeNull(); expect(restoreSettings()).toEqual(DEFAULT_SETTINGS);
+  it('drops only a broken stored value and keeps every other valid one', () => {
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ ...DEFAULT_SETTINGS, renderScale: 0.49, volMaster: 12, locale: 'en', keyScheme: 'nope', unknown: 1 }) });
+    expect(storedSettings()).toEqual({ ...DEFAULT_SETTINGS, volMaster: 12, locale: 'en' });
     vi.stubGlobal('localStorage', { getItem: () => '{broken' });
+    expect(storedSettings()).toBeNull(); expect(restoreSettings()).toEqual(DEFAULT_SETTINGS);
+    vi.stubGlobal('localStorage', { getItem: () => '[1,2]' });
     expect(storedSettings()).toBeNull();
+  });
+  it('maps values older builds offered but never applied to the supported neighbour', () => {
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ antialias: 'msaa4', splatLayers: 2, shadowCascades: 3, bloom: false }) });
+    expect(storedSettings()).toEqual({ ...DEFAULT_SETTINGS, antialias: 'fxaa', splatLayers: 4, shadowCascades: 2, bloom: false });
   });
 });

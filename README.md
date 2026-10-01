@@ -8,7 +8,7 @@ Das Projekt ist spielbar und wird weiterentwickelt. Die Simulation läuft determ
 
 [GitHub](https://github.com/LoggeL/flow-and-fire) · [HomeBox-Deployment](docs/deployment.md) · [Integrationsstand](docs/status/integration-goal.md) · [Projektplan](docs/PLAN.md)
 
-**[Im Browser spielen](https://flow-and-fire.logge.top/?menu=1)**. Läuft als Docker-Container auf der HomeBox.
+**[Im Browser spielen](https://faf.logge.top/?menu=1)**. Läuft als Docker-Container auf der HomeBox.
 
 ![Flow & Fire: Commander, Bauauswahl und Sicht auf Hollow Ridge](docs/screenshots/gameplay-homebox.png)
 
@@ -19,11 +19,11 @@ Starte im Hauptmenü ein **Gefecht**. Wähle Karte, Startpositionen, Teams und K
 Aktuell enthalten:
 
 - Gefechte gegen die KI mit den Stufen Leicht, Normal und Schwer, konfigurierbaren Regeln und Karten.
-- Masse- und Energiewirtschaft, Gebäudeplatzierung, Baureihen, Fabrikwarteschlangen und Wiederholproduktion.
+- Masse- und Energiewirtschaft, Gebäudeplatzierung, Baureihen, Fabrikwarteschlangen und Wiederholproduktion; bezahlter Ausbau von Extraktoren und Landwerken bis T3.
 - Commander, Pioniere, Späher, Panzer und Artillerie; bezahlte Engineering- und Panzerungsupgrades für den ACU.
-- Nebel des Krieges, Strategic Zoom, Mehrfachauswahl, Kontrollgruppen und kontextabhängige Rechtsklickbefehle.
+- Vorerkundetes Gelände, Nebel des Krieges, Radar, Geschütztürme, Strategic Zoom, Mehrfachauswahl, Kontrollgruppen und kontextabhängige Rechtsklickbefehle.
 - Kompaktes HUD mit Einheitenicons, Ressourcenfluss, Meldungen und deutschen sowie englischen Menüs.
-- Spielsound und Replay-Bibliothek mit Import, Export, Zeitnavigation und Wiedergabetempo. Lokale Aufnahmen hängen von den Speicherfunktionen des Browsers ab.
+- Ergebnisstatistik, Spielsound und Replay-Bibliothek mit Import, Export, Suche, Umbenennen, Zeitnavigation und Wiedergabetempo. Lokale Aufnahmen hängen von den Speicherfunktionen des Browsers ab.
 
 ## Schnellstart mit Docker
 

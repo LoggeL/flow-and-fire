@@ -311,6 +311,8 @@ describe('content', () => {
       'core:cube',
       'core:eng_t1',
       'core:fac_land_t1',
+      'core:fac_land_t2',
+      'core:fac_land_t3',
       'core:lnd_t1_arty',
       'core:lnd_t1_scout',
       'core:lnd_t1_tank',
@@ -318,7 +320,11 @@ describe('content', () => {
       'core:lnd_t3_heavy',
       'core:str_t1_estorage',
       'core:str_t1_mex',
+      'core:str_t1_pd',
       'core:str_t1_pgen',
+      'core:str_t1_radar',
+      'core:str_t2_mex',
+      'core:str_t3_mex',
     ]);
     const cube = game.units.find((u) => u.id === 'core:cube')!;
     expect(cube.simId).toBe(game.units.findIndex((u) => u.id === 'core:cube'));

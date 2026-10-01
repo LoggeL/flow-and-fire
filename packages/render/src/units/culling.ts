@@ -16,7 +16,8 @@
  *   (`marginPerWU × distance`) so icons at the frustum edge do not pop.
  */
 import type { Frustum } from '../frustum.ts';
-import { UNIT_INSTANCE_OFF_VISUAL, UNIT_INSTANCE_STRIDE } from '../instance-layout.ts';
+import { UnitFlags } from '@faf/protocol';
+import { UNIT_INSTANCE_OFF_FLAGS, UNIT_INSTANCE_OFF_VISUAL, UNIT_INSTANCE_STRIDE } from '../instance-layout.ts';
 
 export const LOD_LEVELS = 3;
 /** Default LOD switch distances in WU (PLAN §3.9 `view.lod: [60, 180]`). */
@@ -180,6 +181,13 @@ export class InstanceCuller {
       }
       const dist = Math.hypot(cxr - ex, cyr - ey, czr - ez);
       st.visible++;
+      // Radar blips never show a model: they always go to the icon-only bucket (blip glyph).
+      const flagsAt = i * UNIT_INSTANCE_STRIDE + UNIT_INSTANCE_OFF_FLAGS;
+      if (((bytes[flagsAt]! | (bytes[flagsAt + 1]! << 8)) & UnitFlags.Blip) !== 0) {
+        keys[i] = iconKey;
+        st.iconOnly++;
+        continue;
+      }
       if (sc !== null) {
         const selR = sc.selectionRadius[visual]!;
         const thr = sc.iconThreshold[visual]!;

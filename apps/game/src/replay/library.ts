@@ -13,6 +13,7 @@ export interface ReplayExport {
 export interface ReplayInfo { readonly head: ReplayHead; readonly game: ReplayGame; readonly meta: ReplayMeta | null; }
 export type ReplayTaskRequest = { readonly t: 'replay-task'; readonly id: number } & (
   { readonly kind: 'list' } |
+  { readonly kind: 'delete'; readonly name: string } |
   { readonly kind: 'inspect'; readonly bytes: ArrayBuffer } |
   { readonly kind: 'export'; readonly name: string; readonly simBin: ArrayBuffer; readonly map: ArrayBuffer } |
   { readonly kind: 'convert'; readonly bytes: ArrayBuffer; readonly simBin: ArrayBuffer; readonly map: ArrayBuffer });
@@ -50,6 +51,8 @@ export class ReplayLibrary {
     });
   }
   list(): Promise<readonly RecordedGame[]> { return this.request({ kind: 'list' }); }
+  /** Removes one stored recording; a log still being written by a running match is refused. */
+  delete(name: string): Promise<void> { return this.request({ kind: 'delete', name }); }
   inspect(bytes: Uint8Array): Promise<ReplayInfo> {
     const copy = bytes.slice().buffer; return this.request({ kind: 'inspect', bytes: copy }, [copy]);
   }
@@ -71,6 +74,27 @@ export class ReplayLibrary {
     this.worker.removeEventListener('message', this.listener); this.worker.removeEventListener('error', this.failed); this.worker.removeEventListener('messageerror', this.failed);
     this.worker.terminate();
   }
+}
+
+/** Player labels for stored recordings. File names stay untouched: rotation and recovery rely on them. */
+export const REPLAY_LABELS_KEY = 'faf.replayLabels.v1';
+export function loadReplayLabels(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): Readonly<Record<string, string>> {
+  try {
+    const raw: unknown = JSON.parse(storage?.getItem(REPLAY_LABELS_KEY) ?? '{}');
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+    return Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== ''));
+  } catch { return {}; }
+}
+export function saveReplayLabel(name: string, label: string, storage: Pick<Storage, 'getItem' | 'setItem'> | undefined = globalThis.localStorage): Readonly<Record<string, string>> {
+  const labels: Record<string, string> = { ...loadReplayLabels(storage) }, clean = label.trim().slice(0, 80);
+  if (clean === '') delete labels[name]; else labels[name] = clean;
+  try { storage?.setItem(REPLAY_LABELS_KEY, JSON.stringify(labels)); } catch { /* Labels stay session-only. */ }
+  return labels;
+}
+/** Recording start time from `log-YYYYMMDDTHHMMSSmmm-…`, or null for foreign names. */
+export function recordingDate(name: string): Date | null {
+  const m = /^log-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(\d{3})-/.exec(name);
+  return m === null ? null : new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!, +m[4]!, +m[5]!, +m[6]!, +m[7]!));
 }
 
 export function downloadReplay(bytes: Uint8Array, name = 'game.rtsreplay'): void {

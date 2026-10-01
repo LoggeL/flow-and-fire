@@ -16,14 +16,15 @@ export function LiveExtractorUpgrade({ controller }: { readonly controller: Upgr
   const status = upgrade.queued && !upgrade.active ? (en ? 'Queued' : 'Eingereiht')
     : upgrade.paused ? (en ? 'Paused' : 'Pausiert')
     : upgrade.stalled ? (en ? 'Waiting for resources' : 'Wartet auf Ressourcen')
-    : upgrade.remainingS === null ? (en ? 'Upgrading' : 'Upgrade läuft') : `${number(upgrade.remainingS)} s`;
+    : upgrade.remainingS === null ? (en ? 'Upgrading' : 'Ausbau läuft') : `${number(upgrade.remainingS)} s`;
   return <Panel class="live-commander-upgrade" panelId="extractor-upgrades" testId="extractor-upgrades" component="ExtractorUpgrades">
-    <div class="live-upgrade-heading"><b>{en ? 'Mass extractor' : 'Masseextraktor'} · T{upgrade.tier}</b>{busy && <span>{status}</span>}</div>
+    <div class="live-upgrade-heading"><b>{liveUnitText(upgrade.currentTypeId, 'name', m.locale.value)} · T{upgrade.tier}</b>{busy && <span>{status}</span>}</div>
     {target === null ? <div class="live-upgrade-complete">{en ? 'Fully upgraded' : 'Voll ausgebaut'} · {number(upgrade.massIncome)} M/s</div>
       : busy ? <div class="live-upgrade-running">
         <div class="live-upgrade-progress-label"><span>{target}</span><span>{percentage}</span></div>
         <Bar kind="build" value={upgrade.progress} testId="extractor-upgrade-progress" label={`${target}: ${percentage}`}/>
-        <div class="live-upgrade-running-actions"><button type="button" data-testid="extractor-upgrade-pause" disabled={!upgrade.active || !upgrade.controllable} onClick={() => controller.pauseExtractorUpgrade()}>{upgrade.paused ? (en ? 'Resume' : 'Fortsetzen') : 'Pause'}</button><button type="button" data-testid="extractor-upgrade-cancel" disabled={!upgrade.controllable} onClick={() => controller.cancelExtractorUpgrade()}>{en ? 'Cancel' : 'Abbrechen'}</button></div>
+        <div class="live-upgrade-running-actions"><button type="button" data-testid="extractor-upgrade-pause" disabled={!upgrade.active || !upgrade.controllable} onClick={() => controller.pauseExtractorUpgrade()}>{upgrade.paused ? (en ? 'Resume' : 'Fortsetzen') : 'Pause'}</button><button type="button" data-testid="extractor-upgrade-cancel" disabled={!upgrade.controllable} title={upgrade.paused ? (en ? 'Cancels the upgrade and resumes the unit' : 'Bricht den Ausbau ab und setzt die Einheit fort') : undefined} onClick={() => controller.cancelExtractorUpgrade()}>{upgrade.paused ? (en ? 'Cancel & resume' : 'Abbrechen + fortsetzen') : (en ? 'Cancel' : 'Abbrechen')}</button></div>
+        {upgrade.paused && <div class="live-upgrade-paused-note" data-testid="extractor-upgrade-paused-note">{en ? 'Paused: mass output and the upgrade are idle.' : 'Pausiert: Masseförderung und Ausbau ruhen.'}</div>}
       </div>
       : <button class="live-upgrade-start" type="button" data-testid="extractor-upgrade-start" disabled={!upgrade.enabled || !upgrade.controllable} aria-label={`${en ? 'Upgrade' : 'Ausbauen'}: ${target}. ${number(upgrade.mass)} M, ${number(upgrade.energy)} E. ${improvements}`} title={improvements} onClick={() => controller.startExtractorUpgrade()}>
         <ResourceGlyph kind="mass" decorative/><span>T{upgrade.targetTier}</span>

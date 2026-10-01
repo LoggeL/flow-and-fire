@@ -16,7 +16,7 @@ import { parseParams, type GameParams } from './params.ts';
 import { ReplayController, ReplayLibrary, ReplayPanel, createReplayWorker, downloadReplay, transferredReplay, type RecordedGame, type ReplayAssets } from './replay/index.ts';
 import { skirmishInitialization } from './session-setup.ts';
 import { SessionAssetsStore, gameAssetsFromSession, type SessionMap } from './session-assets.ts';
-import { storedSettings } from './session-settings.ts';
+import { storedSettings, uiLocale } from './session-settings.ts';
 import { App, BootError } from './ui/App.tsx';
 import { LoadingScreen } from './ui/LoadingScreen.tsx';
 
@@ -69,7 +69,14 @@ async function beforeHistoricalReplayNavigation(): Promise<void> {
   try { await disposeSession(); }
   finally { await previous?.audio.dispose(); }
 }
-function report(error: unknown): void { actionError.value = error instanceof Error ? error.message : String(error); }
+let actionErrorTimer: ReturnType<typeof setTimeout> | null = null;
+/** Session errors stay readable for five seconds, then clear like in-game action errors. */
+function report(error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  actionError.value = message;
+  if (actionErrorTimer !== null) clearTimeout(actionErrorTimer);
+  actionErrorTimer = setTimeout(() => { actionErrorTimer = null; if (actionError.peek() === message) actionError.value = null; }, 5000);
+}
 
 const ports: GameHudPorts = {
   startSkirmish(config) { void startSession(config).catch(report); },
@@ -84,6 +91,12 @@ const ports: GameHudPorts = {
     if (game === null || game.replayMode) return;
     const assets = currentReplayAssets();
     void game.exportLog(false).then(bytes => replayLibrary().convert(bytes, assets)).then(result => downloadReplay(result.bytes)).catch(report);
+  },
+  watchMatchReplay() {
+    const game = gameSig.peek();
+    if (game === null || game.replayMode) return;
+    const assets = currentReplayAssets();
+    void game.exportLog(false).then(bytes => replayLibrary().convert(bytes, assets)).then(result => startSession(undefined, result.bytes)).catch(report);
   },
   applySetting(key, value) {
     const game = gameSig.peek();
@@ -107,8 +120,9 @@ function defaultSkirmish(mapId: string): SkirmishConfig {
   return {
     mapId,
     slots: [
-      { index: 0, name: 'Spieler', controller: 'human', faction: 'varkan', color: 'team-blau', team: 0, start: 0, ai: null },
-      { index: 1, name: 'KI', controller: 'ai', faction: 'varkan', color: 'team-rot', team: 1, start: 1, ai: { difficulty: 'normal', aix: false, aixFactor: 1 } },
+      // Colours are setup option ids; teams stay 0-based internally (shown as 1 and 2).
+      { index: 0, name: 'Spieler', controller: 'human', faction: 'varkan', color: 'blue', team: 0, start: 0, ai: null },
+      { index: 1, name: 'KI', controller: 'ai', faction: 'varkan', color: 'red', team: 1, start: 1, ai: { difficulty: 'normal', aix: false, aixFactor: 1 } },
     ],
     rules: { ...DEFAULT_SKIRMISH_RULES, seed: initialParams.seed },
   };
@@ -117,10 +131,11 @@ function Root() {
   const game = gameSig.value, state = load.value, assets = assetsSig.value;
   return <>
     {game !== null ? <App game={game} ports={ports} {...(game.result.value !== null ? { result: game.result.value } : {})}/> : state.phase === 'ready' ? <FrontendMenus ports={ports} maps={menuMaps.value} build={__FAF_BUILD_HASH__} {...(configSig.value !== undefined ? { initialConfig: configSig.value } : {})}/> : null}
-    {(replayOpen.value || game !== null) && assets !== null ? <ReplayPanel library={replayLibrary()} controller={replaySig.value} open={replayOpen.value}
+    {(replayOpen.value || (game !== null && (game.replayMode || game.result.value === null))) && assets !== null ? <ReplayPanel library={replayLibrary()} controller={replaySig.value} open={replayOpen.value}
       assets={{ simBin: assets.simBin, map: assets.mapBytes }}
       exportCurrentLog={game !== null && !game.replayMode ? () => game.exportLog(false) : null}
       onOpen={bytes => startSession(undefined, bytes)} onExit={() => { ports.leaveGame(); }} resolveAssets={recordingAssets}
+      locale={uiLocale.value} mapName={hash => mapsSig.value.find(map => map.simHash === hash)?.menu.name}
       beforeHistoricalNavigate={beforeHistoricalReplayNavigation}/> : null}
     {actionError.value !== null ? <div class="live-action-error" role="alert">{actionError.value}<button onClick={() => { actionError.value = null; }}>Schließen</button></div> : null}
     {state.phase !== 'ready' ? <LoadingScreen state={state} mapName={params.value.map}/> : null}

@@ -11,7 +11,7 @@ function fixture(readOnlyCommands = false) {
   const link=new FakeSimLink({units:1,enemyUnits:0}); const canvas=new FakeCanvas(); const win=new FakeTarget(); const renderer=new FakeRenderer();
   const map=ClientMap.testPlane(64);
   const client=new GameClient({canvas,keyTarget:win,renderer,link,map,visuals:[],playerArmy:0,raf:new ManualRaf(),readOnlyCommands});
-  const bp={ids:['core:cmd_commander','core:str_t1_pgen','core:str_t1_mex'],indexOf:(id:string)=>bp.ids.indexOf(id),buildPowerQ16PerTickCol:Int32Array.of(65536,0,0),massCostCol:Int32Array.of(0,75,36),spotKindCol:Int32Array.of(-1,-1,0),upgradesTo:()=>-1,maxHpCol:Int32Array.of(10000,400,400),firstMount:()=>0,mountCount:()=>0,footprintW:()=>2,footprintH:()=>2,maxSlope:()=>4096,buildableByExpr:()=>0,unitMatchesExpr:()=>true,maxHp:()=>10000,speedPerTick:()=>4096,vision:()=>40960};
+  const bp={ids:['core:cmd_commander','core:str_t1_pgen','core:str_t1_mex'],indexOf:(id:string)=>bp.ids.indexOf(id),buildPowerQ16PerTickCol:Int32Array.of(65536,0,0),massCostCol:Int32Array.of(0,75,36),spotKindCol:Int32Array.of(-1,-1,0),upgradesTo:()=>-1,maxHpCol:Int32Array.of(10000,400,400),firstMount:()=>0,mountCount:()=>0,footprintW:()=>2,footprintH:()=>2,maxSlope:()=>4096,buildableByExpr:()=>0,unitMatchesExpr:()=>true,maxHp:()=>10000,speedPerTick:()=>4096,vision:()=>40960,categoryNames:[] as string[],categoryWord:()=>0};
   const game={client,bp,map,unitCap:8192,replayMode:readOnlyCommands,hud:signal({contextLost:false}),params:{preset:'medium'},buildHash:'test',transport:'transfer',ready:null} as unknown as Game;
   const controller=new GameHudController(game);
   const caps={units:4,parts:0,projectiles:0,beams:0,events:0,debugBytes:0,eco:1,footprints:4};
@@ -35,7 +35,19 @@ describe('real game HUD adapter',()=>{
     f.publish(true);f.controller.commands.cardActivate('KeyW',click);f.canvas.dispatch(pointer('pointerdown',640,360,0));f.canvas.dispatch(pointer('pointerup',640,360,0));
     expect(f.link.sentBatches).toHaveLength(1);expect(f.controller.ghost.value?.verdict).not.toBe(0);
     f.controller.commands.cancelMode();f.controller.dispose();f.client.dispose();});
-  it('camera and selected commands route through the active client, unsupported actions report visibly',()=>{const f=fixture();f.controller.commands.setCamera(12,14);expect(f.client.cameraState().x).toBe(12);f.controller.commands.minimapOrder(20,25,true);expect(decodeBatch(f.link.sentBatches[0]!)[0]!.op).toBe(Op.Move);f.controller.commands.activateOrder('stop',click);expect(decodeBatch(f.link.sentBatches[1]!)[0]!.op).toBe(Op.Stop);f.controller.commands.queueAdd('core:lnd_t1_tank',1,false);expect(f.controller.error.value).toMatch(/queueAdd/);f.controller.dispose();f.client.dispose();});
+  it('camera and selected commands route through the active client, unsupported actions report visibly',()=>{const f=fixture();f.controller.commands.setCamera(12,14);expect(f.client.cameraState().x).toBe(12);f.controller.commands.minimapOrder(20,25,true);expect(decodeBatch(f.link.sentBatches[0]!)[0]!.op).toBe(Op.Move);f.controller.commands.activateOrder('stop',click);expect(decodeBatch(f.link.sentBatches[1]!)[0]!.op).toBe(Op.Stop);f.controller.commands.queueAdd('core:lnd_t1_tank',1,false);expect(f.controller.error.value).toBe('Keine ausgewählte Fabrik kann das bauen.');expect(f.controller.error.value).not.toMatch(/queueAdd|core:/);f.controller.dispose();f.client.dispose();});
+  it('hotkeys of cards the build card does not show are ignored without a raw error',()=>{const f=fixture();
+    const shown=new Set(['KeyQ','KeyW']);
+    for(const code of ['KeyD','KeyF','KeyG','KeyZ','KeyX','KeyC','KeyV','KeyB'].filter(code=>!shown.has(code)))f.controller.handleKey(key('keydown',code) as unknown as KeyboardEvent);
+    expect(f.controller.error.value).toBeNull();expect(f.controller.model.card.placingTypeId.value).toBeNull();expect(f.link.sentBatches).toHaveLength(0);
+    f.controller.dispose();f.client.dispose();});
+  it('control group strip slots follow their digit (slot 0 = key 1, slot 9 = key 0)',()=>{const f=fixture();
+    f.controller.commands.saveGroup(0,false);f.controller.update(true);
+    expect(f.client.controlGroups.snapshot()[1]).toEqual([42]);
+    expect(f.controller.model.strip.groups.value.map(g=>g.count)).toEqual([1,0,0,0,0,0,0,0,0,0]);
+    f.controller.commands.saveGroup(9,false);f.controller.update(true);
+    expect(f.controller.model.strip.groups.value[9]!.count).toBe(1);
+    f.controller.dispose();f.client.dispose();});
   it('grid mode does not pan while pressing a build key',()=>{const actions=gridActionMap();expect(actions.panDirection('KeyW')).toBeNull();expect(actions.panDirection('ArrowUp')).toEqual([0,1]);expect(gridActionMap(true).panDirection('KeyW')).toEqual([0,1]);});
   it.each(['key','card'] as const)('immediate %s build after selection uses the current unit and survives the next HUD update',mode=>{
     const f=fixture();

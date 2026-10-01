@@ -59,7 +59,7 @@ describe('GameClient with a map', () => {
   it('setMap: terrain + spot decals to the renderer, camera bounds/terrain, back to the test plane', () => {
     const { client, renderer, map } = setup();
     expect(renderer.terrain).toMatchObject({ sizeWu: 512, heightScaleRaw: 32, waterLevelRaw: 40960 });
-    expect(renderer.decals).toHaveLength(18);
+    expect(renderer.decals).toHaveLength(16 * 2 + 2); // Mass: pad + ring; hydro: diamond.
     expect(client.mapBounds).toEqual(map.bounds);
     client.jumpTo(96 * RAW_PER_WU, 96 * RAW_PER_WU, 60);
     expect(client.cameraState().y).toBeCloseTo(client.cameraController.focusHeightWU(96, 96), 6);

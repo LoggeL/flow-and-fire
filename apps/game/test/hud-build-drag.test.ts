@@ -16,6 +16,7 @@ function fixture(readOnlyCommands = false, spots: readonly { readonly kind: 'mas
     buildPowerQ16PerTickCol: Int32Array.of(65536, 0, 0), massCostCol: Int32Array.of(0, 75, 36), spotKindCol: Int32Array.of(-1, -1, 0),
     upgradesTo: () => -1, maxHpCol: Int32Array.of(10000, 400, 400), firstMount: () => 0, mountCount: () => 0, footprintW: () => 2, footprintH: () => 2, maxSlope: () => 4096,
     buildableByExpr: () => 0, unitMatchesExpr: () => true, maxHp: () => 10000, speedPerTick: () => 4096, vision: () => 40960,
+    categoryNames: [] as string[], categoryWord: () => 0,
   };
   const game = { client, bp, map, unitCap: 8192, replayMode: readOnlyCommands, hud: signal({ contextLost: false }), params: { preset: 'medium' }, buildHash: 'test', transport: 'transfer', ready: null } as unknown as Game;
   const controller = new GameHudController(game);

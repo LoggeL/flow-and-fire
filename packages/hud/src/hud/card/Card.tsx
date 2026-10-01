@@ -1,3 +1,4 @@
+import type { JSX } from 'preact';
 import { computed } from '@preact/signals';
 import { useMemo } from 'preact/hooks';
 import { useHud, useCommands } from '../../model/index.ts';
@@ -15,22 +16,26 @@ import { t, tn } from '../../i18n/t.ts';
 import { cardSpec, isTabLocked, orderBarVisible } from './spec.ts';
 import '../../styles/hud.css';
 import './card.css';
-export function CardCell({ cell, demoState, danger = false, builderPower, buildCost }: {
+export function CardCell({ cell, demoState, danger = false, builderPower, buildCost, glyph, name }: {
     readonly cell: CardCellSpec;
+    /** Optional class silhouette replacing the strategic icon (the live game build card). */
+    readonly glyph?: JSX.Element | undefined;
+    /** Optional short name for compiled units outside the design roster. */
+    readonly name?: string | undefined;
     readonly demoState?: DemoState;
     readonly danger?: boolean;
     readonly builderPower?: number | undefined;
     readonly buildCost?: { readonly mass: number; readonly energy: number; readonly buildTime: number } | undefined;
 }) {
     const m = useHud(), c = useCommands(), disabled = m.card.capReached.value && cell.kind === 'unit', empty = cell.kind === 'empty';
-    const label = cell.typeId ? cell.kind === 'unit' ? unitText(cell.typeId, 'short', m.locale.value) : t(`ui.card.cell.${cell.kind === 'empty' ? 'pause' : cell.kind}`) : '';
+    const label = cell.typeId ? cell.kind === 'unit' ? name ?? unitText(cell.typeId, 'short', m.locale.value) : t(`ui.card.cell.${cell.kind === 'empty' ? 'pause' : cell.kind}`) : '';
     const progress = useMemo(() => computed(() => m.card.progress.value[cell.typeId ?? ''] ?? 0), [m, cell.typeId]);
     const count = m.card.queueCounts.value[cell.typeId ?? ''] ?? 0;
     const hint = (keyboard: boolean) => { if (!cell.typeId)
         return; m.tooltip.target.value = { kind: 'unit', typeId: cell.typeId, slot: cell.slot, builderBp: builderPower && builderPower > 0 ? builderPower : undefined, buildCost, locked: cell.locked, disabledReason: disabled ? t('ui.card.disabled.cap') : undefined }; m.tooltip.anchor.value = { kind: 'card' }; m.tooltip.viaKeyboard.value = keyboard; };
     return <button type="button" role="gridcell" class={`ff-cell ${empty ? 'is-empty' : ''} ${cell.locked ? 'is-locked' : ''} ${disabled ? 'is-disabled' : ''} ${m.card.armedSlot.value === cell.slot ? 'is-active' : ''} ${m.card.flashSlot.value === cell.slot ? 'is-pressed' : ''} ${danger ? 'is-danger' : ''} ${demoClass(demoState) ?? ''}`} data-component="CardCell" data-testid={`card-${cell.slot}`} aria-disabled={!!cell.locked || disabled || empty} aria-label={t('ui.card.cell.label', { name: label, key: keyLabel(cell.slot, m.keyboardLayout.value) })} onClick={(e) => { if (!cell.locked && !disabled && !empty)
         c.cardActivate(cell.slot, clickModsFromEvent(e)); }} onContextMenu={(e) => { e.preventDefault(); if (!cell.locked && !empty)
-        c.cardActivate(cell.slot, clickModsFromEvent(e)); }} onMouseEnter={() => hint(false)} onFocus={() => hint(true)} onBlur={() => { m.tooltip.target.value = null; }} onMouseLeave={() => { m.tooltip.target.value = null; }}><span class="ff-cell__key">{keyLabel(cell.slot, m.keyboardLayout.value)}</span>{cell.typeId && <StrategicIcon typeId={cell.typeId} class="ff-cell__icon"/>}<span class="ff-cell__name" data-fit="">{label}</span>{cell.locked && <span class="ff-cell__lock">⌑</span>}{count > 0 ? <span class="ff-cell__badge">{count > 99 ? '99+' : count}</span> : <span class="ff-cell__tiers">{[1, 2, 3].map((tier) => <i key={tier} class={cell.roleTiers.includes(tier) ? cell.shownTier === tier ? 'is-current' : '' : 'is-missing'}/>)}</span>}<Bar kind="build" value={progress} class="ff-cell__progress"/></button>;
+        c.cardActivate(cell.slot, clickModsFromEvent(e)); }} onMouseEnter={() => hint(false)} onFocus={() => hint(true)} onBlur={() => { m.tooltip.target.value = null; }} onMouseLeave={() => { m.tooltip.target.value = null; }}><span class="ff-cell__key">{keyLabel(cell.slot, m.keyboardLayout.value)}</span>{cell.typeId && (glyph ?? <StrategicIcon typeId={cell.typeId} class="ff-cell__icon"/>)}<span class="ff-cell__name" data-fit="">{label}</span>{cell.locked && <span class="ff-cell__lock">⌑</span>}{count > 0 ? <span class="ff-cell__badge">{count > 99 ? '99+' : count}</span> : <span class="ff-cell__tiers">{[1, 2, 3].map((tier) => <i key={tier} class={cell.roleTiers.includes(tier) ? cell.shownTier === tier ? 'is-current' : '' : 'is-missing'}/>)}</span>}<Bar kind="build" value={progress} class="ff-cell__progress"/></button>;
 }
 export function OrderButton({ id, compact = false, demoState }: {
     readonly id: OrderId;
@@ -48,7 +53,7 @@ export function OrderTooltip({ orderId }: {
     readonly orderId: OrderId;
 }) {
     const m = useHud(), def = orderDef(orderId), state = orderState(m.orders.states.value, orderId);
-    return <TooltipFrame name={t(`ui.orders.${orderId}.name`)} icon={<LineIcon name={orderIcon(orderId, state)}/>} keyHint={def.key ? keyLabel(def.key, m.keyboardLayout.value) : t('ui.orders.key.selfDestruct')} body={<div><p>{t(`ui.orders.${orderId}.desc`)}</p><p>{t(`ui.orders.behavior.${def.behavior}`)}</p>{!state.enabled && <p>{t('ui.orders.unavailable', { reason: t(`ui.orders.reason.${state.reason ?? 'noSelection'}`) })}</p>}</div>} foot={t('ui.orders.feature', { ids: def.features.join(', '), milestone: def.milestone })} testId="order-tooltip"/>;
+    return <TooltipFrame name={t(`ui.orders.${orderId}.name`)} icon={<LineIcon name={orderIcon(orderId, state)}/>} keyHint={def.key ? keyLabel(def.key, m.keyboardLayout.value) : t('ui.orders.key.selfDestruct')} body={<div><p>{t(`ui.orders.${orderId}.desc`)}</p><p>{t(`ui.orders.behavior.${def.behavior}`)}</p>{!state.enabled && <p>{t('ui.orders.unavailable', { reason: t(`ui.orders.reason.${state.reason ?? 'noSelection'}`) })}</p>}</div>} testId="order-tooltip"/>;
 }
 export function CommandCard() {
     const m = useHud(), c = useCommands(), spec = cardSpec(m.card).value;

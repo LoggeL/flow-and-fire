@@ -1,6 +1,6 @@
 import { computed, effect } from '@preact/signals';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { HudProvider, MainMenu, SkirmishSetup, Settings, ScoreScreen, bindUiSettings, autoScale, ResourceBar, MatchStatus, PauseBanner, CardCell, OrderButton, SelectionFilter, ControlGroups, TooltipLayer, GameMenu, IconSprite, StrategicIcon, Panel, PanelHead, cardSpec, useHud, useCommands, Num, Bar, Button, ORDER_DEFS, orderDef, keyLabel, nextFocusType, clickModsFromEvent, fmtDec, fmtPct, tn, t, type SkirmishMap, type SkirmishConfig } from '@faf/hud';
+import { HudProvider, MainMenu, SkirmishSetup, Settings, ScoreScreen, bindUiSettings, autoScale, ResourceBar, MatchStatus, PauseBanner, CardCell, OrderButton, SelectionFilter, TooltipLayer, GameMenu, IconSprite, StrategicIcon, Panel, PanelHead, cardSpec, useHud, useCommands, Num, Bar, Button, ORDER_DEFS, orderDef, keyLabel, nextFocusType, clickModsFromEvent, fmtDec, fmtPct, tn, t, type SkirmishMap, type SkirmishConfig } from '@faf/hud';
 import '@faf/hud/styles.css';
 import { GameHudController, type GameHudPorts, type MatchResult } from './live.ts';
 import type { Game } from '../game.ts';
@@ -10,6 +10,10 @@ import { liveUnitText } from './unit-text.ts';
 import { LiveNotices } from './LiveNotices.tsx';
 import { LiveExtractorUpgrade } from './LiveExtractorUpgrade.tsx';
 import { LiveCommanderUpgrade } from './LiveCommanderUpgrade.tsx';
+import { LiveFactoryUpgrade } from './LiveFactoryUpgrade.tsx';
+import { BuildGlyph } from './BuildGlyph.tsx';
+import { LiveBriefing, LiveCredits } from './LiveInfoScreens.tsx';
+import { BUILD_ROLE_COLORS, buildRole } from './build-role.ts';
 
 const PRIMARY_ORDERS=['move','attack','patrol','stop','assist','reclaim'] as const;
 
@@ -25,12 +29,12 @@ function ControllerView({controller}: {controller:GameHudController}) {
   const screen=controller.screen.value, ghost=controller.ghost.value, queuedGhosts=controller.queuedGhosts.value, dragGhosts=controller.dragGhosts.value;
   return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen}>
     <HudProvider model={m} commands={controller.commands}>
-      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu/>:screen==='skirmish'?<SkirmishSetup/>:screen==='settings'?<Settings/>:screen==='credits'?<div class="live-unavailable" data-testid="credits"><h2>Flow &amp; Fire</h2><p>{m.locale.value==='en'?'Interface: Preact. Development tools: TypeScript and Vite.':'Oberfläche: Preact. Entwicklungswerkzeuge: TypeScript und Vite.'}</p><p>{m.menus.main.build.value}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>:screen==='score'?(controller.result.value?.verdict==='draw'?<div class="live-unavailable"><h2>{m.locale.value==='en'?'Draw':'Unentschieden'}</h2><p>{controller.result.value.durationS.toFixed(1)} s</p><button onClick={()=>controller.commands.quitToMenu()}>{m.locale.value==='en'?'Main menu':'Hauptmenü'}</button></div>:<ScoreScreen/>):<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
+      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu/>:screen==='skirmish'?<SkirmishSetup/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
     </HudProvider>
-    {controller.error.value&&<div class="live-action-error" role="alert" data-testid="hud-action-error">{controller.error.value}<button type="button" aria-label="Close" onClick={()=>{controller.error.value=null;}}>×</button></div>}
+    {controller.error.value&&<div class="live-action-error" role="alert" data-testid="hud-action-error">{controller.error.value}<button type="button" aria-label={m.locale.value==='en'?'Close':'Schließen'} onClick={()=>{controller.error.value=null;}}>×</button></div>}
     {screen==='game'&&queuedGhosts.length>0&&<svg class="live-queued-build-ghosts" data-testid="queued-build-ghosts" data-count={queuedGhosts.length} aria-hidden="true">{queuedGhosts.map(site=><polygon key={site.key} data-testid="queued-build-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-yaw={site.yaw} data-builders={site.builders.length} data-orders={site.orders.length} data-queue-index={site.queueIndex} data-verdict={site.verdict??'unknown'} class={site.verdict===null?'queued':'queued blocked'} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')}/>)}</svg>}
     {screen==='game'&&dragGhosts.length>0&&<svg class="live-build-ghost live-build-drag-ghosts" data-testid="build-drag-ghosts" data-count={dragGhosts.length} aria-hidden="true">{dragGhosts.map(site=><polygon key={`${site.x}:${site.z}`} data-testid="build-drag-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-verdict={site.verdict} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={site.verdict===0?'valid':'invalid'}/>)}</svg>}
-    {dragGhosts.length===0&&ghost&&ghost.corners.length===4&&<svg class="live-build-ghost" data-testid="build-ghost" data-verdict={ghost.verdict} data-type={ghost.typeId} data-x={ghost.x} data-z={ghost.z}><polygon points={ghost.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={ghost.verdict===0?'valid':'invalid'}/><text x={ghost.corners[0]![0]} y={ghost.corners[0]![1]-8}>{ghost.verdict===0?(m.locale.value==='en'?'Place':'Bauen'):(m.locale.value==='en'?'Blocked':'Gesperrt')}</text></svg>}
+    {dragGhosts.length===0&&ghost&&ghost.corners.length===4&&<svg class="live-build-ghost" data-testid="build-ghost" data-verdict={ghost.verdict} data-type={ghost.typeId} data-x={ghost.x} data-z={ghost.z} data-role={ghost.role} style={ghost.verdict===0&&ghost.role?{'--ghost-role':BUILD_ROLE_COLORS[ghost.role]}:undefined}><polygon points={ghost.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={ghost.verdict===0?'valid':'invalid'}/>{ghost.roof&&ghost.roof.length===4&&<g class={`live-build-volume ${ghost.verdict===0?'valid':'invalid'}`} data-testid="build-ghost-volume">{[0,1,2,3].map(i=>{const a=ghost.corners[i]!,b=ghost.corners[(i+1)%4]!,c=ghost.roof![(i+1)%4]!,d=ghost.roof![i]!;return <polygon key={i} points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`}/>;})}<polygon class="roof" points={ghost.roof.map(p=>`${p[0]},${p[1]}`).join(' ')}/></g>}<text x={ghost.corners[0]![0]} y={ghost.corners[0]![1]-8}>{ghost.verdict===0?(m.locale.value==='en'?'Place':'Bauen'):(m.locale.value==='en'?'Blocked':'Gesperrt')}</text></svg>}
   </div>;
 }
 export function LiveGameHud({game,ports,result}: {game:Game;ports?:GameHudPorts;result?:MatchResult}) {
@@ -40,7 +44,8 @@ export function LiveGameHud({game,ports,result}: {game:Game;ports?:GameHudPorts;
     let raf=0; const update=()=>{controller.update();raf=requestAnimationFrame(update);}; raf=requestAnimationFrame(update);
     return ()=>{unsubscribe();cancelAnimationFrame(raf);controller.dispose();};
   },[game,controller]);
-  useEffect(()=>{if(result)controller.showResult(result);else if(game.replayMode){controller.result.value=null;if(controller.screen.peek()==='score')controller.screen.value='game';}},[controller,result,game]);
+  // A replay keeps its battlefield, clock and controls at the recorded end; only live matches open the score screen.
+  useEffect(()=>{if(result&&!game.replayMode)controller.showResult(result);else if(game.replayMode){controller.result.value=null;if(controller.screen.peek()==='score')controller.screen.value='game';}},[controller,result,game]);
   return <ControllerView controller={controller}/>;
 }
 export interface FrontendMenusProps {readonly ports:GameHudPorts;readonly maps:readonly SkirmishMap[];readonly build?:string;readonly initialConfig?:SkirmishConfig}
@@ -57,13 +62,32 @@ function CompactFactoryQueue() {
     return seconds===null?t('ui.factory.remainingUnavailable'):t('ui.factory.remaining',{value:fmtDec(seconds,1)});
   }),[m]);
   return <div class={`fq live-text-queue ${q?.paused?'is-paused':''}`} data-component="FactoryQueue" data-testid="factory-queue">
+    <div class="fq__ctl"><Button size="sm" disabled={readOnly} class={q?.repeat?'is-on':''} onClick={()=>c.toggleRepeat()}>{t('ui.factory.ctl.repeat')}</Button><Button size="sm" disabled={readOnly} class={q?.paused?'is-on':''} onClick={()=>c.togglePauseProduction()}>{t('ui.factory.ctl.pause')}</Button><Button size="sm" disabled={readOnly} onClick={()=>c.armRally()}>{t('ui.factory.ctl.rally')}</Button><Button size="sm" disabled={readOnly} onClick={()=>c.clearQueue()}>{t('ui.factory.ctl.clear')}</Button></div>
     {q?.current?<div class="fq__now"><b class="live-queue-product"><StrategicIcon typeId={q.current.typeId}/><span>{liveUnitText(q.current.typeId,'name',m.locale.value)}</span></b><Num value={m.factory.progress} format={fmtPct}/><Bar kind="build" value={m.factory.progress}/><span data-testid="factory-remaining">{remaining}</span></div>:<span>{t('ui.factory.idle')}</span>}
     {!!q?.blocks.length&&<div class="fq__list">{q.blocks.map((block,index)=><button class={`fqi ${q.repeat?'is-loop':''}`} key={index} disabled={readOnly} aria-label={t('ui.factory.block',{name:liveUnitText(block.typeId,'name',m.locale.value),n:block.count})} onClick={event=>c.queueAdd(block.typeId,event.shiftKey?5:1,event.ctrlKey||event.metaKey)} onContextMenu={event=>{event.preventDefault();if(!readOnly)c.queueRemove(block.typeId,event.shiftKey?5:1);}}><StrategicIcon typeId={block.typeId}/><span>{liveUnitText(block.typeId,'short',m.locale.value)}</span><b>{block.count}</b></button>)}</div>}
-    <div class="fq__ctl"><Button size="sm" disabled={readOnly} class={q?.repeat?'is-on':''} onClick={()=>c.toggleRepeat()}>{t('ui.factory.ctl.repeat')}</Button><Button size="sm" disabled={readOnly} class={q?.paused?'is-on':''} onClick={()=>c.togglePauseProduction()}>{t('ui.factory.ctl.pause')}</Button><Button size="sm" disabled={readOnly} onClick={()=>c.armRally()}>{t('ui.factory.ctl.rally')}</Button><Button size="sm" disabled={readOnly} onClick={()=>c.clearQueue()}>{t('ui.factory.ctl.clear')}</Button></div>
   </div>;
 }
 
-function CompactSelection() {
+/** Filled control groups only, with a visible caption and key/count chips that explain themselves. */
+function LiveControlGroups() {
+  const m=useHud(),c=useCommands(),groups=m.strip.groups.value,en=m.locale.value==='en';
+  if(!groups.some(group=>group.count>0))return null;
+  return <div class="live-groups" role="group" aria-label={t('ui.strip.groups')} data-testid="control-groups"><span class="live-groups-caption">{en?'Groups':'Gruppen'}</span>{groups.map((group,i)=>{
+    if(group.count===0)return null;const key=(i+1)%10,label=t('ui.strip.group.filled',{key,units:tn('ui.common.units',group.count)});
+    return <button key={i} type="button" class={`live-group ${m.strip.activeGroup.value===i?'is-active':''}`} data-testid={`control-group-${key}`} aria-label={label} title={label} onClick={event=>c.recallGroup(i,clickModsFromEvent(event))} onContextMenu={event=>{event.preventDefault();c.saveGroup(i,event.shiftKey);}}><kbd>{key}</kbd><span>{group.count}×</span></button>;
+  })}</div>;
+}
+
+/** Visible without Details: own paused units in the selection and a labelled resume action. */
+function PausedSelectionRow({controller}: {controller:GameHudController}) {
+  const m=useHud(),paused=controller.pausedSelection.value;
+  if(!paused)return null;
+  const en=m.locale.value==='en',partial=paused.count<paused.total;
+  const label=partial?(en?`${paused.count} of ${paused.total} paused`:`${paused.count} von ${paused.total} pausiert`):(en?'Paused':'Pausiert');
+  return <div class="live-paused-row" data-testid="selection-paused" data-count={paused.count} role="status"><span>{label}</span>{paused.controllable&&<button type="button" data-testid="selection-resume" onClick={()=>controller.resumeSelection()}>{en?'Resume':'Fortsetzen'}</button>}</div>;
+}
+
+function CompactSelection({controller}: {controller:GameHudController}) {
   const m=useHud(),c=useCommands(),kind=m.selection.kind.value;
   const [detailsOpen,setDetailsOpen]=useState(false);
   const single=m.selection.single.value,multi=m.selection.multi.value,factory=m.factory.detail.value;
@@ -71,8 +95,9 @@ function CompactSelection() {
   const name=(typeId:string)=>liveUnitText(typeId,'name',m.locale.value);
   const count=multi?.total??m.card.unitCount.value;
   const secondaryOrders=m.match.replay.value?[]:ORDER_DEFS.filter(order=>!PRIMARY_ORDERS.some(primary=>primary===order.id)&&m.orders.states.value[order.id]?.enabled===true);
-  return <Panel class="live-selection-panel" panelId="selection" testId="selection-panel" component="SelectionPanel">
+  return <Panel class={`live-selection-panel ${kind==='factory'?'is-factory':''}`} panelId="selection" testId="selection-panel" component="SelectionPanel">
     <div class="live-selection-heading"><b>{single?name(single.typeId):tn('ui.common.units',count)}</b><button class="live-detail-toggle" type="button" aria-expanded={detailsOpen} aria-controls={kind==='factory'?'live-selection-details live-factory-details':'live-selection-details'} data-testid="selection-details-toggle" onClick={()=>setDetailsOpen(!detailsOpen)}>Details {detailsOpen?'−':'+'}</button></div>
+    <PausedSelectionRow controller={controller}/>
     {single&&<div class="live-single-text" data-testid="unit-detail"><div class="live-hp"><span>HP</span><span>{single.hp} / {single.hpMax}</span></div><Bar kind="hp" value={single.hp/Math.max(1,single.hpMax)}/>{single.shield&&<div>{t('ui.selection.meter.shield')} {single.shield.hp} / {single.shield.hpMax}</div>}</div>}
     {multi&&<div class="live-type-groups" data-testid="selection-groups" onKeyDown={event=>{if(event.key==='Tab'){const next=nextFocusType(multi.groups,m.selection.focusTypeId.peek(),event.shiftKey);if(next){event.preventDefault();c.focusType(next);}}}}>{multi.groups.map(group=><button key={group.typeId} class={`live-type-group ${m.selection.focusTypeId.value===group.typeId?'is-focus':''}`} data-type={group.typeId} data-count={group.count} aria-label={t('ui.selection.tile',{name:name(group.typeId),n:group.count})} onClick={event=>{if(event.shiftKey)c.deselectType(group.typeId);else if(event.ctrlKey||event.metaKey)c.selectDamagedOfType(group.typeId);else c.selectType(group.typeId);}}><StrategicIcon typeId={group.typeId}/><span>{name(group.typeId)}</span><b>{group.count}</b></button>)}</div>}
     {kind==='factory'&&factory&&<div class="live-factory-text" data-testid="factory-detail"><CompactFactoryQueue/><div id="live-factory-details" hidden={!detailsOpen}><div>{t('ui.factory.rally')}: {t(`ui.factory.rally.${factory.rally}`)}</div><div>{t('ui.factory.bp')} {factory.bpOwn} + {factory.bpAssist} = {factory.bpOwn+factory.bpAssist}</div>{factory.helpers.length>0&&<div>{t('ui.factory.helpers')}: {factory.helpers.map(helper=>`${name(helper.typeId)} ×${helper.count}`).join(', ')}</div>}</div></div>}
@@ -98,13 +123,14 @@ function LivePresentation({controller}: {controller:GameHudController}) {
     cells[((index+delta)%cells.length+cells.length)%cells.length]?.focus();
   };
   const buildPage=spec.page==='build'||spec.page==='production';
-  const buildCells=buildPage&&game?spec.cells.filter(cell=>{const bp=cell.typeId?game.bp.indexOf(simTypeId(cell.typeId)):-1;return !game.client.readOnlyCommands&&bp>=0&&cell.kind==='unit'&&game.bp.buildableByExpr(bp)>=0;}):[];
+  const buildCells=buildPage&&game?controller.cardCells().filter(cell=>{const bp=cell.typeId?game.bp.indexOf(simTypeId(cell.typeId)):-1;return !game.client.readOnlyCommands&&bp>=0&&cell.kind==='unit'&&game.bp.buildableByExpr(bp)>=0;}):[];
   const showOrders=selected&&!m.match.replay.value;
   const card=buildCells.length>0&&game?<Panel class="card" panelId="card" testId="command-card" component="CommandCard"><PanelHead title={t(spec.page==='build'?'ui.card.head.build':'ui.card.head.production',{name:spec.headTypeId?liveUnitText(spec.headTypeId,'name',m.locale.value):''})}/><div class="card__grid" role="grid">{buildCells.map(cell=>{
     const bp=game.bp.indexOf(simTypeId(cell.typeId!)),frame=game.client.lastFrame;let builderPower=0;
     if(frame)for(let i=0;i<frame.unitCount;i++)if(game.client.selection.has(frame.unitHandle(i))&&game.bp.canBuild(frame.unitVisual(i),bp))builderPower+=game.bp.buildPowerQ16PerTickCol[frame.unitVisual(i)]!*10/65536;
-    return <CardCell key={cell.slot} builderPower={builderPower} buildCost={{mass:game.bp.massCostCol[bp]!,energy:game.bp.energyCostCol[bp]!,buildTime:game.bp.buildTimeCol[bp]!}} cell={cell}/>;
+    const glyph=buildRole(game.bp,bp);
+    return <CardCell key={cell.slot} builderPower={builderPower} buildCost={{mass:game.bp.massCostCol[bp]!,energy:game.bp.energyCostCol[bp]!,buildTime:game.bp.buildTimeCol[bp]!}} cell={cell} glyph={<BuildGlyph role={glyph.role} tier={glyph.tier}/>} name={liveUnitText(cell.typeId!,'short',m.locale.value)}/>;
   })}</div></Panel>:null;
   const hasGroups=m.strip.groups.value.some(group=>group.count>0);
-  return <div class="hud live-game-presentation" onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer"><ResourceBar/><MatchStatus/><PauseBanner/><LiveNotices/>{(selected||hasGroups)&&<div class="live-bottom-context">{showOrders&&<div class="live-command-context">{card}<LiveCommanderUpgrade controller={controller}/><LiveExtractorUpgrade controller={controller}/><Panel class="live-primary-orders" panelId="orders" testId="order-bar" component="OrderBar"><div class="live-primary-order-row">{PRIMARY_ORDERS.map(id=><div class="live-primary-order" key={id} role="group" aria-label={t('ui.orders.label',{name:t(`ui.orders.${id}.name`),keys:`Alt+${keyLabel(orderDef(id).key!,m.keyboardLayout.value)}`})}><OrderButton id={id} compact/><span class="live-primary-order-caption" aria-hidden="true">{t(`ui.orders.${id}.short`)}</span></div>)}</div></Panel></div>}<div class="live-selection-context"><div class="live-selection-tools">{selected&&<SelectionFilter/>}<ControlGroups/></div>{selected&&<CompactSelection/>}</div></div>}<TooltipLayer/><GameMenu/></div></div>;
+  return <div class="hud live-game-presentation" onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer">{controller.ecoAvailable.value&&<ResourceBar/>}<MatchStatus/><PauseBanner/><LiveNotices/>{(selected||hasGroups)&&<div class="live-bottom-context">{showOrders&&<div class="live-command-context">{card}<LiveCommanderUpgrade controller={controller}/><LiveExtractorUpgrade controller={controller}/><LiveFactoryUpgrade controller={controller}/><Panel class="live-primary-orders" panelId="orders" testId="order-bar" component="OrderBar"><div class="live-primary-order-row">{PRIMARY_ORDERS.map(id=><div class="live-primary-order" key={id} role="group" aria-label={t('ui.orders.label',{name:t(`ui.orders.${id}.name`),keys:`Alt+${keyLabel(orderDef(id).key!,m.keyboardLayout.value)}`})}><OrderButton id={id} compact/><span class="live-primary-order-caption" aria-hidden="true">{t(`ui.orders.${id}.short`)}</span></div>)}</div></Panel></div>}<div class="live-selection-context"><div class="live-selection-tools">{selected&&<SelectionFilter/>}<LiveControlGroups/></div>{selected&&<CompactSelection controller={controller}/>}</div></div>}{m.menus.settings.values.value.tooltips!=='off'&&<TooltipLayer/>}<GameMenu/></div></div>;
 }

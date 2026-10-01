@@ -8,7 +8,9 @@ import { FRAME_BLOCK_GLSL, SLOT_FRAME, SLOT_PASS } from './shared.ts';
 export const VISIBILITY_FOG_CELL_WU = 8;
 export const VISIBILITY_FOG_TRANSITION_MS = 150;
 /** Brightness of unknown, explored and currently visible server cells. */
-export const VISIBILITY_FOG_BRIGHTNESS = [0.04, 0.35, 1] as const;
+export const VISIBILITY_FOG_BRIGHTNESS = [0.04, 0.5, 1] as const;
+/** Cool dark overlay colour: explored ground stays readable but is set apart from live sight. */
+export const VISIBILITY_FOG_TINT = [0.02, 0.035, 0.06] as const;
 export interface VisibilityFogSnapshot {
   readonly dim: number;
   readonly cells: Uint8Array;
@@ -81,18 +83,44 @@ ${BLOCK}
 uniform sampler2D u_visibility;
 in vec2 v_world;
 out vec4 o_color;
+${FOG_BICUBIC_GLSL}
 void main() {
   // Match WaterPass's exact height function and shoreline, without fogging submerged ground twice.
   int h = terrainHeightRaw(ivec2(floor(v_world * 4096.0 + 0.5)));
   ${water ? 'if (h >= u_visibilitySurface.x) discard;' : 'if (u_visibilityParams.z > 0.5 && h < u_visibilitySurface.x) discard;'}
   vec2 uv = v_world / (${VISIBILITY_FOG_CELL_WU}.0 * u_visibilityParams.y);
-  vec2 levels = texture(u_visibility, uv).rg;
+  vec2 levels = fogBicubic(uv, u_visibilityParams.y);
   float brightness = mix(levels.r, levels.g, u_visibilityParams.x);
-  if (brightness >= 0.999) discard;
-  o_color = vec4(0.0, 0.0, 0.0, 1.0 - brightness);
+  // The B-spline turns the coarse cell staircase into round contours; sharpen only the band
+  // between explored and visible so the sight edge reads as a soft line, not a wide smear.
+  const float explored = ${VISIBILITY_FOG_BRIGHTNESS[1].toFixed(4)};
+  if (brightness > explored) brightness = mix(explored, 1.0, smoothstep(0.22, 0.78, (brightness - explored) / (1.0 - explored)));
+  if (brightness >= 0.995) discard;
+  o_color = vec4(${VISIBILITY_FOG_TINT.map(v => v.toFixed(3)).join(', ')}, 1.0 - brightness);
 }
 `;
 }
+/** Cubic B-spline reconstruction of the cell texture from four bilinear taps. */
+const FOG_BICUBIC_GLSL = /* glsl */ `
+vec4 fogCubic(float v) {
+  vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+  vec4 s = n * n * n;
+  float x = s.x, y = s.y - 4.0 * s.x, z = s.z - 4.0 * s.y + 6.0 * s.x;
+  return vec4(x, y, z, 6.0 - x - y - z) * (1.0 / 6.0);
+}
+vec2 fogBicubic(vec2 uv, float dim) {
+  vec2 st = uv * dim - 0.5, f = fract(st);
+  st -= f;
+  vec4 xc = fogCubic(f.x), yc = fogCubic(f.y);
+  vec4 c = st.xxyy + vec2(-0.5, 1.5).xyxy;
+  vec4 s = vec4(xc.xz + xc.yw, yc.xz + yc.yw);
+  vec4 o = (c + vec4(xc.yw, yc.yw) / s) / dim;
+  vec2 s0 = texture(u_visibility, o.xz).rg, s1 = texture(u_visibility, o.yz).rg;
+  vec2 s2 = texture(u_visibility, o.xw).rg, s3 = texture(u_visibility, o.yw).rg;
+  float sx = s.x / (s.x + s.y), sy = s.z / (s.z + s.w);
+  return mix(mix(s3, s2, sx), mix(s1, s0, sx), sy);
+}
+`;
 
 /** Owns only fog texture/UBO/pipelines; surface passes retain all geometry and height resources. */
 export class VisibilityFogPass {

@@ -47,13 +47,24 @@ describe('authoritative Frame HUD alerts', () => {
     const overflow = fixture(); initializeSkirmish(overflow.world); step(overflow.world);
     const observed = frame(overflow.world, -1);
     expect(eventIndices(observed, EventType.StorageFull)).toHaveLength(4);
+    // A skirmish starts with full storage: that overflow is real, but not news for the player.
     overflow.alerts.present(observed, 0);
+    expect(overflow.section.items.peek()).toEqual([]);
+    // Once storage had room and fills up again, the actual overflow event is presented once.
+    const A = overflow.world.armies.col;
+    for (const army of [0, 1]) { A.massStored.set(army, 100000); A.energyStored.set(army, 100000); }
+    step(overflow.world); overflow.alerts.present(frame(overflow.world, -1), 0);
+    for (const army of [0, 1]) { A.massStored.set(army, A.massCapacity.get(army)); A.energyStored.set(army, A.energyCapacity.get(army)); }
+    step(overflow.world);
+    const refilled = frame(overflow.world, -1);
+    expect(eventIndices(refilled, EventType.StorageFull).length).toBeGreaterThan(0);
+    overflow.alerts.present(refilled, 0);
     expect(overflow.section.items.peek()).toEqual([expect.objectContaining({ type: 'storageFull', count: 2, location: null })]);
-    overflow.alerts.present(observed, 0);
+    overflow.alerts.present(refilled, 0);
     expect(overflow.section.items.peek()[0]!.count).toBe(2);
-    // The observer's selected army changes without changing the frame's viewer (-1).
-    overflow.alerts.present(observed, 1);
-    expect(overflow.section.items.peek()).toEqual([expect.objectContaining({ type: 'storageFull', count: 2, id: 1 })]);
+    // The observer's selected army changes without changing the frame's viewer (-1): history resets.
+    overflow.alerts.present(refilled, 1);
+    expect(overflow.section.items.peek()).toEqual([]);
   });
 
   it('build completion carries the actual subject/location and replay rewind clears future alerts', () => {
