@@ -103,7 +103,7 @@ test('native raised pgen ghosts paint around a mex and accepted queues reserve t
   }
   expect(mex, 'a completed mex from a native Build on the real mass spot').toBeDefined();
   const mexHandle = mex!;
-  await page.evaluate(() => window.__faf!.setCamera(116, 100, 85)); await rendered(page);
+  await page.evaluate(() => window.__faf!.setCamera(116, 100, 45)); await rendered(page);
   await page.keyboard.press('KeyW');
   const start = await groundPixel(page, 114, 98), end = await groundPixel(page, 118.25, 102.25);
   const sites = () => page.getByTestId('build-drag-ghost').evaluateAll(elements => elements.map(el => ({

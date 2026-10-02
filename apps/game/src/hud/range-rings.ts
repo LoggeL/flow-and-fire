@@ -145,7 +145,9 @@ export class FrameRangeRings {
     flush();
     const longest = arcs.reduce<Point[]>((best, candidate) => candidate.length > best.length ? candidate : best, []);
     // A small readable label on the highest visible part; omit labels on tiny clipped slivers.
-    const label = longest.length < 12 ? null : longest.reduce((best, point) => point[1] < best[1] ? point : best, longest[0]!);
+    // Keep range captions in the battlefield, clear of the resource bar and command panels.
+    const labelPoints = longest.filter(point => point[0] > 65 && point[0] < camera.viewportWidth - 65 && point[1] > 140 && point[1] < camera.viewportHeight - 190);
+    const label = longest.length < 12 || labelPoints.length === 0 ? null : labelPoints.reduce((best, point) => point[1] < best[1] ? point : best, labelPoints[0]!);
     return { segments: arcs.map(points => points.map(point => `${point[0].toFixed(1)},${point[1].toFixed(1)}`).join(' ')),
       label: label && label[0] > 65 && label[0] < camera.viewportWidth - 65 && label[1] > 24 ? label : null };
   }
