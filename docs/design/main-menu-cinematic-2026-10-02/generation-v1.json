@@ -1,0 +1,11 @@
+{
+  "generator": "built-in image_gen.imagegen",
+  "mode": "new generation",
+  "transparentBackground": false,
+  "original": "docs/design/main-menu-cinematic-2026-10-02/commander-dusk-source-v1.png",
+  "runtime": "apps/game/src/hud/assets/menu/commander-dusk-v1.webp",
+  "runtimeSha256": "2a60d97827381499a4d42d7c4ebc476ed36a32bfb5e18d6d06577e87eb8a9d6b",
+  "runtimeBytes": 225144,
+  "encoding": "WebP quality88, same source dimensions, no image edits",
+  "prompt": "Use case: stylized-concept. Asset type: cinematic widescreen main-menu background artwork for the original browser RTS Flow & Fire, a heavy industrial commander RTS in the spirit of classic Supreme Commander Forged Alliance. Create a premium painterly-realistic 3D game key-art scene, 16:9 landscape. At dusk on a rainy, alien volcanic plateau, a towering original block-armored blue-steel commander stands in the RIGHT HALF in three-quarter view, full upper body and mechanical legs, broad industrial shoulders, a heavy integrated cannon on one arm and engineering emitter on the other, segmented armor, hydraulic joints, layered vents, cables, worn metal and softly glowing cyan optical sensors. A monumental angular land-unit factory and smaller tanks recede behind it into atmospheric smoke. Restrained warm amber reactor glow and distant orange fire illuminate the mist and wet rock, with cold blue-grey rim lighting. Ground-level cinematic camera, believable weight, highly detailed machinery and crisp silhouette, realistic physically-lit materials, no toy look. The LEFT 40 percent is calm dark mist and empty shaded terrain with lower detail and contrast, intentionally clean negative space for live menu typography and buttons. Focal points and bright lights stay on the right, not behind the left menu. Sky has layered smoke rather than stars. Mood: impending large-scale battle, quiet power, cinematic atmosphere, restrained accents. This is artwork only: absolutely no typography, logos, HUD, UI frames, menu buttons, numbers or watermarks. Do not use existing faction insignia or reproduce a named game's exact unit. Deliver a beautiful finished widescreen environment illustration suitable for subtle slow CSS camera drift."
+}

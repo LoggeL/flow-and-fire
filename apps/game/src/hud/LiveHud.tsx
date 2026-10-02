@@ -7,6 +7,7 @@ import { GameHudController, type GameHudPorts, type MatchResult } from './live.t
 import type { Game } from '../game.ts';
 import './live.css';
 import './supcom.css';
+import './main-menu.css';
 import { simTypeId } from './type-ids.ts';
 import { liveUnitText } from './unit-text.ts';
 import { LiveNotices } from './LiveNotices.tsx';
@@ -19,6 +20,8 @@ import { LiveBriefing, LiveCredits } from './LiveInfoScreens.tsx';
 import { BUILD_ROLE_COLORS, buildRole, type BuildRole } from './build-role.ts';
 import { hudArmyTheme } from './faction-theme.ts';
 import { RangeRings } from './RangeRings.tsx';
+import { MenuBackdrop } from './MenuBackdrop.tsx';
+import { chosenArmyColor } from '../army-colors.ts';
 
 const PRIMARY_ORDERS=['move','attack','patrol','stop','assist','reclaim'] as const;
 
@@ -40,8 +43,11 @@ function ControllerView({controller}: {controller:GameHudController}) {
     return ()=> {window.removeEventListener('keydown',onKey,true);window.removeEventListener('resize',update);};
   },[controller,m]);
   const screen=controller.screen.value, ghost=controller.ghost.value, queuedGhosts=controller.queuedGhosts.value, dragGhosts=controller.dragGhosts.value;
-  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen}>
+  const menuHouse=screen==='main'?m.menus.skirmish.slots.value.find(slot=>!slot.ai)?.color:undefined;
+  const menuAccent=menuHouse===undefined?undefined:chosenArmyColor(menuHouse);
+  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen} data-menu-house-color={menuHouse} style={menuAccent===undefined?undefined:{'--menu-accent':`#${menuAccent.toString(16).padStart(6,'0')}`}}>
     <HudProvider model={m} commands={controller.commands}>
+      {screen==='main'&&<MenuBackdrop/>}
       {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu/>:screen==='skirmish'?<SkirmishSetup/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
     </HudProvider>
     {controller.error.value&&<div class="live-action-error" role="alert" data-testid="hud-action-error">{controller.error.value}<button type="button" aria-label={m.locale.value==='en'?'Close':'Schließen'} onClick={()=>{controller.error.value=null;}}>×</button></div>}

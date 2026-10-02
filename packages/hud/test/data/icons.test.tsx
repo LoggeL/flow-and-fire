@@ -83,6 +83,11 @@ describe('StrategicIcon', () => {
     ['core:str_t1_estorage', 'struct_estore_t1'],
     ['core:cmd_commander_engineering', 'cmd_commander'],
     ['core:cmd_commander_armored', 'cmd_commander'],
+    ['core:cmd_commander_cannon', 'cmd_commander'],
+    ['core:cmd_commander_cannon_protection', 'cmd_commander'],
+    ['core:cmd_commander_engineering_cannon', 'cmd_commander'],
+    ['core:cmd_commander_enhanced', 'cmd_commander'],
+    ['core:cmd_commander_protection', 'cmd_commander'],
     ['core:lnd_t3_heavy', 'land_direct_t3'],
     ['core:cube', 'blip_ground'],
   ])('renders the existing %s runtime glyph without a roster record', (typeId, icon) => {
