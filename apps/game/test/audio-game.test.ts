@@ -105,6 +105,24 @@ describe('compiled runtime audio mapping', () => {
     expect(sink.plays.map((p) => p.soundId)).toEqual(['varkan:wpn_slag_mortar_t1_fire', 'common:imp_shell_ground']);
     expect(router.stats).toMatchObject({ events: 2, eventsUnmapped: 0, plays: 2 });
   });
+
+  it('uses the Reeve cannon fire and shell impact for its compiled commander enhancement', () => {
+    const unit = runtime.indexOf('core:cmd_commander_cannon');
+    expect(unit).toBeGreaterThanOrEqual(0);
+    expect(runtime.mountCount(unit)).toBe(1);
+    const weapon = runtime.mountWeapon(runtime.firstMount(unit));
+    expect(runtime.weaponIds[weapon]).toBe('core:wpn_reeve_cannon_enhanced');
+    expect(runtime.projectileIds[runtime.weaponProjectile(weapon)]).toBe('core:prj_shell_heavy');
+    const resolver = new ManifestResolver(manifest), sink = new RecordingSink(resolver);
+    const router = new EventRouter({ map: DEFAULT_EVENT_SOUND_MAP, resolver, faction: 'varkan',
+      eventTypes: GAME_AUDIO_EVENT_TYPES, visualName: index => runtime.weaponIds[index], alerts: new RecordingAlerts() });
+    const source = new ArrayEventSource();
+    source.push(EventType.Shot, weapon, 100, 0, 0, 0, 0, 0, 0, 7);
+    source.push(EventType.Impact, weapon, 101, 0, 0, 0, 0, 0, 0, 7);
+    router.handle(source, sink, 10, 1000);
+    expect(sink.plays.map(p => p.soundId)).toEqual(['varkan:wpn_reeve_cannon_fire', 'common:imp_shell_ground']);
+    expect(router.stats).toMatchObject({ events: 2, eventsUnmapped: 0, plays: 2 });
+  });
 });
 
 describe('game audio bridge, fake context only (no speaker API)', () => {

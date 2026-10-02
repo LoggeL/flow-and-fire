@@ -14,9 +14,9 @@ const manifest = loadRealManifest();
 const nameOf = (id: string): string => id.slice(id.indexOf(':') + 1);
 
 describe('default event map against the real manifest', () => {
-  it('validates without issues for faction varkan, including MVP refs and the runtime artillery alias', () => {
+  it('validates without issues for faction varkan, including MVP refs and compiled weapon additions', () => {
     // Actual compiled mount coverage belongs to Game tests, which depend on blueprints.
-    const weaponRefs = [...mvpWeaponRefs(), 'core:wpn_arty_t1'];
+    const weaponRefs = [...mvpWeaponRefs(), 'core:wpn_arty_t1', 'core:wpn_reeve_cannon_enhanced'];
     const issues = validateEventSoundMap(DEFAULT_EVENT_SOUND_MAP, manifest, ['varkan'], { weaponRefs });
     expect(issues).toEqual([]);
   });

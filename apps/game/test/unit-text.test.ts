@@ -44,7 +44,12 @@ describe('live unit text outside the design roster', () => {
     const missing = view.visuals.filter(v => findUnit(hudTypeId(v.id)) === undefined);
     expect(missing.map(v => v.id)).toEqual([
       'core:cmd_commander_armored',
+      'core:cmd_commander_cannon',
+      'core:cmd_commander_cannon_protection',
       'core:cmd_commander_engineering',
+      'core:cmd_commander_engineering_cannon',
+      'core:cmd_commander_enhanced',
+      'core:cmd_commander_protection',
       'core:cube',
       'core:lnd_t3_heavy',
     ]);
