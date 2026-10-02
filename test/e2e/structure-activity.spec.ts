@@ -124,6 +124,8 @@ test('native paid T1 and T2 factory production animates gates and holds on pause
     expect(actor(held, factory.handle).work!.progress).toBe(actor(paused, factory.handle).work!.progress);
     expect(part(held, factory.handle).curPitch).toBe(part(paused, factory.handle).curPitch);
     expect(part(held, factory.handle).prevPitch).toBe(part(held, factory.handle).curPitch);
+    // The HUD schedules its own updates; wait until its real toggle reflects the accepted pause.
+    await expect(queue).toHaveClass(/is-paused/);
     await queue.getByRole('button', { name: 'Pause', exact: true }).click(); await accepted(page, 2);
     const resumed = await state(page, [factory.handle]);
     expect(actor(resumed, factory.handle).unit!.flags & UnitFlags.Paused).toBe(0);
@@ -131,11 +133,18 @@ test('native paid T1 and T2 factory production animates gates and holds on pause
     expect(part(resumed, factory.handle).curPitch - part(held, factory.handle).curPitch).toBeGreaterThan(0);
     expect(part(resumed, factory.handle).curPitch - part(held, factory.handle).curPitch).toBeLessThanOrEqual((resumed.tick - held.tick) * 1365);
     await info.attach(`native-${factory.id.replace(':', '-')}-producing`, { body: await page.screenshot(), contentType: 'image/png' });
-    await queue.getByRole('button', { name: 'Leeren', exact: true }).click(); await accepted(page, 14);
+    await queue.getByRole('button', { name: 'Leeren', exact: true }).click(); await accepted(page, 2);
+    // Clearing the queue preserves its current product. Observe its real completion before idle.
+    let completed = await state(page, [factory.handle]);
+    for (let n = 0; n < 52 && actor(completed, factory.handle).work?.product !== null; n++) {
+      await accepted(page, 5); completed = await state(page, [factory.handle]);
+    }
+    expect(actor(completed, factory.handle).work?.product).toBeNull();
+    await accepted(page, 14);
     const closed = await state(page, [factory.handle]);
     expect(actor(closed, factory.handle).work?.product).toBeNull();
     expect(part(closed, factory.handle)).toMatchObject({ prevYaw: 0, curYaw: 0, prevPitch: 0, curPitch: 0 });
-    rows.push({ factory, idle, begun, samples, operating, wallPause, paused, held, resumed, closed });
+    rows.push({ factory, idle, begun, samples, operating, wallPause, paused, held, resumed, completed, closed });
   }
 
   // An actual native Build supplies the incomplete case, rather than fabricated build flags.
@@ -172,9 +181,9 @@ test('native billed extractor and radar activity holds without catchup and point
   const commander = await startPaused(page);
   const origin = await page.evaluate(h => window.__faf!.unitPos(h)!, commander);
   const actors = [
-    { id: 'core:str_t1_mex', handle: await spawn(page, 'core:str_t1_mex', origin.x + 14, origin.z + 8), axis: 'pitch' },
-    { id: 'core:str_t2_mex', handle: await spawn(page, 'core:str_t2_mex', origin.x + 22, origin.z + 9), axis: 'pitch' },
-    { id: 'core:str_t1_radar', handle: await spawn(page, 'core:str_t1_radar', origin.x + 30, origin.z + 16), axis: 'yaw' },
+    { id: 'core:str_t1_mex', label: 'Zapfstelle I', handle: await spawn(page, 'core:str_t1_mex', origin.x + 14, origin.z + 8), axis: 'pitch' },
+    { id: 'core:str_t2_mex', label: 'Zapfstelle II', handle: await spawn(page, 'core:str_t2_mex', origin.x + 22, origin.z + 9), axis: 'pitch' },
+    { id: 'core:str_t1_radar', label: 'Horcher I', handle: await spawn(page, 'core:str_t1_radar', origin.x + 30, origin.z + 16), axis: 'yaw' },
   ];
   const handles = actors.map(unit => unit.handle), start = await state(page, handles), samples = [start];
   for (let n = 0; n < 25; n++) { await accepted(page, 1); samples.push(await state(page, handles)); }
@@ -190,10 +199,10 @@ test('native billed extractor and radar activity holds without catchup and point
   const wallPause = await noWallClockMotion(page, handles);
   for (const unit of actors) {
     await select(page, unit.handle);
-    const toggle = page.getByTestId('selection-details-toggle');
-    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    await expect(page.getByTestId('order-pause')).toBeVisible();
-    await page.getByTestId('order-pause').click(); await accepted(page, 2);
+    const energy = page.getByTestId('resource-energy');
+    if (await energy.getAttribute('aria-expanded') !== 'true') await energy.click();
+    const pause = page.getByTestId('flow-details').getByRole('button', { name: `${unit.label} pausieren`, exact: true });
+    await expect(pause).toBeVisible(); await pause.click(); await accepted(page, 2);
     const paused = await state(page, [unit.handle]);
     expect(actor(paused, unit.handle).unit!.flags & UnitFlags.Paused).not.toBe(0);
     await accepted(page, 9); const held = await state(page, [unit.handle]);
