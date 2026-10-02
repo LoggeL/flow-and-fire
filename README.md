@@ -22,7 +22,7 @@ Aktuell enthalten:
 - Masse- und Energiewirtschaft, Gebäudeplatzierung, Baureihen, Fabrikwarteschlangen und Wiederholproduktion; bezahlter Ausbau von Extraktoren und Landwerken bis T3.
 - Commander, Pioniere, Späher, Panzer und Artillerie; drei unabhängig kombinierbare ACU-Ausbauplätze für Baumodul, Hauptwaffen-Verstärker und Rückenpanzerung.
 - Vorerkundetes Gelände, Nebel des Krieges, Radar, Geschütztürme, Strategic Zoom, Mehrfachauswahl, Kontrollgruppen und kontextabhängige Rechtsklickbefehle.
-- HUD nach der Forged-Alliance-Referenz: Stahlrahmen, kompakte Ressourcenanzeigen, horizontale Bauliste mit Bildern der echten Modelle, Mehrfachauswahl und deutsche sowie englische Menüs. Die Varkan-Modelle haben überarbeitete Panzerplatten, Gelenke und eine dezente Metalltextur.
+- HUD nach der Forged-Alliance-Referenz: Stahlrahmen in der gewählten Armeefarbe, kompakte Ressourcenanzeigen, Bildicons für Befehle und ACU-Module, horizontale Bauliste mit Bildern der echten Modelle, Mehrfachauswahl und deutsche sowie englische Menüs. Die Varkan-Modelle haben überarbeitete Panzerplatten, Gelenke und eine dezente Metalltextur. [Aktuelle Spielscreens](docs/design/icons-faction-ui-2026-10-02/README.md).
 - Ergebnisstatistik, Spielsound und Replay-Bibliothek mit Import, Export, Suche, Umbenennen, Zeitnavigation und Wiedergabetempo. Lokale Aufnahmen hängen von den Speicherfunktionen des Browsers ab.
 
 ## Schnellstart mit Docker

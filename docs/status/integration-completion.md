@@ -5,7 +5,7 @@ spielbare Entwicklungsversion läuft auf der HomeBox:
 [Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
-und Bedienung. Der ausgelieferte Spielbuild ist `fe3c4b7670eb`, Sim-Version
+und Bedienung. Der ausgelieferte Spielbuild ist `898000c4970c`, Sim-Version
 `faf-sim/ms6.4-commander-enhancements`. Die ältere Adresse bleibt als Alias erreichbar.
 
 ## Umgesetzter Umfang
@@ -56,6 +56,13 @@ keine Lautsprecherverbindungen. Die Originalvideos sind mit
 Die [runderen HUD-Rahmen](../design/rounded-ui-2026-10-02/README.md) folgen mit echten
 Kurven, konzentrischer Innenkante und kleineren passenden Radien an den Bedienflächen.
 Der Vergleich zeigt die ACU-Auswahl und den Fabrikausbau im öffentlichen Build.
+
+Die [Icons und Armeefarben](../design/icons-faction-ui-2026-10-02/README.md) sind
+ebenfalls ausgeliefert: sechs ImageGen-Befehlsbilder, drei ACU-Komponentenbilder und
+17 neu gerenderte Bau-/Produktionsbilder. HUD, Einheiten und Auswahlringe verwenden
+dieselbe gewählte Armeefarbe. Vier Farben bestehen in Chromium, Firefox und WebKit;
+der öffentliche Build besteht zusätzlich 56 bezahlte Ausbau-/Produktionsscreens und
+56 Layoutprüfungen ohne Fehler oder Lautsprecherverbindungen.
 
 ## Nachweise und ihre Grenzen
 

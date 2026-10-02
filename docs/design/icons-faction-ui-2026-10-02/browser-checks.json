@@ -1,0 +1,87 @@
+{
+  "nativeThemeCases": [
+    {
+      "title": "chosen blue house colors the live HUD in house display mode",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 2059
+    },
+    {
+      "title": "chosen red house colors the live HUD in house display mode",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 1850
+    },
+    {
+      "title": "chosen green house colors the live HUD in relation display mode",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 1887
+    },
+    {
+      "title": "chosen orange house colors the live HUD in cvd display mode",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 1850
+    },
+    {
+      "title": "chosen blue house colors the live HUD in house display mode",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 2641
+    },
+    {
+      "title": "chosen red house colors the live HUD in house display mode",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 1951
+    },
+    {
+      "title": "chosen green house colors the live HUD in relation display mode",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 1855
+    },
+    {
+      "title": "chosen orange house colors the live HUD in cvd display mode",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 1853
+    },
+    {
+      "title": "chosen blue house colors the live HUD in house display mode",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 2859
+    },
+    {
+      "title": "chosen red house colors the live HUD in house display mode",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 2748
+    },
+    {
+      "title": "chosen green house colors the live HUD in relation display mode",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 2585
+    },
+    {
+      "title": "chosen orange house colors the live HUD in cvd display mode",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 2672
+    }
+  ],
+  "nativeCommanderUpgradeBrowsers": [
+    "chromium",
+    "firefox",
+    "webkit"
+  ],
+  "unitTestFiles": 3,
+  "unitTestsPassed": 18,
+  "typecheck": "passed",
+  "lint": "passed",
+  "localPaidUpgradeScreens": 56,
+  "localLayoutChecks": 56
+}

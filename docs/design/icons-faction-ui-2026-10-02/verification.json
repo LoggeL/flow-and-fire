@@ -1,0 +1,1169 @@
+{
+  "base": "https://faf.logge.top",
+  "build": "898000c4970c",
+  "simHash": 40017171,
+  "nativePaidUpgradesPassed": true,
+  "screens": [
+    {
+      "name": "commander-all-slots-1440x900",
+      "sha256": "9711c2598cee02234f40a0823728533e6f4d1d2cbd7c8d061e6bc577b8a93822",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-slots-1280x720",
+      "sha256": "4cc0d1c21d94552f46cafa74999b539a2a7421c6a577f9e804419268f06cd58b",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-slots-1024x768",
+      "sha256": "4726cd9d6c62d6c661585326910d37075013a14e36bb3c998c2b81fd8059b78d",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-slots-800x600",
+      "sha256": "2e59834f44cd41f8b65207d76041f771afb055d02a5c1cbaad56877b5d86080b",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-right-cannon-offer-1440x900",
+      "sha256": "4b960533b7e6b9be8bc271a3c92e990fa9337de56a28534362b1d77a2df609ea",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-right-cannon-offer-1280x720",
+      "sha256": "32fabe90c74cce1225a1aab9ed45a812dd3995794f5f93b8d6319852d5af9794",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-right-cannon-offer-1024x768",
+      "sha256": "e0a3666b5aab37cffa74bcd48befd55fd60ccd14318d5366c6ea95ebf611e078",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-right-cannon-offer-800x600",
+      "sha256": "5cba45dd4daac0db853a238aa30f097f93bba2ec7fc2a9604f7a0b54f26b51fd",
+      "build": "898000c4970c",
+      "tick": 36,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-running-1440x900",
+      "sha256": "b3bbd8f5665a8c02c84135596f690fe3b4e71e48214a93f4a3fd54ce7872af03",
+      "build": "898000c4970c",
+      "tick": 57,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-running-1280x720",
+      "sha256": "2fcc2c701c278ae4e27b99a6f7fa62c31761d7e78c3ea4b93441999989069d5b",
+      "build": "898000c4970c",
+      "tick": 57,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-running-1024x768",
+      "sha256": "6560ade3da2a19ffdb14362c5aba6361dacea8d17bda8d30466e89b4957e2dad",
+      "build": "898000c4970c",
+      "tick": 57,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-running-800x600",
+      "sha256": "af95452732cc33d53816affc8bd0826c0a6f2fe7c60f486ff1db399be2f6d41f",
+      "build": "898000c4970c",
+      "tick": 57,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-installed-1440x900",
+      "sha256": "66398a669c8faf37f278edc7827b6ddd7a44814274134b889974ef18bd9e7661",
+      "build": "898000c4970c",
+      "tick": 658,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-installed-1280x720",
+      "sha256": "63c4fef58013e5c50423a87e295315b4c21f5ddc057213ffae9d4ea44719a026",
+      "build": "898000c4970c",
+      "tick": 658,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-installed-1024x768",
+      "sha256": "61f860f9f21426a626a3b4f8194116f9a7a0683752300c6691a8c7cb87cc4e82",
+      "build": "898000c4970c",
+      "tick": 658,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-cannon-installed-800x600",
+      "sha256": "e10631571ae1c2ab8683b84e973d30b9d26e672476d48fdc87bcc6c76aa33b85",
+      "build": "898000c4970c",
+      "tick": 658,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-running-1440x900",
+      "sha256": "677f29219ae7de3e8b6975640714d8e5049eae7d5d2aae0fff055b4f32827ee8",
+      "build": "898000c4970c",
+      "tick": 2386,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-running-1280x720",
+      "sha256": "a0a7fbd11a7b20f8ac1a4d56bb09cac126ccf749d9886df2ed960c1efd32f637",
+      "build": "898000c4970c",
+      "tick": 2386,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-running-1024x768",
+      "sha256": "c93539aebca70643d8dca32ae046fd195ad12b074e94ee9d0bdcb1ca663f1ffa",
+      "build": "898000c4970c",
+      "tick": 2386,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-running-800x600",
+      "sha256": "f7d9b8c72dca3ad6d425392df1c558d6da6ac42095cd747fede01a1c8ddc7f2c",
+      "build": "898000c4970c",
+      "tick": 2386,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-installed-1440x900",
+      "sha256": "552a7592903b79161f368dd58bf01dd257c0016269fb9f08f2f21c4de153d878",
+      "build": "898000c4970c",
+      "tick": 3087,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-installed-1280x720",
+      "sha256": "e4dc871287a80943fbbeec58f1c01e676c058792cb81d70ea24568322be89b5d",
+      "build": "898000c4970c",
+      "tick": 3087,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-installed-1024x768",
+      "sha256": "51c9964642bb5b388147be485316206d3cbbfd32e396ec5518fc463070dee60d",
+      "build": "898000c4970c",
+      "tick": 3087,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-engineering-installed-800x600",
+      "sha256": "9fc8e234d895fa21601b7f3160abb568c94010316f674a63364429e880b88952",
+      "build": "898000c4970c",
+      "tick": 3087,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-running-1440x900",
+      "sha256": "a3a22bb7a390ce6570bc4f57dd12954401487f940a7c3d5ced562bfea0d43d66",
+      "build": "898000c4970c",
+      "tick": 3108,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-running-1280x720",
+      "sha256": "705baf6dbc5c8c0d5d726a8eb1e5133d700b8f8da0375c8d3cc43b5fcdc97a9f",
+      "build": "898000c4970c",
+      "tick": 3108,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-running-1024x768",
+      "sha256": "946c58f6988d03b3f96d21756e0620d2a79c198258315f8feeeb56739680f1d4",
+      "build": "898000c4970c",
+      "tick": 3108,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-running-800x600",
+      "sha256": "9539f2ee2e8c9970ad0cf0120414bbc9ea1c9d94d43e7df10fd5019b9dcc6065",
+      "build": "898000c4970c",
+      "tick": 3108,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-installed-1440x900",
+      "sha256": "afc1325df2f79b299b7ff95338f8e745473660703f84f9cfb899d65a76914d51",
+      "build": "898000c4970c",
+      "tick": 3609,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-installed-1280x720",
+      "sha256": "f2e1e8ff8341898fe02244f931285fbca397883962c7b648c8fe019a24eb4947",
+      "build": "898000c4970c",
+      "tick": 3609,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-installed-1024x768",
+      "sha256": "3b1e229eadda5005707956bea758bb1f73acc6a9349fd278de825e21b332191d",
+      "build": "898000c4970c",
+      "tick": 3609,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-armor-installed-800x600",
+      "sha256": "00a092a8f5fc94041c0441318a5e0bb48c2f0bca94efd76efd577f458ea260d8",
+      "build": "898000c4970c",
+      "tick": 3609,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-installed-1440x900",
+      "sha256": "92e993d1bf83aa52acf4393cdc50a89c87646933ae766bbe5f581ff92443202b",
+      "build": "898000c4970c",
+      "tick": 3610,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-installed-1280x720",
+      "sha256": "645099288eb1b25dfa05ae1a8023f281a1cc8597fb96ae8c17ad2f3c541383d1",
+      "build": "898000c4970c",
+      "tick": 3610,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-installed-1024x768",
+      "sha256": "4eef0895a887c943cebc0d376c66c7f8b02762abb88430621e24eb07b8666bbb",
+      "build": "898000c4970c",
+      "tick": 3610,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "commander-all-installed-800x600",
+      "sha256": "495e6362b95bb282b2ca967e92a3a31cc275ffada666db0f598504acdf9712b0",
+      "build": "898000c4970c",
+      "tick": 3610,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-offer-1440x900",
+      "sha256": "c55ff7cab4a4f43a60f6f89c24e6820b7b464c5920bf724f24703f62c8ada4be",
+      "build": "898000c4970c",
+      "tick": 3611,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-offer-1280x720",
+      "sha256": "4af26d69b349628cf9696c2da2edbeb7fb04c42567bf3b43d3fc58374e652037",
+      "build": "898000c4970c",
+      "tick": 3611,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-offer-1024x768",
+      "sha256": "18a5cca67314968c7b5aca82db64ad2dfb4b45c8816c9b4ac9ce3232a655cf8d",
+      "build": "898000c4970c",
+      "tick": 3611,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-offer-800x600",
+      "sha256": "7253952d767772c5262f97be3c8819b9c0755c93f9890fa9d802d4cdbf618307",
+      "build": "898000c4970c",
+      "tick": 3611,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-running-1440x900",
+      "sha256": "de97dfd1c188681f96468907dd6c6acf17ed03b379c21a16253a9657e0984047",
+      "build": "898000c4970c",
+      "tick": 3711,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-running-1280x720",
+      "sha256": "b0597948c8680df51847cbe9133ffb0194e4a2cca86305c23288dc8260508deb",
+      "build": "898000c4970c",
+      "tick": 3711,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-running-1024x768",
+      "sha256": "540cf929b652d8b8607212712477525736fa7212ff912502413016d7180431f4",
+      "build": "898000c4970c",
+      "tick": 3711,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-running-800x600",
+      "sha256": "397a49e8fd8cce7d7c1477eb949daff706e5f27e27a0f26184f0150b91e0cf76",
+      "build": "898000c4970c",
+      "tick": 3711,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-paused-1440x900",
+      "sha256": "80dac66e2a74734dbfeaf4d3a84d5445748f2fdad18221569a0269160fa5f79a",
+      "build": "898000c4970c",
+      "tick": 3813,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-paused-1280x720",
+      "sha256": "367c79c0418661aec984f7ad8cbda58c9db4e7db154cd740aa2e7e3bd16e4069",
+      "build": "898000c4970c",
+      "tick": 3813,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-paused-1024x768",
+      "sha256": "60bc381bb5065719a2ab74863761cf81bd3e4cf9dee222b506502ba8464804d4",
+      "build": "898000c4970c",
+      "tick": 3813,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t1-t2-paused-800x600",
+      "sha256": "09440248c41e9442a32da90fc654f531d0e8c2729cf6d3b85e11db3d5ced1175",
+      "build": "898000c4970c",
+      "tick": 3813,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-complete-1440x900",
+      "sha256": "df3a0e273f1b560fcd376ec285829ec05fc8c7848b8cfb848fd1565c11967a37",
+      "build": "898000c4970c",
+      "tick": 8015,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-complete-1280x720",
+      "sha256": "592d3941f3f282c5620b2499a01850e007bc9a87057d9410d1a32fd0fa45fbda",
+      "build": "898000c4970c",
+      "tick": 8015,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-complete-1024x768",
+      "sha256": "11b9dbc095b4eb7a597791220187895542cd1fd8fa93e11eb62cf667ea220e99",
+      "build": "898000c4970c",
+      "tick": 8015,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-complete-800x600",
+      "sha256": "1ec28c6640a6cac2bd7ff494cff1e10cd4bf76bff674aa0360fcf9cde0d5b3ee",
+      "build": "898000c4970c",
+      "tick": 8015,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-tank-production-1440x900",
+      "sha256": "d69162f06f09223ba5bc82b14c9a940f843519b227eef647cd14169c190d4f9f",
+      "build": "898000c4970c",
+      "tick": 8115,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-tank-production-1280x720",
+      "sha256": "2aa56a24bc8fea758c00d9e1890c2935a856747ca83db3f2e34bcad3f4db9925",
+      "build": "898000c4970c",
+      "tick": 8115,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-tank-production-1024x768",
+      "sha256": "4b8fc138732803eee77ec489fbc63a4a5fd7e4e8d18cb2f7f7321039fe350aa1",
+      "build": "898000c4970c",
+      "tick": 8115,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "name": "factory-t2-tank-production-800x600",
+      "sha256": "db1bda40d50679267c5cf2f6fde00c07fcc484284f8f5239d0391a9290d6fed0",
+      "build": "898000c4970c",
+      "tick": 8115,
+      "simHash": 40017171,
+      "tainted": false,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    }
+  ],
+  "layoutCases": 56,
+  "maximumDesktopDockHeight": 209.765625,
+  "errors": {
+    "pageErrors": [],
+    "failedRequests": [],
+    "layoutFailures": []
+  },
+  "colorCases": [
+    {
+      "color": "blue",
+      "mode": "house",
+      "colors": {
+        "house": "#2f6fd0",
+        "head": [
+          205,
+          220,
+          244,
+          255
+        ],
+        "key": [
+          205,
+          220,
+          244,
+          255
+        ],
+        "rim": [
+          188,
+          209,
+          240,
+          255
+        ],
+        "frameShadow": "color(srgb 0.73898 0.819294 0.94102) 0px 0px 0px 1px inset, rgba(5, 9, 13, 0.85) 0px 0px 0px 2px inset, color(srgb 0.184314 0.435294 0.815686 / 0.28) 0px 0px 9.52px 0px inset",
+        "rimCss": "color(srgb 0.73898 0.819294 0.94102)",
+        "move": [
+          147,
+          180,
+          231,
+          255
+        ],
+        "attack": [
+          255,
+          77,
+          63,
+          255
+        ],
+        "stop": [
+          255,
+          59,
+          59,
+          255
+        ],
+        "mass": [
+          180,
+          232,
+          58,
+          255
+        ],
+        "energy": [
+          255,
+          210,
+          58,
+          255
+        ]
+      },
+      "state": {
+        "build": "898000c4970c",
+        "simHash": 40017171,
+        "tick": 16,
+        "tainted": false,
+        "hostErrors": [],
+        "crossOriginIsolated": true,
+        "audio": {
+          "installed": true,
+          "contexts": 1,
+          "speakerConnections": 0,
+          "blockedConnections": 0,
+          "streamDestinations": 1
+        }
+      },
+      "sha256": "5d087a6b9d58cf27e0c93104d70efdf35cca7ec9efe452e947a8995b182f24fa"
+    },
+    {
+      "color": "red",
+      "mode": "house",
+      "colors": {
+        "house": "#c8372d",
+        "head": [
+          242,
+          207,
+          205,
+          255
+        ],
+        "key": [
+          242,
+          207,
+          205,
+          255
+        ],
+        "rim": [
+          237,
+          191,
+          188,
+          255
+        ],
+        "frameShadow": "color(srgb 0.93098 0.74902 0.736471) 0px 0px 0px 1px inset, rgba(5, 9, 13, 0.85) 0px 0px 0px 2px inset, color(srgb 0.784314 0.215686 0.176471 / 0.28) 0px 0px 9.52px 0px inset",
+        "rimCss": "color(srgb 0.93098 0.74902 0.736471)",
+        "move": [
+          226,
+          151,
+          146,
+          255
+        ],
+        "attack": [
+          255,
+          77,
+          63,
+          255
+        ],
+        "stop": [
+          255,
+          59,
+          59,
+          255
+        ],
+        "mass": [
+          180,
+          232,
+          58,
+          255
+        ],
+        "energy": [
+          255,
+          210,
+          58,
+          255
+        ]
+      },
+      "state": {
+        "build": "898000c4970c",
+        "simHash": 40017171,
+        "tick": 16,
+        "tainted": false,
+        "hostErrors": [],
+        "crossOriginIsolated": true,
+        "audio": {
+          "installed": true,
+          "contexts": 1,
+          "speakerConnections": 0,
+          "blockedConnections": 0,
+          "streamDestinations": 1
+        }
+      },
+      "sha256": "a2d2a47b4a05a2ae80b45e484af2d34f035b824ea745d3ce166c9f1be4be8a22"
+    },
+    {
+      "color": "green",
+      "mode": "relation",
+      "colors": {
+        "house": "#3e9a4a",
+        "head": [
+          209,
+          231,
+          212,
+          255
+        ],
+        "key": [
+          209,
+          231,
+          212,
+          255
+        ],
+        "rim": [
+          193,
+          223,
+          197,
+          255
+        ],
+        "frameShadow": "color(srgb 0.757804 0.873255 0.772863) 0px 0px 0px 1px inset, rgba(5, 9, 13, 0.85) 0px 0px 0px 2px inset, color(srgb 0.243137 0.603922 0.290196 / 0.28) 0px 0px 9.52px 0px inset",
+        "rimCss": "color(srgb 0.757804 0.873255 0.772863)",
+        "move": [
+          155,
+          202,
+          161,
+          255
+        ],
+        "attack": [
+          255,
+          77,
+          63,
+          255
+        ],
+        "stop": [
+          255,
+          59,
+          59,
+          255
+        ],
+        "mass": [
+          180,
+          232,
+          58,
+          255
+        ],
+        "energy": [
+          255,
+          210,
+          58,
+          255
+        ]
+      },
+      "state": {
+        "build": "898000c4970c",
+        "simHash": 40017171,
+        "tick": 16,
+        "tainted": false,
+        "hostErrors": [],
+        "crossOriginIsolated": true,
+        "audio": {
+          "installed": true,
+          "contexts": 1,
+          "speakerConnections": 0,
+          "blockedConnections": 0,
+          "streamDestinations": 1
+        }
+      },
+      "sha256": "fb1310aa31b3a18fabfc1506c8f947dd8d459b1a3c6a7079b08891285f14b085"
+    },
+    {
+      "color": "orange",
+      "mode": "cvd",
+      "colors": {
+        "house": "#e07a1f",
+        "head": [
+          248,
+          223,
+          201,
+          255
+        ],
+        "key": [
+          248,
+          223,
+          201,
+          255
+        ],
+        "rim": [
+          245,
+          212,
+          183,
+          255
+        ],
+        "frameShadow": "color(srgb 0.961098 0.833098 0.718902) 0px 0px 0px 1px inset, rgba(5, 9, 13, 0.85) 0px 0px 0px 2px inset, color(srgb 0.878431 0.478431 0.121569 / 0.28) 0px 0px 9.52px 0px inset",
+        "rimCss": "color(srgb 0.961098 0.833098 0.718902)",
+        "move": [
+          239,
+          186,
+          139,
+          255
+        ],
+        "attack": [
+          255,
+          77,
+          63,
+          255
+        ],
+        "stop": [
+          255,
+          59,
+          59,
+          255
+        ],
+        "mass": [
+          180,
+          232,
+          58,
+          255
+        ],
+        "energy": [
+          255,
+          210,
+          58,
+          255
+        ]
+      },
+      "state": {
+        "build": "898000c4970c",
+        "simHash": 40017171,
+        "tick": 16,
+        "tainted": false,
+        "hostErrors": [],
+        "crossOriginIsolated": true,
+        "audio": {
+          "installed": true,
+          "contexts": 1,
+          "speakerConnections": 0,
+          "blockedConnections": 0,
+          "streamDestinations": 1
+        }
+      },
+      "sha256": "14831704145ddc5bae5d927d9c6d191b44648fd61ae3f34ffa241344a6318f3a"
+    }
+  ],
+  "nativeReplay": {
+    "tainted": false,
+    "humanOps": [
+      11,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      11,
+      11,
+      11,
+      16,
+      16,
+      12
+    ]
+  },
+  "completedAt": "2026-10-02T08:43:00.642Z"
+}
