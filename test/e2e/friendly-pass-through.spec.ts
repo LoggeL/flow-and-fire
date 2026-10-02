@@ -50,7 +50,13 @@ for (const area of [false, true]) test(`native ${area ? 'artillery area damage' 
     if (sample.actors.find(a => a.handle === target)!.unit!.hp < before.actors.at(-1)!.unit!.hp) break;
   }
   const after = samples.at(-1)!;
-  expect(before.actors.at(-1)!.unit!.hp - after.actors.at(-1)!.unit!.hp).toBe(area ? 90 : 45);
+  const targetBefore = before.actors.at(-1)!.unit!;
+  expect(targetBefore.hp).toBe(targetBefore.hpMax);
+  // HP is published as a floored u8 fraction and then rounded by unitInfo.
+  // A genuine 90-HP hit on this 400-HP target therefore displays a 91-HP loss.
+  const damage = area ? 90 : 45;
+  const publishedHp = Math.round(Math.floor((targetBefore.hpMax - damage) * 255 / targetBefore.hpMax) / 255 * targetBefore.hpMax);
+  expect(after.actors.at(-1)!.unit!.hp).toBe(publishedHp);
   expect(after.tainted).toBe(true); expect(after.hostErrors).toEqual([]);
   await assertSilentOutput(page); expectNoErrors(errors);
   await info.attach('native-friendly-passage', { body: await page.screenshot(), contentType: 'image/png' });
