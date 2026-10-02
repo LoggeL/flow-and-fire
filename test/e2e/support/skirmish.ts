@@ -21,9 +21,9 @@ export async function setFrontendLocale(page: Page, locale: 'de' | 'en'): Promis
 }
 
 /** Uses the actual menu; openGame deliberately starts the legacy cube sandbox. */
-export async function startHumanAiSkirmish(page: Page): Promise<number> {
+export async function startHumanAiSkirmish(page: Page, options: { navigate?: boolean } = {}): Promise<number> {
   await installSilentOutput(page);
-  await page.goto(`${COI_URL}?menu=1&map=hollow-ridge&seed=177`, { waitUntil: 'commit' });
+  if (options.navigate !== false) await page.goto(`${COI_URL}?menu=1&map=hollow-ridge&seed=177`, { waitUntil: 'commit' });
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
   // Boot populates maps/config and replaces the frontend controller before ready.
   // Navigating the first visible menu during that phase can be reset back to MainMenu.

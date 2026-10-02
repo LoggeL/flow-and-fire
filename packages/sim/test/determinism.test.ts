@@ -24,26 +24,35 @@ describe('determinism (L1/L4, 1,000 cubes, 2,000 ticks)', { timeout: 180_000 }, 
   });
 
   it('snapshot at tick 1,000 + restore ⇒ same rule and full hash at tick 2,000', () => {
-    const direct = runScenario(table, 42, 2000, 'view');
     const first = runScenario(table, 42, 1000, 'view');
+    const atSnapshot = Object.freeze({ rule: ruleHash(first.world), full: fullHash(first.world) });
     const snap = snapshot(first.world);
     expect(snap.length).toBe(first.world.snapshotByteLength);
+    expect(ruleHash(first.world), 'snapshot leaves the source rule state intact').toBe(atSnapshot.rule);
+    expect(fullHash(first.world), 'snapshot leaves the source full state intact').toBe(atSnapshot.full);
+    const tail = continueScenario(first.world, 2000, 'view');
+    const direct = Object.freeze({
+      chain: Object.freeze([...first.chain, ...tail.chain]),
+      rule: ruleHash(first.world),
+      full: fullHash(first.world),
+    });
     // Restore into a fresh world (same layout) and into the original after it diverged.
     const fresh = createWorld({ bpTable: table, seed: 42, armyCount: 2 });
     expect(fresh.layoutHash).toBe(first.world.layoutHash);
     restore(fresh, snap);
     expect(fresh.tick).toBe(1000);
-    expect(ruleHash(fresh)).toBe(ruleHash(first.world));
-    expect(fullHash(fresh)).toBe(fullHash(first.world));
+    expect(ruleHash(fresh)).toBe(atSnapshot.rule);
+    expect(fullHash(fresh)).toBe(atSnapshot.full);
     const resumed = continueScenario(fresh, 2000, 'view');
-    expect(ruleHash(resumed.world)).toBe(ruleHash(direct.world));
-    expect(fullHash(resumed.world)).toBe(fullHash(direct.world));
+    expect(ruleHash(resumed.world)).toBe(direct.rule);
+    expect(fullHash(resumed.world)).toBe(direct.full);
     expect([...direct.chain.slice(0, 100), ...resumed.chain]).toEqual(direct.chain);
 
+    restore(first.world, snap);
     continueScenario(first.world, 1500, 'view');
     restore(first.world, snap);
     continueScenario(first.world, 2000, 'view');
-    expect(fullHash(first.world)).toBe(fullHash(direct.world));
+    expect(fullHash(first.world)).toBe(direct.full);
   });
 });
 
@@ -70,16 +79,24 @@ describe('determinism with a map (hollow-ridge, 2,000 ticks)', { timeout: 180_00
   });
 
   it('snapshot at tick 1,000 + restore ⇒ same rule and full hash at tick 2,000 (static map untouched)', () => {
-    const direct = runScenario(table, 42, 2000, 'view', map);
     const first = runScenario(table, 42, 1000, 'view', map);
+    const atSnapshot = Object.freeze({ rule: ruleHash(first.world), full: fullHash(first.world) });
     const snap = snapshot(first.world);
+    expect(ruleHash(first.world), 'snapshot leaves the source rule state intact').toBe(atSnapshot.rule);
+    expect(fullHash(first.world), 'snapshot leaves the source full state intact').toBe(atSnapshot.full);
+    const tail = continueScenario(first.world, 2000, 'view');
+    const direct = Object.freeze({
+      chain: Object.freeze([...first.chain, ...tail.chain]),
+      rule: ruleHash(first.world),
+      full: fullHash(first.world),
+    });
     const fresh = createWorld({ bpTable: table, seed: 42, armyCount: 2, map });
     expect(fresh.layoutHash).toBe(first.world.layoutHash);
     restore(fresh, snap);
-    expect(ruleHash(fresh)).toBe(ruleHash(first.world));
+    expect(ruleHash(fresh)).toBe(atSnapshot.rule);
     const resumed = continueScenario(fresh, 2000, 'view');
-    expect(ruleHash(resumed.world)).toBe(ruleHash(direct.world));
-    expect(fullHash(resumed.world)).toBe(fullHash(direct.world));
+    expect(ruleHash(resumed.world)).toBe(direct.rule);
+    expect(fullHash(resumed.world)).toBe(direct.full);
     expect([...direct.chain.slice(0, 100), ...resumed.chain]).toEqual(direct.chain);
     expect(fresh.terrain.heights).toEqual(map.heights);
   });

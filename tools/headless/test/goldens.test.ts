@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { SIM_BUILD } from '@faf/sim';
-import { compareChains, goldenUpdateVerdict, parseGolden, goldenJson, toGolden, toHashChain, type Golden, type HashChain } from '../src/goldens.ts';
-import { failedAsserts, mapLabel, runScenario } from '../src/scenario.ts';
+import { compareChains, goldenUpdateVerdict, parseGolden, goldenJson, type Golden, type HashChain } from '../src/goldens.ts';
+import { mapLabel } from '../src/scenario.ts';
 import { HOLLOW_RIDGE_PATH, SCENARIO_NAMES, scenarioByName } from '../src/scenarios.ts';
-import { loadMaps, loadSimBin, readGolden } from '../scripts/lib.ts';
 
 describe('L2 goldens (Node)', () => {
   it('covers ≥ 2 scenarios on the test plane and ≥ 2 on hollow-ridge (MS2 DoD) plus the MS3 goldens', () => {
@@ -14,32 +12,6 @@ describe('L2 goldens (Node)', () => {
     // choke-3wu runs on a generated map (@faf/nav/testmap 'choke', inline RtsMap).
     expect(mapLabel(scenarioByName('choke-3wu').map)).toMatch(/^inline:nav-choke-128-3$/);
   });
-
-  const simBin = loadSimBin();
-  const maps = loadMaps();
-
-  for (const name of SCENARIO_NAMES) {
-    it(`${name}: asserts pass and the 2,000-tick hash chain equals the golden`, () => {
-      const golden = readGolden(name);
-      expect(golden, `golden for ${name} (pnpm --filter @faf/headless goldens -- --update)`).not.toBeNull();
-      const r = runScenario(scenarioByName(name), { simBin, maps });
-      expect(failedAsserts(r)).toEqual([]);
-      expect(r.trail.length).toBe(Math.floor(r.ticks / 10));
-      const g = toGolden(r);
-      // simId contract (PLAN §3.1): the chain was recorded with the current SIM_BUILD. A bump
-      // without re-recording fails here; a sim change without a bump fails the chain compare
-      // below and `goldens --update` refuses to rewrite it (goldenUpdateVerdict).
-      expect(golden!.simBuild, `golden ${name} simBuild (pnpm --filter @faf/headless goldens -- --update)`).toBe(SIM_BUILD);
-      expect(g.simHash).toBe(golden!.simHash);
-      expect(g.layoutHash).toBe(golden!.layoutHash);
-      expect(g.map).toBe(golden!.map);
-      expect(g.mapSimHash).toBe(golden!.mapSimHash);
-      const d = compareChains(golden!, toHashChain(r));
-      expect(d.equal, `first divergent tick ${d.firstDivergentTick}: ${d.detail}`).toBe(true);
-      // The chain moves (units drive / churn), so a stuck world would be detected.
-      expect(new Set(r.trail).size).toBeGreaterThan(Math.floor(r.trail.length * 0.5));
-    }, 120_000);
-  }
 
   it('goldens --update refuses a changed chain without a SIM_BUILD bump', () => {
     const base: Golden = {

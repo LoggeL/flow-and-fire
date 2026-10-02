@@ -29,16 +29,23 @@
   object-position: 65% 48%;
   transform-origin: 65% 48%;
 }
+/* A shared orbit moves the whole scene; depth planes countertranslate on one clock. */
+.live-hud[data-screen='main'] .menu-backdrop__camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 65% 48%;
+  animation: ff-menu-camera-orbit 24s ease-in-out -6s infinite;
+}
 .live-hud[data-screen='main'] .menu-backdrop__image,
 .live-hud[data-screen='main'] .menu-backdrop__scene-effects--background {
-  animation: ff-menu-background-drift 60s ease-in-out -15s infinite alternate;
+  animation: ff-menu-background-drift 24s ease-in-out -6s infinite;
 }
 .live-hud[data-screen='main'] .menu-backdrop__commander,
 .live-hud[data-screen='main'] .menu-backdrop__scene-effects--commander {
-  animation: ff-menu-commander-drift 48s ease-in-out -12s infinite alternate;
+  animation: ff-menu-commander-drift 24s ease-in-out -6s infinite;
 }
 .live-hud[data-screen='main'] .menu-backdrop__foreground {
-  animation: ff-menu-foreground-drift 34s ease-in-out -8.5s infinite alternate;
+  animation: ff-menu-foreground-drift 24s ease-in-out -6s infinite;
 }
 /* Companion planes reproduce object-fit: cover before their shared image transform. */
 .live-hud[data-screen='main'] .menu-backdrop__scene-effects {
@@ -65,10 +72,32 @@
   animation: ff-menu-factory-light 11s ease-in-out infinite alternate;
 }
 .live-hud[data-screen='main'] .menu-scene-smoke {
-  background: radial-gradient(ellipse at 42% 66%, #c0bec820, transparent 53%), radial-gradient(ellipse at 61% 43%, #b1afbb14, transparent 48%);
+  background: radial-gradient(ellipse at 42% 66%, #c0bec85c, transparent 53%), radial-gradient(ellipse at 61% 43%, #b1afbb39, transparent 48%);
   transform-origin: 50% 100%;
   opacity: 0;
   animation: ff-menu-factory-smoke 21s ease-in-out infinite;
+}
+.live-hud[data-screen='main'] .menu-scene-smoke--billow {
+  background: radial-gradient(ellipse at 62% 55%, #b2c8d346, transparent 62%), radial-gradient(ellipse at 34% 73%, #b2c8d32e, transparent 52%);
+}
+/* Soft masks isolate sky and waterfall atmosphere without copying scene structures. */
+.live-hud[data-screen='main'] .menu-scene-cloud {
+  mask-image: radial-gradient(ellipse at 50% 38%, #000 16%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 38%, #000 16%, transparent 72%);
+  animation: ff-menu-cloud-shadow 19s ease-in-out -4s infinite alternate;
+}
+.live-hud[data-screen='main'] .menu-scene-cloud--shadow {
+  background: radial-gradient(ellipse at 29% 48%, #10212c85, transparent 54%), radial-gradient(ellipse at 68% 35%, #29374170, transparent 58%);
+}
+.live-hud[data-screen='main'] .menu-scene-cloud--warm {
+  background: radial-gradient(ellipse at 45% 53%, #eaba8263, transparent 63%), radial-gradient(ellipse at 69% 35%, #ed93583b, transparent 58%);
+  animation: ff-menu-cloud-glow 15s ease-in-out -7s infinite alternate;
+}
+.live-hud[data-screen='main'] .menu-scene-haze {
+  background: radial-gradient(ellipse at 34% 68%, #adc1d459, transparent 55%), radial-gradient(ellipse at 70% 54%, #a5bedb38, transparent 58%);
+  mask-image: radial-gradient(ellipse, #000 8%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse, #000 8%, transparent 70%);
+  animation: ff-menu-valley-haze 18s ease-in-out infinite alternate;
 }
 .live-hud[data-screen='main'] .menu-scene-emitter {
   background: radial-gradient(ellipse at 50% 28%, #b0f0ff4d, #6bd8ff1a 36%, transparent 66%), radial-gradient(ellipse at 50% 62%, #75dfff20, transparent 65%);
@@ -114,11 +143,13 @@
   opacity: 0;
   animation: ff-menu-ember 20s linear infinite;
 }
+.live-hud[data-screen='main'] .menu-backdrop__camera,
 .live-hud[data-screen='main'] .menu-backdrop__layer,
 .live-hud[data-screen='main'] .menu-backdrop__scene-effects,
 .live-hud[data-screen='main'] .menu-backdrop [data-scene-effect],
 .live-hud[data-screen='main'] .menu-backdrop__mist,
 .live-hud[data-screen='main'] .menu-backdrop__embers i { animation-play-state: paused; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__camera,
 .live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__layer,
 .live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__scene-effects,
 .live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] [data-scene-effect],
@@ -272,12 +303,28 @@
 }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-foot .sp { min-width: 0; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] [data-testid='menu-build-meta'] { overflow-wrap: anywhere; text-align: right; }
-/* Registered images share the same frame. Increasing travel and shorter cycles reveal depth. */
-@keyframes ff-menu-background-drift { from { transform: translate3d(.15%, .1%, 0) scale(1.025); } to { transform: translate3d(-.35%, -.15%, 0) scale(1.035); } }
-@keyframes ff-menu-commander-drift { from { transform: translate3d(.45%, .25%, 0) scale(1.025); } to { transform: translate3d(-.6%, -.3%, 0) scale(1.045); } }
-@keyframes ff-menu-foreground-drift { from { transform: translate3d(1%, .5%, 0) scale(1.075); } to { transform: translate3d(-1.35%, -.7%, 0) scale(1.105); } }
+/* Overscan covers the orbit at every crop; matching phases prevent depth from swimming. */
+@keyframes ff-menu-camera-orbit {
+  0%, 100% { transform: perspective(1600px) translate3d(-1.4%, .45%, 0) rotateY(-1.2deg) rotate(-.12deg) scale(1.10); }
+  50% { transform: perspective(1600px) translate3d(1.4%, -.45%, 0) rotateY(1.2deg) rotate(.12deg) scale(1.12); }
+}
+@keyframes ff-menu-background-drift {
+  0%, 100% { transform: translate3d(.5%, -.12%, 0) scale(1.025); }
+  50% { transform: translate3d(-.5%, .12%, 0) scale(1.025); }
+}
+@keyframes ff-menu-commander-drift {
+  0%, 100% { transform: translate3d(-.65%, .22%, 0) scale(1.035); }
+  50% { transform: translate3d(.65%, -.22%, 0) scale(1.035); }
+}
+@keyframes ff-menu-foreground-drift {
+  0%, 100% { transform: translate3d(-1.8%, .6%, 0) scale(1.08); }
+  50% { transform: translate3d(1.8%, -.6%, 0) scale(1.08); }
+}
 @keyframes ff-menu-factory-light { from { opacity: .22; } to { opacity: .7; } }
-@keyframes ff-menu-factory-smoke { 0% { transform: translate3d(-50%, -75%, 0) scale(.75); opacity: 0; } 25% { opacity: .35; } 60% { opacity: .22; } 100% { transform: translate3d(-22%, -145%, 0) scale(1.25); opacity: 0; } }
+@keyframes ff-menu-factory-smoke { 0% { transform: translate3d(-50%, -75%, 0) scale(.75); opacity: 0; } 25% { opacity: .55; } 60% { opacity: .38; } 100% { transform: translate3d(-8%, -155%, 0) scale(1.4); opacity: 0; } }
+@keyframes ff-menu-cloud-shadow { from { transform: translate3d(-5%, 2%, 0) scale(1); opacity: .45; } to { transform: translate3d(7%, -4%, 0) scale(1.07); opacity: .75; } }
+@keyframes ff-menu-cloud-glow { from { transform: translate3d(6%, -3%, 0) scale(1.04); opacity: .35; } to { transform: translate3d(-7%, 4%, 0) scale(.98); opacity: .7; } }
+@keyframes ff-menu-valley-haze { from { transform: translate3d(-8%, 4%, 0) scale(.94); opacity: .3; } to { transform: translate3d(10%, -7%, 0) scale(1.12); opacity: .7; } }
 @keyframes ff-menu-emitter-breathe { from { transform: translate(-50%, -50%) scale(.96); opacity: .25; } to { transform: translate(-50%, -50%) scale(1.06); opacity: .6; } }
 @keyframes ff-menu-mist { from { transform: translate3d(-4%, 5%, 0) scale(1); opacity: .45; } to { transform: translate3d(6%, -3%, 0) scale(1.07); opacity: .9; } }
 @keyframes ff-menu-ember { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 18% { opacity: .45; } 75% { opacity: .25; } 100% { transform: translate3d(-45px, -165px, 0); opacity: 0; } }
@@ -292,7 +339,7 @@
 @media (max-width: 760px) {
   .live-hud[data-screen='main'] .menu-backdrop { --scene-align-x: .68; }
   .live-hud[data-screen='main'] .menu-backdrop__layer { object-position: 68% 48%; transform-origin: 68% 48%; }
-  .live-hud[data-screen='main'] .menu-backdrop__scene-effects { transform-origin: 68% 48%; }
+  .live-hud[data-screen='main'] :is(.menu-backdrop__scene-effects, .menu-backdrop__camera) { transform-origin: 68% 48%; }
   .live-hud[data-screen='main'] .menu-backdrop__shade { background: linear-gradient(90deg, #050a0ff0, #070d12ab 52%, #070d1266); }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .main { grid-template-columns: minmax(0, 1fr); gap: 22px; align-content: center; padding-top: 22px; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .logo { font-size: clamp(68px, 15vw, 96px); }
@@ -301,19 +348,20 @@
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-foot .sp { margin-left: 0; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] [data-testid='menu-build-meta'] { text-align: left; }
 }
-.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__layer, .menu-backdrop__scene-effects, [data-scene-effect], .menu-backdrop__mist, .menu-backdrop__embers i) { animation: none; }
-.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__layer, .menu-backdrop__scene-effects) { transform: none; }
-.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-scene-smoke, .menu-backdrop__embers) { display: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__camera, .menu-backdrop__layer, .menu-backdrop__scene-effects, [data-scene-effect], .menu-backdrop__mist, .menu-backdrop__embers i) { animation: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__camera, .menu-backdrop__layer, .menu-backdrop__scene-effects) { transform: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-scene-cloud, .menu-scene-haze, .menu-scene-smoke, .menu-backdrop__embers) { display: none; }
 .live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-scene-light, .menu-scene-emitter) { opacity: .18; }
 @media (prefers-reduced-motion: reduce) {
+  .live-hud[data-screen='main'] .menu-backdrop__camera,
   .live-hud[data-screen='main'] .menu-backdrop__layer,
   .live-hud[data-screen='main'] .menu-backdrop__scene-effects,
   .live-hud[data-screen='main'] .menu-backdrop [data-scene-effect],
   .live-hud[data-screen='main'] .menu-backdrop__mist,
   .live-hud[data-screen='main'] .menu-backdrop__embers i { animation: none; }
-  .live-hud[data-screen='main'] .menu-backdrop__layer { transform: none; }
+  .live-hud[data-screen='main'] :is(.menu-backdrop__camera, .menu-backdrop__layer) { transform: none; }
   .live-hud[data-screen='main'] .menu-backdrop__scene-effects { transform: none; }
-  .live-hud[data-screen='main'] .menu-backdrop .menu-scene-smoke { display: none; }
+  .live-hud[data-screen='main'] .menu-backdrop :is(.menu-scene-cloud, .menu-scene-haze, .menu-scene-smoke) { display: none; }
   .live-hud[data-screen='main'] .menu-scene-light,
   .live-hud[data-screen='main'] .menu-scene-emitter { opacity: .18; }
   .live-hud[data-screen='main'] .menu-backdrop__embers { display: none; }

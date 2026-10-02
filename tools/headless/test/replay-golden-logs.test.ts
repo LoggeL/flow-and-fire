@@ -5,9 +5,10 @@ import { CommandBatchView, Op, validateBatch } from '@faf/protocol';
 import { HASH_INTERVAL_TICKS } from '@faf/sim';
 import { HeadlessSim, LOG_VERSION, MarkKind, parseCommandLog, SIM_BUILD, simIdFor } from '@faf/sim-host';
 import { checkGoldenLog, GOLDEN_LOG_BUILD_HASH, recordScenarioLog, ScenarioLogError } from '../src/replay/scenario-log.ts';
-import { resolveScenarioMap, runScenario, ScenarioBuilder } from '../src/scenario.ts';
+import { failedAsserts, resolveScenarioMap, runScenario, ScenarioBuilder } from '../src/scenario.ts';
 import { SCENARIO_NAMES, scenarioByName } from '../src/scenarios.ts';
 import { loadMaps, loadSimBin, readGolden, REPO_DIR } from '../scripts/lib.ts';
+import { compareChains, toGolden, toHashChain } from '../src/goldens.ts';
 
 const LOGS_DIR = resolve(REPO_DIR, 'test/golden-replays/logs');
 const HINT = 'pnpm --filter @faf/headless golden-logs -- --update';
@@ -34,10 +35,36 @@ describe('golden command logs (test/golden-replays/logs)', () => {
     expect(() => recordScenarioLog(allied, { simBin })).toThrow(ScenarioLogError);
   });
 
-  for (const name of withGolden) {
+  for (const name of SCENARIO_NAMES) {
     describe(name, () => {
-      const golden = readGolden(name)!;
+      const golden = readGolden(name);
       const sc = scenarioByName(name);
+      // Fresh results have no mutable world and are observed by both L2 and log checks.
+      let recorded: ReturnType<typeof recordScenarioLog> | undefined;
+      const freshRecording = (): ReturnType<typeof recordScenarioLog> => recorded ??= recordScenarioLog(sc, { simBin, maps });
+
+      it(`${name}: asserts pass and the 2,000-tick hash chain equals the golden`, () => {
+        expect(golden, `golden for ${name} (pnpm --filter @faf/headless goldens -- --update)`).not.toBeNull();
+        const r = freshRecording().result;
+        expect(failedAsserts(r)).toEqual([]);
+        expect(r.trail.length).toBe(Math.floor(r.ticks / 10));
+        const g = toGolden(r);
+        // simId contract (PLAN §3.1): the chain was recorded with the current SIM_BUILD. A bump
+        // without re-recording fails here; a sim change without a bump fails the chain compare
+        // below and `goldens --update` refuses to rewrite it (goldenUpdateVerdict).
+        expect(golden!.simBuild, `golden ${name} simBuild (pnpm --filter @faf/headless goldens -- --update)`).toBe(SIM_BUILD);
+        expect(g.simHash).toBe(golden!.simHash);
+        expect(g.layoutHash).toBe(golden!.layoutHash);
+        expect(g.map).toBe(golden!.map);
+        expect(g.mapSimHash).toBe(golden!.mapSimHash);
+        const d = compareChains(golden!, toHashChain(r));
+        expect(d.equal, `first divergent tick ${d.firstDivergentTick}: ${d.detail}`).toBe(true);
+        // The chain moves (units drive / churn), so a stuck world would be detected.
+        expect(new Set(r.trail).size).toBeGreaterThan(Math.floor(r.trail.length * 0.5));
+      }, 120_000);
+
+      // A missing golden must still fail its L2 check above.
+      if (golden === null) return;
       const file = new Uint8Array(readFileSync(resolve(LOGS_DIR, `${name}.faflog`)));
 
       it('parses completely: v2, not truncated, END at the last tick, header = scenario identity', () => {
@@ -86,7 +113,7 @@ describe('golden command logs (test/golden-replays/logs)', () => {
       });
 
       it('is fresh: recordScenarioLog produces the checked-in bytes, the scenario result is the golden', () => {
-        const { log, result } = recordScenarioLog(sc, { simBin, maps });
+        const { log, result } = freshRecording();
         expect(bytesEqual(log, file), `${name}.faflog is stale (${HINT})`).toBe(true);
         expect(result.trail.map((h) => `0x${h.toString(16).padStart(8, '0')}`)).toEqual(golden.trail);
       });

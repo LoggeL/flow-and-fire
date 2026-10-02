@@ -11,7 +11,7 @@ import { Game, type GameAssets } from './game.ts';
 import { installTestHooks } from './hooks.ts';
 import type { GameHudPorts } from './hud/live.ts';
 import { FrontendMenus } from './hud/LiveHud.tsx';
-import { INITIAL_LOAD_STATE, SIM_START_PROGRESS, type LoadState, type LoadTimings } from './loading.ts';
+import { INITIAL_LOAD_STATE, SIM_START_PROGRESS, type LoadState, type LoadTimings, type SessionAssets } from './loading.ts';
 import { parseParams, type GameParams } from './params.ts';
 import { ReplayController, ReplayLibrary, ReplayPanel, createReplayWorker, downloadReplay, transferredReplay, type RecordedGame, type ReplayAssets } from './replay/index.ts';
 import { skirmishInitialization } from './session-setup.ts';
@@ -168,7 +168,7 @@ async function recordingAssets(recording: RecordedGame): Promise<ReplayAssets> {
   return { simBin: session.simBin, map: session.mapBytes };
 }
 
-async function startSession(config?: SkirmishConfig, replayBytes?: Uint8Array, autostart = true): Promise<void> {
+async function startSession(config?: SkirmishConfig, replayBytes?: Uint8Array, autostart = true, bootstrap?: { map: string; session: SessionAssets }): Promise<void> {
   if (starting) throw new Error('Ein Spiel wird bereits geladen.');
   if (config !== undefined) {
     const problem = validateSkirmish(config, mapsSig.peek().map(map => map.menu));
@@ -193,7 +193,10 @@ async function startSession(config?: SkirmishConfig, replayBytes?: Uint8Array, a
     await closing;
     if (id !== generation) throw new Error('Spielstart abgebrochen.');
     params.value = sessionParams;
-    const session = await store.load(sessionParams.map, state => { if (id === generation) setLoad(state); });
+    // Boot already verified and decoded this map. Retain its real cold-load timings and avoid
+    // loading every model a second time; a replay/config selecting another map still loads it.
+    const session = bootstrap?.map === sessionParams.map ? bootstrap.session
+      : await store.load(sessionParams.map, state => { if (id === generation) setLoad(state); });
     if (id !== generation) throw new Error('Spielstart abgebrochen.');
     const assets = gameAssetsFromSession(session);
     assetsSig.value = assets;
@@ -234,13 +237,14 @@ async function boot(): Promise<void> {
   manager = new AssetManager({ manifestUrl: `${import.meta.env.BASE_URL}assets/manifest.json`, createWorker: () => new AssetWorker({ name: 'faf-assets' }) });
   store = new SessionAssetsStore(manager);
   const session = await store.load(initialParams.map, setLoad);
+  const bootstrap = { map: initialParams.map, session };
   assetsSig.value = gameAssetsFromSession(session);
   mapsSig.value = await store.maps();
   configSig.value = defaultSkirmish(mapsSig.peek().some(map => map.menu.id === initialParams.map) ? initialParams.map : mapsSig.peek()[0]?.menu.id ?? '');
   const transfer = transferredReplay(location.search), query = new URLSearchParams(location.search);
-  if (transfer !== null) await startSession(undefined, transfer);
-  else if (query.get('mode') === 'skirmish') await startSession(configSig.peek(), undefined, initialParams.autostart);
-  else if (query.size > 0 && query.get('menu') !== '1') await startSession();
+  if (transfer !== null) await startSession(undefined, transfer, true, bootstrap);
+  else if (query.get('mode') === 'skirmish') await startSession(configSig.peek(), undefined, initialParams.autostart, bootstrap);
+  else if (query.size > 0 && query.get('menu') !== '1') await startSession(undefined, undefined, true, bootstrap);
   else setLoad({ ...load.peek(), phase: 'ready', progress: 100 });
   if (import.meta.hot) {
     import.meta.hot.on('faf:blueprints', (payload: { simBin: number[]; viewJson: string; changedAt: number }) => gameSig.peek()?.reloadBlueprints(payload));

@@ -106,12 +106,26 @@ pnpm lint
 pnpm test
 ```
 
+`pnpm test` führt die Funktions-, Property-, Golden- und Replaytests aus. Für kleine Änderungen
+prüft `pnpm test:changed` nur die seit `HEAD` betroffenen Tests; `pnpm test:watch` wiederholt sie
+bei Dateiänderungen. Vitest speichert übersetzte Module zwischen Läufen und isoliert weiterhin
+jede Testdatei.
+
+Die beiden langen Allokations-Suites mit 1.000 Einheiten und jeweils 10.000 Messticks laufen
+gezielt mit `pnpm test:allocation`, nacheinander in einem Worker. `pnpm test:full` und
+`pnpm ci:local` enthalten auch diese Prüfungen. Die Lasten und Speichergrenzen bleiben erhalten.
+Messwerte und die erhaltenen Prüfungen stehen im [Testbericht](docs/status/test-optimization.md).
+
 Für Browserprüfungen zusätzlich:
 
 ```sh
 pnpm exec playwright install chromium firefox webkit
 pnpm test:e2e
 ```
+
+Der E2E-Befehl baut nur Spielinhalte und Spiel. Ein bereits gebautes Spiel lässt sich mit
+`pnpm exec playwright test <spec>` direkt prüfen. Fehlertraces enthalten DOM- und ARIA-Zustände;
+Fehler-Screenshots und ausdrücklich angeforderte Screenshots bleiben erhalten.
 
 Auf macOS steht für große Jobs zusätzlich `./tools/heavy` als Speicher- und Parallelitätsgate bereit, beispielsweise `./tools/heavy pnpm test`. Es benötigt zsh und macOS-Werkzeuge. Vergleichbare Zeitmessungen benötigen ein freies Messfenster. Die Standard-E2E-Prüfung ersetzt die getrennten strikten Performance-Gates nicht; automatisierte Audio-Browserprüfungen verbinden keinen Lautsprecherausgang.
 

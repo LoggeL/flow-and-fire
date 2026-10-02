@@ -163,6 +163,19 @@ async function animationPlayStates(backdrop: Locator) {
   }));
 }
 
+async function atmospherePair(backdrop: Locator, intervalMs = 120) {
+  const planes = backdrop.locator('[data-testid="menu-camera-orbit"], [data-testid="menu-sky-shadow"], [data-testid="menu-sky-glow"], [data-testid^="menu-factory-billow-"], [data-testid^="menu-valley-haze-"]');
+  await expect(planes).toHaveCount(7);
+  const sample = () => planes.evaluateAll(elements => elements.map(el => {
+    const style = getComputedStyle(el);
+    const bounds = el.getBoundingClientRect();
+    return { id: el.getAttribute('data-testid'), transform: style.transform, opacity: style.opacity, x: bounds.x, y: bounds.y };
+  }));
+  const before = await sample();
+  await backdrop.page().waitForTimeout(intervalMs);
+  return { before, after: await sample() };
+}
+
 async function expectPausedLayers(backdrop: Locator, layers: Locator) {
   await expect(backdrop).toHaveAttribute('data-motion', 'paused');
   await expect(backdrop).toHaveAttribute('data-motion-reason', 'user');
@@ -176,7 +189,9 @@ async function expectPausedLayers(backdrop: Locator, layers: Locator) {
   const transforms = await transformPair(layers);
   expect(transforms.before).toHaveLength(3);
   expect(transforms.after).toEqual(transforms.before);
-  return { playStates, transforms };
+  const atmosphere = await atmospherePair(backdrop);
+  expect(atmosphere.after).toEqual(atmosphere.before);
+  return { playStates, transforms, atmosphere };
 }
 
 test('cinematic main menu: built artwork and native keyboard navigation', async ({ page }, info) => {
@@ -261,6 +276,8 @@ test('cinematic main menu: reduced motion, manual pause and real skirmish transi
   expect(reducedAnimations.every(name => name === 'none')).toBe(true);
   const reduced = await transformPair(layers);
   expect(reduced.after).toEqual(reduced.before);
+  const reducedAtmosphere = await atmospherePair(backdrop);
+  expect(reducedAtmosphere.after).toEqual(reducedAtmosphere.before);
   await screenshot(page, info, 'main-menu-reduced-motion');
   const { settings, preference } = await openPreferences(page);
   // The stored preference remains available while the OS suppresses actual motion.
@@ -275,6 +292,14 @@ test('cinematic main menu: reduced motion, manual pause and real skirmish transi
   const movingPlayStates = await animationPlayStates(backdrop);
   const moving = await transformPair(layers);
   expectIndependentMotion(moving);
+  const atmosphere = await atmospherePair(backdrop, 700);
+  for (const first of atmosphere.before) {
+    const next = atmosphere.after.find(plane => plane.id === first.id)!;
+    expect(next.transform, `${first.id} moves with real elapsed time`).not.toBe(first.transform);
+  }
+  const cameraBefore = atmosphere.before.find(plane => plane.id === 'menu-camera-orbit')!;
+  const cameraAfter = atmosphere.after.find(plane => plane.id === 'menu-camera-orbit')!;
+  expect(Math.hypot(cameraAfter.x - cameraBefore.x, cameraAfter.y - cameraBefore.y), 'Camera travel is visible within 700 ms').toBeGreaterThan(.75);
   await openPreferences(page);
   await preference.click();
   await expect(preference).not.toBeChecked();
@@ -298,7 +323,7 @@ test('cinematic main menu: reduced motion, manual pause and real skirmish transi
   const resumed = await transformPair(layers);
   expectIndependentMotion(resumed);
 
-  const commander = await startHumanAiSkirmish(page);
+  const commander = await startHumanAiSkirmish(page, { navigate: false });
   await expect(backdrop).toHaveCount(0);
   expect(await page.evaluate(() => window.__faf!.hostErrors)).toEqual([]);
   const game = await page.evaluate(() => ({ tick: window.__faf!.tick, units: window.__faf!.unitCount, own: window.__faf!.ownHandles().length, tainted: window.__faf!.tainted }));
@@ -315,6 +340,6 @@ test('cinematic main menu: reduced motion, manual pause and real skirmish transi
   await expect(page.getByTestId('MainMenu')).toBeVisible();
   await expectArtwork(page);
   await expect(backdrop).toHaveAttribute('data-motion', 'active');
-  await attachJson(info, 'menu-motion-skirmish-receipt', { browser: info.project.name, build: await page.evaluate(() => document.documentElement.dataset['build']), artwork, logo, gameLogo, reducedAnimations, reduced, movingPlayStates, moving, paused, persistedPause, resumedPlayStates, resumed, commander, game, audio: gameAudio });
+  await attachJson(info, 'menu-motion-skirmish-receipt', { browser: info.project.name, build: await page.evaluate(() => document.documentElement.dataset['build']), artwork, logo, gameLogo, reducedAnimations, reduced, reducedAtmosphere, movingPlayStates, moving, atmosphere, paused, persistedPause, resumedPlayStates, resumed, commander, game, audio: gameAudio });
   expectNoErrors(errors);
 });
