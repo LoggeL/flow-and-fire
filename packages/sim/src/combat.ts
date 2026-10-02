@@ -74,8 +74,10 @@ function damage(w:World,v:number,amount:number,source:number):void {
 }
 function impact(w:World,p:number,hit:number,wreck=-1):void {
   const P=w.projectiles.col,U=w.units.col,B=w.bp,weapon=P.weapon[p]!,radius=B.weaponDamageRadiusCol[weapon]!,source=P.source[p]!;
-  if(radius===0){if(hit>=0)damage(w,hit,P.damageOverride[p]!>0?P.damageOverride[p]!:B.weaponDamageCol[weapon]!,source);}
-  else for(let v=0;v<w.units.highWater;v++)if(isActive(w,v)){const dx=U.x[v]!-P.x[p]!,dz=U.z[v]!-P.z[p]!;if(dx*dx+dz*dz<=radius*radius){let amount=P.damageOverride[p]!>0?P.damageOverride[p]!:B.weaponDamageCol[weapon]!;const flags=B.weaponFlagsCol[weapon]!;
+  if(radius===0){if(hit>=0&&!allied(w,P.army[p]!,U.army[hit]!))damage(w,hit,P.damageOverride[p]!>0?P.damageOverride[p]!:B.weaponDamageCol[weapon]!,source);}
+  // The projectile retains its army even after its source dies. Allies are immune
+  // to its area damage as well as being transparent to its swept collision test.
+  else for(let v=0;v<w.units.highWater;v++)if(isActive(w,v)&&!allied(w,P.army[p]!,U.army[v]!)){const dx=U.x[v]!-P.x[p]!,dz=U.z[v]!-P.z[p]!;if(dx*dx+dz*dz<=radius*radius){let amount=P.damageOverride[p]!>0?P.damageOverride[p]!:B.weaponDamageCol[weapon]!;const flags=B.weaponFlagsCol[weapon]!;
       if((flags&1)!==0){if(hasCategory(w,U.bp[v]!,'COMMAND'))amount=400;else if(hasCategory(w,U.bp[v]!,'STRUCTURE'))amount=800;}
       if((flags&2)!==0){const inner=(flags>>>16)*64;if(dx*dx+dz*dz>inner*inner)amount=Math.floor(amount/4);}damage(w,v,amount,source);}
 }
@@ -83,7 +85,7 @@ function impact(w:World,p:number,hit:number,wreck=-1):void {
   const surface=wreck>=0?1:hit>=0?(hasCategory(w,U.bp[hit]!,'STRUCTURE')?4:1):(w.hasWater&&P.y[p]!<=w.waterLevel?2:0);
   event(w,EventType.Impact,weapon,hit,surface,0,P.x[p]!,P.y[p]!,P.z[p]!);w.projectiles.free(p);
 }
-/** Swept segment tests each unit in slot order; nearest hit wins, including friendly blockers. */
+/** Swept segment tests hostile units in slot order; nearest hit wins, allies pass through. */
 export function projectilesPhase(w:World):void {
   const P=w.projectiles.col,U=w.units.col,B=w.bp;
   for(let p=0;p<w.projectiles.highWater;p++){
@@ -93,7 +95,7 @@ export function projectilesPhase(w:World):void {
     P.x[p]=P.x[p]!+P.vx[p]!;P.z[p]=P.z[p]!+P.vz[p]!;
     if(kind===1){const a=Math.min(age,duration);P.y[p]=P.sy[p]!+Math.trunc((P.ty[p]!-P.sy[p]!)*a/duration)+Math.trunc(B.projectileGravityCol[prj]!*a*(duration-a)/2);}else P.y[p]=P.y[p]!+P.vy[p]!;
     P.age[p]=age;const ax=P.px[p]!,az=P.pz[p]!,dx=P.x[p]!-ax,dz=P.z[p]!-az,len=dx*dx+dz*dz;let hit=-1,wreck=-1,best=65537;
-    for(let v=0;v<w.units.highWater;v++)if(isActive(w,v)&&w.units.handle(v)!==P.source[p]){
+    for(let v=0;v<w.units.highWater;v++)if(isActive(w,v)&&!allied(w,P.army[p]!,U.army[v]!)&&w.units.handle(v)!==P.source[p]){
       const rx=U.px[v]!-ax,rz=U.pz[v]!-az,rdx=dx-(U.x[v]!-U.px[v]!),rdz=dz-(U.z[v]!-U.pz[v]!),relativeLen=rdx*rdx+rdz*rdz,q=relativeLen>0?segmentRatio(rx*rdx+rz*rdz,relativeLen):0;
       const cx=ax+Math.trunc(dx*q/65536),cz=az+Math.trunc(dz*q/65536),cy=P.py[p]!+Math.trunc((P.y[p]!-P.py[p]!)*q/65536),ex=cx-(U.px[v]!+Math.trunc((U.x[v]!-U.px[v]!)*q/65536)),ez=cz-(U.pz[v]!+Math.trunc((U.z[v]!-U.pz[v]!)*q/65536)),r=B.radiusCol[U.bp[v]!]!;
       if(q<best&&ex*ex+ez*ez<=r*r&&cy>=U.y[v]!-1024&&cy<=U.y[v]!+Math.max(2048,B.hitbox(U.bp[v]!,1))){hit=v;wreck=-1;best=q;}

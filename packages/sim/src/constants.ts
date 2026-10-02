@@ -34,7 +34,8 @@ export const MAX_MAP_SIZE_WU = 4096;
 // ms6.3: paid land-factory successors (no production while upgrading, Stop cancels only the
 // upgrade), radar blips in frames, point defense and radar content.
 // ms6.4: independent paid commander slots, preserving installed modules in every order.
-export const SIM_BUILD = 'faf-sim/ms6.4-commander-enhancements';
+// ms6.5: projectiles pass through allied units and structures; allied area damage is suppressed.
+export const SIM_BUILD = 'faf-sim/ms6.5-allied-projectile-passthrough';
 
 /**
  * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is
