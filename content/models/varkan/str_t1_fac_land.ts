@@ -19,6 +19,7 @@ import {
   box,
   cylinder,
   defineModel,
+  extrude,
   mirrorX,
   quad,
   stripes,
@@ -152,10 +153,15 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
   hull.push(
     // Wände links/rechts (45°-Fasen) mit teamfarbenen Kappen = Randband des Dachs
     mirrorX(
-      beveledBox({
-        size: [1.5, WALL_H, WALL_D],
-        at: [WALL_X, TOP + WALL_H / 2, WALL_Z],
-        bevel: { top: 0.35 },
+      extrude({
+        // A clipped nose and rear shoulder keep the factory from reading as two solid bricks.
+        profile: [
+          [ROOF_Z0, TOP], [2.5, TOP], [2.5, TOP + 1.15],
+          [1.85, TOP + WALL_H], [-3.55, TOP + WALL_H], [ROOF_Z0, TOP + 1.45],
+        ],
+        depth: 1.5,
+        axis: "x",
+        at: [WALL_X, 0, 0],
         mat: "body",
         keep: true,
         tag: "hull",
@@ -163,8 +169,8 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
     ),
     mirrorX(
       quad({
-        size: [0.8, WALL_D - 0.7],
-        at: [WALL_X, TOP + WALL_H + 0.004, WALL_Z],
+        size: [0.8, WALL_D - 1.2],
+        at: [WALL_X, TOP + WALL_H + 0.004, WALL_Z - 0.15],
         mat: "team",
         keep: true,
       }),
@@ -186,14 +192,44 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
       keep: true,
       tag: "hull",
     }),
+    // Raised, chamfered roof cassettes leave a visible central service channel.
+    ...(tech === 3
+      ? [
+          beveledBox({
+            size: [2.6, 0.08, 1.7], at: [0, ROOF_Y + 0.04, -1.75],
+            bevel: { top: 0.06 }, mat: "team", keep: true, maxLod: 0, tag: "hull",
+          }),
+          quad({
+            size: [0.12, 1.55], at: [0, ROOF_Y + 0.084, -1.75],
+            mat: "soot", maxLod: 0,
+          }),
+        ]
+      : [
+          mirrorX(beveledBox({
+            size: [1.24, 0.08, 1.7], at: [0.68, ROOF_Y + 0.04, -1.75],
+            bevel: { top: 0.06 }, mat: "team", keep: true, maxLod: 0, tag: "hull",
+          })),
+        ]),
     box({
-      size: [2.6, 0.08, 1.7],
-      at: [0, ROOF_Y + 0.04, -1.75],
-      mat: "team",
-      keep: true,
-      maxLod: 1,
-      tag: "hull",
+      size: [2.6, 0.08, 1.7], at: [0, ROOF_Y + 0.04, -1.75],
+      mat: "team", keep: true, minLod: 1, maxLod: 1, tag: "hull",
     }),
+    // Portal lintel and sloping knee supports expose the working bay beneath the roof.
+    box({
+      size: [4.3, 0.22, 0.26],
+      at: [0, TOP + WALL_H - 0.11, GATE_Z + 0.2],
+      mat: "copper",
+      maxLod: 0,
+    }),
+    mirrorX(
+      wedge({
+        size: [0.3, 1.1, 1.0],
+        at: [2.12, TOP + 0.55, 1.65],
+        mat: "body",
+        maxLod: 0,
+        tag: "hull",
+      }),
+    ),
     quad({
       size: [2.6, 1.7],
       at: [0, ROOF_Y + 0.004, -1.75],
@@ -251,10 +287,9 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
     // Schürzen außen an den Wänden
     hull.push(
       mirrorX(
-        beveledBox({
+        wedge({
           size: [0.3, 1.0, 5.2],
           at: [3.8, TOP + 0.5, -0.9],
-          bevel: { top: 0.14 },
           mat: "body",
           maxLod: 0,
           tag: "hull",
@@ -272,7 +307,7 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
       keep: true,
       tag: "hull",
     }),
-    ...[-1.45, 0, 1.45].map((x) =>
+    ...[-1.1, 1.1].map((x) =>
       box({
         size: [0.22, WALL_H - 0.1, 0.12],
         at: [x, gateY, GATE_Z + 0.06],

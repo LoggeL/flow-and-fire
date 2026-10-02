@@ -46,9 +46,9 @@ export default defineModel({
           tag: 'hull',
         }),
         // Bannerplatte (team) über die ganze vordere Decklänge
-        box({ size: [0.72, PLATE_TOP - DECK_TOP, 1.14], at: [0, (PLATE_TOP + DECK_TOP) / 2, 0.2], mat: 'team' }),
+        beveledBox({ size: [0.72, PLATE_TOP - DECK_TOP, 1.14], at: [0, (PLATE_TOP + DECK_TOP) / 2, 0.2], bevel: { topFront: 0.02 }, mat: 'team' }),
         // Doppelt tiefes Gegengewicht am Heck (Pflichtteil Artillerie, T3)
-        beveledBox({ size: [0.78, CW_TOP - DECK_TOP, 0.58], at: [0, (CW_TOP + DECK_TOP) / 2, -0.61], bevel: { top: 0.06, topBack: 0.08 }, mat: 'body', tag: 'hull' }),
+        beveledBox({ size: [0.78, CW_TOP - DECK_TOP, 0.58], at: [0, (CW_TOP + DECK_TOP) / 2, -0.61], bevel: { top: 0.06, topBack: 0.06 }, mat: 'body', tag: 'hull' }),
         // Kupferkrümmer an der Rückseite des Gegengewichts + Glutschlitz
         box({ size: [0.7, 0.08, 0.08], at: [0, DECK_TOP + 0.06, -0.92], mat: 'copper', maxLod: 1, tag: 'manifold' }),
         quad({ size: [0.3, 0.03], at: [0, DECK_TOP + 0.104, -0.92], mat: 'glow', maxLod: 1 }),
@@ -64,7 +64,9 @@ export default defineModel({
       shapes: [
         cylinder({ radius: 0.22, height: 0.06, at: [0, PLATE_TOP + 0.03, BOOM_Z], segments: 8, caps: 'top', mat: 'dark', maxLod: 1, tag: 'boom' }),
         // Schwenkarm (Lafette, 0,22 WU breit) schräg nach vorn oben
-        box({ size: [0.22, 0.13, 0.58], at: [0, 0.585, BOOM_Z + 0.21], rot: [-40, 0, 0], mat: 'body', tag: 'boom' }),
+        beveledBox({ size: [0.22, 0.13, 0.58], at: [0, 0.585, BOOM_Z + 0.21], rot: [-40, 0, 0], bevel: { top: 0.035 }, mat: 'body', tag: 'boom' }),
+        // Zwei Hydraulikzylinder flankieren die gefaste Lafette.
+        mirrorX(cylinder({ radius: 0.05, height: 0.38, axis: 'z', at: [0.16, 0.57, BOOM_Z + 0.2], rot: [-40, 0, 0], segments: 6, caps: false, mat: 'copper', maxLod: 0, tag: 'boom' })),
         cylinder({ radius: 0.075, height: 0.36, axis: 'x', at: [LADLE_PIVOT[0], LADLE_PIVOT[1], LADLE_PIVOT[2]], segments: 6, mat: 'copper', maxLod: 1, tag: 'boom' }),
       ],
     },

@@ -49,6 +49,9 @@ export default defineModel({
         }),
         // Bannerplatte (Teamfarbe) hinter der Bugfase
         beveledBox({ size: [0.8, PLATE_TOP - DECK_TOP, 0.92], at: [0, (PLATE_TOP + DECK_TOP) / 2, 0.025], bevel: { top: 0.012 }, mat: 'team' }),
+        // Abgesetzte Bugpanzerung und zwei breite Wartungsschlitze, im nahen LOD.
+        beveledBox({ size: [0.6, 0.04, 0.18], at: [0, DECK_TOP + 0.018, 0.51], bevel: { topFront: 0.025 }, mat: 'team', maxLod: 0, tag: 'hull' }),
+        mirrorX(quad({ size: [0.15, 0.15], at: [0.275, PLATE_TOP + 0.004, -0.23], mat: 'dark', maxLod: 0 })),
         // Heckkrümmer aus Kupfer mit zwei Glutschlitzen (Glutnaht ≤ 2 % der Oberfläche)
         beveledBox({ size: [0.98, 0.08, 0.14], at: [0, DECK_TOP + 0.04, -0.54], bevel: { top: 0.02 }, mat: 'copper', tag: 'manifold' }),
         // Kupferleitungen längs der Deckkanten (Ø 0,17 WU = Mindestmaß), laufen in den Krümmer: der „Flow“
@@ -76,6 +79,7 @@ export default defineModel({
       anim: 'pitch',
       shapes: [
         beveledBox({ size: [0.26, 0.16, 0.14], at: [0, BARREL_Y, 0.26], bevel: { topFront: 0.05 }, mat: 'body' }),
+        cylinder({ radius: 0.13, height: 0.1, axis: 'z', at: [0, BARREL_Y, 0.4], segments: 4, caps: false, mat: 'body', maxLod: 0, tag: 'barrel' }),
         // Rohr Ø 0,17 WU (Mindestmaß 12 % der Länge), waagerecht, 0,86 WU lang
         cylinder({ radius: 0.085, height: 0.86, axis: 'z', at: [0, BARREL_Y, 0.76], segments: 6, caps: 'top', mat: 'dark', keep: true, tag: 'barrel' }),
         cylinder({ radius: 0.105, height: 0.12, axis: 'z', at: [0, BARREL_Y, 1.15], segments: 6, mat: 'copper', tag: 'barrel' }),

@@ -10,7 +10,12 @@
   "blueprints": {
     "core:cmd_commander": "cmd_commander",
     "core:cmd_commander_armored": "cmd_commander",
+    "core:cmd_commander_cannon": "cmd_commander",
+    "core:cmd_commander_cannon_protection": "cmd_commander",
     "core:cmd_commander_engineering": "cmd_commander",
+    "core:cmd_commander_engineering_cannon": "cmd_commander",
+    "core:cmd_commander_enhanced": "cmd_commander",
+    "core:cmd_commander_protection": "cmd_commander",
     "core:eng_t1": "lnd_t1_engineer",
     "core:fac_land_t1": "str_t1_fac_land",
     "core:fac_land_t2": "str_t2_fac_land",
@@ -32,104 +37,104 @@
     {
       "mesh": "units/varkan/cmd_commander",
       "file": "cmd_commander.png",
-      "modelSha256": "7035988c787ed1d6c4dc717c9206ab2b26297e336b01b1c2cb86cc5f25c4bb78",
-      "sha256": "4f7cd9df38263c1dafe66bcb25ad4ddcc8c0b191fbcb88a80ae35f21268ea4f3"
+      "modelSha256": "72935d2f815f63be993e92c3865c14aa3c2893abdaca0729e9dcbe28868d356a",
+      "sha256": "3634a11b70d135d6ccd000a96a8355dbf72045503ebe23512b111e73500f4e7f"
     },
     {
       "mesh": "units/varkan/lnd_t1_arty",
       "file": "lnd_t1_arty.png",
-      "modelSha256": "b2d9f1982b3c4234e88407e7fe9f5d4ede0c65047809fede09ca6568f1a0076d",
-      "sha256": "520e86e2d9f968f892df1d9682453fc1689bb906cc3ad5bd25ff15264a4e158d"
+      "modelSha256": "d60cef92150884340e137839c4b5942d35fc0bd2fc35e367421f8aeb3573f524",
+      "sha256": "21fcaafe0d0dd90e1db44f4e4798f282498171d0fca8ddaa3e2ba8b376825b07"
     },
     {
       "mesh": "units/varkan/lnd_t1_engineer",
       "file": "lnd_t1_engineer.png",
-      "modelSha256": "447739081fe404bc93e799ec7056e6727e6fa05e032d1873a16707e52950ae7b",
-      "sha256": "aba2d4e6348c3d965f06ef99e61d8d44e720539f5f12c002b1ec7f153b39c51c"
+      "modelSha256": "dff172d5f78c8cbb25acf3f7d6f326b5dfc64dd026d507f65e73c64c5a660b69",
+      "sha256": "c4a969253c45175f768e382826d022c9af90e4c66666160970a0351bf6ae777c"
     },
     {
       "mesh": "units/varkan/lnd_t1_scout",
       "file": "lnd_t1_scout.png",
-      "modelSha256": "7e646b4623e26ce6f2de6f929d6880a6603e274ebe180127d0c8d312eff43436",
-      "sha256": "3efba1aa36f59ef06e8168370a849e0c29bc1e4f24574bef130c66364a8ce76a"
+      "modelSha256": "ce6b9e2b52f9f8b73b101ada4d3a06b063a32b43eed4816e696e8a46c7c183ba",
+      "sha256": "c5082006e469c0a80f8ad3c82f8c663bd2237dfdc5da92cb8fdd906eff842033"
     },
     {
       "mesh": "units/varkan/lnd_t1_tank",
       "file": "lnd_t1_tank.png",
-      "modelSha256": "1ca0b9f750326b3cccfda9cbd8ca35cccb1ed6ee893b0603d1b1ce3a51f2f46c",
-      "sha256": "b1d2b42dfab76e1d7f1714c54940a81d3c33e4f979aba27b9f501d55b8440b58"
+      "modelSha256": "25b22c76113fd035feb1d89be26098fd9bb2fe9f3b9d8ee367e5380cd07e3943",
+      "sha256": "d65a7334609c0a7926df6643221f5876dc4c5bc9041e9df577392e01f9a8bc54"
     },
     {
       "mesh": "units/varkan/lnd_t2_tank",
       "file": "lnd_t2_tank.png",
-      "modelSha256": "f91028cdacb7d9b81a36539d5938b0ba93fae140496076fbcfc94a4630eacef5",
-      "sha256": "ba60a23223719d123c9412d4bec5e4f26e511d2b39c016daf056440108150946"
+      "modelSha256": "daeeee604aae49d1ce6426a6be01d1937dc7d166776ce4badc4bf893c9e27dcf",
+      "sha256": "cda491a47a62e51c1794277fd8f98a154616d11d36fee5f36c66568446f3bfda"
     },
     {
       "mesh": "units/varkan/lnd_t3_bot",
       "file": "lnd_t3_bot.png",
-      "modelSha256": "13a1e4ec55cb676672328cc10ecbbc87556cdded0a8e748361a15739dd242656",
-      "sha256": "9b51fa3459f859a44a4bdbe01100ca7916a973e42e96836d170b2759bedad806"
+      "modelSha256": "07cdf6c84a214b4cc337bbf8f741f2be6765e00e0c9147a1b02f715964ca8c68",
+      "sha256": "f11bfe4a258909c596a838865882eef63a9f44f6bbccfa395210e245a988c7c8"
     },
     {
       "mesh": "units/varkan/str_t1_estore",
       "file": "str_t1_estore.png",
-      "modelSha256": "1b57f745df4b574c37c972f74f68c76cc70367b3b4e0377dc91cfec1f931fd36",
-      "sha256": "002f6ef8129b6b64613258f0165c018e6366d3bc2af545f90954aa1b754dcaf6"
+      "modelSha256": "0058dd134e6cbfc1f49b6b0b3af89edc926969f556c14809c6929dc80bdd3844",
+      "sha256": "9776aabb9b8cbd56ec4d35fd4350f714f811346d3263a286d9f35deb62529ad4"
     },
     {
       "mesh": "units/varkan/str_t1_fac_land",
       "file": "str_t1_fac_land.png",
-      "modelSha256": "508708c83cfae182814faaac2d2dd3872b616f069ed8be54d56f760deafa3060",
-      "sha256": "0efe0ad3f8e6e5149de191963e8f05f34eb5e6fd2446db9fdb1394e088411837"
+      "modelSha256": "6ddc83ae41aff785394264416897870b033a3b0929fbe6a7054c8138cb4f83cc",
+      "sha256": "2793409e90b3c4c7a1435626c2a6388a2c7ce349c98cf9f7eadd3b90df53ae0f"
     },
     {
       "mesh": "units/varkan/str_t1_mex",
       "file": "str_t1_mex.png",
-      "modelSha256": "861a2b4f4c44585ee0acc596cceb3f0f9119dff293687a7700648b6601972688",
-      "sha256": "6fcd88fcacb02369eb824dddd326ee501d0f4d746af63e76ed85b74b7f0e4d79"
+      "modelSha256": "fe5125304099ca29bc32d82b69c470f366c2d78c57db1d268ef24da414cc3b43",
+      "sha256": "01c3e836a1e4355187d59beb3af34c5f66bdc06b5fb223aaaf12dc78423d405c"
     },
     {
       "mesh": "units/varkan/str_t1_pd",
       "file": "str_t1_pd.png",
-      "modelSha256": "8803a573d3bbf75c6f269549d7cba52895dba3f3a248bfc50f94f6a592a4f8a2",
-      "sha256": "4f47dbaf431d361fcad57e410c6c138252ca618fd2c8d46c5070b055d4f05b7a"
+      "modelSha256": "c63cc534b0c263c8ee47b8984f499c8f493967f5988f76a4f2c6ff80428ec3d5",
+      "sha256": "a5a2ac8d51f6a540942f75832002393db97b068326ad54e0739084fed04a22d8"
     },
     {
       "mesh": "units/varkan/str_t1_pgen",
       "file": "str_t1_pgen.png",
-      "modelSha256": "af7cc6a9030d379ef01478492074479fc9188f3aae970c68d5e0bd471bf294c2",
-      "sha256": "90ff7a921d6bdd8768bd899415d4974514e07aa7df41dce6dc8f29337e226e4e"
+      "modelSha256": "99e0a851f6bd13960aeb4dfad36f895b8713393963f06f286a6fabb78aed03fb",
+      "sha256": "f1c75d7a83ef781b63b47c2ee4fc4decae187cc11d936faae73a8fdd132179b8"
     },
     {
       "mesh": "units/varkan/str_t1_radar",
       "file": "str_t1_radar.png",
-      "modelSha256": "99febc1eedc05100e561af91a311eafb2cc475735e3081c43017ba97d1e5c00a",
-      "sha256": "b0aa8b21150782035f6e88f8c84903864d51ae2ea579028981ac7337dca5e7fa"
+      "modelSha256": "4d46f6a4ff7e5eeb4d2e10d632e5d61352324f67ba6245d25b96b5aef508aa6d",
+      "sha256": "3355c7c85774ddc802e2fbbd084ee3c820059bfabe7557066572b052647970a9"
     },
     {
       "mesh": "units/varkan/str_t2_fac_land",
       "file": "str_t2_fac_land.png",
-      "modelSha256": "09bbc5d0480cf4bd0fdeb8242c2b553623127759ea23c3d80345c15030ce007a",
-      "sha256": "7ba2ed661766af7bf864cc842c48a406c0bff34afb213e488ca0ec7f293416d0"
+      "modelSha256": "1759983f2d78a0979b489c0da7cfa248f9dff3c72c801d4280a9204af647595f",
+      "sha256": "77a4a49ea8ce916eb55e23cd394b33c64a58b0b688d54370939e9c69142daf53"
     },
     {
       "mesh": "units/varkan/str_t2_mex",
       "file": "str_t2_mex.png",
-      "modelSha256": "f3e6c118891accf8b1a8a869de1b7620390867e0c9dc607697bf9e6abda9a2a9",
-      "sha256": "84639d63914358d541d6c8ebb2c018b41f38b4fd60d88e13141c74098419f348"
+      "modelSha256": "5443f6c3bcf80b71b87d6eaf608b8251dfef58479e712e8b10a3e76128068c98",
+      "sha256": "aa3ed11b0be80bba0ef4b754a3248396cb73d66914f448525ec8eace8b63fc25"
     },
     {
       "mesh": "units/varkan/str_t3_fac_land",
       "file": "str_t3_fac_land.png",
-      "modelSha256": "068fe2e9a1e93ba34f2e972b0dee640f5aa862353bc5865d19d9b302cecc7441",
-      "sha256": "1ab7bbab16744b1596a3cf82e794f17ae5c772657ccab52725924a6e1ce00651"
+      "modelSha256": "6b3b1db7cd0796215bd34f742da3429ad2842650760dbbddda2e5c8e1d4a1f15",
+      "sha256": "b555b56bac5927b7a36021cb64206b7ffa457bac0f28453db098f37e0f262cd2"
     },
     {
       "mesh": "units/varkan/str_t3_mex",
       "file": "str_t3_mex.png",
-      "modelSha256": "60858169e7a1f9397e3d39915a2ecfc804e532555f28ba17617663dfc717255e",
-      "sha256": "d1df8f6a99005fa3b08f596adced3611802c24e3c136bebb4db8e83bed371e02"
+      "modelSha256": "f4c811f01e686111bf11ee75c332d5a3c149bac659212f1a22ebb6245e0d450b",
+      "sha256": "b55b10efdd36916a39959cff977cdafc44af38912f8d86b7ba92ae3a91fbd508"
     }
   ]
 }

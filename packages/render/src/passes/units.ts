@@ -1,6 +1,7 @@
 import { OpaquePipelineExtension } from '../opaque-extension.ts';
 import type { OpaqueShaderExtension } from '../opaque-extension.ts';
 import type { PipelineDesc } from '../rhi/types.ts';
+import { ARMOR_SURFACE_GLSL, ARMOR_SURFACE_SIZE, armorSurfacePixels } from '../units/armor-surface.ts';
 /**
  * UnitPass (PLAN §3.7 "Units", G14, P2): one instanced draw per (visual, LOD).
  *
@@ -60,6 +61,7 @@ export const PART_TEXTURE_WIDTH = 1024;
 export const PART_STRIDE = 8;
 const UNIT_TEX_PARTS = 0;
 const UNIT_TEX_PIVOTS = 1;
+const UNIT_TEX_SURFACE = 3;
 
 export const UNIT_ATTR = {
   position: 0,
@@ -73,6 +75,7 @@ export const UNIT_ATTR = {
   parts: 8,
   color: 9,
   mask: 10,
+  surface: 11,
 } as const;
 
 const UNIT_VS = /* glsl */ `#version 300 es
@@ -89,6 +92,7 @@ layout(location = ${UNIT_ATTR.normal}) in vec4 a_normal;
 layout(location = ${UNIT_ATTR.partId}) in uint a_partId;
 layout(location = ${UNIT_ATTR.color}) in vec4 a_color; // linear palette RGB, w=1 for authored material
 layout(location = ${UNIT_ATTR.mask}) in vec4 a_mask; // team, emissive, metal, AO
+layout(location = ${UNIT_ATTR.surface}) in float a_surface;
 layout(location = ${UNIT_ATTR.prevPos}) in ivec3 a_prevPos;
 layout(location = ${UNIT_ATTR.curPos}) in ivec3 a_curPos;
 layout(location = ${UNIT_ATTR.yaw}) in uvec2 a_yaw;     // prevYaw, curYaw (Ang16)
@@ -101,6 +105,9 @@ out vec3 v_albedo;
 out vec3 v_emissive;
 out vec2 v_material;
 out vec3 v_rel;
+out vec3 v_surfacePos;
+out vec3 v_surfaceNormal;
+out float v_surface;
 flat out uint v_highlight;
 flat out uint v_authored;
 flat out float v_fade;
@@ -149,6 +156,9 @@ void main() {
   // Merged-part: rotate around the part pivot, then follow the parent chain up to the hull.
   vec3 p = a_position;
   vec3 n = a_normal.xyz;
+  v_surfacePos = p;
+  v_surfaceNormal = n;
+  v_surface = a_surface;
   uint k = a_partId;
   for (int it = 0; it < ${MAX_MESH_PARTS}; ++it) {
     if (k == 0u) break;
@@ -194,11 +204,16 @@ const UNIT_FS = /* glsl */ `#version 300 es
 precision highp float;
 precision highp int;
 ${FRAME_BLOCK_GLSL}
+uniform sampler2D u_surface;
+${ARMOR_SURFACE_GLSL}
 in vec3 v_normal;
 in vec3 v_albedo;
 in vec3 v_emissive;
 in vec2 v_material;
 in vec3 v_rel;
+in vec3 v_surfacePos;
+in vec3 v_surfaceNormal;
+in float v_surface;
 flat in uint v_highlight;
 flat in uint v_authored;
 flat in float v_fade;
@@ -217,10 +232,13 @@ void main() {
   vec3 n = normalize(v_normal);
   float ndl = max(dot(n, u_sunDir.xyz), 0.0);
   vec3 hemi = mix(u_groundColor.rgb, u_skyColor.rgb, n.y * 0.5 + 0.5);
-  vec3 color = v_albedo * (hemi * v_material.y + u_sunColor.rgb * ndl);
+  float grain = 1.0;
+  if (v_surface > 0.0) grain = armorGrain(u_surface, v_surfacePos, v_surfaceNormal, v_surface);
+  vec3 albedo = v_albedo * grain;
+  vec3 color = albedo * (hemi * v_material.y + u_sunColor.rgb * ndl);
   // Authored metal has a broad highlight (modelkit's roughness=0.85), glow is unlit.
   vec3 halfDir = normalize(normalize(-v_rel) + u_sunDir.xyz);
-  color += mix(vec3(0.04), v_albedo, v_material.x) * pow(max(dot(n, halfDir), 0.0), 8.0) * v_material.x * ndl;
+  color += mix(vec3(0.04), albedo, v_material.x) * pow(max(dot(n, halfDir), 0.0), 8.0) * v_material.x * ndl;
   color += v_emissive;
   // Scene/post, selection and fog use display space. Encode authored lighting exactly once.
   if (v_authored != 0u) color = pow(max(color, vec3(0.0)), vec3(1.0 / ${UNIT_DISPLAY_GAMMA}));
@@ -275,6 +293,7 @@ export function mergeMeshes(meshes: readonly MeshData[]): MergedMeshes {
       i8[o + 14] = Math.round(m.normals[v * 3 + 2]! * 127);
       i8[o + 15] = 0;
       u8[o + 16] = m.partIds[v]!;
+      u8[o + 17] = m.surface?.[v] ?? 0;
       const material = m.colors !== undefined && m.mask !== undefined;
       f32[(o >> 2) + 5] = material ? m.colors![v * 3]! : 1;
       f32[(o >> 2) + 6] = material ? m.colors![v * 3 + 1]! : 1;
@@ -341,6 +360,7 @@ export class UnitPass {
 
   // merged-part textures
   private partsTex: TexH;
+  private readonly surfaceTex: TexH;
   private partsRows = 0;
   private partsStaging = new Uint16Array(4);
   private lastPartsVersion = Number.NaN;
@@ -387,6 +407,7 @@ export class UnitPass {
             { location: UNIT_ATTR.position, format: vf('f32', 3, 'float'), offset: 0 },
             { location: UNIT_ATTR.normal, format: vf('i8', 4, 'norm'), offset: 12 },
             { location: UNIT_ATTR.partId, format: vf('u8', 1, 'int'), offset: 16 },
+            { location: UNIT_ATTR.surface, format: vf('u8', 1, 'norm'), offset: 17 },
             { location: UNIT_ATTR.color, format: vf('f32', 4, 'float'), offset: 20 },
             { location: UNIT_ATTR.mask, format: vf('u8', 4, 'norm'), offset: 36 },
           ],
@@ -415,6 +436,7 @@ export class UnitPass {
       samplers: [
         { name: 'u_parts', unit: UNIT_TEX_PARTS },
         { name: 'u_partPivots', unit: UNIT_TEX_PIVOTS },
+        { name: 'u_surface', unit: UNIT_TEX_SURFACE },
         { name: 'u_visualData', unit: UNIT_VISUAL_DATA },
       ],
       cullMode: 'back',
@@ -425,6 +447,14 @@ export class UnitPass {
     this.pipeline = dev.createPipeline(pipelineDesc);
     this.shader = new OpaquePipelineExtension(dev, pipelineDesc, '(v_rel + u_camFrac.xyz)', 'n');
     this.partsTex = this.createPartsTexture(1);
+    const surfacePixels = armorSurfacePixels();
+    const uploadSurface = (h: TexH): void => {
+      dev.writeTexture(h, { x: 0, y: 0, width: ARMOR_SURFACE_SIZE, height: ARMOR_SURFACE_SIZE }, surfacePixels);
+      dev.generateMipmaps(h);
+    };
+    this.surfaceTex = dev.createTexture({ label: 'unit-armor-surface.tex', width: ARMOR_SURFACE_SIZE, height: ARMOR_SURFACE_SIZE,
+      format: 'r8', mipLevels: 8, filter: 'linear', wrap: 'repeat', restore: uploadSurface });
+    uploadSurface(this.surfaceTex);
     this.visualData = new VisualDataTexture(dev);
     this.strategic = {
       projK: 0,
@@ -554,7 +584,7 @@ export class UnitPass {
 
   private rebuildTextureGroup(): void {
     if (this.textureGroup !== null) this.dev.destroyBindGroup(this.textureGroup);
-    const textures = [{ unit: UNIT_TEX_PARTS, texture: this.partsTex }];
+    const textures = [{ unit: UNIT_TEX_PARTS, texture: this.partsTex }, { unit: UNIT_TEX_SURFACE, texture: this.surfaceTex }];
     if (this.pivotTex !== null) textures.push({ unit: UNIT_TEX_PIVOTS, texture: this.pivotTex });
     this.textureGroup = this.dev.createBindGroup({ label: 'units.textures', textures });
   }
@@ -796,6 +826,7 @@ export class UnitPass {
     if (this.textureGroup !== null) this.dev.destroyBindGroup(this.textureGroup);
     this.textureGroup = null;
     this.dev.destroyTexture(this.partsTex);
+    this.dev.destroyTexture(this.surfaceTex);
     this.visualData.dispose();
     if (this.pivotTex !== null) this.dev.destroyTexture(this.pivotTex);
     this.pivotTex = null;

@@ -31,6 +31,7 @@ export function fromModelkit(id: string, built: BuiltModel, viewScale = 1): Mode
       pivot: part.pivot.map(value => value * viewScale) as [number, number, number], anim: part.anim })),
     lods: built.lods.map(lod => ({ positions: Float32Array.from(lod.positions, value => value * viewScale), normals: new Float32Array(lod.normals),
       colors: new Float32Array(lod.colors), mask: new Uint8Array(lod.mask), partIds: new Uint8Array(lod.partIds),
+      ...(lod.surface === undefined ? {} : { surface: new Uint8Array(lod.surface) }),
       indices: lod.indices instanceof Uint32Array ? new Uint32Array(lod.indices) : new Uint16Array(lod.indices) })) };
 }
 

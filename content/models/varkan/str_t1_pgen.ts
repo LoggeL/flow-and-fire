@@ -17,8 +17,10 @@ import {
   box,
   cylinder,
   defineModel,
+  mirrorX,
   quad,
   stripes,
+  wedge,
   type PartDef,
   type Shape,
 } from "@faf/modelkit";
@@ -42,13 +44,13 @@ export function pgenParts(tech: 1 | 2 | 3): PartDef[] {
       tag: "hull",
     }),
     // Sättel
-    box({
+    wedge({
       size: [0.2, 0.16, 0.62],
       at: [0.42, TOP + 0.08, BOILER_Z],
       mat: "soot",
       maxLod: 0,
     }),
-    box({
+    wedge({
       size: [0.2, 0.16, 0.62],
       at: [-0.42, TOP + 0.08, BOILER_Z],
       mat: "soot",
@@ -89,6 +91,16 @@ export function pgenParts(tech: 1 | 2 | 3): PartDef[] {
       minLod: 2,
       tag: "boiler",
     }),
+    // Visible pressure collars break up the broad boiler mantle without hiding the team panel.
+    mirrorX(cylinder({
+      radius: BOILER_R + 0.02, height: 0.05, axis: "x", segments: 6, caps: false,
+      at: [0.61, BOILER_Y, BOILER_Z], mat: "copper", maxLod: 0, tag: "boiler",
+    })),
+    cylinder({
+      radius: 0.1, height: 0.12, segments: 6, caps: "top",
+      at: [0, BOILER_Y + BOILER_R + 0.06, BOILER_Z],
+      mat: "body", maxLod: 0, tag: "boiler",
+    }),
     // Feuerloch vorn: Gussblock + Glutschlitz (Glutkern)
     beveledBox({
       size: [0.5, 0.26, 0.2],
@@ -125,8 +137,12 @@ export function pgenParts(tech: 1 | 2 | 3): PartDef[] {
         maxLod: 0,
         tag: "stack",
       }),
-      box({
-        size: [0.1, 0.1, 0.36],
+      cylinder({
+        radius: 0.06,
+        height: 0.36,
+        axis: "z",
+        segments: 6,
+        caps: false,
         at: [x, BOILER_Y + 0.12, (stackZ + BOILER_Z) / 2 - 0.02],
         mat: "copper",
         maxLod: 0,
@@ -170,10 +186,9 @@ export function pgenParts(tech: 1 | 2 | 3): PartDef[] {
     if (tech === 3) {
       for (const x of [0.86, -0.86])
         hull.push(
-          beveledBox({
+          wedge({
             size: [0.2, 0.2, 1.1],
             at: [x, TOP + 0.1, 0.2],
-            bevel: { top: 0.08 },
             mat: "body",
             maxLod: 1,
             tag: "hull",

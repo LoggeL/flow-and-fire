@@ -1,5 +1,5 @@
 /** MS4 deterministic flow and construction; all durable state is held by the arena. */
-import { completeUpgrade, upgradeTarget } from './upgrade.ts';
+import { completeUpgrade, upgradeCostBp, upgradeTarget } from './upgrade.ts';
 import { EventType, validateSkirmishInitialization, type SkirmishInitialization } from '@faf/protocol';
 import { event, unitEventFlags, intelPhase } from './intel.ts';
 import { WH_SKIRMISH,WH_FOG,WH_VICTORY,WH_WINNER } from './schema.ts';
@@ -118,8 +118,8 @@ function done(w:World,i:number):number{return repairing(w,i)?w.units.col.repairD
 function limit(w:World,i:number):number{if(upgradeTarget(w,i)>=0)return 65536;const U=w.units.col;return repairing(w,i)?done(w,i)+Math.floor(((w.bp.maxHpCol[U.bp[i]!]!-U.hp[i]!)*65536+w.bp.maxHpCol[U.bp[i]!]!-1)/w.bp.maxHpCol[U.bp[i]!]!):65536;}
 function paidM(w:World,i:number):number{return repairing(w,i)?w.units.col.repairPaidMass.get(i):w.units.col.buildPaidMass.get(i);}
 function paidE(w:World,i:number):number{return repairing(w,i)?w.units.col.repairPaidEnergy.get(i):w.units.col.buildPaidEnergy.get(i);}
-/** Construction bills the site; self upgrades bill the successor while retaining old stats. */
-function workBp(w: World, i: number): number { const target = upgradeTarget(w, i); return target >= 0 ? target : w.units.col.bp[i]!; }
+/** Construction bills the site; self upgrades bill the added module or successor while retaining old stats. */
+function workBp(w: World, i: number): number { const target = upgradeTarget(w, i); return target >= 0 ? upgradeCostBp(w, w.units.col.bp[i]!, target) : w.units.col.bp[i]!; }
 /** Preview tier billing before mutation; cumulative rounding cannot overdraw a bank. */
 function tierCost(w: World, army: number, priority: number, ratio: number): void {
     const U = w.units.col, t = w.bp;
@@ -318,7 +318,7 @@ export function constructionPhase(w: World): void {
     for (let i = 0; i < w.units.highWater; i++) {
         if (!isActive(w, i) || BP.get(i) === 0)
             continue;
-        const upgrade = upgradeTarget(w, i), bp = upgrade >= 0 ? upgrade : U.bp[i]!;
+        const upgrade = upgradeTarget(w, i), bp = upgrade >= 0 ? upgradeCostBp(w, U.bp[i]!, upgrade) : U.bp[i]!;
         if (upgrade >= 0) {
             const after = U.repairDone.get(i) + NEXT[i]!;
             U.repairDone.set(i, after);

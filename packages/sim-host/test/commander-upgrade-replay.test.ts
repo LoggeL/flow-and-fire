@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { asArmyId, asTick, fx, type Handle } from '@faf/fixed';
 import { createRtsMap, readAllCommands, readRtsReplay } from '@faf/formats';
 import { decodeBatch, Op, type CommandEnvelope } from '@faf/protocol';
+import { commanderEnhancementTarget, type CommanderEnhancementId } from '@faf/rules';
 import { unitHandles, type World } from '@faf/sim';
 import { convertCommandLog, HeadlessSim, parseCommandLog, replayLog, ReplayPlayer } from '../src/index.ts';
 import { gameSimBin } from './support/fixtures.ts';
@@ -93,4 +94,45 @@ describe('commander upgrade through recorded simulation and replay', () => {
     expect(player.playToEnd().fullHash).toBe(finalFullHash); expect(player.ruleHash()).toBe(finalRuleHash);
     expect(player.divergences).toEqual([]);
   });
+  it('records armor, cannon and engineering in independent order and reproduces every accepted combination after rewind', () => {
+    const simBin = gameSimBin(), map = createRtsMap({ sizeWu: 64, name: 'commander-independent-replay', starts: [
+      { army: 0, x: fx(8), z: fx(8) }, { army: 1, x: fx(56), z: fx(56) },
+    ] });
+    const sim = new HeadlessSim({ simBin, map, seed: 94, armyCount: 2, playerArmy: 0, initialization: { kind: 'skirmish', faction: 0 }, keyframes: false });
+    const handle = unitHandles(sim.world, 0)[0]!, u = sim.world.units.resolve(handle);
+    const checkpoints: { tick: number; state: ReturnType<typeof commanderState>; fullHash: number; ruleHash: number }[] = [];
+    let seq = 0;
+    const record = () => checkpoints.push({ tick: sim.tick, state: commanderState(sim.world, handle), fullHash: sim.fullHash(), ruleHash: sim.ruleHash() });
+    record();
+    for (const module of ['armor', 'cannon', 'engineering'] as readonly CommanderEnhancementId[]) {
+      const source = sim.world.bp.ids[sim.world.units.col.bp[u]!]!, targetId = commanderEnhancementTarget(source, module)!;
+      const target = sim.world.bp.indexOf(targetId), payload = new Uint8Array(2);
+      new DataView(payload.buffer).setUint16(0, target, true);
+      sim.submit([{ tick: asTick(sim.tick), army: asArmyId(0), seq: ++seq, op: Op.Upgrade, flags: 0, units: [handle as Handle], payload }]);
+      sim.step(10); expect(sim.world.bp.ids[sim.world.units.col.bp[u]!]).toBe(source);
+      record(); // Payment and partial work have not granted the module.
+      while (sim.world.units.col.bp[u] !== target && sim.tick < 7000) sim.step();
+      expect(sim.world.bp.ids[sim.world.units.col.bp[u]!]).toBe(targetId);
+      sim.step(); record();
+    }
+    const final = commanderState(sim.world, handle);
+    expect(final).toMatchObject({ blueprint: 'core:cmd_commander_enhanced', hp: 24000, maxHp: 24000, buildPower: 131072 });
+    const weapon = sim.world.bp.mountWeaponCol[sim.world.bp.firstMount(sim.world.units.col.bp[u]!)]!;
+    expect([sim.world.bp.weaponRangeCol[weapon], sim.world.bp.weaponDamageCol[weapon]]).toEqual([32 * 4096, 150]);
+    const log = sim.exportLog(), durable = replayLog(log, { simBin, map, keyframes: false });
+    expect(durable.mismatches).toEqual([]); expect(commanderState(durable.sim.world, handle)).toEqual(final);
+    const converted = convertCommandLog(log, { simBin, map });
+    expect(converted.verified).toBe(true); expect(converted.mismatches).toEqual([]);
+    const player = ReplayPlayer.open(readRtsReplay(converted.bytes), { simBin, map, keyframes: false });
+    for (const checkpoint of checkpoints) {
+      player.runUntil(checkpoint.tick);
+      expect(commanderState(player.world, handle)).toEqual(checkpoint.state);
+      expect([player.fullHash(), player.ruleHash()]).toEqual([checkpoint.fullHash, checkpoint.ruleHash]);
+    }
+    expect(player.playToEnd().divergences).toEqual([]);
+    player.seek(0);
+    for (const checkpoint of checkpoints) { player.runUntil(checkpoint.tick); expect(commanderState(player.world, handle)).toEqual(checkpoint.state); }
+    expect([player.fullHash(), player.ruleHash()]).toEqual([sim.fullHash(), sim.ruleHash()]);
+  }, 20000);
+
 });

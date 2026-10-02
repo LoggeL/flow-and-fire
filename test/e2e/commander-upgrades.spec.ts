@@ -1,4 +1,7 @@
-import { WatchOrderType } from '../../packages/protocol/src/index.ts';
+import { readFile } from 'node:fs/promises';
+import type { Handle } from '../../packages/fixed/src/index.ts';
+import { readAllCommands, readRtsReplay, ReplayFlags } from '../../packages/formats/src/index.ts';
+import { decodeBatch, Op, WatchOrderType } from '../../packages/protocol/src/index.ts';
 import { assertSilentOutput, installSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 import { expect, test, type Page, type TestInfo } from './support/silent-test.ts';
 import { attachJson, captureErrors, expectNoErrors, stepTicks } from './support/game.ts';
@@ -84,7 +87,7 @@ async function screenshots(page: Page, info: TestInfo, state: string) {
   return layouts;
 }
 
-test('native ACU engineering upgrade pauses, cancels without refund, completes and unlocks armor', async ({ page }, info) => {
+test('native ACU independent slots: engineering pauses, cancels without refund and completes', async ({ page }, info) => {
   test.setTimeout(180_000);
   const errors = captureErrors(page);
   await installSilentOutput(page); // Before navigation; the automatic fixture also enforces this.
@@ -110,12 +113,25 @@ test('native ACU engineering upgrade pauses, cancels without refund, completes a
   await expect(start).toContainText('300 M'); await expect(start).toContainText('3.000 E');
   await expect(start).toContainText('Baukraft 10 → 20');
   await expect(start).toContainText('HP 12.000 → 16.000');
-  const image = start.locator('img');
-  await expect(image).toHaveAttribute('alt', ''); await expect(image).toHaveAttribute('aria-hidden', 'true');
-  await expect.poll(() => image.evaluate(el => ({ loaded: (el as HTMLImageElement).complete, width: (el as HTMLImageElement).naturalWidth }))).toEqual({ loaded: true, width: 64 });
-  const icon = await image.boundingBox(); expect(icon).not.toBeNull();
-  expect(icon!.width).toBe(32); expect(icon!.height).toBe(32);
-  const engineeringIconSrc = await image.getAttribute('src');
+  const slots = ['left', 'back', 'right'] as const;
+  for (const slot of slots) {
+    const button = page.getByTestId(`commander-slot-${slot}`);
+    await expect(button).toBeVisible(); await expect(button).toBeEnabled();
+    await expect(button).toHaveAttribute('data-installed', 'false');
+    await expect(button.locator('svg')).toHaveCount(1);
+    await expect(button.locator('img, canvas')).toHaveCount(0);
+  }
+  await expect(start).toHaveAttribute('data-enhancement', 'engineering');
+  await expect(start.locator('img, canvas')).toHaveCount(0);
+  await page.getByTestId('commander-slot-back').click();
+  await expect(start).toHaveAttribute('data-enhancement', 'armor');
+  await expect(start).toContainText('400 M'); await expect(start).toContainText('5.000 E');
+  await expect(start).toContainText('HP 12.000 → 20.000');
+  await page.getByTestId('commander-slot-right').click();
+  await expect(start).toHaveAttribute('data-enhancement', 'cannon');
+  await expect(start).toContainText('Reichweite'); await expect(start).toContainText('DPS');
+  await page.getByTestId('commander-slot-left').click();
+  await expect(start).toHaveAttribute('data-enhancement', 'engineering');
   const layouts = await screenshots(page, info, 'available');
 
   await start.click();
@@ -177,17 +193,17 @@ test('native ACU engineering upgrade pauses, cancels without refund, completes a
   expect(retired.position).toEqual(completed.position);
   expect(retired.watch?.targets.some(target => target.type === WatchOrderType.Upgrade) ?? false).toBe(false);
   await expect(page.getByTestId('unit-detail').locator('.live-hp')).toContainText('16000 / 16000');
+  await expect(page.getByTestId('commander-slot-left')).toHaveAttribute('data-installed', 'true');
+  await expect(page.getByTestId('commander-enhancement-installed')).toContainText('Baumodul');
+  await expect(start).toHaveCount(0);
+  await expect(page.getByTestId('commander-slot-back')).toHaveAttribute('data-installed', 'false');
+  await expect(page.getByTestId('commander-slot-right')).toHaveAttribute('data-installed', 'false');
+  await page.getByTestId('commander-slot-back').click();
   await expect(start).toBeVisible(); await expect(start).toBeEnabled();
-  await expect(start).toContainText('Vogt, verstärkte Panzerung');
+  await expect(start).toHaveAttribute('data-enhancement', 'armor');
+  await expect(start).toContainText('Rückenpanzerung');
   await expect(start).toContainText('400 M'); await expect(start).toContainText('5.000 E');
   await expect(start).toContainText('HP 16.000 → 24.000');
-  await expect(image).toHaveAttribute('alt', ''); await expect(image).toHaveAttribute('aria-hidden', 'true');
-  await expect.poll(() => image.evaluate(el => ({ loaded: (el as HTMLImageElement).complete,
-    width: (el as HTMLImageElement).naturalWidth, height: (el as HTMLImageElement).naturalHeight }))).toEqual({ loaded: true, width: 64, height: 64 });
-  const armorIcon = await image.boundingBox(); expect(armorIcon).not.toBeNull();
-  expect(armorIcon!.width).toBe(32); expect(armorIcon!.height).toBe(32);
-  const armorIconSrc = await image.getAttribute('src');
-  expect(armorIconSrc).not.toBe(engineeringIconSrc);
   await page.getByTestId('selection-details-toggle').click();
   await expect(page.locator('.live-unit-stats')).toContainText('BP 20,0');
   await page.getByTestId('selection-details-toggle').click();
@@ -198,8 +214,20 @@ test('native ACU engineering upgrade pauses, cancels without refund, completes a
   expect(await page.evaluate(() => window.__faf!.tainted)).toBe(false);
   expect(await page.evaluate(() => window.__faf!.hostErrors)).toEqual([]);
   await assertSilentOutput(page);
+  await page.getByRole('button', { name: 'Replays', exact: true }).click();
+  const download = page.waitForEvent('download');
+  await page.getByTestId('replay-export-current').click();
+  const replayPath = info.outputPath('native-independent-slots.rtsreplay');
+  await (await download).saveAs(replayPath);
+  const replay = readRtsReplay(new Uint8Array(await readFile(replayPath)));
+  const commands = readAllCommands(replay).flatMap(row => decodeBatch(row.batch));
+  expect(replay.head.flags & ReplayFlags.Tainted).toBe(0);
+  const humanUpgrades = commands.filter(command => command.army === 0 && command.op === Op.Upgrade);
+  expect(humanUpgrades).toHaveLength(2);
+  expect(humanUpgrades.every(command => command.units.includes(commander as Handle))).toBe(true);
+  await info.attach('native-independent-slots-replay', { path: replayPath, contentType: 'application/octet-stream' });
   const silent = await page.evaluate(() => (window as unknown as { __fafSilentAudio: { installed: boolean; contexts: number; streamDestinations: number; speakerConnections: number; blockedConnections: number } }).__fafSilentAudio);
-  await attachJson(info, 'native-commander-upgrade', { commander, compiled: { base, engineering, armor }, icon, engineeringIconSrc, armorIcon, armorIconSrc, initial, started, paused, held, resumed, beforeCancel, canceled, completed, retired, restartTick, progress, layouts, silent,
+  await attachJson(info, 'native-commander-upgrade', { commander, compiled: { base, engineering, armor }, initial, started, paused, held, resumed, beforeCancel, canceled, completed, retired, restartTick, progress, layouts, silent, humanUpgrades,
     boundary: 'Original untainted skirmish commander, native HUD commands and accepted Frame inspection. No diagnostic spawn, model mutation or authoritative World access.' });
   expectNoErrors(errors);
 });

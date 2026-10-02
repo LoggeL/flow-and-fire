@@ -1,4 +1,5 @@
 /** Upgrade work shares the mutually exclusive repair counters; the active order owns its target. */
+import { commanderEnhancementAdded, commanderEnhancementCostId, commanderEnhancementMask } from '@faf/rules';
 import { OrderBits, OrderType, UnitBits } from './constants.ts';
 import { ORD_OFFSET, ORD_TYPE_FLAGS, ORDER_RECORD_WORDS } from './schema.ts';
 import { hasCategory } from './intel.ts';
@@ -26,10 +27,23 @@ export function clearUpgradeWork(w: World, u: number): void {
   U.buildRemainder.zero(u);
 }
 
+/** The added module's standalone cost, or the ordinary successor cost for structures. */
+export function upgradeCostBp(w: World, source: number, target: number): number {
+  const module = commanderEnhancementAdded(w.bp.ids[source]!, w.bp.ids[target]!);
+  return module === null ? target : w.bp.indexOf(commanderEnhancementCostId(module));
+}
+
 /** Commander successors and compatible stationary extractors or factories retain their occupied site. */
 export function canUpgrade(w: World, source: number, target: number): boolean {
-  if (source < 0 || source >= w.bp.count || target < 0 || target >= w.bp.count || w.bp.upgradesTo(source) !== target) return false;
-  if (hasCategory(w, source, 'COMMAND') && hasCategory(w, target, 'COMMAND')) return true;
+  if (source < 0 || source >= w.bp.count || target < 0 || target >= w.bp.count) return false;
+  if (hasCategory(w, source, 'COMMAND') && hasCategory(w, target, 'COMMAND')) {
+    if (commanderEnhancementMask(w.bp.ids[source]!) >= 0) {
+      const module = commanderEnhancementAdded(w.bp.ids[source]!, w.bp.ids[target]!);
+      return module !== null && w.bp.indexOf(commanderEnhancementCostId(module)) >= 0;
+    }
+    return w.bp.upgradesTo(source) === target;
+  }
+  if (w.bp.upgradesTo(source) !== target) return false;
   const bp = w.bp;
   const sameRole = (hasCategory(w, source, 'MASSEXTRACTION') && hasCategory(w, target, 'MASSEXTRACTION')) ||
     (hasCategory(w, source, 'FACTORY') && hasCategory(w, target, 'FACTORY'));
@@ -45,7 +59,7 @@ export function completeUpgrade(w: World, u: number, target: number): void {
   const U = w.units.col, previous = U.bp[u]!;
   U.hp[u] = Math.min(w.bp.maxHpCol[target]!, U.hp[u]! + w.bp.maxHpCol[target]! - w.bp.maxHpCol[previous]!);
   U.bp[u] = target;
-  // Commander successors retain their weapons; extractor successors retain their footprint. Reset mount pose.
+  // Commander modules may replace their weapon blueprint; extractor successors retain their footprint. Reset mount pose.
   w.weapons.i32.fill(0, u * 80, (u + 1) * 80);
   clearUpgradeWork(w, u);
 }

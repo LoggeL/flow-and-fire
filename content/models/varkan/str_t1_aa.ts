@@ -10,7 +10,7 @@
  *   grate – Rost-Platte (Team) mit dunklen Schlitzen, Rohrjoch, 2 senkrechte Rohre (8° vorgeneigt) mit
  *           Kupfermündung; dreht um +Y (PartStream 1)
  */
-import { beveledBox, cylinder, defineModel, mirrorX, quad, stripes } from '@faf/modelkit';
+import { beveledBox, cylinder, defineModel, frustum, mirrorX, quad, stripes } from '@faf/modelkit';
 
 const TOP = 0.24;
 const G_Y = TOP + 0.1; // Oberkante Rost
@@ -40,8 +40,14 @@ export default defineModel({
         quad({ size: [0.56, 0.06], at: [0, G_Y + 0.004, -0.17], mat: 'dark', maxLod: 1 }),
         // Rohrjoch (Kupfer)
         beveledBox({ size: [0.44, 0.1, 0.18], at: [0, G_Y + 0.05, 0], bevel: { top: 0.03 }, mat: 'copper', tag: 'hull' }),
+        // Chamfered receiver cheeks shelter the pipe roots and expose the central copper yoke.
+        mirrorX(beveledBox({ size: [0.13, 0.15, 0.3], at: [0.29, G_Y - 0.025, -0.03],
+          bevel: { top: 0.04 }, mat: 'body', maxLod: 0, tag: 'hull' })),
         // 2 senkrechte Rohre (Ø 0,18), Kamm quer zur Blickrichtung, 8° vorgeneigt (≥ 75°)
         mirrorX([
+          frustum({ radius: 0.12, radiusTop: 0.09, height: 0.14,
+            at: [0.13, G_Y + 0.16, 0.006], rot: [8, 0, 0], segments: 6, caps: false,
+            mat: 'body', maxLod: 0, tag: 'barrel' }),
           cylinder({ radius: 0.09, height: 0.5, at: [0.13, G_Y + 0.33, 0.03], rot: [8, 0, 0], segments: 6, caps: 'top', mat: 'dark', keep: true, tag: 'barrel' }),
           cylinder({ radius: 0.105, height: 0.08, at: [0.13, G_Y + 0.55, 0.06], rot: [8, 0, 0], segments: 6, caps: 'top', mat: 'copper', tag: 'barrel' }),
         ]),

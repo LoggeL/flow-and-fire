@@ -21,6 +21,7 @@ import {
   cylinder,
   defineModel,
   extrude,
+  frustum,
   group,
   mirrorX,
   quad,
@@ -62,12 +63,13 @@ function armShapes(
   const tipY = 0.36;
   const fall = Math.atan2(elbowY - tipY, r) * (180 / Math.PI);
   const kids: Shape[] = [
-    cylinder({
+    frustum({
       radius: 0.11,
+      radiusTop: 0.07,
       height: 0.08,
       at: [0, 0.04, 0],
       segments: 6,
-      caps: "top",
+      caps: false, // Deck und steigendes Glied schließen die schmalen Enden.
       mat: "copper",
       maxLod: 0,
       tag: "boom",
@@ -88,6 +90,18 @@ function armShapes(
       mat: "copper",
       keep: true,
       maxLod: 1,
+      tag: "boom",
+    }),
+    // Querliegender Gusskragen am sichtbaren Ellbogen, nur im nahen LOD.
+    cylinder({
+      radius: 0.08,
+      height: 0.21,
+      axis: "x",
+      at: [0, elbowY - 0.03, elbowZ - 0.01],
+      segments: 6,
+      caps: false,
+      mat: "body",
+      maxLod: 0,
       tag: "boom",
     }),
     // LOD2: ein gerades Glied vom Drehkranz zur Spitze

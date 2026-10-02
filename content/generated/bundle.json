@@ -141,7 +141,7 @@
       "index": 0,
       "simUnits": {
         "startUnit": 0,
-        "units": [0, 14, 18, 19, 16, 13, 5, 6, 7, 15, 17, 4, 9, 10, 8, 11, 12]
+        "units": [0, 19, 23, 24, 21, 18, 10, 11, 12, 20, 22, 9, 14, 15, 13, 16, 17]
       },
       "source": "content/blueprints/core/factions/faction_core.ts"
     }
@@ -374,7 +374,7 @@
       "source": "content/blueprints/core/props/nature.ts"
     }
   ],
-  "simHash": "0x249A86A9",
+  "simHash": "0x02629D13",
   "units": [
     {
       "blueprint": {
@@ -471,7 +471,7 @@
         "spotKind": -1,
         "turnInPlace": true,
         "turnRatePerTick": 1638,
-        "upgradesTo": 2,
+        "upgradesTo": 4,
         "veterancy": 1,
         "vision": 106496,
         "wreckHp": 0,
@@ -482,7 +482,7 @@
     {
       "blueprint": {
         "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
-        "extends": "core:cmd_commander_engineering",
+        "extends": "core:cmd_commander",
         "id": "core:cmd_commander_armored",
         "sim": {
           "deathWeapon": "core:wpn_plumb_break",
@@ -513,6 +513,7 @@
             "speed": 1.7,
             "turnRateDeg": 90
           },
+          "upgradesTo": "core:cmd_commander_enhanced",
           "weapons": [
             {
               "arcDeg": 360,
@@ -574,7 +575,215 @@
         "spotKind": -1,
         "turnInPlace": true,
         "turnRatePerTick": 1638,
-        "upgradesTo": -1,
+        "upgradesTo": 6,
+        "veterancy": 1,
+        "vision": 106496,
+        "wreckHp": 0,
+        "wreckMass": 0
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
+        "extends": "core:cmd_commander",
+        "id": "core:cmd_commander_cannon",
+        "sim": {
+          "deathWeapon": "core:wpn_plumb_break",
+          "economy": {
+            "buildPower": 10,
+            "buildRange": 5,
+            "buildTime": 500,
+            "energy": 2500,
+            "energyIncome": 20,
+            "energyStorage": 3900,
+            "mass": 250,
+            "massIncome": 1,
+            "massStorage": 650
+          },
+          "health": {
+            "max": 12000
+          },
+          "intel": {
+            "vision": 26
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.7,
+            "sizeClass": 2,
+            "speed": 1.7,
+            "turnRateDeg": 90
+          },
+          "upgradesTo": "core:cmd_commander_engineering_cannon",
+          "weapons": [
+            {
+              "arcDeg": 360,
+              "id": "cannon",
+              "layers": ["land"],
+              "part": "hull",
+              "priorities": ["COMMAND", "MOBILE & LAND", "STRUCTURE"],
+              "ref": "core:wpn_reeve_cannon_enhanced",
+              "yawRateDeg": 120
+            }
+          ]
+        },
+        "view": {
+          "descKey": "unit.core.cmd_commander_cannon.desc",
+          "icon": "commander",
+          "iconThreshold": 12,
+          "lod": [80, 240],
+          "mesh": "units/varkan/cmd_commander",
+          "nameKey": "unit.core.cmd_commander_cannon.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [2, 2.4, 2]
+          }
+        }
+      },
+      "id": "core:cmd_commander_cannon",
+      "simId": 2,
+      "simUnits": {
+        "accelPerTick": 123,
+        "brakePerTick": 246,
+        "buildPowerQ16PerTick": 65536,
+        "buildRangeRaw": 20480,
+        "buildTime": 500,
+        "buildableBy": -1,
+        "categoryMask": ["0x01035112", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": 7,
+        "ecoFlags": 0,
+        "energyCost": 2500,
+        "energyIncomeMilliPerTick": 2000,
+        "energyStorageMilli": 3900000,
+        "energyUpkeepMilliPerTick": 0,
+        "firstMount": 2,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [5734, 5734, 5734],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 250,
+        "massIncomeMilliPerTick": 100,
+        "massStorageMilli": 650000,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 12000,
+        "maxSlope": 2458,
+        "mountCount": 1,
+        "radar": 0,
+        "radius": 2867,
+        "sizeClass": 2,
+        "speedPerTick": 696,
+        "spotKind": -1,
+        "turnInPlace": true,
+        "turnRatePerTick": 1638,
+        "upgradesTo": 5,
+        "veterancy": 1,
+        "vision": 106496,
+        "wreckHp": 0,
+        "wreckMass": 0
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
+        "extends": "core:cmd_commander",
+        "id": "core:cmd_commander_cannon_protection",
+        "sim": {
+          "deathWeapon": "core:wpn_plumb_break",
+          "economy": {
+            "buildPower": 10,
+            "buildRange": 5,
+            "buildTime": 800,
+            "energy": 5000,
+            "energyIncome": 20,
+            "energyStorage": 3900,
+            "mass": 400,
+            "massIncome": 1,
+            "massStorage": 650
+          },
+          "health": {
+            "max": 20000
+          },
+          "intel": {
+            "vision": 26
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.7,
+            "sizeClass": 2,
+            "speed": 1.7,
+            "turnRateDeg": 90
+          },
+          "upgradesTo": "core:cmd_commander_enhanced",
+          "weapons": [
+            {
+              "arcDeg": 360,
+              "id": "cannon",
+              "layers": ["land"],
+              "part": "hull",
+              "priorities": ["COMMAND", "MOBILE & LAND", "STRUCTURE"],
+              "ref": "core:wpn_reeve_cannon_enhanced",
+              "yawRateDeg": 120
+            }
+          ]
+        },
+        "view": {
+          "descKey": "unit.core.cmd_commander_cannon_protection.desc",
+          "icon": "commander",
+          "iconThreshold": 12,
+          "lod": [80, 240],
+          "mesh": "units/varkan/cmd_commander",
+          "nameKey": "unit.core.cmd_commander_cannon_protection.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [2, 2.4, 2]
+          }
+        }
+      },
+      "id": "core:cmd_commander_cannon_protection",
+      "simId": 3,
+      "simUnits": {
+        "accelPerTick": 123,
+        "brakePerTick": 246,
+        "buildPowerQ16PerTick": 65536,
+        "buildRangeRaw": 20480,
+        "buildTime": 800,
+        "buildableBy": -1,
+        "categoryMask": ["0x01035112", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": 7,
+        "ecoFlags": 0,
+        "energyCost": 5000,
+        "energyIncomeMilliPerTick": 2000,
+        "energyStorageMilli": 3900000,
+        "energyUpkeepMilliPerTick": 0,
+        "firstMount": 3,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [5734, 5734, 5734],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 400,
+        "massIncomeMilliPerTick": 100,
+        "massStorageMilli": 650000,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 20000,
+        "maxSlope": 2458,
+        "mountCount": 1,
+        "radar": 0,
+        "radius": 2867,
+        "sizeClass": 2,
+        "speedPerTick": 696,
+        "spotKind": -1,
+        "turnInPlace": true,
+        "turnRatePerTick": 1638,
+        "upgradesTo": 6,
         "veterancy": 1,
         "vision": 106496,
         "wreckHp": 0,
@@ -643,7 +852,7 @@
         }
       },
       "id": "core:cmd_commander_engineering",
-      "simId": 2,
+      "simId": 4,
       "simUnits": {
         "accelPerTick": 123,
         "brakePerTick": 246,
@@ -658,7 +867,7 @@
         "energyIncomeMilliPerTick": 2000,
         "energyStorageMilli": 3900000,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 2,
+        "firstMount": 4,
         "footprintH": 2,
         "footprintW": 2,
         "hitbox": [5734, 5734, 5734],
@@ -669,6 +878,317 @@
         "massStorageMilli": 650000,
         "massUpkeepMilliPerTick": 0,
         "maxHp": 16000,
+        "maxSlope": 2458,
+        "mountCount": 1,
+        "radar": 0,
+        "radius": 2867,
+        "sizeClass": 2,
+        "speedPerTick": 696,
+        "spotKind": -1,
+        "turnInPlace": true,
+        "turnRatePerTick": 1638,
+        "upgradesTo": 1,
+        "veterancy": 1,
+        "vision": 106496,
+        "wreckHp": 0,
+        "wreckMass": 0
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
+        "extends": "core:cmd_commander",
+        "id": "core:cmd_commander_engineering_cannon",
+        "sim": {
+          "deathWeapon": "core:wpn_plumb_break",
+          "economy": {
+            "buildPower": 20,
+            "buildRange": 5,
+            "buildTime": 800,
+            "energy": 5000,
+            "energyIncome": 20,
+            "energyStorage": 3900,
+            "mass": 400,
+            "massIncome": 1,
+            "massStorage": 650
+          },
+          "health": {
+            "max": 16000
+          },
+          "intel": {
+            "vision": 26
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.7,
+            "sizeClass": 2,
+            "speed": 1.7,
+            "turnRateDeg": 90
+          },
+          "upgradesTo": "core:cmd_commander_enhanced",
+          "weapons": [
+            {
+              "arcDeg": 360,
+              "id": "cannon",
+              "layers": ["land"],
+              "part": "hull",
+              "priorities": ["COMMAND", "MOBILE & LAND", "STRUCTURE"],
+              "ref": "core:wpn_reeve_cannon_enhanced",
+              "yawRateDeg": 120
+            }
+          ]
+        },
+        "view": {
+          "descKey": "unit.core.cmd_commander_engineering_cannon.desc",
+          "icon": "commander",
+          "iconThreshold": 12,
+          "lod": [80, 240],
+          "mesh": "units/varkan/cmd_commander",
+          "nameKey": "unit.core.cmd_commander_engineering_cannon.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [2, 2.4, 2]
+          }
+        }
+      },
+      "id": "core:cmd_commander_engineering_cannon",
+      "simId": 5,
+      "simUnits": {
+        "accelPerTick": 123,
+        "brakePerTick": 246,
+        "buildPowerQ16PerTick": 131072,
+        "buildRangeRaw": 20480,
+        "buildTime": 800,
+        "buildableBy": -1,
+        "categoryMask": ["0x01035112", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": 7,
+        "ecoFlags": 0,
+        "energyCost": 5000,
+        "energyIncomeMilliPerTick": 2000,
+        "energyStorageMilli": 3900000,
+        "energyUpkeepMilliPerTick": 0,
+        "firstMount": 5,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [5734, 5734, 5734],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 400,
+        "massIncomeMilliPerTick": 100,
+        "massStorageMilli": 650000,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 16000,
+        "maxSlope": 2458,
+        "mountCount": 1,
+        "radar": 0,
+        "radius": 2867,
+        "sizeClass": 2,
+        "speedPerTick": 696,
+        "spotKind": -1,
+        "turnInPlace": true,
+        "turnRatePerTick": 1638,
+        "upgradesTo": 6,
+        "veterancy": 1,
+        "vision": 106496,
+        "wreckHp": 0,
+        "wreckMass": 0
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
+        "extends": "core:cmd_commander",
+        "id": "core:cmd_commander_enhanced",
+        "sim": {
+          "deathWeapon": "core:wpn_plumb_break",
+          "economy": {
+            "buildPower": 20,
+            "buildRange": 5,
+            "buildTime": 800,
+            "energy": 5000,
+            "energyIncome": 20,
+            "energyStorage": 3900,
+            "mass": 400,
+            "massIncome": 1,
+            "massStorage": 650
+          },
+          "health": {
+            "max": 24000
+          },
+          "intel": {
+            "vision": 26
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.7,
+            "sizeClass": 2,
+            "speed": 1.7,
+            "turnRateDeg": 90
+          },
+          "weapons": [
+            {
+              "arcDeg": 360,
+              "id": "cannon",
+              "layers": ["land"],
+              "part": "hull",
+              "priorities": ["COMMAND", "MOBILE & LAND", "STRUCTURE"],
+              "ref": "core:wpn_reeve_cannon_enhanced",
+              "yawRateDeg": 120
+            }
+          ]
+        },
+        "view": {
+          "descKey": "unit.core.cmd_commander_enhanced.desc",
+          "icon": "commander",
+          "iconThreshold": 12,
+          "lod": [80, 240],
+          "mesh": "units/varkan/cmd_commander",
+          "nameKey": "unit.core.cmd_commander_enhanced.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [2, 2.4, 2]
+          }
+        }
+      },
+      "id": "core:cmd_commander_enhanced",
+      "simId": 6,
+      "simUnits": {
+        "accelPerTick": 123,
+        "brakePerTick": 246,
+        "buildPowerQ16PerTick": 131072,
+        "buildRangeRaw": 20480,
+        "buildTime": 800,
+        "buildableBy": -1,
+        "categoryMask": ["0x01035112", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": 7,
+        "ecoFlags": 0,
+        "energyCost": 5000,
+        "energyIncomeMilliPerTick": 2000,
+        "energyStorageMilli": 3900000,
+        "energyUpkeepMilliPerTick": 0,
+        "firstMount": 6,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [5734, 5734, 5734],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 400,
+        "massIncomeMilliPerTick": 100,
+        "massStorageMilli": 650000,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 24000,
+        "maxSlope": 2458,
+        "mountCount": 1,
+        "radar": 0,
+        "radius": 2867,
+        "sizeClass": 2,
+        "speedPerTick": 696,
+        "spotKind": -1,
+        "turnInPlace": true,
+        "turnRatePerTick": 1638,
+        "upgradesTo": -1,
+        "veterancy": 1,
+        "vision": 106496,
+        "wreckHp": 0,
+        "wreckMass": 0
+      },
+      "source": "content/blueprints/core/units/economy.ts"
+    },
+    {
+      "blueprint": {
+        "categories": ["LAND", "MOBILE", "DIRECTFIRE", "COMMAND", "ENGINEER", "RECLAIM", "REPAIR", "UNIQUE"],
+        "extends": "core:cmd_commander",
+        "id": "core:cmd_commander_protection",
+        "sim": {
+          "deathWeapon": "core:wpn_plumb_break",
+          "economy": {
+            "buildPower": 10,
+            "buildRange": 5,
+            "buildTime": 800,
+            "energy": 5000,
+            "energyIncome": 20,
+            "energyStorage": 3900,
+            "mass": 400,
+            "massIncome": 1,
+            "massStorage": 650
+          },
+          "health": {
+            "max": 20000
+          },
+          "intel": {
+            "vision": 26
+          },
+          "motion": {
+            "accel": 3,
+            "footprint": [2, 2],
+            "layer": "land",
+            "maxSlope": 0.6,
+            "radius": 0.7,
+            "sizeClass": 2,
+            "speed": 1.7,
+            "turnRateDeg": 90
+          },
+          "upgradesTo": "core:cmd_commander_armored",
+          "weapons": [
+            {
+              "arcDeg": 360,
+              "id": "cannon",
+              "layers": ["land"],
+              "part": "hull",
+              "priorities": ["COMMAND", "MOBILE & LAND", "STRUCTURE"],
+              "ref": "core:wpn_reeve_cannon",
+              "yawRateDeg": 120
+            }
+          ]
+        },
+        "view": {
+          "descKey": "unit.core.cmd_commander_protection.desc",
+          "icon": "commander",
+          "iconThreshold": 12,
+          "lod": [80, 240],
+          "mesh": "units/varkan/cmd_commander",
+          "nameKey": "unit.core.cmd_commander_protection.name",
+          "placeholder": {
+            "hull": "box",
+            "size": [2, 2.4, 2]
+          }
+        }
+      },
+      "id": "core:cmd_commander_protection",
+      "simId": 7,
+      "simUnits": {
+        "accelPerTick": 123,
+        "brakePerTick": 246,
+        "buildPowerQ16PerTick": 65536,
+        "buildRangeRaw": 20480,
+        "buildTime": 800,
+        "buildableBy": -1,
+        "categoryMask": ["0x01035112", "0x00000000", "0x00000000", "0x00000000"],
+        "deathWeapon": 7,
+        "ecoFlags": 0,
+        "energyCost": 5000,
+        "energyIncomeMilliPerTick": 2000,
+        "energyStorageMilli": 3900000,
+        "energyUpkeepMilliPerTick": 0,
+        "firstMount": 7,
+        "footprintH": 2,
+        "footprintW": 2,
+        "hitbox": [5734, 5734, 5734],
+        "layer": 0,
+        "mass": 4,
+        "massCost": 400,
+        "massIncomeMilliPerTick": 100,
+        "massStorageMilli": 650000,
+        "massUpkeepMilliPerTick": 0,
+        "maxHp": 20000,
         "maxSlope": 2458,
         "mountCount": 1,
         "radar": 0,
@@ -724,7 +1244,7 @@
         }
       },
       "id": "core:cube",
-      "simId": 3,
+      "simId": 8,
       "simUnits": {
         "accelPerTick": 123,
         "brakePerTick": 246,
@@ -822,7 +1342,7 @@
         }
       },
       "id": "core:eng_t1",
-      "simId": 4,
+      "simId": 9,
       "simUnits": {
         "accelPerTick": 102,
         "brakePerTick": 205,
@@ -922,7 +1442,7 @@
         }
       },
       "id": "core:fac_land_t1",
-      "simId": 5,
+      "simId": 10,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -957,7 +1477,7 @@
         "spotKind": -1,
         "turnInPlace": false,
         "turnRatePerTick": 0,
-        "upgradesTo": 6,
+        "upgradesTo": 11,
         "veterancy": 0,
         "vision": 81920,
         "wreckHp": 2048,
@@ -1020,7 +1540,7 @@
         }
       },
       "id": "core:fac_land_t2",
-      "simId": 6,
+      "simId": 11,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -1055,7 +1575,7 @@
         "spotKind": -1,
         "turnInPlace": false,
         "turnRatePerTick": 0,
-        "upgradesTo": 7,
+        "upgradesTo": 12,
         "veterancy": 0,
         "vision": 81920,
         "wreckHp": 2048,
@@ -1117,7 +1637,7 @@
         }
       },
       "id": "core:fac_land_t3",
-      "simId": 7,
+      "simId": 12,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -1233,7 +1753,7 @@
         }
       },
       "id": "core:lnd_t1_arty",
-      "simId": 8,
+      "simId": 13,
       "simUnits": {
         "accelPerTick": 74,
         "brakePerTick": 147,
@@ -1248,7 +1768,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 3,
+        "firstMount": 8,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [3686, 1843, 2662],
@@ -1350,7 +1870,7 @@
         }
       },
       "id": "core:lnd_t1_scout",
-      "simId": 9,
+      "simId": 14,
       "simUnits": {
         "accelPerTick": 205,
         "brakePerTick": 410,
@@ -1365,7 +1885,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 4,
+        "firstMount": 9,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [3277, 1434, 2253],
@@ -1466,7 +1986,7 @@
         }
       },
       "id": "core:lnd_t1_tank",
-      "simId": 10,
+      "simId": 15,
       "simUnits": {
         "accelPerTick": 102,
         "brakePerTick": 205,
@@ -1481,7 +2001,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 5,
+        "firstMount": 10,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [2458, 1638, 3277],
@@ -1582,7 +2102,7 @@
         }
       },
       "id": "core:lnd_t2_tank",
-      "simId": 11,
+      "simId": 16,
       "simUnits": {
         "accelPerTick": 90,
         "brakePerTick": 180,
@@ -1597,7 +2117,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 6,
+        "firstMount": 11,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [5734, 2048, 4096],
@@ -1709,7 +2229,7 @@
         }
       },
       "id": "core:lnd_t3_heavy",
-      "simId": 12,
+      "simId": 17,
       "simUnits": {
         "accelPerTick": 49,
         "brakePerTick": 98,
@@ -1724,7 +2244,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 7,
+        "firstMount": 12,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [9421, 3277, 6963],
@@ -1802,7 +2322,7 @@
         }
       },
       "id": "core:str_t1_estorage",
-      "simId": 13,
+      "simId": 18,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -1899,7 +2419,7 @@
         }
       },
       "id": "core:str_t1_mex",
-      "simId": 14,
+      "simId": 19,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -1934,7 +2454,7 @@
         "spotKind": 0,
         "turnInPlace": false,
         "turnRatePerTick": 0,
-        "upgradesTo": 18,
+        "upgradesTo": 23,
         "veterancy": 0,
         "vision": 65536,
         "wreckHp": 2048,
@@ -2011,7 +2531,7 @@
         }
       },
       "id": "core:str_t1_pd",
-      "simId": 15,
+      "simId": 20,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -2026,7 +2546,7 @@
         "energyIncomeMilliPerTick": 0,
         "energyStorageMilli": 0,
         "energyUpkeepMilliPerTick": 0,
-        "firstMount": 9,
+        "firstMount": 14,
         "footprintH": 1,
         "footprintW": 1,
         "hitbox": [3686, 2867, 3686],
@@ -2104,7 +2624,7 @@
         }
       },
       "id": "core:str_t1_pgen",
-      "simId": 16,
+      "simId": 21,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -2201,7 +2721,7 @@
         }
       },
       "id": "core:str_t1_radar",
-      "simId": 17,
+      "simId": 22,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -2296,7 +2816,7 @@
         }
       },
       "id": "core:str_t2_mex",
-      "simId": 18,
+      "simId": 23,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -2331,7 +2851,7 @@
         "spotKind": 0,
         "turnInPlace": false,
         "turnRatePerTick": 0,
-        "upgradesTo": 19,
+        "upgradesTo": 24,
         "veterancy": 0,
         "vision": 81920,
         "wreckHp": 2048,
@@ -2390,7 +2910,7 @@
         }
       },
       "id": "core:str_t3_mex",
-      "simId": 19,
+      "simId": 24,
       "simUnits": {
         "accelPerTick": 0,
         "brakePerTick": 0,
@@ -2435,7 +2955,7 @@
     }
   ],
   "version": 2,
-  "viewHash": "0xFAF5DCD1",
+  "viewHash": "0x014B077E",
   "weapons": [
     {
       "blueprint": {
@@ -2751,6 +3271,42 @@
     },
     {
       "blueprint": {
+        "extends": "core:wpn_reeve_cannon",
+        "id": "core:wpn_reeve_cannon_enhanced",
+        "sim": {
+          "damage": 150,
+          "minRange": 1,
+          "muzzleVelocity": 35,
+          "projectile": "core:prj_shell_heavy",
+          "range": 32,
+          "reloadSec": 1,
+          "salvo": 1
+        },
+        "view": {
+          "fx": {
+            "impact": "core:fx_explosion_small",
+            "muzzle": "core:fx_muzzle_large"
+          }
+        }
+      },
+      "id": "core:wpn_reeve_cannon_enhanced",
+      "index": 9,
+      "simUnits": {
+        "damage": 150,
+        "damageRadius": 0,
+        "flags": 0,
+        "minRange": 4096,
+        "muzzleVelocityPerTick": 14336,
+        "projectile": 3,
+        "range": 131072,
+        "reloadTicks": 10,
+        "salvo": 1,
+        "salvoIntervalTicks": 0
+      },
+      "source": "content/blueprints/core/weapons/land_weapons.ts"
+    },
+    {
+      "blueprint": {
         "id": "core:wpn_reeve_tapshot",
         "sim": {
           "damage": 15000,
@@ -2770,7 +3326,7 @@
         }
       },
       "id": "core:wpn_reeve_tapshot",
-      "index": 9,
+      "index": 10,
       "simUnits": {
         "damage": 15000,
         "damageRadius": 10240,

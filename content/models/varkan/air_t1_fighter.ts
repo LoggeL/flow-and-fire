@@ -12,7 +12,7 @@
  *          Sichtschlitz, 2 Kupfer-Düsen mit Glutkern (Glutnaht), Doppelleitwerk, 1 Keramik-Tech-Streifen.
  *   Keine animierten Parts (Roster: animatedParts 0) – der Antrieb sind die zwei starren Glutdüsen.
  */
-import { beveledBox, box, cone, cylinder, defineModel, extrude, mirrorX, stripes } from '@faf/modelkit';
+import { beveledBox, box, cone, cylinder, defineModel, extrude, frustum, mirrorX, quad, stripes } from '@faf/modelkit';
 
 /** Draufsicht [x, z] der linken Flügelhälfte + Spiegel: Spitze vorn, Vorderkante stark gepfeilt, gerade Hinterkante. */
 const DELTA: readonly (readonly [number, number])[] = [
@@ -75,6 +75,10 @@ export default defineModel({
         beveledBox({ size: [0.1, 0.04, 0.16], at: [0, BODY_Y + 0.09, 0.2], bevel: { topFront: 0.03 }, mat: 'glass', maxLod: 1 }),
         // Rückenplatte (Teamfarbe) hinter dem Sichtschlitz
         box({ size: [0.1, 0.012, 0.44], at: [0, BODY_Y + 0.086, -0.14], mat: 'team', maxLod: 1 }),
+        // Breite Einlassbacken und offene Kragen brechen die flache Flügeloberseite.
+        mirrorX(beveledBox({ size: [0.14, 0.075, 0.25], at: [0.19, WING_TOP + 0.045, -0.17], bevel: { topFront: 0.05 }, mat: 'team', maxLod: 0, tag: 'hull' })),
+        mirrorX(quad({ size: [0.09, 0.04], at: [0.19, WING_TOP + 0.0645, -0.0735], rot: [45, 0, 0], mat: 'dark', maxLod: 0 })),
+        mirrorX(frustum({ radius: 0.095, radiusTop: 0.075, height: 0.07, segments: 6, axis: 'z', scale: [1, 0.8, 1], at: [0.09, NOZZLE_Y, -0.55], caps: false, mat: 'body', maxLod: 0, tag: 'manifold' })),
         // 2 Glutdüsen: Kupferrohre längs des Rumpfs + Glutkern hinten (Glutnaht ≤ 2 %)
         mirrorX([
           cylinder({ radius: 0.08, height: 0.36, segments: 6, axis: 'z', at: [0.09, NOZZLE_Y, -0.47], caps: false, mat: 'copper', keep: true, tag: 'manifold' }),

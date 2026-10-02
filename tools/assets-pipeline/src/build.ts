@@ -8,7 +8,7 @@
  * - `content/maps/*.rtsmap` (validated with `@faf/formats`) → `maps/<name>.<hash8>.rtsmap`,
  * - `content/generated/sim.bin` / `view.json` (blueprint compiler output, validated) →
  *   `content/sim.<hash8>.bin`, `content/view.<hash8>.json`,
- * - `content/icons/icons.json` (vector icon sources, MS3/C2) → the MSDF atlas
+ * - `content/icons/atlas-source.json` (vector icon sources, MS3/C2) → the MSDF atlas
  *   `icons/atlas.<hash8>.rgba` (kind `iconatlas`) + `icons/atlas.<hash8>.json` (kind `iconmetrics`),
  *   see icons.ts; every `view.icon` must be an atlas glyph.
  *
@@ -33,7 +33,7 @@ import { decodeSimBin } from '@faf/blueprints/simbin';
 import { parseViewJson } from '@faf/blueprints/view';
 import { readRtsMap } from '@faf/formats';
 import { writeCompressedGlb, writeRawGlb } from './gltf.ts';
-import { buildIconAtlas, parseIconSource } from './icons.ts';
+import { buildIconAtlas, ICON_SOURCE_FILENAME, parseIconSource } from './icons.ts';
 import { type ModelDef } from './models.ts';
 import { referencedModels } from './modelkit.ts';
 
@@ -109,7 +109,7 @@ export async function buildAssets(opts: BuildOptions = {}): Promise<AssetBuild> 
   add('content/view.json', hashedName('content', 'view', 'json', viewBytes), viewBytes, 'viewjson');
 
   // Strategic icon atlas (MSDF, raw RGBA8) + metrics.
-  const iconSrc = parseIconSource(new TextDecoder().decode(await readFile(join(root, 'content', 'icons', 'icons.json'))));
+  const iconSrc = parseIconSource(new TextDecoder().decode(await readFile(join(root, 'content', 'icons', ICON_SOURCE_FILENAME))));
   const atlas = buildIconAtlas(iconSrc);
   const metricsBytes = new TextEncoder().encode(atlas.metricsText);
   add('icons/atlas', hashedName('icons', 'atlas', 'rgba', atlas.pixels), atlas.pixels, 'iconatlas');

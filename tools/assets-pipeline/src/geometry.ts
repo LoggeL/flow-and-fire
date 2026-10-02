@@ -18,6 +18,8 @@ export interface LodGeometry {
   readonly colors?: Float32Array<ArrayBuffer>;
   /** Team, emissive, metal and ambient-occlusion channels. */
   readonly mask?: Uint8Array<ArrayBuffer>;
+  /** Optional normalized u8 armor-grain weight. */
+  readonly surface?: Uint8Array<ArrayBuffer>;
 }
 
 const POS_GRID = 4096;

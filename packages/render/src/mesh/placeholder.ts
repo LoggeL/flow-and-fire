@@ -49,6 +49,8 @@ export interface MeshData {
   readonly colors?: Float32Array;
   /** Optional team, emissive, metal, AO channels, four normalized u8 components per vertex. */
   readonly mask?: Uint8Array;
+  /** Optional armor-grain weight per vertex, normalized u8; legacy meshes omit it. */
+  readonly surface?: Uint8Array;
   readonly indices: Uint16Array | Uint32Array;
   readonly vertexCount: number;
   readonly indexCount: number;

@@ -271,6 +271,46 @@
 .live-hud .live-game-presentation .live-upgrade-complete {color:var(--text-hi);}
 .live-hud .live-game-presentation .live-upgrade-paused-note {grid-column:1/-1;font-size:var(--fs-micro);line-height:1.25;color:var(--warn);}
 
+/* ACU slots: the same compact chrome, with a highlighted body component and installed marker. */
+.live-hud .live-game-presentation .live-enhancements {width:29rem;display:grid;gap:.25rem;}
+.live-hud .live-game-presentation .live-enhancements .live-upgrade-heading {margin:0;}
+.live-hud .live-game-presentation .live-enhancement-slots {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.25rem;}
+.live-hud .live-game-presentation .live-enhancement-slot {display:flex;align-items:center;gap:.3rem;min-width:0;min-height:44px;padding:.2rem .25rem;border:1px solid #64727c;background:linear-gradient(180deg,#212a32,#0a0e11);color:var(--text-mid);font:inherit;text-align:left;cursor:pointer;}
+.live-hud .live-game-presentation .live-enhancement-slot:hover,.live-hud .live-game-presentation .live-enhancement-slot.is-selected {border-color:var(--sc-ice);background:linear-gradient(180deg,#24445b,#0b1b27);color:var(--text-hi);box-shadow:inset 0 -2px 0 var(--sc-ice);}
+.live-hud .live-game-presentation .live-enhancement-slot:focus-visible {outline:2px solid white;outline-offset:1px;}
+.live-hud .live-game-presentation .live-enhancement-slot>span {display:grid;gap:.1rem;min-width:0;}
+.live-hud .live-game-presentation .live-enhancement-slot small {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-micro);color:var(--text-mid);}
+.live-hud .live-game-presentation .live-enhancement-slot.is-installed small {color:var(--mass);}
+.live-hud .live-game-presentation .live-enhancement-slot.is-fitting small {color:var(--energy);}
+.live-hud .live-game-presentation .live-enhancement-glyph {flex:none;width:2.2rem;height:2.2rem;color:#738694;}
+.live-hud .live-game-presentation .live-enhancement-glyph .is-lit {fill:#234b62;stroke:#b5e8ff;}
+.live-hud .live-game-presentation .is-installed .live-enhancement-glyph .is-lit {fill:#344b21;stroke:var(--mass);}
+.live-hud .live-game-presentation .live-enhancement-installed {display:grid;grid-template-columns:1fr auto;gap:.15rem .4rem;min-height:44px;align-content:center;padding:.2rem .4rem;border:1px solid #617541;background:#111b10;}
+.live-hud .live-game-presentation .live-enhancement-installed>span {color:var(--mass);}
+.live-hud .live-game-presentation .live-enhancement-installed>small {grid-column:1/-1;font-size:var(--fs-micro);color:var(--text-mid);}
+.live-hud .live-game-presentation .live-enhancement-install-mark {font-size:1.4rem;color:var(--sc-ice);}
+.live-hud .live-game-presentation .live-enhancements .live-upgrade-progress-label {font-size:var(--fs-micro);}
+.live-hud .live-game-presentation .live-upgrade-start>.live-build-portrait {position:relative;inset:auto;transform:none;flex:none;width:32px;height:32px;}
+.live-hud .live-game-presentation .live-factory-upgrade-transition {display:flex;grid-column:1/-1;gap:.4rem;align-items:center;color:var(--sc-ice);margin-bottom:.35rem;}
+.live-hud .live-game-presentation .live-factory-upgrade .live-upgrade-running-actions {grid-row:2/4;}
+.live-hud .live-game-presentation .live-factory-upgrade-transition>.live-build-portrait {position:relative;inset:auto;transform:none;flex:none;width:32px;height:32px;}
+.live-hud .live-game-presentation .live-factory-upgrade-transition>span:last-child {color:var(--text-mid);font-size:var(--fs-micro);}
+.live-hud .live-game-presentation .live-text-queue:has(.fq__now.is-idle):not(:has(.fq__list)) {grid-template-columns:auto minmax(0,1fr);}
+.live-hud .live-game-presentation .live-text-queue:has(.fq__now.is-idle):not(:has(.fq__list)) .fq__now {grid-column:1;grid-row:1;}
+.live-hud .live-game-presentation .live-text-queue:has(.fq__now.is-idle):not(:has(.fq__list)) .fq__ctl {grid-column:2;grid-row:1;justify-content:flex-end;}
+
+/* At medium widths keep factory work beside its queue, rather than wrapping two large panels into a tall dock. */
+@media (min-width:761px) and (max-width:1100px) {
+  .live-hud .live-game-presentation .live-dock-aux:has(.live-factory-upgrade) {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.25rem .4rem;align-items:end;}
+  .live-hud .live-game-presentation .live-dock-aux:has(.live-factory-upgrade)>.live-selection-tools {grid-column:1;grid-row:1;}
+  .live-hud .live-game-presentation .live-dock-aux:has(.live-factory-upgrade)>.live-factory-text {grid-column:1;grid-row:2;width:100%;}
+  .live-hud .live-game-presentation .live-dock-aux>.live-factory-upgrade {grid-column:2;grid-row:1/3;width:100%;}
+}
+@media (min-width:761px) and (max-width:900px) {
+  .live-hud .live-game-presentation .live-text-queue:has(.fq__now.is-idle):not(:has(.fq__list)) {grid-template-columns:minmax(0,1fr);}
+  .live-hud .live-game-presentation .live-text-queue:has(.fq__now.is-idle):not(:has(.fq__list)) .fq__ctl {grid-column:1;grid-row:2;justify-content:flex-start;}
+}
+
 /* Narrow windows: stack summary, tools, orders and strip instead of squeezing tiles; the strip keeps scrolling. */
 @media (max-width:760px) {
   .live-game-presentation {--dock-left:min(22.5rem,calc(100vw - 1rem));}

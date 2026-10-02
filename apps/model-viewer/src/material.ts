@@ -5,6 +5,14 @@
  * swap slot colors per army (palette `teamAlt`: Varkan white glow, Aurith smoke quartz, …).
  */
 import * as THREE from 'three';
+import { ARMOR_SURFACE_GLSL, ARMOR_SURFACE_SIZE, armorSurfacePixels } from './armor-surface.ts';
+
+const armorTexture = new THREE.DataTexture(armorSurfacePixels(), ARMOR_SURFACE_SIZE, ARMOR_SURFACE_SIZE, THREE.RedFormat);
+armorTexture.wrapS = armorTexture.wrapT = THREE.RepeatWrapping;
+armorTexture.magFilter = THREE.LinearFilter;
+armorTexture.minFilter = THREE.LinearMipmapLinearFilter;
+armorTexture.generateMipmaps = true;
+armorTexture.needsUpdate = true;
 
 export const MAX_PARTS = 16;
 /** Max. team-conflict swaps per faction palette (Palette.teamAlt). */
@@ -13,11 +21,15 @@ export const MAX_ALTS = 4;
 const vertexShader = /* glsl */ `
 attribute float _partid;
 attribute vec4 _mask;
+attribute float _surface;
 uniform mat4 uPart[${MAX_PARTS}];
 varying vec3 vColor;
 varying vec4 vMask;
 varying vec3 vNormalW;
 varying vec3 vPosW;
+varying vec3 vSurfacePos;
+varying vec3 vSurfaceNormal;
+varying float vSurface;
 void main() {
   int pid = int(_partid + 0.5);
   mat4 pm = uPart[pid];
@@ -27,11 +39,16 @@ void main() {
   vNormalW = normalize(mat3(modelMatrix) * (mat3(pm) * normal));
   vColor = color;
   vMask = _mask;
+  vSurfacePos = position;
+  vSurfaceNormal = normal;
+  vSurface = _surface;
   gl_Position = projectionMatrix * viewMatrix * wp;
 }
 `;
 
 const fragmentShader = /* glsl */ `
+uniform sampler2D uSurface;
+${ARMOR_SURFACE_GLSL.replaceAll('texture(', 'texture2D(')}
 uniform vec3 uTeam;
 uniform vec3 uAltFrom[${MAX_ALTS}];
 uniform vec3 uAltTo[${MAX_ALTS}];
@@ -44,6 +61,9 @@ varying vec3 vColor;
 varying vec4 vMask;
 varying vec3 vNormalW;
 varying vec3 vPosW;
+varying vec3 vSurfacePos;
+varying vec3 vSurfaceNormal;
+varying float vSurface;
 void main() {
   if (uSilhouette > 0.5) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -56,6 +76,7 @@ void main() {
     if (uAltOn[i] > 0.5 && distance(vColor, uAltFrom[i]) < 0.004) base = uAltTo[i];
   }
   vec3 albedo = base * mix(vec3(1.0), team, vMask.r);
+  if (vSurface > 0.0) albedo *= armorGrain(uSurface, vSurfacePos, vSurfaceNormal, vSurface);
   if (uGray > 0.5) albedo = vec3(dot(albedo, vec3(0.2126, 0.7152, 0.0722)));
   float ao = vMask.a;
   vec3 sky = vec3(0.60, 0.66, 0.75);
@@ -104,6 +125,7 @@ export interface TeamSwap {
 export function createUnitMaterial(): UnitMaterial {
   const uniforms: UnitMaterialUniforms = {
     uPart: { value: Array.from({ length: MAX_PARTS }, () => new THREE.Matrix4()) },
+    uSurface: { value: armorTexture },
     uTeam: { value: new THREE.Color('#2F6FD0') },
     uAltFrom: { value: Array.from({ length: MAX_ALTS }, () => new THREE.Color()) },
     uAltTo: { value: Array.from({ length: MAX_ALTS }, () => new THREE.Color()) },
@@ -113,7 +135,9 @@ export function createUnitMaterial(): UnitMaterial {
     uGray: { value: 0 },
     uSunDir: { value: new THREE.Vector3(0.45, 0.8, 0.4).normalize() },
   };
-  return new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, vertexColors: true }) as UnitMaterial;
+  const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, vertexColors: true }) as UnitMaterial;
+  (material.defaultAttributeValues as Record<string, number[]>)['_surface'] = [0];
+  return material;
 }
 
 /** Team color + the faction's conflict swaps (faction.md §4.3 of each faction, e.g. Varkan red/orange → white glow). */

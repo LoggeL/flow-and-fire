@@ -5,3 +5,5 @@ export * from './layer.ts';
 export * from './terrain.ts';
 export * from './economy.ts';
 export * from './placement.ts';
+
+export * from './commander-enhancements.ts';

@@ -18,6 +18,12 @@ const available: CommanderUpgradeState = {
   stage: 'base', active: false, queued: false, progress: 0, paused: false, stalled: false,
   enabled: true, controllable: true, mass: 300, energy: 1800, buildPower: 20, hpMax: 10000,
   targetBuildPower: 60, targetHpMax: 12000, remainingS: null,
+  weaponRange: 22, weaponDps: 100, activeEnhancementId: null,
+  enhancements: [
+    { id: 'engineering', slot: 'left', installed: false, enabled: true, targetTypeId: 'core:cmd_commander_engineering', mass: 300, energy: 1800, buildTime: 400, targetBuildPower: 60, targetHpMax: 12000, targetWeaponRange: 22, targetWeaponDps: 100 },
+    { id: 'armor', slot: 'back', installed: false, enabled: true, targetTypeId: 'core:cmd_commander_armor', mass: 400, energy: 5000, buildTime: 800, targetBuildPower: 20, targetHpMax: 18000, targetWeaponRange: 22, targetWeaponDps: 100 },
+    { id: 'cannon', slot: 'right', installed: false, enabled: true, targetTypeId: 'core:cmd_commander_cannon', mass: 250, energy: 2500, buildTime: 500, targetBuildPower: 20, targetHpMax: 10000, targetWeaponRange: 32, targetWeaponDps: 150 },
+  ],
 };
 
 function fixture(state: CommanderUpgradeState | null = available) {
@@ -51,8 +57,34 @@ describe('visible commander enhancement controls', () => {
     expect(start.textContent).toContain('HP 10,000 → 12,000');
     act(() => start.click());
     expect(controller.startCommanderUpgrade).toHaveBeenCalledOnce();
-    act(() => { controller.commanderUpgrade.value = { ...available, enabled: false }; });
+    expect(controller.startCommanderUpgrade).toHaveBeenCalledWith('engineering');
+    act(() => { controller.commanderUpgrade.value = { ...available, enabled: false, enhancements: available.enhancements.map(item => ({ ...item, enabled: false })) }; });
     expect(start.disabled).toBe(true);
+  });
+
+  it('selects independent left, back and right slots and submits the chosen module with its actual effects', () => {
+    const { getByTestId, controller } = fixture();
+    expect(getByTestId('commander-slot-left').getAttribute('aria-pressed')).toBe('true');
+    act(() => getByTestId('commander-slot-right').click());
+    expect(getByTestId('commander-slot-right').getAttribute('aria-pressed')).toBe('true');
+    const start = getByTestId('commander-upgrade-start');
+    expect(start.textContent).toContain('Range 22 → 32');
+    expect(start.textContent).toContain('DPS 100 → 150');
+    act(() => start.click());
+    expect(controller.startCommanderUpgrade).toHaveBeenLastCalledWith('cannon');
+    act(() => getByTestId('commander-slot-back').click());
+    expect(getByTestId('commander-upgrade-start').textContent).toContain('HP 10,000 → 18,000');
+    act(() => getByTestId('commander-upgrade-start').click());
+    expect(controller.startCommanderUpgrade).toHaveBeenLastCalledWith('armor');
+  });
+
+  it('shows installed modules without charging them again and retains other slot choices', () => {
+    const { getByTestId, queryByTestId } = fixture({ ...available, enhancements: available.enhancements.map(item => item.id === 'engineering' ? { ...item, installed: true, enabled: false } : item) });
+    expect(getByTestId('commander-slot-left').getAttribute('data-installed')).toBe('true');
+    expect(getByTestId('commander-enhancement-installed').textContent).toContain('Installed');
+    expect(queryByTestId('commander-upgrade-start')).toBeNull();
+    act(() => getByTestId('commander-slot-right').click());
+    expect(getByTestId('commander-upgrade-start').getAttribute('data-enhancement')).toBe('cannon');
   });
 
   it('follows accepted running progress, pause and stall state and exposes pause/cancel actions', () => {
@@ -93,5 +125,12 @@ describe('visible commander enhancement controls', () => {
     const { getByTestId } = fixture({ ...available, active: true, queued: true, enabled: false, controllable: false });
     expect((getByTestId('commander-upgrade-pause') as HTMLButtonElement).disabled).toBe(true);
     expect((getByTestId('commander-upgrade-cancel') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('does not reset the running module when another body slot is inspected', () => {
+    const { getByTestId } = fixture({ ...available, active: true, queued: true, activeEnhancementId: 'cannon', progress: .42 });
+    act(() => getByTestId('commander-slot-back').click());
+    expect(getByTestId('commander-upgrade-progress').getAttribute('aria-label')).toContain('Main cannon amplifier: 42%');
+    expect(getByTestId('commander-slot-right').className).toContain('is-fitting');
   });
 });

@@ -63,8 +63,8 @@ export function collectIcons(): IconIndexEntry[] {
 }
 
 /** Returns the number of SVG files written. */
-export function writeIcons(): number {
-  const svgDir = join(ICONS_DIR, 'svg');
+export function writeIcons(outDir = ICONS_DIR): number {
+  const svgDir = join(outDir, 'svg');
   const files = new Map<string, string>();
   for (const form of Object.keys(FORMS) as IconForm[]) files.set(`forms/${form}.svg`, formSvg(form, { title: FORMS[form].label }));
   for (const g of Object.keys(GLYPHS).sort()) files.set(`glyphs/${g}.svg`, glyphSvg(g, { title: GLYPHS[g]!.label }));
@@ -93,6 +93,6 @@ export function writeIcons(): number {
     mkdirSync(dirname(p), { recursive: true });
     writeFileSync(p, `${svg}\n`);
   }
-  writeFileSync(join(ICONS_DIR, 'icons.json'), `${JSON.stringify({ schema: 'faf-icons/1', icons }, null, 2)}\n`);
+  writeFileSync(join(outDir, 'icons.json'), `${JSON.stringify({ schema: 'faf-icons/1', icons }, null, 2)}\n`);
   return files.size;
 }

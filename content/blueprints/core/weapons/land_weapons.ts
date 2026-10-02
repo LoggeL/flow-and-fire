@@ -3,6 +3,7 @@ import { defineWeapon } from '../../../../packages/blueprints/src/define.ts';
 
 export default [
   defineWeapon({id:'core:wpn_reeve_cannon',sim:{range:22,minRange:1,damage:100,reloadSec:1,muzzleVelocity:35,projectile:'core:prj_shell_heavy',salvo:1},view:{fx:{muzzle:'core:fx_muzzle_large',impact:'core:fx_explosion_small'}}}),
+  defineWeapon({ id: 'core:wpn_reeve_cannon_enhanced', extends: 'core:wpn_reeve_cannon', sim: { range: 32, damage: 150 } }),
   defineWeapon({id:'core:wpn_reeve_tapshot',sim:{range:22,damage:15000,damageRadius:2.5,reloadSec:3.3,muzzleVelocity:25,projectile:'core:prj_shell_heavy',salvo:1,overcharge:true},view:{fx:{muzzle:'core:fx_muzzle_large',impact:'core:fx_explosion_large'}}}),
   defineWeapon({id:'core:wpn_plumb_break',sim:{range:1,damage:2000,damageRadius:40,damageInnerRadius:30,damageFalloff:'quarter',reloadSec:1,muzzleVelocity:1,projectile:'core:prj_blast',salvo:1},view:{fx:{impact:'core:fx_explosion_large'}}}),
   defineWeapon({

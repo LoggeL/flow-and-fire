@@ -1,7 +1,7 @@
 /**
  * Strategic icon atlas (C2, PLAN §3.7 "IconPass … MSDF-Atlas, Tech-Striche, Blip/Ghost").
  *
- * Source: `content/icons/icons.json` (own vector designs, see its `comment`): one entry per icon id of
+ * Source: `content/icons/atlas-source.json` (own vector designs, see its `comment`): one entry per icon id of
  * `ICON_IDS` (@faf/blueprints/view) plus the special glyphs {@link SPECIAL_GLYPHS} (`generic` fallback
  * form, tech strokes `tech1..3`, `blip` and `ghost` frames).
  *
@@ -38,6 +38,8 @@ export const PX_RANGE = 4;
 export const ALPHA_RANGE = 12;
 export const ATLAS_COLUMNS = 8;
 export const ICON_SOURCE_FORMAT = 'faf-icons';
+/** Authored vector source; kept separate from the generated model-viewer index `icons.json`. */
+export const ICON_SOURCE_FILENAME = 'atlas-source.json';
 export const ICON_ATLAS_FORMAT = 'faf-icon-atlas';
 /** Glyphs besides the class icons (fallback form, tech strokes, blip and ghost frames). */
 export const SPECIAL_GLYPHS = ['generic', 'tech1', 'tech2', 'tech3', 'blip', 'ghost'] as const;
@@ -97,7 +99,7 @@ export function atlasGlyphOrder(): string[] {
 }
 
 function fail(path: string, msg: string): never {
-  throw new Error(`icons.json ${path}: ${msg}`);
+  throw new Error(`${ICON_SOURCE_FILENAME} ${path}: ${msg}`);
 }
 
 function num(v: unknown, path: string): number {

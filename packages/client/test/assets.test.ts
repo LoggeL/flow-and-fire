@@ -455,7 +455,7 @@ describe('visual table from view.json + models', () => {
     expect(t3[cube]!.meshes).toHaveLength(1);
     const bp = decodeSimBin(new Uint8Array(readFileSync(join(REPO_ROOT, 'content/generated/sim.bin'))));
     const flags = [...commanderVisuals(bp)];
-    const commanderIds = ['core:cmd_commander', 'core:cmd_commander_armored', 'core:cmd_commander_engineering'];
+    const commanderIds = ['core:cmd_commander', 'core:cmd_commander_armored', 'core:cmd_commander_cannon', 'core:cmd_commander_cannon_protection', 'core:cmd_commander_engineering', 'core:cmd_commander_engineering_cannon', 'core:cmd_commander_enhanced', 'core:cmd_commander_protection'];
     expect(bp.ids.filter((_id, index) => flags[index] !== 0)).toEqual(commanderIds);
     for (const id of commanderIds) expect(flags[bp.indexOf(id)]).toBe(1);
     expect(flags[bp.indexOf('core:cube')]).toBe(0);

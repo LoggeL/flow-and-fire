@@ -389,6 +389,7 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
     const idx = r.accessor(Number(prim.indices));
     let colors: Float32Array | undefined;
     let mask: Uint8Array | undefined;
+    let surface: Uint8Array | undefined;
     if (prim.attributes.COLOR_0 !== undefined || prim.attributes._MASK !== undefined) {
       if (prim.attributes.COLOR_0 === undefined || prim.attributes._MASK === undefined) throw new GlbError('format', 'COLOR_0 and _MASK must be paired');
       const col = r.accessor(Number(prim.attributes.COLOR_0)), channels = r.accessor(Number(prim.attributes._MASK));
@@ -400,6 +401,16 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
         const value = channels.values[i]!;
         if (!Number.isFinite(value) || value < 0 || value > 1) throw new GlbError('format', 'palette mask out of range');
         mask[i] = Math.round(value * 255);
+      }
+    }
+    if (prim.attributes._SURFACE !== undefined) {
+      const grain = r.accessor(Number(prim.attributes._SURFACE));
+      if (grain.count !== n || grain.comps !== 1) throw new GlbError('format', '_SURFACE must be SCALAR with the vertex count');
+      surface = new Uint8Array(n);
+      for (let i = 0; i < n; i++) {
+        const value = grain.values[i]!;
+        if (!Number.isFinite(value) || value < 0 || value > 1) throw new GlbError('format', 'surface weight out of range');
+        surface[i] = Math.round(value * 255);
       }
     }
     if (idx.comps !== 1 || idx.count % 3 !== 0) throw new GlbError('format', 'indices must be a triangle list');
@@ -414,6 +425,7 @@ export function parseGlb(bytes: Uint8Array, decoder: MeshoptDecoderLike | null):
       normals,
       partIds,
       ...(colors === undefined ? {} : { colors, mask: mask! }),
+      ...(surface === undefined ? {} : { surface }),
       indices,
       vertexCount: n,
       indexCount: idx.count,

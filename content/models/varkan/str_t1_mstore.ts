@@ -8,7 +8,7 @@
  *   Gusssockel 2×2, untere Lage: drei Erzbarren längs (Eisen), obere Lage: zwei Barren quer (Teamfarbe),
  *   Kupfer-Spannbänder, Tech-Streifen (Keramik) hinten.
  */
-import { beveledBox, box, defineModel, stripes } from "@faf/modelkit";
+import { beveledBox, box, defineModel, mirrorX, stripes } from "@faf/modelkit";
 
 const TOP = 0.16;
 const L1 = 0.24; // Höhe untere Lage
@@ -48,6 +48,15 @@ export default defineModel({
             tag: "hull",
           }),
         ),
+        // Chamfered retaining jaws and recessed end hatches make the stack a contained industrial store.
+        mirrorX(beveledBox({
+          size: [0.14, 0.4, 0.2], at: [0.7, TOP + 0.2, 0],
+          bevel: { top: 0.05 }, mat: "copper", maxLod: 0, tag: "hull",
+        })),
+        ...[-0.82, 0.82].map((z) => beveledBox({
+          size: [0.75, 0.18, 0.12], at: [0, TOP + 0.12, z],
+          bevel: { top: 0.04 }, mat: "soot", maxLod: 0, tag: "hull",
+        })),
         // Kupfer-Spannbänder über den Stapel
         ...[0.46, -0.46].map((x) =>
           box({

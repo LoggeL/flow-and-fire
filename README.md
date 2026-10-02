@@ -20,9 +20,9 @@ Aktuell enthalten:
 
 - Gefechte gegen die KI mit den Stufen Leicht, Normal und Schwer, konfigurierbaren Regeln und Karten.
 - Masse- und Energiewirtschaft, Gebäudeplatzierung, Baureihen, Fabrikwarteschlangen und Wiederholproduktion; bezahlter Ausbau von Extraktoren und Landwerken bis T3.
-- Commander, Pioniere, Späher, Panzer und Artillerie; bezahlte Engineering- und Panzerungsupgrades für den ACU.
+- Commander, Pioniere, Späher, Panzer und Artillerie; drei unabhängig kombinierbare ACU-Ausbauplätze für Baumodul, Hauptwaffen-Verstärker und Rückenpanzerung.
 - Vorerkundetes Gelände, Nebel des Krieges, Radar, Geschütztürme, Strategic Zoom, Mehrfachauswahl, Kontrollgruppen und kontextabhängige Rechtsklickbefehle.
-- HUD nach der Forged-Alliance-Referenz: Stahlrahmen, kompakte Ressourcenanzeigen, horizontale Bauliste mit Bildern der echten Modelle, Mehrfachauswahl und deutsche sowie englische Menüs.
+- HUD nach der Forged-Alliance-Referenz: Stahlrahmen, kompakte Ressourcenanzeigen, horizontale Bauliste mit Bildern der echten Modelle, Mehrfachauswahl und deutsche sowie englische Menüs. Die Varkan-Modelle haben überarbeitete Panzerplatten, Gelenke und eine dezente Metalltextur.
 - Ergebnisstatistik, Spielsound und Replay-Bibliothek mit Import, Export, Suche, Umbenennen, Zeitnavigation und Wiedergabetempo. Lokale Aufnahmen hängen von den Speicherfunktionen des Browsers ab.
 
 ## Schnellstart mit Docker
@@ -78,6 +78,8 @@ pnpm --filter @faf/game run serve --host 0.0.0.0 --port 4173 --coi
 | Befehl einreihen | Shift + Rechtsklick |
 | Bauen | Bauoption im HUD wählen, dann gültigen Standort anklicken; Shift + Ziehen legt eine Baureihe an, Shift hält den Baumodus aktiv |
 | Masseextraktor ausbauen | Einen fertigen Extraktor auswählen, im HUD T2 oder T3 wählen; Fortschritt, Pause und Abbruch stehen dort |
+| Commander ausbauen | ACU wählen, linker Arm, Rücken oder rechter Arm anklicken und das angezeigte Modul einbauen. Kosten und Wirkung stehen direkt am Einbauknopf |
+| Fabrik ausbauen | Ein fertiges Landwerk wählen und den Ausbau auf T2 oder T3 starten. Die Produktion ruht während des Einbaus, die Bauliste bleibt erhalten |
 | Bau- oder Befehlsmodus abbrechen | Esc oder Rechtsklick |
 | Auswahl stoppen | S kurz drücken |
 | Kontrollgruppe speichern / aufrufen | Strg oder Alt + Ziffer / Ziffer; doppelt drücken zentriert die Kamera |

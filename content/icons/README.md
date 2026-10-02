@@ -16,5 +16,13 @@ unter `#/icons` (Teamfarbe umschaltbar, Echtgröße 20 px × Faktor).
 - Teamfarbe im SVG als `var(--team, #2F6FD0)` – inline eingebettet per CSS umfärbbar.
 
 Dateien: `svg/forms/`, `svg/glyphs/`, `svg/notches/`, `svg/states/blip_*.svg`, `svg/icons/<id>.svg`
-(+ `.selected.svg`, Gebäude + `.ghost.svg`). Der MSDF-Atlas für den IconPass entsteht später in der
-Asset-Pipeline aus derselben Grammatik.
+(+ `.selected.svg`, Gebäude + `.ghost.svg`).
+
+Der MSDF-Atlas für den IconPass nutzt die separat gepflegten Vektoren in [`atlas-source.json`](atlas-source.json)
+(`format: "faf-icons"`, `version: 1`, `glyphs`). Diese Datei enthält die ursprünglichen C2-Glyphen für die
+`ICON_IDS` des Spiel-Renderers sowie Fallback, Tech-Striche, Blip und Ghost. Die Vektoren wurden unverändert aus
+Commit `af8a6a3` übernommen; `pnpm assets` baut daraus den Atlas.
+
+`icons.json` ist ausschließlich der erzeugte Grammatik-Index für den Model-Viewer (`schema: "faf-icons/1"`,
+`icons`). `pnpm models` ersetzt diesen Index und die SVGs, lässt `atlas-source.json` aber unverändert. So kann
+der Asset-Build nach jeder Modell-Regenerierung dieselben Atlas-Glyphen verwenden.

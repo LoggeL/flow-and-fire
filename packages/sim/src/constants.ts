@@ -33,7 +33,8 @@ export const MAX_MAP_SIZE_WU = 4096;
 // ms6.2: paid stationary mass-extractor successors; prior builds remain available for replays.
 // ms6.3: paid land-factory successors (no production while upgrading, Stop cancels only the
 // upgrade), radar blips in frames, point defense and radar content.
-export const SIM_BUILD = 'faf-sim/ms6.3-factory-tiers-radar';
+// ms6.4: independent paid commander slots, preserving installed modules in every order.
+export const SIM_BUILD = 'faf-sim/ms6.4-commander-enhancements';
 
 /**
  * Rule hash interval in ticks (PLAN §3.5; release: 50). Only the observation cadence: the hash is

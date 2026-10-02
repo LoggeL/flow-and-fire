@@ -8,12 +8,15 @@
  *   hull  – Fuß, Gusssockel, Schürzenplatten, Kupferkranz, 2 Tech-Kerben, Glutschlitz am Heck
  *   grate – Rost-Platte (Team) mit Schlitzen, Joch, 3 senkrechte Rohre mit Kupfermündung; Yaw (PartStream 1)
  */
-import { beveledBox, box, cylinder, defineModel, mirrorX, quad, stripes } from '@faf/modelkit';
+import { beveledBox, box, cylinder, defineModel, frustum, mirrorX, quad, stripes } from '@faf/modelkit';
 
 const TOP = 0.24;
 const G_Y = TOP + 0.1;
 
 const tubeAt = (x: number) => [
+  frustum({ radius: .115, radiusTop: .085, height: 0.14,
+    at: [x, G_Y + 0.16, 0.01], rot: [8, 0, 0], segments: 6, caps: false,
+    mat: 'body', maxLod: 0, tag: 'barrel' }),
   cylinder({ radius: 0.085, height: 0.52, at: [x, G_Y + 0.34, 0.03], rot: [8, 0, 0], segments: 6, caps: 'top', mat: 'dark', keep: true, tag: 'barrel' }),
   cylinder({ radius: 0.1, height: 0.08, at: [x, G_Y + 0.57, 0.065], rot: [8, 0, 0], segments: 6, caps: 'top', mat: 'copper', maxLod: 1, tag: 'barrel' }),
 ];
@@ -41,6 +44,9 @@ export default defineModel({
         quad({ size: [0.64, 0.06], at: [0, G_Y + 0.004, 0.18], mat: 'dark', maxLod: 1 }),
         quad({ size: [0.64, 0.06], at: [0, G_Y + 0.004, -0.18], mat: 'dark', maxLod: 1 }),
         beveledBox({ size: [0.64, 0.1, 0.18], at: [0, G_Y + 0.05, 0], bevel: { top: 0.03 }, mat: 'copper', tag: 'hull' }),
+        // Chamfered receiver cheeks shelter the pipe roots and expose the central copper yoke.
+        mirrorX(beveledBox({ size: [0.13, 0.15, 0.3], at: [0.33, G_Y - 0.025, -0.03],
+          bevel: { top: 0.04 }, mat: 'body', maxLod: 0, tag: 'hull' })),
         // 3 senkrechte Rohre Ø 0,17 (Basis), Kamm quer
         ...tubeAt(0),
         mirrorX(tubeAt(0.22)),

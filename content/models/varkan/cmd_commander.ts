@@ -26,6 +26,7 @@ import {
   frustum,
   quad,
   sphere,
+  strut,
   wedge,
   type Place,
   type Shape,
@@ -67,14 +68,24 @@ function leg(x: number): Shape[] {
       maxLod: 1,
       tag: "legs",
     }),
-    // Unterschenkel (leicht nach hinten geneigt) und Oberschenkel
-    beam([x, 0.16, 0.02], [x, 0.8, -0.1], 0.34, 0.36, {
+    // Verjüngte Gussglieder: schmales Knie, breite Hüfte und Knöchel. Beide Enden bleiben geschlossen.
+    strut({
+      from: [x, 0.16, 0.02],
+      to: [x, 0.8, -0.1],
+      radius: 0.36 / Math.SQRT2,
+      radiusEnd: 0.28 / Math.SQRT2,
+      sides: 4,
       mat: "body",
       keep: true,
       maxLod: 0,
       tag: "legs",
     }),
-    beam([x, 0.74, -0.12], [x, HIP_Y + 0.06, 0.02], 0.38, 0.4, {
+    strut({
+      from: [x, 0.74, -0.12],
+      to: [x, HIP_Y + 0.06, 0.02],
+      radius: 0.32 / Math.SQRT2,
+      radiusEnd: 0.4 / Math.SQRT2,
+      sides: 4,
       mat: "body",
       keep: true,
       maxLod: 0,
@@ -159,13 +170,15 @@ export default defineModel({
           mat: "team",
           maxLod: 0,
         }),
-        quad({
-          size: [0.96, 0.54],
-          at: [0, TORSO_Y1 + 0.004, -0.13],
+        wedge({
+          size: [0.96, 0.04, 0.54],
+          at: [0, TORSO_Y1 + 0.02, -0.13],
+          front: 0.012,
           mat: "team",
           keep: true,
-          maxLod: 1,
+          maxLod: 0,
         }),
+        quad({ size: [0.96, 0.54], at: [0, TORSO_Y1 + 0.004, -0.13], mat: "team", keep: true, minLod: 1, maxLod: 1 }),
         // Schulterplatten (Teamfarbe) – Schulterbreite 2,24 WU
         beveledBox({
           size: [0.56, 0.3, 0.9],
@@ -198,8 +211,8 @@ export default defineModel({
         }),
         sphere({
           radius: 0.3,
-          segments: 6,
-          rings: 3,
+          segments: 8,
+          rings: 2,
           at: [0, TORSO_Y1 + 0.5, 0.1],
           mat: "team",
           keep: true,
@@ -227,8 +240,12 @@ export default defineModel({
           tag: "stack",
         }),
         // Kupfer-Krümmer: Schlotfuß zu den Schultern (der Flow)
-        box({
-          size: [1.3, 0.14, 0.16],
+        cylinder({
+          radius: 0.08,
+          height: 1.3,
+          axis: "x",
+          segments: 6,
+          caps: false,
           at: [0, TORSO_Y1 - 0.02, -0.5],
           mat: "copper",
           maxLod: 0,

@@ -32,6 +32,8 @@ import { dedupe, type Lod, type Poly } from './primitives.ts';
 import { groupMatrix, placeMatrix, type PrimGen, type Shape, type Smooth } from './shapes.ts';
 
 export const LOD_COUNT = 3;
+/** Surface grain is strongest on iron/copper; team, light and glass stay clean. */
+const VARKAN_SURFACE_WEIGHTS = [220, 110, 200, 0, 0, 0, 90] as const;
 /** Automatic LOD reduction: shapes whose largest extent is below this share of the model's largest extent vanish. */
 export const LOD_REMOVE_RATIO: readonly [number, number, number] = [0, 0.08, 0.16];
 
@@ -73,6 +75,8 @@ export interface LodMesh {
   readonly partIds: Uint8Array;
   /** RGBA u8 per vertex: team, glow, metal, AO. */
   readonly mask: Uint8Array;
+  /** Optional neutral armor-grain weight (normalized u8); absent for other factions. */
+  readonly surface?: Uint8Array;
   /** Material slot index per vertex (0–6), for tools; not exported to glTF. */
   readonly matIds: Uint8Array;
   readonly indices: Uint16Array | Uint32Array;
@@ -484,6 +488,7 @@ export function buildModel(def: ModelDef, ctx: BuildContext): BuiltModel {
       partIds: new Uint8Array(acc.part),
       mask: new Uint8Array(acc.mask),
       matIds: new Uint8Array(acc.mat),
+      ...(palette.faction === 'varkan' ? { surface: Uint8Array.from(acc.mat, (slot) => VARKAN_SURFACE_WEIGHTS[slot] ?? 0) } : {}),
       indices: vcount > 65535 ? new Uint32Array(acc.idx) : new Uint16Array(acc.idx),
       triangles: tris,
       vertices: vcount,

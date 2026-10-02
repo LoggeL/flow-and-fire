@@ -18,8 +18,10 @@ import {
   cylinder,
   defineModel,
   frustum,
+  mirrorX,
   radial,
   stripes,
+  wedge,
   torus,
   type PartDef,
   type Shape,
@@ -51,7 +53,7 @@ export function mexParts(tech: 1 | 2 | 3): PartDef[] {
     torus({
       radius: 0.56,
       tube: 0.13,
-      segments: 12,
+      segments: 8,
       sides: 4,
       scale: [1, 0.8, 1],
       at: [0, MEX_TOP + 0.1, 0],
@@ -69,6 +71,20 @@ export function mexParts(tech: 1 | 2 | 3): PartDef[] {
       }),
       { count: 2, startDeg: 45, maxLod: 0 },
     ),
+    // Four sloping jaw housings clamp the ring to the drill platform.
+    radial(
+      wedge({
+        size: [0.2, 0.18, 0.28], at: [0, MEX_TOP + 0.12, 0.76],
+        mat: "body", maxLod: 0, tag: "hull",
+      }),
+      { count: 4 },
+    ),
+    // Two exposed piston guides flank the reciprocating pump, below its glowing crown.
+    mirrorX(cylinder({
+      radius: 0.04, height: pumpH + 0.1, segments: 4, caps: false,
+      at: [0.26, MEX_TOP + (pumpH + 0.1) / 2, 0],
+      mat: "copper", keep: true, maxLod: 0, tag: "barrel",
+    })),
     // Tech-Streifen (Keramik) im hinteren Drittel, quer zwischen Kranz und Sockelkante
     stripes({
       count: tech,

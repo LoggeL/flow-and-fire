@@ -10,7 +10,7 @@
  *   wing – Lager (Kupfer), Joch, Radarplatte (Team, 35° aus der Senkrechten nach hinten gekippt) mit dunkler
  *          Rückenrippe; dreht um +Y (PartStream 1)
  */
-import { beveledBox, box, cylinder, defineModel, frustum, stripes, tube } from '@faf/modelkit';
+import { beveledBox, box, cylinder, defineModel, extrude, frustum, mirrorX, stripes, strut, tube } from '@faf/modelkit';
 
 const TOP = 0.2; // Sockeldach
 const MAST_TOP = 2.05;
@@ -39,6 +39,11 @@ export default defineModel({
         // Mast: dunkler Fuß + dünner Kupferschaft (Flow-Leitung zum Horcher)
         frustum({ radius: 0.2, radiusTop: 0.12, height: 0.24, at: [0, TOP + 0.34, 0.05], segments: 6, caps: false, mat: 'dark', tag: 'mast' }),
         cylinder({ radius: 0.1, height: MAST_TOP - TOP - 0.46, at: [0, (MAST_TOP + TOP + 0.46) / 2, 0.05], segments: 6, caps: 'top', mat: 'copper', keep: true, tag: 'mast' }),
+        // Broad diagonal mast bracing supports the array without adding another animated part.
+        mirrorX(strut({
+          from: [0.26, TOP + 0.3, 0.05], to: [0, TOP + 0.9, 0.05],
+          radius: 0.04, sides: 4, caps: false, mat: "body", maxLod: 0,
+        })),
         stripes({ count: 1, width: 0.12, rot: [0, 90, 0], at: [0, TOP + 0.034, -0.78] }),
       ],
     },
@@ -50,7 +55,12 @@ export default defineModel({
         cylinder({ radius: 0.15, height: 0.1, at: [0, MAST_TOP + 0.05, 0.05], segments: 6, mat: 'copper', tag: 'mast' }),
         beveledBox({ size: [0.2, 0.12, 0.34], at: [0, MAST_TOP + 0.14, 0.0], bevel: { top: 0.03 }, mat: 'body', tag: 'boom' }),
         // Radarplatte 1,6 × 0,8 × 0,1 (Team), 35° nach hinten gekippt, mit Rückenrippe
-        box({ size: [1.6, PLATE_L, 0.08], at: [0, PY, PZ], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
+        extrude({ profile: [
+          [-0.70, -PLATE_L / 2], [0.70, -PLATE_L / 2],
+          [0.8, -PLATE_L / 2 + 0.1], [0.8, PLATE_L / 2 - 0.1],
+          [0.70, PLATE_L / 2], [-0.70, PLATE_L / 2],
+          [-0.8, PLATE_L / 2 - 0.1], [-0.8, -PLATE_L / 2 + 0.1],
+        ], depth: 0.08, axis: "z", at: [0, PY, PZ], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
         box({ size: [1.2, PLATE_L * 0.6, 0.08], at: [0, PY - 0.04 * Math.sin(TILT), PZ - 0.07], rot: [-TILT_DEG, 0, 0], mat: 'dark', maxLod: 1, tag: 'wing' }),
       ],
     },

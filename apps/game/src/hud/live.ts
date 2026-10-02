@@ -1,4 +1,5 @@
 /** Live HUD adapter. Simulation state comes exclusively from the accepted frame. */
+import { COMMANDER_ENHANCEMENTS, commanderEnhancementAdded, commanderEnhancementCostId, commanderEnhancementMask, commanderEnhancementTarget, type CommanderEnhancementId, type CommanderEnhancementSlot } from '@faf/rules';
 import { batch, effect, signal } from '@preact/signals';
 import { ActionMap, buildDragGrid, interpolatedPos, type Action, type BuildGesture } from '@faf/client';
 import { UnitFlags, EcoField, FrameFlags, WatchOrderType, Op, encodeMove, encodeTarget, encodeFactoryQueue, encodeFactoryQueueEdit, encodeTogglePause, type FrameReader } from '@faf/protocol';
@@ -48,19 +49,33 @@ export interface GameHudPorts {
   /** Converts the finished live match and opens it in the replay player. */
   watchMatchReplay?(): void;
 }
-export interface CommanderUpgradeState {
+export interface UpgradeWorkState {
   readonly handle: number; readonly currentTypeId: string; readonly targetTypeId: string | null;
-  readonly stage: 'base' | 'engineering' | 'armored'; readonly active: boolean; readonly queued: boolean;
+  readonly active: boolean; readonly queued: boolean;
   readonly progress: number; readonly paused: boolean; readonly stalled: boolean; readonly enabled: boolean; readonly controllable: boolean;
   readonly mass: number; readonly energy: number; readonly buildPower: number; readonly hpMax: number;
   readonly targetBuildPower: number; readonly targetHpMax: number; readonly remainingS: number | null;
 }
-export interface ExtractorUpgradeState extends Omit<CommanderUpgradeState, 'stage'> {
+export interface CommanderEnhancementState {
+  readonly id: CommanderEnhancementId; readonly slot: CommanderEnhancementSlot;
+  readonly installed: boolean; readonly enabled: boolean; readonly targetTypeId: string | null;
+  readonly mass: number; readonly energy: number; readonly buildTime: number;
+  readonly targetBuildPower: number; readonly targetHpMax: number;
+  readonly targetWeaponRange: number; readonly targetWeaponDps: number;
+}
+export interface CommanderUpgradeState extends UpgradeWorkState {
+  readonly stage: 'base' | 'engineering' | 'armored';
+  readonly enhancements: readonly CommanderEnhancementState[];
+  readonly activeEnhancementId: CommanderEnhancementId | null;
+  readonly weaponRange: number; readonly weaponDps: number;
+}
+export type { CommanderEnhancementId, CommanderEnhancementSlot } from '@faf/rules';
+export interface ExtractorUpgradeState extends UpgradeWorkState {
   readonly tier: number; readonly targetTier: number | null;
   readonly massIncome: number; readonly targetMassIncome: number;
   readonly energyUpkeep: number; readonly targetEnergyUpkeep: number;
 }
-export interface FactoryUpgradeState extends Omit<CommanderUpgradeState, 'stage'> {
+export interface FactoryUpgradeState extends UpgradeWorkState {
   readonly tier: number; readonly targetTier: number | null;
   /** HUD type ids of mobile units only the successor can produce. */
   readonly unlocks: readonly string[];
@@ -705,13 +720,14 @@ export class GameHudController {
       range=Math.max(range,table.weaponRangeCol[weapon]!/4096);}
     return {dps,range};
   }
-  startCommanderUpgrade(): void {
+  startCommanderUpgrade(moduleId?: CommanderEnhancementId): void {
     const game = this.game, frame = game?.client.lastFrame;
     if (!game || !frame || game.client.readOnlyCommands) return;
     this.updateCommanderUpgrade(frame);
     const state = this.commanderUpgrade.peek();
-    if (!state?.enabled || !state.targetTypeId) return;
-    const bp = game.bp.indexOf(state.targetTypeId), payload = new Uint8Array(2);
+    const module = moduleId ? state?.enhancements.find(entry => entry.id === moduleId) : state?.enhancements.find(entry => entry.enabled);
+    if (!state?.enabled || !module?.enabled || !module.targetTypeId) return;
+    const bp = game.bp.indexOf(module.targetTypeId), payload = new Uint8Array(2);
     if (bp < 0) return;
     new DataView(payload.buffer).setUint16(0, bp, true);
     this.cancelMode();
@@ -762,7 +778,8 @@ export class GameHudController {
     const game = this.game, indices = this.selectedIndices();
     if (!game || !frame || indices.length !== 1) { this.commanderUpgrade.value = null; return; }
     const i = indices[0]!, bp = frame.unitVisual(i), id = game.bp.ids[bp]!;
-    if (id !== 'core:cmd_commander' && id !== 'core:cmd_commander_engineering' && id !== 'core:cmd_commander_armored') {
+    const installedMask = commanderEnhancementMask(id);
+    if (installedMask < 0) {
       this.commanderUpgrade.value = null; return;
     }
     const handle = frame.unitHandle(i), watch = this.watchIndex(handle), successor = game.bp.upgradesTo(bp);
@@ -770,23 +787,43 @@ export class GameHudController {
     if (watch >= 0) for (let k = 0; k < frame.watchTargetCount(watch); k++) queued ||= frame.watchTargetType(watch, k) === WatchOrderType.Upgrade;
     const active = watch >= 0 && frame.watchTargetCount(watch) > 0 && frame.watchTargetType(watch, 0) === WatchOrderType.Upgrade && frame.watchFactoryBp(watch) >= 0;
     const target = active ? frame.watchFactoryBp(watch) : successor, progress = active ? frame.watchFactoryProgress(watch) / 65536 : 0;
+    const activeEnhancementId = active ? commanderEnhancementAdded(id, game.bp.ids[target]!) : null;
+    const costModule = target >= 0 ? commanderEnhancementAdded(id, game.bp.ids[target]!) : null;
+    const costBp = costModule ? game.bp.indexOf(commanderEnhancementCostId(costModule)) : target;
     const paused = (frame.unitFlags(i) & UnitFlags.Paused) !== 0, stalled = active && !paused && (frame.unitFlags(i) & UnitFlags.Stalled) !== 0;
     let effectivePower: number | null = null;
     if (active && frame.flowTick === frame.tick) for (let f = 0; f < frame.flowCount; f++) if (frame.flowHandle(f) === handle) {
       for (let e = 0; e < frame.ecoCount; e++) if (frame.ecoArmy(e) === frame.flowArmy(f))
         effectivePower = Math.floor(frame.flowEffectivePower(f) * frame.ecoRatio(e, frame.flowPriority(f)) / 65536) * 10 / 65536;
     }
+    const controllable = !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy;
+    const weapons = this.weaponStats(bp);
+    const enhancements = COMMANDER_ENHANCEMENTS.map(module => {
+      const targetTypeId = commanderEnhancementTarget(id, module.id), next = targetTypeId ? game.bp.indexOf(targetTypeId) : -1;
+      const moduleCost = game.bp.indexOf(commanderEnhancementCostId(module.id));
+      const stats = next >= 0 ? this.weaponStats(next) : weapons;
+      return {
+        id: module.id, slot: module.slot, installed: (installedMask & module.bit) !== 0,
+        enabled: next >= 0 && moduleCost >= 0 && !queued && controllable,
+        targetTypeId, mass: moduleCost >= 0 ? game.bp.massCostCol[moduleCost]! : 0,
+        energy: moduleCost >= 0 ? game.bp.energyCostCol[moduleCost]! : 0,
+        buildTime: moduleCost >= 0 ? game.bp.buildTimeCol[moduleCost]! : 0,
+        targetBuildPower: game.bp.buildPowerQ16PerTickCol[next >= 0 ? next : bp]! * 10 / 65536,
+        targetHpMax: game.bp.maxHpCol[next >= 0 ? next : bp]!,
+        targetWeaponRange: stats.range, targetWeaponDps: stats.dps,
+      };
+    });
     this.commanderUpgrade.value = {
       handle, currentTypeId: id, targetTypeId: target >= 0 ? game.bp.ids[target]! : null,
-      stage: id.endsWith('_armored') ? 'armored' : id.endsWith('_engineering') ? 'engineering' : 'base',
-      active, queued, progress, paused, stalled,
-      controllable: !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
-      enabled: target >= 0 && !queued && !game.client.readOnlyCommands && frame.unitArmy(i) === game.client.playerArmy,
-      mass: target >= 0 ? game.bp.massCostCol[target]! : 0, energy: target >= 0 ? game.bp.energyCostCol[target]! : 0,
+      stage: (installedMask & 4) !== 0 ? 'armored' : (installedMask & 1) !== 0 ? 'engineering' : 'base',
+      active, queued, progress, paused, stalled, controllable,
+      enabled: enhancements.some(module => module.enabled), enhancements, activeEnhancementId,
+      weaponRange: weapons.range, weaponDps: weapons.dps,
+      mass: costBp >= 0 ? game.bp.massCostCol[costBp]! : 0, energy: costBp >= 0 ? game.bp.energyCostCol[costBp]! : 0,
       buildPower: game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536, hpMax: game.bp.maxHpCol[bp]!,
       targetBuildPower: target >= 0 ? game.bp.buildPowerQ16PerTickCol[target]! * 10 / 65536 : game.bp.buildPowerQ16PerTickCol[bp]! * 10 / 65536,
       targetHpMax: target >= 0 ? game.bp.maxHpCol[target]! : game.bp.maxHpCol[bp]!,
-      remainingS: active && target >= 0 && !paused && effectivePower !== null && effectivePower > 0 ? (1 - progress) * game.bp.buildTimeCol[target]! / effectivePower : null,
+      remainingS: active && costBp >= 0 && !paused && effectivePower !== null && effectivePower > 0 ? (1 - progress) * game.bp.buildTimeCol[costBp]! / effectivePower : null,
     };
   }
 

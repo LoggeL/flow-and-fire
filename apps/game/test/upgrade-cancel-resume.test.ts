@@ -154,4 +154,24 @@ describe('explicit upgrade cancel after pause', () => {
     expect(result.divergences).toEqual([]); expect(result.complete).toBe(true); expect(result.compared).toBeGreaterThan(0);
     expect(result.fullHash).toBe(finalHash);
   });
+  it('selects a paid cannon slot first, reports accepted costs/time, blocks another module during work and preserves it after cancel', () => {
+    const f = fixture(), w = f.sim.world;
+    expect(f.controller.commanderUpgrade.value?.enhancements.map(m => [m.id, m.slot, m.installed, m.enabled])).toEqual([
+      ['engineering', 'left', false, true], ['cannon', 'right', false, true], ['armor', 'back', false, true],
+    ]);
+    f.controller.startCommanderUpgrade('cannon'); f.advance(10);
+    expect(f.controller.commanderUpgrade.value).toMatchObject({ activeEnhancementId: 'cannon', mass: 250, energy: 2500, weaponRange: 22, weaponDps: 100 });
+    expect(f.controller.commanderUpgrade.value?.remainingS).toBeCloseTo(49, 1);
+    f.controller.startCommanderUpgrade('engineering'); expect(f.drain()).toEqual([]);
+    for (let n = 0; n < 600 && f.controller.commanderUpgrade.value?.active; n++) f.advance();
+    expect(f.controller.commanderUpgrade.value).toMatchObject({ currentTypeId: 'core:cmd_commander_cannon', weaponRange: 32, weaponDps: 150 });
+    expect(f.controller.commanderUpgrade.value?.enhancements.find(m => m.id === 'cannon')).toMatchObject({ installed: true, enabled: false });
+    f.advance(); // The completed upgrade leaves the accepted order queue on the next tick.
+    f.controller.startCommanderUpgrade('armor'); f.advance(5);
+    expect(f.controller.commanderUpgrade.value).toMatchObject({ activeEnhancementId: 'armor', mass: 400, energy: 5000 });
+    f.controller.cancelCommanderUpgrade(); f.advance();
+    expect(w.bp.ids[w.units.col.bp[unit(w, f.commander)]!]).toBe('core:cmd_commander_cannon');
+    expect(f.controller.commanderUpgrade.value?.enhancements.find(m => m.id === 'armor')).toMatchObject({ installed: false, enabled: true });
+  });
+
 });

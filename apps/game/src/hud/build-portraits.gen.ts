@@ -2,7 +2,12 @@
 export const BUILD_PORTRAIT_MODELS: Readonly<Record<string, string>> = {
   "core:cmd_commander": "cmd_commander",
   "core:cmd_commander_armored": "cmd_commander",
+  "core:cmd_commander_cannon": "cmd_commander",
+  "core:cmd_commander_cannon_protection": "cmd_commander",
   "core:cmd_commander_engineering": "cmd_commander",
+  "core:cmd_commander_engineering_cannon": "cmd_commander",
+  "core:cmd_commander_enhanced": "cmd_commander",
+  "core:cmd_commander_protection": "cmd_commander",
   "core:eng_t1": "lnd_t1_engineer",
   "core:fac_land_t1": "str_t1_fac_land",
   "core:fac_land_t2": "str_t2_fac_land",

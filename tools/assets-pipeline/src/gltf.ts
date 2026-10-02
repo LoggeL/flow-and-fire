@@ -54,6 +54,10 @@ export function modelDocument(model: ModelDef): Document {
         .setAttribute('_MASK', acc('mask', 'VEC4', lod.mask, true));
       prim.setMaterial(doc.createMaterial(`${name}_vertex`).setBaseColorFactor([1, 1, 1, 1]).setMetallicFactor(0).setRoughnessFactor(0.85));
     }
+    if (lod.surface !== undefined) {
+      if (lod.surface.length !== lod.partIds.length) throw new RangeError(`${model.id}: invalid surface array`);
+      prim.setAttribute('_SURFACE', acc('surface', 'SCALAR', lod.surface, true));
+    }
     const extras = { faf: { lod: i, parts } };
     const mesh = doc.createMesh(`${name}_lod${i}`).addPrimitive(prim).setExtras(extras);
     scene.addChild(doc.createNode(`lod${i}`).setMesh(mesh).setExtras({ faf: { lod: i } }));

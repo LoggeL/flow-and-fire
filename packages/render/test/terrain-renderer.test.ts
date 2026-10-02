@@ -231,9 +231,9 @@ describe('Renderer with terrain (fake WebGL2)', () => {
     gl.resetCalls();
     gl.restore();
     // heightmap, albedo array, 2 splat planes, 2 × 3 decal textures (static + dynamic), parts, pivots,
-    // visual data, icon atlas, probe target
+    // visual data, icon atlas, shared armor grain, probe target
     expect(gl.created('texture')).toBe(texturesBefore);
-    expect(texturesBefore).toBe(15);
+    expect(texturesBefore).toBe(16);
     expect(gl.created('buffer')).toBe(buffersBefore);
     expect(gl.created('program')).toBe(programsBefore);
     // Heightmap content re-uploaded in the new generation.
@@ -241,7 +241,7 @@ describe('Renderer with terrain (fake WebGL2)', () => {
     expect(gl.state.textures.get(hm.obj)!.uploads[0]!.data).toEqual(t.heights);
     // Albedo array: one texSubImage3D per layer + mipmaps.
     expect(gl.named('texSubImage3D').length).toBe(8);
-    expect(gl.named('generateMipmap').length).toBe(1);
+    expect(gl.named('generateMipmap').length).toBe(2);
     // Decal data restored from the CPU copy.
     const dec = liveTextures(gl, GL.RGBA32I)[0]!;
     expect((gl.state.textures.get(dec.obj)!.uploads[0]!.data as Int32Array)[0]).toBe(30 * 4096);

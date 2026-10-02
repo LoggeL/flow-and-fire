@@ -1,12 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { asArmyId, asTick, fx, type Handle } from '@faf/fixed';
+import { COMMANDER_VARIANTS, commanderEnhancementTarget, type CommanderEnhancementId } from '@faf/rules';
 import { compileContent } from '@faf/blueprints/content';
 import { decodeSimBin, type SimBpTable } from '@faf/blueprints/simbin';
 import { CmdFlags, encodeTarget, encodeTogglePause, FlowFlags, FrameReader, FrameWriter, Op, WatchOrderType, type CommandEnvelope } from '@faf/protocol';
-import { createWorld, fullHash, restore, snapshot, step, writeFrame, type World } from '../src/index.ts';
+import { createWorld, initializeSkirmish, fullHash, restore, snapshot, step, writeFrame, type World } from '../src/index.ts';
 import { spawnUnit } from '../src/units.ts';
 import { queueLength } from '../src/orders.ts';
 import { upgradeTarget } from '../src/upgrade.ts';
+import { quietCorner } from './support/corner.ts';
 import { nextSeq } from './support/fixtures.ts';
 
 let bp: SimBpTable;
@@ -38,9 +40,9 @@ function frame(w: World, u: number, viewer = 0): FrameReader {
 }
 
 describe('real commander self upgrades', () => {
-  it('compiles a bounded successor chain with inherited weapons, motion, economy and base builder capability', () => {
+  it('compiles a default successor path while retaining engineering/armor stats and base builder capability', () => {
     const base = bp.indexOf(BASE), engineering = bp.indexOf(ENGINEERING), armored = bp.indexOf(ARMORED);
-    expect(bp.upgradesTo(base)).toBe(engineering); expect(bp.upgradesTo(engineering)).toBe(armored); expect(bp.upgradesTo(armored)).toBe(-1);
+    expect(bp.upgradesTo(base)).toBe(engineering); expect(bp.upgradesTo(engineering)).toBe(armored); expect(bp.upgradesTo(armored)).toBe(bp.indexOf('core:cmd_commander_enhanced'));
     expect([bp.maxHpCol[base], bp.maxHpCol[engineering], bp.maxHpCol[armored]]).toEqual([12000, 16000, 24000]);
     expect([bp.buildPowerQ16PerTickCol[base], bp.buildPowerQ16PerTickCol[engineering], bp.buildPowerQ16PerTickCol[armored]]).toEqual([65536, 131072, 131072]);
     for (const target of [engineering, armored]) {
@@ -79,7 +81,7 @@ describe('real commander self upgrades', () => {
     expect(empty.units.col.ecoRatio[a]).toBeLessThan(65536); expect(empty.units.col.bp[a]).toBe(bp.indexOf(BASE));
     expect(empty.armies.col.massStored.get(0)).toBeGreaterThanOrEqual(0); expect(empty.armies.col.energyStored.get(0)).toBeGreaterThanOrEqual(0);
   });
-  it('rejects wrong armies, skipped prerequisites, malformed payloads and noncommanders; duplicate queued requests cannot reset progress', () => {
+  it('rejects wrong armies, multi-module jumps, malformed payloads and noncommanders; duplicate queued requests cannot reset progress', () => {
     const w = world(), u = spawn(w), engineer = spawn(w, 'core:eng_t1', 0, 15); bank(w);
     step(w, [upgrade(w, u, ENGINEERING, 0, 1), upgrade(w, u, ARMORED), upgrade(w, engineer), cmd(w, u, Op.Upgrade, new Uint8Array(1))]);
     expect(queueLength(w, u)).toBe(0); expect(queueLength(w, engineer)).toBe(0); expect(w.armies.col.massSpent.get(0)).toBe(0);
@@ -107,4 +109,59 @@ describe('real commander self upgrades', () => {
     expect(reader.flowMassSpent(row)).toBe(w.armies.col.massSpent.get(0)); expect(fullHash(w)).toBe(before);
     const foreign = frame(w, u, 1); expect(foreign.watchCount).toBe(0); expect(foreign.flowCount).toBe(0);
   });
+  it.each([
+    ['engineering', 'cannon', 'armor'], ['engineering', 'armor', 'cannon'],
+    ['cannon', 'engineering', 'armor'], ['cannon', 'armor', 'engineering'],
+    ['armor', 'engineering', 'cannon'], ['armor', 'cannon', 'engineering'],
+  ] as readonly (readonly CommanderEnhancementId[])[])('installs modules in order %s / %s / %s, paying each once and preserving prior modules', (...order) => {
+    const w = world(), u = spawn(w), U = w.units.col, handle = w.units.handle(u);
+    let mask = 0, spentMass = 0, spentEnergy = 0;
+    U.hp[u] = U.hp[u]! - 900;
+    for (const module of order) {
+      const before = U.bp[u]!, id = commanderEnhancementTarget(bp.ids[before]!, module)!;
+      bank(w); step(w, [upgrade(w, u, id)]);
+      expect(U.bp[u]).toBe(before); // No partial benefits.
+      const firstMass = w.armies.col.massSpent.get(0), firstEnergy = w.armies.col.energySpent.get(0);
+      const [mass, energy] = paidUntil(w, u, id);
+      spentMass += firstMass + mass; spentEnergy += firstEnergy + energy;
+      mask |= module === 'engineering' ? 1 : module === 'cannon' ? 2 : 4;
+      expect(bp.ids[U.bp[u]!]).toBe(COMMANDER_VARIANTS[mask]);
+      expect(U.hp[u]).toBe(12000 + ((mask & 1) ? 4000 : 0) + ((mask & 4) ? 8000 : 0) - 900);
+      expect(bp.buildPowerQ16PerTickCol[U.bp[u]!]).toBe((mask & 1) ? 131072 : 65536);
+      const weapon = bp.mountWeaponCol[bp.firstMount(U.bp[u]!)]!;
+      expect(bp.weaponRangeCol[weapon]).toBe(((mask & 2) ? 32 : 22) * 4096);
+      expect(bp.weaponDamageCol[weapon]).toBe((mask & 2) ? 150 : 100);
+      expect(w.units.handle(u)).toBe(handle);
+      step(w); // Ordinary order completion.
+      step(w, [upgrade(w, u, id)]); expect(queueLength(w, u)).toBe(0); // Cannot install twice.
+    }
+    expect([spentMass, spentEnergy]).toEqual([950000, 10500000]);
+  });
+  it('cancelled back armor preserves an installed cannon, its weapon and consumed charges', () => {
+    const w = world(), u = spawn(w, 'core:cmd_commander_cannon'); bank(w);
+    step(w, [upgrade(w, u, 'core:cmd_commander_cannon_protection')]);
+    expect(w.units.col.repairPaidMass.get(u)).toBeGreaterThan(0);
+    step(w, [cmd(w, u, Op.Stop, new Uint8Array(0))]);
+    expect(bp.ids[w.units.col.bp[u]!]).toBe('core:cmd_commander_cannon');
+    expect(w.units.col.hp[u]).toBe(12000);
+    expect(bp.weaponDamageCol[bp.mountWeaponCol[bp.firstMount(w.units.col.bp[u]!)]!]).toBe(150);
+    expect(w.units.col.repairDone.get(u)).toBe(0);
+    step(w, [upgrade(w, u, BASE), upgrade(w, u, 'core:cmd_commander_enhanced')]);
+    expect(queueLength(w, u)).toBe(0); // Reject removing modules and adding two at once.
+  });
+  it('fires the enhanced main cannon beyond the base range in the native weapon/projectile simulation', () => {
+    const base = createWorld({ bpTable: bp, seed: 19, armyCount: 2, mapSizeWu: 256 });
+    const enhanced = createWorld({ bpTable: bp, seed: 19, armyCount: 2, mapSizeWu: 256 });
+    const config = { kind: 'skirmish' as const, faction: 0, rules: { unitCap: 100, fog: 'revealed' as const, victory: 'annihilation' as const } };
+    initializeSkirmish(base, config); initializeSkirmish(enhanced, config);
+    const [x, z] = quietCorner(base, bp);
+    spawnUnit(base, bp.indexOf(BASE), 0, fx(x), fx(z), 0);
+    spawnUnit(enhanced, bp.indexOf('core:cmd_commander_cannon'), 0, fx(x), fx(z), 0);
+    const a = spawnUnit(base, bp.indexOf('core:str_t1_pgen'), 1, fx(x + 24), fx(z), 0);
+    const b = spawnUnit(enhanced, bp.indexOf('core:str_t1_pgen'), 1, fx(x + 24), fx(z), 0);
+    for (let tick = 0; tick < 40; tick++) { step(base); step(enhanced); }
+    expect(base.units.col.hp[a]).toBe(620);
+    expect(enhanced.units.col.hp[b]).toBeLessThan(620);
+  });
+
 });

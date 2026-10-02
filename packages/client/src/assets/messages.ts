@@ -117,6 +117,7 @@ export function transferablesOf(m: AssetWorkerMessage): ArrayBuffer[] {
     add(l.partParents);
     add(l.colors);
     add(l.mask);
+    add(l.surface);
   }
   return out;
 }

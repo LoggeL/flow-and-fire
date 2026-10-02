@@ -53,6 +53,7 @@ export function modelDocument(m: BuiltModel): Document {
       .setAttribute('_PARTID', acc('partid', 'SCALAR', lod.partIds))
       .setAttribute('_MASK', acc('mask', 'VEC4', lod.mask, true))
       .setIndices(acc('indices', 'SCALAR', lod.indices));
+    if (lod.surface !== undefined) prim.setAttribute('_SURFACE', acc('surface', 'SCALAR', lod.surface, true));
     const mesh = doc.createMesh(`${name}_lod${i}`).addPrimitive(prim).setExtras({ faf: { lod: i, parts } });
     scene.addChild(doc.createNode(`lod${i}`).setMesh(mesh).setExtras({ faf: { lod: i } }));
   });

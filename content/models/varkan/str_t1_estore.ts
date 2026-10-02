@@ -8,7 +8,7 @@
  *   Gusssockel 2×2, untere Trommel (Eisen), Glutfuge, obere Trommel (Teamfarbe) mit Eisendeckel (Teamfarbe bleibt als
  *   Randband sichtbar), zwei Kupfer-Steigleitungen, Tech-Streifen (Keramik) hinten.
  */
-import { beveledBox, cylinder, defineModel, stripes } from "@faf/modelkit";
+import { beveledBox, cylinder, defineModel, frustum, radial, quad, stripes } from "@faf/modelkit";
 
 const TOP = 0.16;
 const R = 0.8; // Ø 1,6 = 0,8 × Kante
@@ -59,8 +59,9 @@ export default defineModel({
           keep: true,
           tag: "boiler",
         }),
-        cylinder({
+        frustum({
           radius: 0.56,
+          radiusTop: 0.46,
           height: 0.05,
           at: [0, TOP + 2 * H + 0.06 + 0.025, 0],
           segments: 12,
@@ -68,12 +69,17 @@ export default defineModel({
           mat: "body",
           tag: "boiler",
         }),
-        // Kupfer-Steigleitungen vorn links/rechts, an der Trommelwand
-        ...[0.585, -0.585].map((x) =>
+        // Four dark vent slots cut the broad upper drum into readable heat-bank sectors.
+        radial(quad({
+          size: [0.09, 0.22], at: [0, TOP + 2 * H + 0.064, 0.68],
+          mat: "soot", maxLod: 0,
+        }), { count: 4 }),
+        // Kupfer-Steigleitungen an den vier Seiten der Trommelwand
+        ...[[0.585, 0.585], [-0.585, 0.585], [0.585, -0.585], [-0.585, -0.585]].map(([x, z]) =>
           cylinder({
             radius: 0.09,
             height: 2 * H + 0.12,
-            at: [x, TOP + H + 0.06, 0.585],
+            at: [x!, TOP + H + 0.06, z!],
             segments: 6,
             caps: "top",
             mat: "copper",

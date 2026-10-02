@@ -10,7 +10,7 @@
  *   wing – Lager, Joch, Hauptplatte (Team) + zweite Platte (Team, darüber, mit Spalt), dunkle Rückenrippe;
  *          dreht um +Y (PartStream 1)
  */
-import { beveledBox, box, cylinder, defineModel, frustum, mirrorX, stripes, tube } from '@faf/modelkit';
+import { beveledBox, box, cylinder, defineModel, extrude, frustum, mirrorX, stripes, strut, tube } from '@faf/modelkit';
 
 const TOP = 0.2;
 const MAST_TOP = 2.05;
@@ -44,6 +44,11 @@ export default defineModel({
           cylinder({ radius: 0.09, height: MAST_TOP - TOP - 0.44, at: [MX, (MAST_TOP + TOP + 0.44) / 2, 0.05], segments: 6, caps: false, mat: 'copper', keep: true, tag: 'mast' }),
         ]),
         box({ size: [0.74, 0.14, 0.2], at: [0, MAST_TOP + 0.03, 0.05], mat: 'body', keep: true, tag: 'mast' }),
+        // Cross bracing makes the upgraded twin mast read as an engineered tower.
+        mirrorX(strut({
+          from: [MX, TOP + 0.5, 0.05], to: [-MX, TOP + 1.25, 0.05],
+          radius: 0.04, sides: 4, caps: false, mat: "body", maxLod: 0,
+        })),
         stripes({ count: 3, width: 0.12, rot: [0, 90, 0], at: [0, TOP + 0.034, -0.78] }),
       ],
     },
@@ -55,9 +60,19 @@ export default defineModel({
         cylinder({ radius: 0.15, height: 0.1, at: [0, MAST_TOP + 0.15, 0.05], segments: 6, mat: 'copper', tag: 'mast' }),
         beveledBox({ size: [0.2, 0.12, 0.34], at: [0, MAST_TOP + 0.24, 0.0], bevel: { top: 0.03 }, mat: 'body', tag: 'boom' }),
         // Hauptplatte 1,6 × 0,8 (Team), Fläche nach vorn-oben (35° aus der Senkrechten), wie Horcher I/II
-        box({ size: [1.6, L1, 0.08], at: [0, BASE + (L1 / 2) * Math.cos(TILT), PZ0 - (L1 / 2) * Math.sin(TILT)], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
+        extrude({ profile: [
+          [-0.70, -L1 / 2], [0.70, -L1 / 2],
+          [0.8, -L1 / 2 + 0.1], [0.8, L1 / 2 - 0.1],
+          [0.70, L1 / 2], [-0.70, L1 / 2],
+          [-0.8, L1 / 2 - 0.1], [-0.8, -L1 / 2 + 0.1],
+        ], depth: 0.08, axis: "z", at: [0, BASE + (L1 / 2) * Math.cos(TILT), PZ0 - (L1 / 2) * Math.sin(TILT)], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
         // zweite Platte 1,2 × 0,5 (T3-Merkmal) als Aufsatz über der Hauptplatte, gleiche Neigung, mit Spalt
-        box({ size: [1.2, L2, 0.08], at: [0, BASE + (L1 + GAP + L2 / 2) * Math.cos(TILT), PZ0 - (L1 + GAP + L2 / 2) * Math.sin(TILT)], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
+        extrude({ profile: [
+          [-0.50, -L2 / 2], [0.50, -L2 / 2],
+          [0.6, -L2 / 2 + 0.1], [0.6, L2 / 2 - 0.1],
+          [0.50, L2 / 2], [-0.50, L2 / 2],
+          [-0.6, L2 / 2 - 0.1], [-0.6, -L2 / 2 + 0.1],
+        ], depth: 0.08, axis: "z", at: [0, BASE + (L1 + GAP + L2 / 2) * Math.cos(TILT), PZ0 - (L1 + GAP + L2 / 2) * Math.sin(TILT)], rot: [-TILT_DEG, 0, 0], mat: 'team', keep: true, tag: 'wing' }),
         // Rückenrippe (dunkel) verbindet beide Platten
         box({ size: [0.16, L1 + GAP + L2 * 0.8, 0.1], at: [0, BASE + ((L1 + GAP + L2 * 0.8) / 2) * Math.cos(TILT) - 0.07 * Math.sin(TILT), PZ0 - ((L1 + GAP + L2 * 0.8) / 2) * Math.sin(TILT) - 0.07 * Math.cos(TILT)], rot: [-TILT_DEG, 0, 0], mat: 'dark', tag: 'wing' }),
       ],

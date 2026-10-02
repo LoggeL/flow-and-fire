@@ -1,15 +1,18 @@
 // MS3 (C2): own MSDF generator + strategic icon atlas – reconstruction quality, sharp corners, edge
 // coloring, deterministic atlas layout and manifest entries.
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ICON_IDS } from '@faf/blueprints/view';
 import { describe, expect, it } from 'vitest';
+import { writeIcons } from '../../../content/icons/build.ts';
 import {
   ALPHA_RANGE,
   ATLAS_COLUMNS,
   BLUE,
   CELL_PX,
   GREEN,
+  ICON_SOURCE_FILENAME,
   PX_RANGE,
   RED,
   REPO_ROOT,
@@ -35,7 +38,8 @@ import {
   type Shape,
 } from '../src/index.ts';
 
-const source = parseIconSource(readFileSync(join(REPO_ROOT, 'content', 'icons', 'icons.json'), 'utf8'));
+const sourceText = readFileSync(join(REPO_ROOT, 'content', 'icons', ICON_SOURCE_FILENAME), 'utf8');
+const source = parseIconSource(sourceText);
 
 /** Bilinear sample (clamp to edge) of channel c of an n × n RGBA8 cell at texel coordinates (u, v). */
 function sample(rgba: Uint8Array, n: number, u: number, v: number, c: number): number {
@@ -132,6 +136,22 @@ describe('MSDF generator', () => {
 });
 
 describe('icon atlas', () => {
+  it('preserves authored atlas vectors when the model icon index is regenerated', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'faf-icon-sources-'));
+    try {
+      const sourceFile = join(dir, ICON_SOURCE_FILENAME);
+      writeFileSync(sourceFile, sourceText);
+      writeIcons(dir);
+      const regeneratedIndex = JSON.parse(readFileSync(join(dir, 'icons.json'), 'utf8')) as { schema: string; icons: unknown[] };
+      expect(regeneratedIndex.schema).toBe('faf-icons/1');
+      expect(regeneratedIndex.icons.length).toBeGreaterThan(0);
+      expect(readFileSync(sourceFile, 'utf8')).toBe(sourceText);
+      expect(parseIconSource(readFileSync(sourceFile, 'utf8')).glyphs).toEqual(source.glyphs);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('covers every ICON_IDS entry plus the special glyphs in a stable grid layout', () => {
     const a = buildIconAtlas(source);
     const ids = a.metrics.glyphs.map((g) => g.id);

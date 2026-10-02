@@ -71,6 +71,8 @@ export default defineModel({
         beveledBox({ size: [0.9, 0.09, 0.42], at: [0, GRATE_TOP - 0.045, GRATE_Z], bevel: { top: 0.025 }, mat: 'team', tag: 'grate' }),
         quad({ size: [0.72, 0.05], at: [0, GRATE_TOP + 0.004, GRATE_Z + 0.12], mat: 'dark', maxLod: 1 }),
         quad({ size: [0.72, 0.05], at: [0, GRATE_TOP + 0.004, GRATE_Z - 0.12], mat: 'dark', maxLod: 1 }),
+        // Gemeinsame Guss-Verschlussbrücke verbindet die drei Rohre über dem Rost.
+        beveledBox({ size: [0.76, 0.08, 0.1], at: [0, GRATE_TOP + 0.105, GRATE_Z - 0.07], bevel: { topFront: 0.025 }, mat: 'body', maxLod: 0, tag: 'grate' }),
         ...flakBarrel(-0.27),
         ...flakBarrel(0),
         ...flakBarrel(0.27),

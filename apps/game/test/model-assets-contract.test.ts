@@ -19,8 +19,8 @@ import { writeCompressedGlb, writeRawGlb } from '../../../tools/assets-pipeline/
 describe('existing Varkan art in the real Game asset contracts', () => {
   it('compiles only live references, preserves source scale/parts/LODs, and changes no sim bytes', async () => {
     const content = await compileContent({ includeTest: false });
-    // ms6.3 content (factory tiers, point defense, radar); model generation must preserve these bytes.
-    expect(content.simHash).toBe(0x249a86a9);
+    // ms6.4 content (independent ACU modules); model generation must preserve these bytes.
+    expect(content.simHash).toBe(0x02629d13);
     expect(content.simBin).toEqual(new Uint8Array(await readFile(join(REPO_ROOT, 'content/generated/sim.bin'))));
     for (const [id, unit] of Object.entries(LIVE_VARKAN_MODELS)) {
       expect(content.view.visuals.find(v => v.id === id)?.mesh, id).toBe(`units/varkan/${unit}`);
