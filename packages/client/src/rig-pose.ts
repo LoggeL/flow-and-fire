@@ -61,7 +61,8 @@ export class RigPoseAdapter {
 
   update(frame: FrameReader, units: Uint8Array, parts: Uint8Array, table: VisualTable): void {
     const repeated = frame.tick === this.tick;
-    if ((!repeated && frame.tick !== this.tick + 1) || frame.viewer !== this.viewer || this.epoch === 0xffffffff) this.reset();
+    const consecutive = frame.tick === this.tick + 1;
+    if (frame.tick < this.tick || frame.viewer !== this.viewer || this.epoch === 0xffffffff) this.reset();
     this.tick = frame.tick;
     this.viewer = frame.viewer;
     const epoch = ++this.epoch;
@@ -126,7 +127,11 @@ export class RigPoseAdapter {
       const slot = handle & HANDLE_INDEX_MASK;
       const bounded = slot < this.handles.length;
       const mask = frame.unitMountAimMask(i) & ((1 << Math.min(sourceCount, MAX_PARTS_PER_UNIT)) - 1);
-      const history = bounded && this.seen[slot] !== 0 && this.seen[slot] === epoch - 1 && this.handles[slot] === handle && this.visuals[slot] === visual && (flags & UnitFlags.NoInterp) === 0;
+      const activityHistory = bounded && this.seen[slot] !== 0 && this.seen[slot] === epoch - 1 && this.handles[slot] === handle && this.visuals[slot] === visual && (flags & UnitFlags.NoInterp) === 0;
+      // Skipped accepted ticks invalidate interpolated aim and travel phase. A stationary
+      // structure keeps its last pose and advances only the one currently observed activity
+      // sample; missed production/upkeep is unknown and never synthesized as catch-up.
+      const history = activityHistory && (repeated || consecutive);
       const previousMask = history ? this.masks[slot]! : 0;
       // A paused host can still emit explicitly stepped, advancing Sim ticks. Only
       // repeated accepted ticks hold the pose; the header alone cannot suppress a step.
@@ -139,8 +144,8 @@ export class RigPoseAdapter {
       const phase = (previousPhase + distance * Math.PI / 2) % (Math.PI * 2);
       const previousGaitPitch = history ? this.gaitPitch[slot]! : 0;
       const gaitPitch = frozen ? previousGaitPitch : distance > 0 ? Math.round(Math.sin(phase) * 4369) : 0;
-      const priorActivity = history ? this.activityPhase[slot]! : 0;
-      const priorGate = history ? this.gatePitch[slot]! : 0;
+      const priorActivity = activityHistory ? this.activityPhase[slot]! : 0;
+      const priorGate = activityHistory ? this.gatePitch[slot]! : 0;
       let activityPhase = priorActivity, gatePitch = priorGate;
       const complete = frame.unitBuild(i) === 255 && (flags & (UnitFlags.Wreck | UnitFlags.Ghost | UnitFlags.Blip)) === 0;
       const blocked = frozen || (flags & (UnitFlags.Paused | UnitFlags.Stalled | UnitFlags.NoInterp)) !== 0;
@@ -169,15 +174,15 @@ export class RigPoseAdapter {
             if (!complete) gatePitch = 0;
             else if (!blocked && production) gatePitch = Math.min(14564, priorGate + 1365);
             else if (!blocked && ((flags & UnitFlags.Idle) !== 0 || (enabled && (flowFlags & FlowFlags.Contributing) === 0))) gatePitch = Math.max(0, priorGate - 1365);
-            pp = blocked || !history || !complete ? gatePitch : priorGate; cp = gatePitch;
+            pp = blocked || !activityHistory || !complete ? gatePitch : priorGate; cp = gatePitch;
           } else {
             if (!complete) activityPhase = 0;
             else if (!blocked && upkeep) activityPhase = (priorActivity + (binding.activity === 'radar-spin' ? 1092 : 2731)) & 65535;
             if (binding.activity === 'radar-spin') {
-              py = blocked || !history || !complete ? activityPhase : priorActivity; cy = activityPhase;
+              py = blocked || !activityHistory || !complete ? activityPhase : priorActivity; cy = activityPhase;
             } else {
               cp = Math.round(Math.sin(activityPhase * Math.PI / 32768) * PUMP_PITCH);
-              pp = blocked || !history || !complete ? cp : Math.round(Math.sin(priorActivity * Math.PI / 32768) * PUMP_PITCH);
+              pp = blocked || !activityHistory || !complete ? cp : Math.round(Math.sin(priorActivity * Math.PI / 32768) * PUMP_PITCH);
             }
           }
         } else if (binding?.gait !== undefined && mountParts) {

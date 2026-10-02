@@ -132,6 +132,28 @@ test('native paid T1 and T2 factory production animates gates and holds on pause
     expect(actor(resumed, factory.handle).work!.progress).toBeGreaterThan(actor(held, factory.handle).work!.progress);
     expect(part(resumed, factory.handle).curPitch - part(held, factory.handle).curPitch).toBeGreaterThan(0);
     expect(part(resumed, factory.handle).curPitch - part(held, factory.handle).curPitch).toBeLessThanOrEqual((resumed.tick - held.tick) * 1365);
+    // Live presentation can accept several sim ticks between render frames. Exercise
+    // ordinary running production as well as the consecutive manual-step observations.
+    await page.keyboard.press('KeyP');
+    await expect.poll(() => page.evaluate(() => window.__faf!.paused)).toBe(false);
+    const liveStart = await state(page, [factory.handle]);
+    await page.waitForFunction(tick => window.__faf!.tick >= tick, liveStart.tick + 18);
+    await rendered(page); const liveOpen = await state(page, [factory.handle]);
+    expect(liveOpen.paused).toBe(false);
+    expect(actor(liveOpen, factory.handle).work?.product).toBe(factory.product);
+    expect(actor(liveOpen, factory.handle).work!.progress).toBeGreaterThan(actor(liveStart, factory.handle).work!.progress);
+    expect(part(liveOpen, factory.handle).curPitch).toBe(14564);
+    await page.waitForFunction(tick => window.__faf!.tick >= tick, liveOpen.tick + 6);
+    await rendered(page); const liveHeldOpen = await state(page, [factory.handle]);
+    expect(liveHeldOpen.paused).toBe(false);
+    expect(actor(liveHeldOpen, factory.handle).work?.product).toBe(factory.product);
+    expect(actor(liveHeldOpen, factory.handle).work!.progress).toBeGreaterThan(actor(liveOpen, factory.handle).work!.progress);
+    expect(part(liveHeldOpen, factory.handle).curPitch).toBe(14564);
+    await page.keyboard.press('KeyP');
+    await expect.poll(() => page.evaluate(() => window.__faf!.paused)).toBe(true);
+    await rendered(page); const livePaused = await state(page, [factory.handle]);
+    expect(part(livePaused, factory.handle).curPitch).toBe(14564);
+    const liveRun = { liveStart, liveOpen, liveHeldOpen, livePaused };
     await info.attach(`native-${factory.id.replace(':', '-')}-producing`, { body: await page.screenshot(), contentType: 'image/png' });
     await queue.getByRole('button', { name: 'Leeren', exact: true }).click(); await accepted(page, 2);
     // Clearing the queue preserves its current product. Observe its real completion before idle.
@@ -144,7 +166,7 @@ test('native paid T1 and T2 factory production animates gates and holds on pause
     const closed = await state(page, [factory.handle]);
     expect(actor(closed, factory.handle).work?.product).toBeNull();
     expect(part(closed, factory.handle)).toMatchObject({ prevYaw: 0, curYaw: 0, prevPitch: 0, curPitch: 0 });
-    rows.push({ factory, idle, begun, samples, operating, wallPause, paused, held, resumed, completed, closed });
+    rows.push({ factory, idle, begun, samples, operating, wallPause, paused, held, resumed, liveRun, completed, closed });
   }
 
   // An actual native Build supplies the incomplete case, rather than fabricated build flags.

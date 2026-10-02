@@ -186,12 +186,12 @@ describe('accepted-frame structure activity', () => {
     }
   });
 
-  it.each([factory, mex, radar])('clears activity history across handle replacement, viewer switch, skip, rewind, NoInterp and reload', v => {
-    for (const reason of ['handle', 'viewer', 'skip', 'rewind', 'NoInterp', 'reload']) {
+  it.each([factory, mex, radar])('clears activity history across handle replacement, viewer switch, rewind, NoInterp and reload', v => {
+    for (const reason of ['handle', 'viewer', 'rewind', 'NoInterp', 'reload']) {
       const a = new RigPoseAdapter(), active = { producing: v === factory };
       update(a, frame(10, active), v); update(a, frame(11, active), v);
       if (reason === 'reload') a.reset();
-      const f = frame(reason === 'skip' ? 14 : reason === 'rewind' ? 1 : 12,
+      const f = frame(reason === 'rewind' ? 1 : 12,
         { ...active, ...(reason === 'handle' ? { handle: handle + 0x100000 } : {}),
           ...(reason === 'viewer' ? { viewer: 1, army: 1 } : {}), ...(reason === 'NoInterp' ? { flags: UnitFlags.NoInterp } : {}) });
       const p = update(a, f, v);
@@ -199,6 +199,32 @@ describe('accepted-frame structure activity', () => {
       const fresh = update(new RigPoseAdapter(), f, v);
       expect(p).toEqual(fresh);
     }
+  });
+
+  it('opens the gate fully during paid production despite dropped forward observations, holds unknown activity and closes only on observed idle', () => {
+    const a = new RigPoseAdapter();
+    let tick = 419, pitch = 0;
+    for (let observed = 0; observed < 14; observed++) {
+      tick += observed % 3 === 0 ? 3 : 1;
+      const p = update(a, frame(tick, { producing: true }), factory);
+      expect(p.curPitch).toBe(Math.min(14564, pitch + 1365));
+      if (observed > 0) expect(p.prevPitch).toBe(pitch);
+      pitch = p.curPitch;
+    }
+    expect(pitch).toBe(14564);
+    expect(update(a, frame(tick + 8, { flow: false }), factory)).toMatchObject({ prevPitch: 14564, curPitch: 14564 });
+    expect(update(a, frame(tick + 15, { producing: true, targetSpent: 0 }), factory)).toMatchObject({ prevPitch: 14564, curPitch: 14564 });
+    expect(update(a, frame(tick + 20, { flags: UnitFlags.Idle, flow: false }), factory)).toMatchObject({ prevPitch: 14564, curPitch: 13199 });
+    expect(update(a, frame(tick + 30, { flags: UnitFlags.Paused, producing: true }), factory)).toMatchObject({ prevPitch: 13199, curPitch: 13199 });
+  });
+
+  it.each([mex, radar])('keeps passive phase across forward frame loss without synthesizing upkeep for skipped ticks', v => {
+    const dropped = new RigPoseAdapter(), continuous = new RigPoseAdapter();
+    update(dropped, frame(10), v); update(continuous, frame(10), v);
+    expect(update(dropped, frame(20), v)).toEqual(update(continuous, frame(11), v));
+    const held = update(dropped, frame(30, { flow: false }), v);
+    expect(held.prevYaw).toBe(held.curYaw); expect(held.prevPitch).toBe(held.curPitch);
+    expect(update(dropped, frame(50), v)).toEqual(update(continuous, frame(12), v));
   });
 
   it('never changes the accepted frame bytes and submits structure poses through reusable buffers without mount channels', () => {
