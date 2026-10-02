@@ -45,12 +45,13 @@ function ControllerView({controller}: {controller:GameHudController}) {
     return ()=> {window.removeEventListener('keydown',onKey,true);window.removeEventListener('resize',update);};
   },[controller,m]);
   const screen=controller.screen.value, ghost=controller.ghost.value, queuedGhosts=controller.queuedGhosts.value, dragGhosts=controller.dragGhosts.value;
-  const menuHouse=screen==='main'?m.menus.skirmish.slots.value.find(slot=>!slot.ai)?.color:undefined;
+  const menuScene=screen==='main'||screen==='skirmish';
+  const menuHouse=menuScene?m.menus.skirmish.slots.value.find(slot=>slot.controller==='human')?.color:undefined;
   const menuAccent=menuHouse===undefined?undefined:chosenArmyColor(menuHouse);
-  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen} data-menu-house-color={menuHouse} style={menuAccent===undefined?undefined:{'--menu-accent':`#${menuAccent.toString(16).padStart(6,'0')}`}}>
+  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen} data-menu-scene={menuScene} data-menu-house-color={menuHouse} style={menuAccent===undefined?undefined:{'--menu-accent':`#${menuAccent.toString(16).padStart(6,'0')}`}}>
     <HudProvider model={m} commands={controller.commands}>
-      {screen==='main'&&<MenuBackdrop/>}
-      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu logo={<BrandLogo/>}/>:screen==='skirmish'?<SkirmishSetup/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
+      {menuScene&&<MenuBackdrop/>}
+      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu logo={<BrandLogo/>}/>:screen==='skirmish'?<SkirmishSetup logo={<BrandLogo compact/>}/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
     </HudProvider>
     {controller.error.value&&<div class="live-action-error" role="alert" data-testid="hud-action-error">{controller.error.value}<button type="button" aria-label={m.locale.value==='en'?'Close':'Schließen'} onClick={()=>{controller.error.value=null;}}>×</button></div>}
     {screen==='game'&&<RangeRings rings={controller.rangeRings.value} locale={m.locale.value}/>}

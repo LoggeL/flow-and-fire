@@ -20,10 +20,11 @@ for (const { color, mode, hex, channel } of [
     await setFrontendLocale(page, 'de');
     await main.getByRole('button', { name: /Gefecht/ }).click();
     const setup = page.getByTestId('SkirmishSetup');
-    await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+    await setup.getByTestId('skirmish-map-hollow-ridge').click();
     const colors = setup.getByRole('combobox', { name: 'Farbe', exact: true });
     if (color === 'red') await colors.nth(1).selectOption('blue');
     await colors.nth(0).selectOption(color);
+    await setup.getByTestId('skirmish-advanced-options').locator('summary').click();
     await setup.getByRole('combobox', { name: 'Teamfarben', exact: true }).selectOption(mode);
     await setup.getByRole('button', { name: 'Gefecht starten', exact: true }).click();
     await page.waitForFunction(() => window.__faf?.ready && window.__faf.tick >= 3, null, { timeout: 60_000 });

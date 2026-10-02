@@ -22,7 +22,7 @@ function sceneBox(x: number, y: number, width: number, height: number) {
   return {left: `${x / 1672 * 100}%`, top: `${y / 941 * 100}%`, width: `${width / 1672 * 100}%`, height: `${height / 941 * 100}%`};
 }
 
-/** Mounted only on the main screen. OS motion preference always takes precedence. */
+/** Shared by the main menu and match setup. OS motion preference always takes precedence. */
 export function MenuBackdrop() {
   const m = useHud(), enabled = m.menus.settings.values.value.backgroundAnimation;
   const [systemReduced, setSystemReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);

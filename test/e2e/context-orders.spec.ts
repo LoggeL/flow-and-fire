@@ -19,7 +19,7 @@ async function start(page: Page, url: string) {
   await setFrontendLocale(page, 'de');
   await main.getByRole('button', { name: /Gefecht/ }).click();
   const setup = page.getByTestId('SkirmishSetup'); await expect(setup).toBeVisible();
-  await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+  await setup.getByTestId('skirmish-map-hollow-ridge').click();
   await setup.getByRole('combobox', { name: 'KI-Stufe', exact: true }).selectOption('normal');
   await setup.getByRole('button', { name: 'Gefecht starten', exact: true }).click();
   // The Sim hook becomes ready before the session's audio/first-frame loading overlay retires.

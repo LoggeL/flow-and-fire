@@ -35,8 +35,9 @@ export async function startHumanAiSkirmish(page: Page, options: { navigate?: boo
   await main.getByRole('button', { name: /Gefecht/ }).click();
   const setup = page.getByTestId('SkirmishSetup');
   await expect(setup).toBeVisible();
-  await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+  await setup.getByTestId('skirmish-map-hollow-ridge').click();
   await setup.getByRole('combobox', { name: 'KI-Stufe', exact: true }).selectOption('normal');
+  await setup.getByTestId('skirmish-advanced-options').locator('summary').click();
   // Keyboard interaction uses the real native range control and its onInput handler.
   const speed = setup.getByRole('slider', { name: 'Anfangstempo', exact: true });
   await speed.focus();
