@@ -1,12 +1,15 @@
-/** Expands private-safe mount observations into render-only poses for the original GLB hierarchy. */
+/** Expands accepted mount and activity observations into render-only poses for the original GLB hierarchy. */
 import { HANDLE_INDEX_MASK } from '@faf/fixed';
 import {
   DEFAULT_FRAME_CAPS, MAX_PARTS_PER_UNIT, PART_RECORD_BYTES, UNIT_RECORD_BYTES,
-  UNIT_OFF_FLAGS, UNIT_OFF_PART_BASE, UNIT_OFF_PART_COUNT, UNIT_OFF_RESERVED, UnitFlags,
+  UNIT_OFF_FLAGS, UNIT_OFF_PART_BASE, UNIT_OFF_PART_COUNT, UNIT_OFF_RESERVED, FlowFlags, UnitFlags,
   type FrameReader,
 } from '@faf/protocol';
 import type { VisualTable } from '@faf/render';
 import type { RigVisualEntry } from './visuals.ts';
+
+/** Five-degree pump stroke, within the authored collar and piston-guide clearance. */
+const PUMP_PITCH = 910;
 
 export interface RigPoseStats {
   animatedUnits: number;
@@ -34,6 +37,9 @@ export class RigPoseAdapter {
   private readonly pitch = new Int16Array(DEFAULT_FRAME_CAPS.units * MAX_PARTS_PER_UNIT);
   private readonly gaitPhase = new Float64Array(DEFAULT_FRAME_CAPS.units);
   private readonly gaitPitch = new Int16Array(DEFAULT_FRAME_CAPS.units);
+  private readonly activityPhase = new Uint16Array(DEFAULT_FRAME_CAPS.units);
+  private readonly gatePitch = new Int16Array(DEFAULT_FRAME_CAPS.units);
+  private readonly flowIndices = new Int32Array(DEFAULT_FRAME_CAPS.units);
   private epoch = 0;
   private tick = -1;
   private viewer = -2;
@@ -54,7 +60,8 @@ export class RigPoseAdapter {
   }
 
   update(frame: FrameReader, units: Uint8Array, parts: Uint8Array, table: VisualTable): void {
-    if (frame.tick !== this.tick + 1 || frame.viewer !== this.viewer || this.epoch === 0xffffffff) this.reset();
+    const repeated = frame.tick === this.tick;
+    if ((!repeated && frame.tick !== this.tick + 1) || frame.viewer !== this.viewer || this.epoch === 0xffffffff) this.reset();
     this.tick = frame.tick;
     this.viewer = frame.viewer;
     const epoch = ++this.epoch;
@@ -62,13 +69,25 @@ export class RigPoseAdapter {
     const stats = this.stats;
     stats.animatedUnits = stats.walkingUnits = stats.observedMounts = stats.overflowUnits = 0;
     let flagged = false;
-    for (let i = 0; i < frame.unitCount; i++) if ((frame.unitFlags(i) & UnitFlags.MountAimParts) !== 0) { flagged = true; break; }
+    for (let i = 0; i < frame.unitCount; i++) {
+      const rig = (table[frame.unitVisual(i)] as RigVisualEntry | null | undefined)?.rig;
+      if ((frame.unitFlags(i) & UnitFlags.MountAimParts) !== 0 || rig?.some(p => p?.activity !== undefined)) { flagged = true; break; }
+    }
     this.units = units;
     this.parts = parts;
     this.partCount = frame.partCount;
     if (!flagged) return;
     // The public frame capacity bounds the accepted live output. Reject malformed oversized input.
     if (frame.unitCount > DEFAULT_FRAME_CAPS.units) throw new RangeError('rig unit capacity');
+    // Economy observations are private to the viewer. Index once, with handle-generation
+    // checks at each lookup, rather than searching the whole flow section per unit.
+    this.flowIndices.fill(-1);
+    if (frame.flowTick === frame.tick) {
+      for (let f = 0; f < frame.flowCount; f++) {
+        const slot = frame.flowHandle(f) & HANDLE_INDEX_MASK;
+        if (slot < this.flowIndices.length && frame.flowArmy(f) === frame.viewer) this.flowIndices[slot] = f;
+      }
+    }
     this.unitBuffer.set(units);
     this.units = this.unitBuffer;
     this.parts = this.partBuffer;
@@ -80,7 +99,10 @@ export class RigPoseAdapter {
       const sourceBase = frame.unitPartBase(i);
       const sourceCount = frame.unitPartCount(i);
       const outBase = this.partCount;
-      if ((flags & UnitFlags.MountAimParts) === 0) {
+      const visual = frame.unitVisual(i);
+      const rig = (table[visual] as RigVisualEntry | null | undefined)?.rig;
+      const mountParts = (flags & UnitFlags.MountAimParts) !== 0;
+      if (!mountParts && !rig?.some(p => p?.activity !== undefined)) {
         // Preserve legacy direct mesh-part records and their addressing after repacking.
         if (sourceBase + sourceCount <= frame.partCount && outBase + sourceCount <= this.partCapacity) {
           for (let k = 0; k < sourceCount; k++) this.copyPart(frame, sourceBase + k);
@@ -94,8 +116,6 @@ export class RigPoseAdapter {
       dv.setUint16(o + UNIT_OFF_FLAGS, flags & ~UnitFlags.MountAimParts, true);
       dv.setUint8(o + UNIT_OFF_RESERVED, 0);
       dv.setUint8(o + UNIT_OFF_PART_COUNT, 0);
-      const visual = frame.unitVisual(i);
-      const rig = (table[visual] as RigVisualEntry | null | undefined)?.rig;
       if (rig === undefined || rig.length < 2) continue;
       const count = rig.length - 1;
       if (count > MAX_PARTS_PER_UNIT || outBase + count > this.partCapacity || sourceBase + sourceCount > frame.partCount) {
@@ -108,23 +128,61 @@ export class RigPoseAdapter {
       const mask = frame.unitMountAimMask(i) & ((1 << Math.min(sourceCount, MAX_PARTS_PER_UNIT)) - 1);
       const history = bounded && this.seen[slot] !== 0 && this.seen[slot] === epoch - 1 && this.handles[slot] === handle && this.visuals[slot] === visual && (flags & UnitFlags.NoInterp) === 0;
       const previousMask = history ? this.masks[slot]! : 0;
+      const frozen = repeated || frame.paused;
       // One four-WU travel cycle, opposite 24-degree hip swings. There is no wall-clock
-      // motion: paused or stationary accepted frames return the legs to their rest pose.
-      const distance = (flags & UnitFlags.NoInterp) !== 0 ? 0 : Math.hypot(
+      // motion: stationary accepted frames return to rest; paused/repeated frames hold.
+      const distance = frozen || (flags & UnitFlags.NoInterp) !== 0 ? 0 : Math.hypot(
         frame.unitCur(i, 0) - frame.unitPrev(i, 0), frame.unitCur(i, 2) - frame.unitPrev(i, 2)) / 4096;
       const previousPhase = history ? this.gaitPhase[slot]! : 0;
       const phase = (previousPhase + distance * Math.PI / 2) % (Math.PI * 2);
-      const gaitPitch = distance > 0 ? Math.round(Math.sin(phase) * 4369) : 0;
       const previousGaitPitch = history ? this.gaitPitch[slot]! : 0;
+      const gaitPitch = frozen ? previousGaitPitch : distance > 0 ? Math.round(Math.sin(phase) * 4369) : 0;
+      const priorActivity = history ? this.activityPhase[slot]! : 0;
+      const priorGate = history ? this.gatePitch[slot]! : 0;
+      let activityPhase = priorActivity, gatePitch = priorGate;
+      const complete = frame.unitBuild(i) === 255 && (flags & (UnitFlags.Wreck | UnitFlags.Ghost | UnitFlags.Blip)) === 0;
+      const blocked = frozen || (flags & (UnitFlags.Paused | UnitFlags.Stalled | UnitFlags.NoInterp)) !== 0;
+      const flow = this.flowIndex(frame, handle);
+      const flowFlags = flow >= 0 && frame.flowBp(flow) === visual ? frame.flowFlags(flow) : 0;
+      const enabled = (flowFlags & FlowFlags.Enabled) !== 0 && (flowFlags & (FlowFlags.Paused | FlowFlags.BuildSite)) === 0;
+      const upkeep = enabled && (flowFlags & FlowFlags.Billed) !== 0 && flow >= 0 &&
+        (frame.flowMassSpent(flow) > 0 || frame.flowEnergySpent(flow) > 0);
+      const targetFlow = flow >= 0 ? this.flowIndex(frame, frame.flowTarget(flow)) : -1;
+      const production = enabled && (flags & UnitFlags.Idle) === 0 && (flowFlags & FlowFlags.Contributing) !== 0 &&
+        targetFlow >= 0 && (frame.flowFlags(targetFlow) & FlowFlags.Paused) === 0 && frame.flowEffectivePower(targetFlow) > 0 &&
+        (frame.flowMassSpent(targetFlow) > 0 || frame.flowEnergySpent(targetFlow) > 0);
       let walking = false;
       for (let k = 1; k <= count; k++) {
         const binding = rig[k];
         let py = 0, cy = 0, pp = 0, cp = 0;
-        if (binding?.gait !== undefined) {
-          pp = previousGaitPitch * binding.gait;
+        if (!mountParts && k <= sourceCount) {
+          const source = sourceBase + k - 1;
+          py = frame.partPrevYaw(source); cy = frame.partCurYaw(source);
+          pp = frame.partPrevPitch(source); cp = frame.partCurPitch(source);
+        }
+        if (binding?.activity !== undefined) {
+          if (binding.activity === 'factory-gate') {
+            // Open the top-hinged gate for observed production; close at a known idle.
+            // Missing/private flow, stalls and pauses retain the last observed pose.
+            if (!complete) gatePitch = 0;
+            else if (!blocked && production) gatePitch = Math.min(14564, priorGate + 1365);
+            else if (!blocked && ((flags & UnitFlags.Idle) !== 0 || (enabled && (flowFlags & FlowFlags.Contributing) === 0))) gatePitch = Math.max(0, priorGate - 1365);
+            pp = blocked || !history || !complete ? gatePitch : priorGate; cp = gatePitch;
+          } else {
+            if (!complete) activityPhase = 0;
+            else if (!blocked && upkeep) activityPhase = (priorActivity + (binding.activity === 'radar-spin' ? 1092 : 2731)) & 65535;
+            if (binding.activity === 'radar-spin') {
+              py = blocked || !history || !complete ? activityPhase : priorActivity; cy = activityPhase;
+            } else {
+              cp = Math.round(Math.sin(activityPhase * Math.PI / 32768) * PUMP_PITCH);
+              pp = blocked || !history || !complete ? cp : Math.round(Math.sin(priorActivity * Math.PI / 32768) * PUMP_PITCH);
+            }
+          }
+        } else if (binding?.gait !== undefined && mountParts) {
+          pp = (frozen ? gaitPitch : previousGaitPitch) * binding.gait;
           cp = gaitPitch * binding.gait;
           walking ||= distance > 0;
-        } else if (binding !== undefined && binding.mount >= 0 && binding.mount < sourceCount && (mask & (1 << binding.mount)) !== 0) {
+        } else if (mountParts && binding !== undefined && binding.mount >= 0 && binding.mount < sourceCount && (mask & (1 << binding.mount)) !== 0) {
           const m = binding.mount;
           const index = sourceBase + m;
           const worldYaw = frame.partCurYaw(index);
@@ -134,9 +192,9 @@ export class RigPoseAdapter {
           if (binding.yaw) {
             cy = (worldYaw - frame.unitCurYaw(i)) & 65535;
             // On a reset hold the observed world direction while the hull moves, except NoInterp.
-            py = ((prior ? this.yaw[h]! : worldYaw) - ((flags & UnitFlags.NoInterp) !== 0 ? frame.unitCurYaw(i) : frame.unitPrevYaw(i))) & 65535;
+            py = frozen ? cy : ((prior ? this.yaw[h]! : worldYaw) - ((flags & UnitFlags.NoInterp) !== 0 ? frame.unitCurYaw(i) : frame.unitPrevYaw(i))) & 65535;
           }
-          if (binding.pitch) { cp = elevation; pp = prior ? this.pitch[h]! : elevation; }
+          if (binding.pitch) { cp = elevation; pp = !frozen && prior ? this.pitch[h]! : elevation; }
         }
         this.writePart(py, cy, pp, cp);
       }
@@ -153,12 +211,20 @@ export class RigPoseAdapter {
         this.masks[slot] = mask;
         this.gaitPhase[slot] = phase;
         this.gaitPitch[slot] = gaitPitch;
+        this.activityPhase[slot] = activityPhase;
+        this.gatePitch[slot] = gatePitch;
       }
       dv.setUint32(o + UNIT_OFF_PART_BASE, outBase, true);
       dv.setUint8(o + UNIT_OFF_PART_COUNT, count);
       stats.animatedUnits++;
       if (walking) stats.walkingUnits++;
     }
+  }
+
+  private flowIndex(frame: FrameReader, handle: number): number {
+    const slot = handle & HANDLE_INDEX_MASK;
+    const index = slot < this.flowIndices.length ? this.flowIndices[slot]! : -1;
+    return index >= 0 && frame.flowHandle(index) === handle ? index : -1;
   }
 
   /** On-demand diagnostics of the buffers actually submitted to the renderer. No World access. */

@@ -22,7 +22,9 @@ import {
   extrude,
   mirrorX,
   quad,
+  strut,
   stripes,
+  tube,
   wedge,
   type PartDef,
   type Shape,
@@ -328,9 +330,117 @@ export function worksParts(tech: 1 | 2 | 3, kind: "land" | "air"): PartDef[] {
   ];
 }
 
+/** T1-Landwerk allein: Die gemeinsame Grundform bleibt für alle anderen Werke bytegleich. */
+function detailedLandFactoryParts(): PartDef[] {
+  const [baseHull, baseGate] = worksParts(1, "land");
+  const hull: Shape[] = [...baseHull!.shapes];
+  const gate: Shape[] = [...baseGate!.shapes];
+
+  // Aufgeschraubte Panzerkassetten zwischen sichtbaren tragenden Wandrahmen.
+  for (const z of [-2.8, -0.85, 1.02]) {
+    hull.push(
+      mirrorX(beveledBox({
+        size: [0.16, 1.08, 1.5], at: [3.73, 1.05, z], bevel: { top: 0.06, bottom: 0.035, topFront: 0.15 },
+        mat: "body", maxLod: 0, tag: "hull",
+      })),
+      mirrorX(box({ size: [0.025, 0.58, 1.12], at: [3.818, 1.04, z], mat: "soot", maxLod: 0 })),
+      mirrorX(strut({ from: [3.846, 0.79, z - 0.49], to: [3.846, 1.29, z + 0.49], radius: 0.055, sides: 4, caps: false, mat: "body", maxLod: 0 })),
+      mirrorX(box({ size: [0.05, 0.15, 0.48], at: [3.845, 1.49, z], mat: "copper", maxLod: 0 })),
+    );
+  }
+  for (const z of [-3.72, -1.8, 0.15, 1.96]) {
+    hull.push(
+      mirrorX(box({ size: [0.21, 1.62, 0.19], at: [3.75, 1.17, z], mat: "body", maxLod: 1, tag: "hull" })),
+      mirrorX(beveledBox({ size: [0.38, 0.18, 0.38], at: [3.72, 0.42, z], bevel: { top: 0.07 }, mat: "copper", maxLod: 0 })),
+    );
+  }
+
+  // Portalpfosten und untere Knie tragen den oberen Torzapfen tatsächlich bis zum Sockel.
+  hull.push(
+    mirrorX(box({ size: [0.21, 1.69, 0.28], at: [2.17, 1.195, GATE_Z], mat: "copper", maxLod: 1, tag: "hull" })),
+    mirrorX(strut({ from: [2.17, 0.4, 0.12], to: [2.17, 1.01, GATE_Z], radius: 0.13, sides: 4, caps: false, mat: "body", maxLod: 0 })),
+    mirrorX(beveledBox({ size: [0.36, 0.35, 0.4], at: [2.2, 2.04, GATE_Z], bevel: { top: 0.09 }, mat: "body", maxLod: 1 })),
+    mirrorX(tube({ outer: 0.145, inner: 0.082, height: 0.09, axis: "x", at: [2.255, 2.1, GATE_Z], segments: 12, mat: "copper", smooth: true, maxLod: 0 })),
+    // Tiefe obere Hallenträger bleiben hinter dem Tor und öffnen den vorderen Arbeitsbereich.
+    mirrorX(box({ size: [0.17, 0.23, 3.11], at: [2.07, 1.88, -2.18], mat: "body", maxLod: 1 })),
+    box({ size: [4.14, 0.18, 0.23], at: [0, 1.87, -3.52], mat: "copper", maxLod: 0 }),
+  );
+
+  // Zwei Kühlaggregate auf den Wandkappen: Hohlkragen, Lüfter und abgesetzte Luftkanäle.
+  hull.push(
+    mirrorX(beveledBox({ size: [1.03, 0.27, 1.44], at: [2.95, 2.235, -2.66], bevel: { top: 0.075 }, mat: "team", maxLod: 1 })),
+    // Teamfarbene Wartungskassetten bleiben zwischen den Leitungen als Dachfläche lesbar.
+    beveledBox({ size: [2.56, 0.06, 0.58], at: [0, 2.53, -3.0], bevel: { top: 0.025 }, mat: "team", maxLod: 0 }),
+    beveledBox({ size: [2.56, 0.06, 0.39], at: [0, 2.53, -0.72], bevel: { top: 0.025 }, mat: "team", maxLod: 0 }),
+    mirrorX(tube({ outer: 0.42, inner: 0.35, height: 0.085, at: [2.95, 2.41, -2.61], segments: 16, mat: "copper", smooth: true, maxLod: 0 })),
+    mirrorX(cylinder({ radius: 0.35, height: 0.024, at: [2.95, 2.375, -2.61], segments: 16, caps: "top", mat: "soot", smooth: true, maxLod: 0 })),
+    mirrorX(cylinder({ radius: 0.087, height: 0.046, at: [2.95, 2.411, -2.61], segments: 8, caps: "top", mat: "body", smooth: true, maxLod: 0 })),
+  );
+  for (const angle of [0, 60, 120]) {
+    hull.push(mirrorX(box({ size: [0.6, 0.025, 0.055], at: [2.95, 2.396, -2.61], rot: [0, angle, 0], mat: "body", maxLod: 0 })));
+  }
+  for (const z of [-1.5, -1.28, -1.06, -0.84, -0.62]) {
+    hull.push(
+      mirrorX(box({ size: [0.84, 0.035, 0.12], at: [2.95, 2.135, z], mat: "soot", maxLod: 0 })),
+      mirrorX(box({ size: [0.045, 0.06, 0.14], at: [3.28, 2.151, z], mat: "copper", maxLod: 0 })),
+    );
+  }
+
+  // Flow-Verteiler: dicke Rohrleitungen mit Flanschen und befestigten Ventilgehäusen.
+  for (const z of [-3.12, -1.19]) {
+    hull.push(
+      mirrorX(cylinder({ radius: 0.205, height: 0.13, axis: "z", at: [1.62, 2.6, z], segments: 12, caps: false, mat: "body", smooth: true, maxLod: 0 })),
+      mirrorX(box({ size: [0.43, 0.13, 0.24], at: [1.62, 2.47, z], mat: "body", maxLod: 0 })),
+    );
+  }
+  hull.push(
+    mirrorX(strut({ from: [1.62, 2.6, -2.65], to: [2.4, 2.32, -2.65], radius: 0.1, sides: 10, caps: false, mat: "copper", smooth: true, maxLod: 0 })),
+    mirrorX(cylinder({ radius: 0.18, height: 0.45, axis: "z", at: [3.7, 0.67, -2.7], segments: 12, mat: "copper", smooth: true, maxLod: 0 })),
+    mirrorX(strut({ from: [3.78, 0.85, -2.7], to: [3.78, 1.7, -2.7], radius: 0.07, sides: 8, caps: false, mat: "copper", smooth: true, maxLod: 0 })),
+    // Hintere Wartungsluke und ein Doppelrahmen um die zugängliche Motorkassette.
+    beveledBox({ size: [2.7, 1.14, 0.15], at: [0, 1.02, -3.84], bevel: { top: 0.055 }, mat: "body", maxLod: 0 }),
+    box({ size: [2.1, 0.68, 0.022], at: [0, 1.03, -3.929], mat: "soot", maxLod: 0 }),
+    mirrorX(box({ size: [0.16, 0.22, 0.065], at: [0.78, 0.93, -3.917], mat: "copper", maxLod: 0 })),
+  );
+  for (const x of [-0.64, -0.32, 0, 0.32, 0.64]) {
+    hull.push(box({ size: [0.1, 0.44, 0.035], at: [x, 1.06, -3.93], mat: "body", maxLod: 0 }));
+  }
+
+  // Zwei Förderbahnen rahmen die Gießrinne; Querrippen laufen über die geneigte Ausfahrt.
+  hull.push(
+    mirrorX(box({ size: [0.13, 0.11, 2.9], at: [1.77, 0.361, 1], mat: "copper", maxLod: 1 })),
+    mirrorX(box({ size: [0.075, 0.045, 2.9], at: [0.46, 0.336, 1], mat: "body", maxLod: 0 })),
+    cylinder({ radius: 0.105, height: 3.25, axis: "x", at: [0, 0.26, 2.45], segments: 12, caps: false, mat: "body", smooth: true, maxLod: 0 }),
+    mirrorX(beveledBox({ size: [0.42, 0.17, 0.62], at: [3.0, 0.365, 3.26], bevel: { top: 0.05 }, mat: "body", maxLod: 0 })),
+  );
+  for (const z of [-0.24, 0.14, 0.52, 0.9, 1.28, 1.66, 2.04, 2.42]) {
+    hull.push(mirrorX(box({ size: [1.14, 0.032, 0.16], at: [1.06, 0.329, z], mat: "body", maxLod: 0 })));
+  }
+  for (const z of [2.82, 3.05, 3.28, 3.51, 3.74]) {
+    hull.push(box({ size: [3.8, 0.027, 0.075], at: [0, TOP * (3.95 - z) / 1.3 + 0.017, z], rot: [13, 0, 0], mat: "body", maxLod: 0 }));
+  }
+
+  // Ein echtes Torblatt hinter dem Glutpaneel, komplett am unveränderten oberen Pitch-Scharnier.
+  const gateY = TOP + (WALL_H - 0.1) / 2;
+  gate.push(
+    box({ size: [4.2, 1.64, 0.1], at: [0, gateY, GATE_Z - 0.09], mat: "body", maxLod: 1, tag: "hull" }),
+    cylinder({ radius: 0.079, height: 4.36, axis: "x", at: [0, TOP + WALL_H, GATE_Z], segments: 12, caps: false, mat: "copper", smooth: true, maxLod: 1 }),
+    mirrorX(box({ size: [0.14, 1.72, 0.17], at: [2.04, gateY, GATE_Z + 0.065], mat: "body", maxLod: 1 })),
+    mirrorX(beveledBox({ size: [0.43, 0.24, 0.19], at: [1.77, 0.49, GATE_Z + 0.075], bevel: { top: 0.05 }, mat: "copper", maxLod: 0 })),
+  );
+  for (const y of [0.36, 0.82, 1.49, 1.94]) {
+    gate.push(box({ size: [4.12, 0.09, 0.16], at: [0, y, GATE_Z + 0.06], mat: "body", maxLod: 0 }));
+  }
+  for (const x of [-1.51, -0.53, 0.53, 1.51]) {
+    gate.push(strut({ from: [x - 0.35, 0.88, GATE_Z + 0.075], to: [x + 0.35, 1.43, GATE_Z + 0.075], radius: 0.035, sides: 4, caps: false, mat: "body", maxLod: 0 }));
+  }
+  return [{ ...baseHull!, shapes: hull }, { ...baseGate!, shapes: gate }];
+}
+
 export default defineModel({
   id: "core:str_t1_fac_land",
-  parts: worksParts(1, "land"),
+  budget: { tris: [4000, 1000, 300] },
+  parts: detailedLandFactoryParts(),
   notes:
-    'Grundform v_fac_land (und v_fac_air über worksParts(…, "air")); Werkhallentor = Roster-Anim „tilt“ → Pitch.',
+    'Landwerk I mit Wandkassetten, tragendem Portal, Dachkühlung, Flow-Verteilern und Förderbahnen. Werkhallentor = Roster-Anim „tilt“ → Pitch am unveränderten oberen Scharnier; Zusatzdetails gelten nur für dieses Modell.',
 });

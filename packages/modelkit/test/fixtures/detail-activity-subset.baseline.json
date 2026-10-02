@@ -1,0 +1,364 @@
+{
+  "sourceRevision": "94e3029c946be087a2d0ada075b83b148b1e3231",
+  "models": {
+    "str_t1_fac_land": {
+      "id": "core:str_t1_fac_land",
+      "scale": {
+        "xz": 1,
+        "y": 1
+      },
+      "icon": "struct_fac_land_t1",
+      "footprint": [
+        8,
+        8
+      ],
+      "originalTriangles": [
+        268,
+        162,
+        64
+      ],
+      "bounds": {
+        "min": [
+          -3.95,
+          0,
+          -3.95
+        ],
+        "max": [
+          3.95,
+          2.76,
+          3.95
+        ],
+        "size": [
+          7.9,
+          2.76,
+          7.9
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "gate",
+          "parent": 0,
+          "pivot": [
+            0,
+            2.1,
+            -0.52
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    "str_t2_fac_land": {
+      "id": "core:str_t2_fac_land",
+      "scale": {
+        "xz": 1,
+        "y": 1.2
+      },
+      "icon": "struct_fac_land_t2",
+      "footprint": [
+        8,
+        8
+      ],
+      "originalTriangles": [
+        308,
+        182,
+        82
+      ],
+      "bounds": {
+        "min": [
+          -3.95,
+          0,
+          -3.95
+        ],
+        "max": [
+          3.95,
+          5.148,
+          3.95
+        ],
+        "size": [
+          7.9,
+          5.148,
+          7.9
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "gate",
+          "parent": 0,
+          "pivot": [
+            0,
+            2.52,
+            -0.52
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    "str_t1_mex": {
+      "id": "core:str_t1_mex",
+      "scale": {
+        "xz": 1,
+        "y": 1
+      },
+      "icon": "struct_mass_t1",
+      "footprint": [
+        2,
+        2
+      ],
+      "originalTriangles": [
+        234,
+        64,
+        54
+      ],
+      "bounds": {
+        "min": [
+          -0.98,
+          0,
+          -0.98
+        ],
+        "max": [
+          0.98,
+          0.86,
+          0.98
+        ],
+        "size": [
+          1.96,
+          0.86,
+          1.96
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "pump",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.21,
+            0
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    "str_t2_mex": {
+      "id": "core:str_t2_mex",
+      "scale": {
+        "xz": 1,
+        "y": 1.2
+      },
+      "icon": "struct_mass_t2",
+      "footprint": [
+        2,
+        2
+      ],
+      "originalTriangles": [
+        276,
+        106,
+        54
+      ],
+      "bounds": {
+        "min": [
+          -0.98,
+          0,
+          -0.98
+        ],
+        "max": [
+          0.98,
+          1.104,
+          0.98
+        ],
+        "size": [
+          1.96,
+          1.104,
+          1.96
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "pump",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.252,
+            0
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    "str_t1_radar": {
+      "id": "core:str_t1_radar",
+      "scale": {
+        "xz": 1,
+        "y": 1
+      },
+      "icon": "struct_intel_t1",
+      "footprint": [
+        2,
+        2
+      ],
+      "originalTriangles": [
+        250,
+        174,
+        58
+      ],
+      "bounds": {
+        "min": [
+          -0.98,
+          0,
+          -0.98
+        ],
+        "max": [
+          0.98,
+          2.8883,
+          0.98
+        ],
+        "size": [
+          1.96,
+          2.8883,
+          1.96
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "wing",
+          "parent": 0,
+          "pivot": [
+            0,
+            2.05,
+            0.05
+          ],
+          "anim": "yaw"
+        }
+      ]
+    },
+    "str_t1_pd": {
+      "id": "core:str_t1_pd",
+      "scale": {
+        "xz": 1,
+        "y": 1
+      },
+      "icon": "struct_direct_t1",
+      "footprint": [
+        1,
+        1
+      ],
+      "originalTriangles": [
+        286,
+        130,
+        74
+      ],
+      "bounds": {
+        "min": [
+          -0.48,
+          0,
+          -0.48
+        ],
+        "max": [
+          0.48,
+          0.618,
+          0.56
+        ],
+        "size": [
+          0.96,
+          0.618,
+          1.04
+        ]
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "turret",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.29,
+            -0.08
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 2,
+          "name": "barrel",
+          "parent": 1,
+          "pivot": [
+            0,
+            0.48,
+            0.16
+          ],
+          "anim": "pitch"
+        }
+      ]
+    }
+  }
+}
