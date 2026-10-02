@@ -1,0 +1,821 @@
+{
+  "fixture": "Visual review only. Original menu Commander plus six explicitly tainted real Spawn commands in the production host. Native selection; accepted actual unit frames and rig/render buffers. Not an ordinary construction or technology progression test.",
+  "buildHash": "1bd5577e87b8",
+  "simHash": 40017171,
+  "tainted": true,
+  "tick": 15,
+  "hostErrors": [],
+  "audio": {
+    "installed": true,
+    "contexts": 1,
+    "speakerConnections": 0,
+    "blockedConnections": 0,
+    "streamDestinations": 1
+  },
+  "observations": [
+    {
+      "unit": "cmd_commander",
+      "id": "core:cmd_commander",
+      "handle": 0,
+      "info": {
+        "x": 96,
+        "y": 24.0859375,
+        "z": 96,
+        "visual": 0,
+        "orders": 0,
+        "blocked": false,
+        "hp": 12000,
+        "hpMax": 12000,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 0,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 0,
+        "bodyCurYaw": 0,
+        "parts": [
+          {
+            "id": 1,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 2,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 3,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 4,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 5,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          }
+        ]
+      },
+      "camera": {
+        "x": 96,
+        "y": 24.08494140625,
+        "z": 96,
+        "distance": 12,
+        "yaw": 3.741592653589793,
+        "pitch": 0.7070810677088529,
+        "clearance": 7.777605481972117
+      },
+      "render": {
+        "frames": 61,
+        "drawCalls": 19,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 2,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 2,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 18,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 18,
+          "uploadBytes": 294912,
+          "draws": 2,
+          "transition": 0.3324333333969116
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 44,
+        "unitInstances": 2,
+        "culledInstances": 5,
+        "lodInstances": [
+          2,
+          0,
+          0
+        ],
+        "terrainPatches": 10,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.0949999988079071,
+        "gpuMs": 1.129416,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/cmd_commander.png"
+    },
+    {
+      "unit": "lnd_t1_engineer",
+      "id": "core:eng_t1",
+      "handle": 2,
+      "info": {
+        "x": 102,
+        "y": 24.078125,
+        "z": 96,
+        "visual": 9,
+        "orders": 0,
+        "blocked": false,
+        "hp": 150,
+        "hpMax": 150,
+        "build": 1,
+        "flags": 512
+      },
+      "pose": {
+        "handle": 2,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 41503,
+        "bodyCurYaw": 41503,
+        "parts": []
+      },
+      "camera": {
+        "x": 102,
+        "y": 24.078125,
+        "z": 96,
+        "distance": 9,
+        "yaw": 7.7206429435659025,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.674867633929036
+      },
+      "render": {
+        "frames": 81,
+        "drawCalls": 21,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 19,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 19,
+          "uploadBytes": 311296,
+          "draws": 2,
+          "transition": 0.33436666667461395
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 42,
+        "unitInstances": 4,
+        "culledInstances": 3,
+        "lodInstances": [
+          4,
+          0,
+          0
+        ],
+        "terrainPatches": 7,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.0949999988079071,
+        "gpuMs": 1.377208,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t1_engineer.png"
+    },
+    {
+      "unit": "lnd_t1_scout",
+      "id": "core:lnd_t1_scout",
+      "handle": 3,
+      "info": {
+        "x": 106,
+        "y": 24.078125,
+        "z": 96,
+        "visual": 14,
+        "orders": 0,
+        "blocked": false,
+        "hp": 60,
+        "hpMax": 60,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 3,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 2703,
+        "bodyCurYaw": 2703,
+        "parts": []
+      },
+      "camera": {
+        "x": 106,
+        "y": 24.0780029296875,
+        "z": 96,
+        "distance": 9,
+        "yaw": 4.000739532943223,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.641118090396436
+      },
+      "render": {
+        "frames": 101,
+        "drawCalls": 21,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 20,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 20,
+          "uploadBytes": 327680,
+          "draws": 2,
+          "transition": 0.3339666666587194
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 44,
+        "unitInstances": 4,
+        "culledInstances": 3,
+        "lodInstances": [
+          4,
+          0,
+          0
+        ],
+        "terrainPatches": 8,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.0949999988079071,
+        "gpuMs": 1.463499,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t1_scout.png"
+    },
+    {
+      "unit": "lnd_t1_tank",
+      "id": "core:lnd_t1_tank",
+      "handle": 4,
+      "info": {
+        "x": 110,
+        "y": 24.0703125,
+        "z": 96,
+        "visual": 15,
+        "orders": 0,
+        "blocked": false,
+        "hp": 300,
+        "hpMax": 300,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 4,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 37072,
+        "bodyCurYaw": 37072,
+        "parts": [
+          {
+            "id": 1,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 2,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          }
+        ]
+      },
+      "camera": {
+        "x": 110,
+        "y": 24.0701904296875,
+        "z": 96,
+        "distance": 9,
+        "yaw": 7.295826139120823,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.666933063616536
+      },
+      "render": {
+        "frames": 122,
+        "drawCalls": 22,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 5,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 5,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 21,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 21,
+          "uploadBytes": 344064,
+          "draws": 2,
+          "transition": 0.3260333333412806
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 44,
+        "unitInstances": 5,
+        "culledInstances": 2,
+        "lodInstances": [
+          5,
+          0,
+          0
+        ],
+        "terrainPatches": 7,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.10999998450279236,
+        "gpuMs": 1.21575,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t1_tank.png"
+    },
+    {
+      "unit": "lnd_t2_tank",
+      "id": "core:lnd_t2_tank",
+      "handle": 5,
+      "info": {
+        "x": 114,
+        "y": 24.0625,
+        "z": 96,
+        "visual": 16,
+        "orders": 0,
+        "blocked": false,
+        "hp": 900,
+        "hpMax": 900,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 5,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 53054,
+        "bodyCurYaw": 53054,
+        "parts": [
+          {
+            "id": 1,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 2,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          }
+        ]
+      },
+      "camera": {
+        "x": 114,
+        "y": 24.064208984375,
+        "z": 96,
+        "distance": 9,
+        "yaw": 8.828081198620092,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.629804856581256
+      },
+      "render": {
+        "frames": 143,
+        "drawCalls": 24,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 7,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 7,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 22,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 22,
+          "uploadBytes": 360448,
+          "draws": 2,
+          "transition": 0.33303333322207135
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 48,
+        "unitInstances": 7,
+        "culledInstances": 0,
+        "lodInstances": [
+          7,
+          0,
+          0
+        ],
+        "terrainPatches": 7,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.11500000953674316,
+        "gpuMs": 3.275249,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t2_tank.png"
+    },
+    {
+      "unit": "lnd_t1_arty",
+      "id": "core:lnd_t1_arty",
+      "handle": 6,
+      "info": {
+        "x": 118,
+        "y": 24.078125,
+        "z": 96,
+        "visual": 13,
+        "orders": 0,
+        "blocked": false,
+        "hp": 200,
+        "hpMax": 200,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 6,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 18135,
+        "bodyCurYaw": 18135,
+        "parts": [
+          {
+            "id": 1,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 2,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          }
+        ]
+      },
+      "camera": {
+        "x": 118,
+        "y": 24.0772705078125,
+        "z": 96,
+        "distance": 9,
+        "yaw": 5.480264002858924,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.650271977156695
+      },
+      "render": {
+        "frames": 164,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 3,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 3,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 23,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 23,
+          "uploadBytes": 376832,
+          "draws": 2,
+          "transition": 0.330799999833107
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 42,
+        "unitInstances": 3,
+        "culledInstances": 4,
+        "lodInstances": [
+          3,
+          0,
+          0
+        ],
+        "terrainPatches": 8,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.13999998569488525,
+        "gpuMs": 1.696874,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t1_arty.png"
+    },
+    {
+      "unit": "lnd_t3_bot",
+      "id": "core:lnd_t3_heavy",
+      "handle": 7,
+      "info": {
+        "x": 122,
+        "y": 24.0859375,
+        "z": 96,
+        "visual": 17,
+        "orders": 0,
+        "blocked": false,
+        "hp": 4500,
+        "hpMax": 4500,
+        "build": 1,
+        "flags": 4608
+      },
+      "pose": {
+        "handle": 7,
+        "tick": 15,
+        "viewer": 0,
+        "alpha": 1,
+        "observationMask": 0,
+        "bodyPrevYaw": 35695,
+        "bodyCurYaw": 35695,
+        "parts": [
+          {
+            "id": 1,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 2,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 3,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          },
+          {
+            "id": 4,
+            "prevYaw": 0,
+            "curYaw": 0,
+            "prevPitch": 0,
+            "curPitch": 0
+          }
+        ]
+      },
+      "camera": {
+        "x": 122,
+        "y": 24.0850830078125,
+        "z": 96,
+        "distance": 9,
+        "yaw": 7.163807917563416,
+        "pitch": 0.6788991876371263,
+        "clearance": 5.661977880767836
+      },
+      "render": {
+        "frames": 185,
+        "drawCalls": 19,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 2,
+          "icons": 1,
+          "overlay": 1
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 2,
+          "icons": 1,
+          "overlay": 1
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 24,
+          "unknown": 0,
+          "explored": 4036,
+          "visible": 60,
+          "uploads": 24,
+          "uploadBytes": 393216,
+          "draws": 2,
+          "transition": 0.33116666654745736
+        },
+        "zoomLevel": 0,
+        "iconCount": 0,
+        "dynamicDecals": 1,
+        "instances": 42,
+        "unitInstances": 2,
+        "culledInstances": 5,
+        "lodInstances": [
+          2,
+          0,
+          0
+        ],
+        "terrainPatches": 9,
+        "decals": 35,
+        "lost": false,
+        "cpuMs": 0.10499998927116394,
+        "gpuMs": 1.971874,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "screenshot": "game/lnd_t3_bot.png"
+    }
+  ],
+  "assetRequests": [
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/cube_bot.fb43777f.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t1_scout.91bde24e.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/cmd_commander.ca2ed10f.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t1_arty.63069e83.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t1_engineer.bc35a451.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t2_tank.27eb08c5.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t1_tank.b67ecfc5.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_estore.d3e5ebfd.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/lnd_t3_bot.d00d2335.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_pgen.35296007.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_pd.e4a265ea.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_fac_land.0052bd42.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_mex.c66ad78b.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t2_mex.f364e48c.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t2_fac_land.ee7c5074.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t1_radar.8126e49c.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t3_fac_land.93acd58f.glb",
+    "http://localhost:5295/b/1bd5577e87b8/assets/models/units/varkan/str_t3_mex.014303ce.glb"
+  ],
+  "httpFailures": [],
+  "errors": []
+}

@@ -1,0 +1,757 @@
+{
+  "baselineRevision": "b135d4d26d1801e60c7066dbdfb3df059ac8235d",
+  "candidateRevision": "1bd5577e87b879668b7a32890188544f003f9cfa",
+  "scope": "Seven Varkan mobile models. Buildings and other factions excluded from this review round.",
+  "screenshots": {
+    "renderer": "existing three.js model viewer reading actual exported GLBs",
+    "resolution": [
+      960,
+      720
+    ],
+    "comparison": "identical camera, color, lighting and footprint"
+  },
+  "checks": {
+    "modelsBuilt": 220,
+    "targetedVitest": 541,
+    "typecheck": "pass",
+    "lint": "pass",
+    "gameBuild": "pass",
+    "nativeBrowserChecks": {
+      "status": "pass",
+      "cases": 6,
+      "engines": [
+        "Chromium",
+        "Firefox",
+        "WebKit"
+      ],
+      "buildHash": "1bd5577e87b8",
+      "verified": [
+        "original Commander native Move drives opposed legs and returns accepted rest pose",
+        "actual combat uses independent heavy turrets and tank barrel pitch with native Attack/Move"
+      ],
+      "audio": {
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "method": "silent realtime audio sink installed before navigation, verified in all six cases"
+      },
+      "reportStats": {
+        "expected": 6,
+        "unexpected": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "duration": 23970.092999999997
+      },
+      "combatFixture": "Explicitly tainted real Spawn commands through actual host. No ordinary technology progression claim."
+    },
+    "localReview": {
+      "status": "pass",
+      "galleryPairs": 7,
+      "actualGameImages": 7,
+      "rotatableModels": 7,
+      "errors": [],
+      "failedResponses": [],
+      "models": [
+        {
+          "unit": "cmd_commander",
+          "sha256": "37ed013b0e9e741bb78940cc91211cce8b63043a91fb9520647b710c0701f2ae",
+          "triangles": [
+            2790,
+            622,
+            156
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t1_engineer",
+          "sha256": "0e80672b91d0ad872505fb438d6fe65b2c5ff64c04746361dbb95f3a266d05b3",
+          "triangles": [
+            1198,
+            250,
+            72
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t1_scout",
+          "sha256": "bac7703b9ea1fa96d6d902a466d784f10d76a41b816a9cda27a4e68b980e9aa5",
+          "triangles": [
+            1098,
+            180,
+            104
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t1_tank",
+          "sha256": "ed4e90e3f18b37e3bf94bf8d7674e6d72fd6a737ab163494e39237665b85878f",
+          "triangles": [
+            1494,
+            234,
+            98
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t2_tank",
+          "sha256": "c1e2f3b660991c207c0a5407226c5ee4618e3fec834dce04109e1b86c081237f",
+          "triangles": [
+            1594,
+            342,
+            94
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t1_arty",
+          "sha256": "e1e7a22c8807cdae2d7da2a0228eef616fa6ddfd32d985031d93f5756de459b2",
+          "triangles": [
+            1400,
+            360,
+            118
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "unit": "lnd_t3_bot",
+          "sha256": "964c5d32a415706fdaadba1de33c050d45e5fcbcd8f95d942c9d4c0b40c947c7",
+          "triangles": [
+            1976,
+            306,
+            130
+          ],
+          "viewerReady": true,
+          "animationControl": true,
+          "lodControls": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    "actualGameRendering": {
+      "status": "pass",
+      "buildHash": "1bd5577e87b8",
+      "models": 7,
+      "allUseLod0": true,
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "fixture": "Visual review only. Original menu Commander plus six explicitly tainted real Spawn commands in the production host. Native selection; accepted actual unit frames and rig/render buffers. Not an ordinary construction or technology progression test."
+    }
+  },
+  "models": [
+    {
+      "unit": "cmd_commander",
+      "name": "Commander · Vogt",
+      "changes": "Geschichtete Brust- und Schulterpanzerung, Hüft-, Knie- und Knöchellager, Hydraulik, Kühlerbank und eine offene Kanonenmündung.",
+      "beforeTriangles": [
+        350,
+        218,
+        96
+      ],
+      "afterTriangles": [
+        2790,
+        622,
+        156
+      ],
+      "detailRatio": 7.97,
+      "sha256": "37ed013b0e9e741bb78940cc91211cce8b63043a91fb9520647b710c0701f2ae",
+      "bounds": {
+        "min": [
+          -1.14,
+          0,
+          -0.687
+        ],
+        "max": [
+          1.14,
+          3.14,
+          1.17
+        ],
+        "size": [
+          2.28,
+          3.14,
+          1.857
+        ]
+      },
+      "budget": {
+        "tris": [
+          3200,
+          900,
+          300
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "legs_l",
+          "parent": 0,
+          "pivot": [
+            0.46,
+            1.24,
+            0
+          ],
+          "anim": "legs"
+        },
+        {
+          "index": 2,
+          "name": "legs_r",
+          "parent": 0,
+          "pivot": [
+            -0.46,
+            1.24,
+            0
+          ],
+          "anim": "legs"
+        },
+        {
+          "index": 3,
+          "name": "torso",
+          "parent": 0,
+          "pivot": [
+            0,
+            1.42,
+            0
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 4,
+          "name": "barrel",
+          "parent": 3,
+          "pivot": [
+            -0.86,
+            2.44,
+            0.2
+          ],
+          "anim": "pitch"
+        },
+        {
+          "index": 5,
+          "name": "boom",
+          "parent": 3,
+          "pivot": [
+            0.5,
+            2.16,
+            -0.46
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t1_engineer",
+      "name": "T1-Ingenieur · Lehrling",
+      "changes": "Laufräder mit profilierten Ketten, Drucktank, Kühler, Stellzylinder, Schläuche und ein ausgearbeiteter Konstruktionsarm.",
+      "beforeTriangles": [
+        202,
+        138,
+        72
+      ],
+      "afterTriangles": [
+        1198,
+        250,
+        72
+      ],
+      "detailRatio": 5.93,
+      "sha256": "0e80672b91d0ad872505fb438d6fe65b2c5ff64c04746361dbb95f3a266d05b3",
+      "bounds": {
+        "min": [
+          -0.4975,
+          0,
+          -0.5102
+        ],
+        "max": [
+          0.4975,
+          0.9858,
+          0.8137
+        ],
+        "size": [
+          0.995,
+          0.9858,
+          1.3239
+        ]
+      },
+      "budget": {
+        "tris": [
+          1600,
+          450,
+          160
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "boom",
+          "parent": 0,
+          "pivot": [
+            0.27,
+            0.41,
+            -0.26
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 2,
+          "name": "emitter",
+          "parent": 1,
+          "pivot": [
+            -0.265,
+            0.71,
+            0.666647
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t1_scout",
+      "name": "T1-Späher · Funke",
+      "changes": "Zehn sichtbare Laufräder, Kettenbänder, geschichtete Bugpanzerung, Glassensoren, Kühlung und Streben am Sensormast.",
+      "beforeTriangles": [
+        198,
+        180,
+        104
+      ],
+      "afterTriangles": [
+        1098,
+        180,
+        104
+      ],
+      "detailRatio": 5.55,
+      "sha256": "bac7703b9ea1fa96d6d902a466d784f10d76a41b816a9cda27a4e68b980e9aa5",
+      "bounds": {
+        "min": [
+          -0.347,
+          0,
+          -0.45
+        ],
+        "max": [
+          0.347,
+          1.41,
+          0.487
+        ],
+        "size": [
+          0.694,
+          1.41,
+          0.937
+        ]
+      },
+      "budget": {
+        "tris": [
+          1400,
+          400,
+          150
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t1_tank",
+      "name": "T1-Panzer · Punze",
+      "changes": "Einzelne Kettenglieder, Laufräder und Umlenkrollen, schräge Panzerung, Lüftung, Auspuff, Turmlager und Rohrhülsen.",
+      "beforeTriangles": [
+        348,
+        218,
+        98
+      ],
+      "afterTriangles": [
+        1494,
+        234,
+        98
+      ],
+      "detailRatio": 4.29,
+      "sha256": "ed4e90e3f18b37e3bf94bf8d7674e6d72fd6a737ab163494e39237665b85878f",
+      "bounds": {
+        "min": [
+          -0.5236,
+          0,
+          -0.6975
+        ],
+        "max": [
+          0.5236,
+          0.824,
+          1.21
+        ],
+        "size": [
+          1.0472,
+          0.824,
+          1.9075
+        ]
+      },
+      "budget": {
+        "tris": [
+          1800,
+          500,
+          180
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "turret",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.45,
+            0
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 2,
+          "name": "barrel",
+          "parent": 1,
+          "pivot": [
+            0,
+            0.64,
+            0.24
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t2_tank",
+      "name": "T2-Panzer · Meißel",
+      "changes": "Detailliertes Fahrwerk und Aufhängung, verstärkte Panzerung, Turmwangen, Kühlerlamellen, Optik und offene Zwillingsmündungen.",
+      "beforeTriangles": [
+        350,
+        218,
+        98
+      ],
+      "afterTriangles": [
+        1594,
+        342,
+        94
+      ],
+      "detailRatio": 4.55,
+      "sha256": "c1e2f3b660991c207c0a5407226c5ee4618e3fec834dce04109e1b86c081237f",
+      "bounds": {
+        "min": [
+          -0.7332,
+          0,
+          -0.754
+        ],
+        "max": [
+          0.7332,
+          1.0179,
+          1.222
+        ],
+        "size": [
+          1.4664,
+          1.0179,
+          1.976
+        ]
+      },
+      "budget": {
+        "tris": [
+          2000,
+          550,
+          180
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "turret",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.585,
+            0.078
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 2,
+          "name": "barrel",
+          "parent": 1,
+          "pivot": [
+            0,
+            0.819,
+            0.364
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t1_arty",
+      "name": "T1-Artillerie · Kelle",
+      "changes": "Fahrwerk, Waffenwiege, Drehzapfen und Hydraulikzylinder, verstärkte Mündung, Verschluss und Ladeschale.",
+      "beforeTriangles": [
+        312,
+        204,
+        102
+      ],
+      "afterTriangles": [
+        1400,
+        360,
+        118
+      ],
+      "detailRatio": 4.49,
+      "sha256": "e1e7a22c8807cdae2d7da2a0228eef616fa6ddfd32d985031d93f5756de459b2",
+      "bounds": {
+        "min": [
+          -0.457,
+          0,
+          -0.76
+        ],
+        "max": [
+          0.457,
+          1.1204,
+          0.9237
+        ],
+        "size": [
+          0.914,
+          1.1204,
+          1.6837
+        ]
+      },
+      "budget": {
+        "tris": [
+          1800,
+          500,
+          180
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "boom",
+          "parent": 0,
+          "pivot": [
+            0,
+            0.38,
+            -0.02
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 2,
+          "name": "ladle",
+          "parent": 1,
+          "pivot": [
+            0,
+            0.76,
+            0.4
+          ],
+          "anim": "pitch"
+        }
+      ]
+    },
+    {
+      "unit": "lnd_t3_bot",
+      "name": "T3-Läufer · Fallhammer",
+      "changes": "Hüft-, Knie- und Knöchellager, einzelne Zehen, Hydraulikstreben, Kühlrippen, Waffenlager und offene Mündungen.",
+      "beforeTriangles": [
+        344,
+        196,
+        102
+      ],
+      "afterTriangles": [
+        1976,
+        306,
+        130
+      ],
+      "detailRatio": 5.74,
+      "sha256": "964c5d32a415706fdaadba1de33c050d45e5fcbcd8f95d942c9d4c0b40c947c7",
+      "bounds": {
+        "min": [
+          -0.8322,
+          0,
+          -1.4135
+        ],
+        "max": [
+          0.8322,
+          2.0995,
+          1.938
+        ],
+        "size": [
+          1.6644,
+          2.0995,
+          3.3515
+        ]
+      },
+      "budget": {
+        "tris": [
+          2600,
+          700,
+          240
+        ],
+        "ok": true
+      },
+      "parts": [
+        {
+          "index": 0,
+          "name": "hull",
+          "parent": 0,
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "anim": "none"
+        },
+        {
+          "index": 1,
+          "name": "legs_l",
+          "parent": 0,
+          "pivot": [
+            0.629,
+            0.85,
+            0
+          ],
+          "anim": "legs"
+        },
+        {
+          "index": 2,
+          "name": "legs_r",
+          "parent": 0,
+          "pivot": [
+            -0.629,
+            0.85,
+            0
+          ],
+          "anim": "legs"
+        },
+        {
+          "index": 3,
+          "name": "turret",
+          "parent": 0,
+          "pivot": [
+            0,
+            1.343,
+            0.748
+          ],
+          "anim": "yaw"
+        },
+        {
+          "index": 4,
+          "name": "turret2",
+          "parent": 0,
+          "pivot": [
+            0,
+            1.683,
+            -0.068
+          ],
+          "anim": "yaw"
+        }
+      ]
+    }
+  ]
+}
