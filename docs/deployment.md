@@ -103,7 +103,7 @@ Anschließend `/build.json` und einen echten Spielstart prüfen. Ein Browser-Rel
 Auf HomeBox bei jedem Update beide Compose-Dateien beibehalten, damit Netzwerk und Proxy-Labels erhalten bleiben:
 
 ```sh
-git pull --ff-only
+git pull --ff-only origin main
 FLOW_FIRE_PORT=8188 SOURCE_REVISION=$(git rev-parse --short=12 HEAD) docker compose -f compose.yaml -f compose.homebox.yaml up -d --build
 docker compose -f compose.yaml -f compose.homebox.yaml ps
 ```

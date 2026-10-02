@@ -5,8 +5,8 @@ spielbare Entwicklungsversion läuft auf der HomeBox:
 [Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
-und Bedienung. Der ausgelieferte Spielbuild ist `6753e2636876`, Sim-Version
-`faf-sim/ms6.3-factory-tiers-radar`. Die ältere Adresse bleibt als Alias erreichbar.
+und Bedienung. Der ausgelieferte Spielbuild ist `eba29249180c`, Sim-Version
+`faf-sim/ms6.4-commander-enhancements`. Die ältere Adresse bleibt als Alias erreichbar.
 
 ## Umgesetzter Umfang
 
@@ -22,8 +22,8 @@ und Bedienung. Der ausgelieferte Spielbuild ist `6753e2636876`, Sim-Version
 
 Gelände ist vorab erkundet. Aktuell sichtbare Bereiche sind hell, der übrige Bereich
 ist verdunkelt; die Sichtgrenze auf Terrain und Wasser läuft weich aus.
-Einheiten-/Gebäudeglyphen, Cursors, Favicon und die erzeugten ACU-Upgradeicons sind
-angeschlossen. Ausgewählte Fabriken zeigen den akzeptierten Rally-Punkt, und ihre
+Einheiten-/Gebäudeglyphen, Cursors und Favicon sind angeschlossen; die ACU-Auswahl zeigt
+die drei Ausbauplätze als Komponentenschemata. Ausgewählte Fabriken zeigen den akzeptierten Rally-Punkt, und ihre
 produzierten Einheiten laufen dorthin. Masseextraktoren lassen sich mit tatsächlicher
 Ressourcenabrechnung über T1, T2 und T3 ausbauen, pausieren und abbrechen.
 
@@ -43,6 +43,15 @@ Die anschließende [HUD-Anpassung an die Forged-Alliance-Screens](../design/supc
 ist ebenfalls ausgeliefert: Stahlrahmen, horizontale Bauliste mit Bildern der echten Modelle,
 Auswahl über Befehlen und kompakte Fabriksteuerung. Im öffentlichen Build bestehen
 24 Layoutprüfungen an vier Fenstergrößen und die tatsächlichen Spiel-/Replay-Abläufe.
+
+Die [Lieferung vom 2. Oktober](../design/acu-enhancements-2026-10-02/README.md) ergänzt
+drei unabhängig kombinierbare ACU-Module, erkennbare Fabrik-Ausbauzustände und überarbeitete
+Varkan-Modelle mit tatsächlich angeschlossener ImageGen-Metalltextur. Der native ACU-Ablauf
+besteht in Chromium, Firefox und WebKit. Auf dem öffentlichen Build wurden alle drei Module,
+reguläre Wirtschaft und der Fabrikausbau bis zur T2-Produktion geprüft: 56 Screenshots an
+vier Fenstergrößen, untainted Replay, keine Browser-, Host-, HTTP- oder Layoutfehler und
+keine Lautsprecherverbindungen. Die Originalvideos sind mit
+[Zeitmarken und Beobachtungsgrenzen](../design/gameplay-reference-2026-10-02.md) dokumentiert.
 
 ## Nachweise und ihre Grenzen
 
