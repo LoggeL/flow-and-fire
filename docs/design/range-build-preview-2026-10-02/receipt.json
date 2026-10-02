@@ -1,0 +1,994 @@
+{
+  "sourceCommit": "d107f97a74ea12cdc6b79590ee22d89a18a23aa2",
+  "buildHash": "d107f97a74ea",
+  "simBuild": "faf-sim/ms6.5-allied-projectile-passthrough",
+  "checks": {
+    "unitTests": {
+      "passed": 804,
+      "files": 93,
+      "scope": [
+        "apps/game",
+        "packages/client",
+        "packages/audio"
+      ]
+    },
+    "finalLabelFocusedRerun": {
+      "passed": 9,
+      "files": 2
+    },
+    "nativeFinal": {
+      "startTime": "2026-10-02T11:13:58.870Z",
+      "duration": 28151.400999999998,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "nativeControlsBeforeCaptionRefinement": {
+      "buildHash": "a0d818e",
+      "stats": {
+        "startTime": "2026-10-02T11:11:26.616Z",
+        "duration": 40190.174,
+        "expected": 12,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": "Shift-drag queue cap, cancellation, ranges and building around a normal mex, all three engines."
+    },
+    "typecheck": "passed",
+    "fullLint": "passed",
+    "productionBuild": "passed"
+  },
+  "nativeReadbacks": [
+    {
+      "engine": "chromium",
+      "case": "ranges",
+      "buildHash": "d107f97a74ea",
+      "tick": 7,
+      "tainted": true,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "initial": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "dc90c89d3aa5662f905c8dc5da56315d5f7648a15f0d77db0130e31b8da6eac1"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "cb761d120bd1fe39e228994c3c319db93e54fefcc350a79a352af82fc6d0a7be"
+        }
+      ],
+      "afterCamera": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "f476eeefcf6a5afac0442160b1db6bce7748b421f2a0c692c7338bac4cab6b54"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "b072f9a8cfe02fca4ac4dc1734993ff0ecf212ae14a630733e77727ce0b5b185"
+        }
+      ],
+      "defense": [
+        {
+          "kind": "vision",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        },
+        {
+          "kind": "weapon",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        }
+      ],
+      "planned": [
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "e587a1cc4e4fc920cd0d4a4538cc24f44abeed1f0a575189aa74b263ae9022ce"
+        },
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "38cf65c97acece1806a7c4bca6cb9f9b30f68fd05a6f8a15c31eecbc6e3a56c5"
+        }
+      ],
+      "fixture": "Two diagnostic Spawn commands for the selected completed radar and point defense; native selection and radar placement thereafter."
+    },
+    {
+      "engine": "chromium",
+      "case": "build around actual mex",
+      "buildHash": "d107f97a74ea",
+      "tick": 161,
+      "tainted": false,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "fixture": "Original skirmish commander and a normal completed Build on a real mass spot. Native Shift drag and accepted queues; no cheats, injected frames or sim World access.",
+      "commander": 0,
+      "mex": 3,
+      "proposed": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "valid": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "accepted": 7,
+      "repeated": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 4
+        }
+      ],
+      "watch": {
+        "handle": 0,
+        "orders": 8,
+        "flags": 0,
+        "points": [],
+        "targets": [
+          {
+            "type": 3,
+            "x": 114,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 102
+          }
+        ]
+      },
+      "mexBefore": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      },
+      "mexAfter": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      }
+    },
+    {
+      "engine": "firefox",
+      "case": "ranges",
+      "buildHash": "d107f97a74ea",
+      "tick": 9,
+      "tainted": true,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "initial": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "dc90c89d3aa5662f905c8dc5da56315d5f7648a15f0d77db0130e31b8da6eac1"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "cb761d120bd1fe39e228994c3c319db93e54fefcc350a79a352af82fc6d0a7be"
+        }
+      ],
+      "afterCamera": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "f476eeefcf6a5afac0442160b1db6bce7748b421f2a0c692c7338bac4cab6b54"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "b072f9a8cfe02fca4ac4dc1734993ff0ecf212ae14a630733e77727ce0b5b185"
+        }
+      ],
+      "defense": [
+        {
+          "kind": "vision",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        },
+        {
+          "kind": "weapon",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        }
+      ],
+      "planned": [
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "e587a1cc4e4fc920cd0d4a4538cc24f44abeed1f0a575189aa74b263ae9022ce"
+        },
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "38cf65c97acece1806a7c4bca6cb9f9b30f68fd05a6f8a15c31eecbc6e3a56c5"
+        }
+      ],
+      "fixture": "Two diagnostic Spawn commands for the selected completed radar and point defense; native selection and radar placement thereafter."
+    },
+    {
+      "engine": "firefox",
+      "case": "build around actual mex",
+      "buildHash": "d107f97a74ea",
+      "tick": 162,
+      "tainted": false,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "fixture": "Original skirmish commander and a normal completed Build on a real mass spot. Native Shift drag and accepted queues; no cheats, injected frames or sim World access.",
+      "commander": 0,
+      "mex": 3,
+      "proposed": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "valid": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "accepted": 7,
+      "repeated": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 4
+        }
+      ],
+      "watch": {
+        "handle": 0,
+        "orders": 8,
+        "flags": 0,
+        "points": [],
+        "targets": [
+          {
+            "type": 3,
+            "x": 114,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 102
+          }
+        ]
+      },
+      "mexBefore": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      },
+      "mexAfter": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      }
+    },
+    {
+      "engine": "webkit",
+      "case": "ranges",
+      "buildHash": "d107f97a74ea",
+      "tick": 11,
+      "tainted": true,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "initial": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "dc90c89d3aa5662f905c8dc5da56315d5f7648a15f0d77db0130e31b8da6eac1"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "cb761d120bd1fe39e228994c3c319db93e54fefcc350a79a352af82fc6d0a7be"
+        }
+      ],
+      "afterCamera": [
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "f476eeefcf6a5afac0442160b1db6bce7748b421f2a0c692c7338bac4cab6b54"
+        },
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "selection",
+          "status": "active",
+          "x": 532480,
+          "z": 335872,
+          "geometryHash": "b072f9a8cfe02fca4ac4dc1734993ff0ecf212ae14a630733e77727ce0b5b185"
+        }
+      ],
+      "defense": [
+        {
+          "kind": "vision",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        },
+        {
+          "kind": "weapon",
+          "radius": 24,
+          "source": "selection",
+          "status": "active",
+          "x": 573440,
+          "z": 344064,
+          "geometryHash": "db7b41774748f255aee6c057fa209ff34648fe8088792b6371330d853a192fb1"
+        }
+      ],
+      "planned": [
+        {
+          "kind": "radar",
+          "radius": 116,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "e587a1cc4e4fc920cd0d4a4538cc24f44abeed1f0a575189aa74b263ae9022ce"
+        },
+        {
+          "kind": "vision",
+          "radius": 20,
+          "source": "placement",
+          "status": "planned",
+          "x": 557056,
+          "z": 327680,
+          "geometryHash": "38cf65c97acece1806a7c4bca6cb9f9b30f68fd05a6f8a15c31eecbc6e3a56c5"
+        }
+      ],
+      "fixture": "Two diagnostic Spawn commands for the selected completed radar and point defense; native selection and radar placement thereafter."
+    },
+    {
+      "engine": "webkit",
+      "case": "build around actual mex",
+      "buildHash": "d107f97a74ea",
+      "tick": 167,
+      "tainted": false,
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": [],
+      "fixture": "Original skirmish commander and a normal completed Build on a real mass spot. Native Shift drag and accepted queues; no cheats, injected frames or sim World access.",
+      "commander": 0,
+      "mex": 3,
+      "proposed": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "valid": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 0
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 0
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 0
+        }
+      ],
+      "accepted": 7,
+      "repeated": [
+        {
+          "x": 466944,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 401408,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 409600,
+          "verdict": 4
+        },
+        {
+          "x": 466944,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 475136,
+          "z": 417792,
+          "verdict": 4
+        },
+        {
+          "x": 483328,
+          "z": 417792,
+          "verdict": 4
+        }
+      ],
+      "watch": {
+        "handle": 0,
+        "orders": 8,
+        "flags": 0,
+        "points": [],
+        "targets": [
+          {
+            "type": 3,
+            "x": 114,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 98
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 100
+          },
+          {
+            "type": 3,
+            "x": 114,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 116,
+            "z": 102
+          },
+          {
+            "type": 3,
+            "x": 118,
+            "z": 102
+          }
+        ]
+      },
+      "mexBefore": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      },
+      "mexAfter": {
+        "x": 116,
+        "z": 100,
+        "visual": 19,
+        "hp": 400,
+        "hpMax": 400,
+        "build": 1
+      }
+    }
+  ],
+  "screenshots": [
+    "docs/design/range-build-preview-2026-10-02/radar-ranges.png",
+    "docs/design/range-build-preview-2026-10-02/build-grid-around-mex.png"
+  ]
+}
