@@ -1,0 +1,17 @@
+.live-range-overlay {position:absolute;inset:0;pointer-events:none;z-index:1;}
+.live-range-rings {position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;}
+.range-vision {--range-color:#cee5b7;--range-dash:none;}
+.range-radar {--range-color:#74e0da;--range-dash:8 4;}
+.range-weapon {--range-color:var(--ember-300,#edb579);--range-dash:none;}
+.range-weapon-min {--range-color:#ed9990;--range-dash:2 5;}
+.range-build {--range-color:#dcd49c;--range-dash:3 3;}
+.live-range-ring polyline {fill:none;stroke:var(--range-color);stroke-width:1.5;stroke-opacity:.82;stroke-dasharray:var(--range-dash);stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 1px #000);}
+.live-range-ring.range-radar polyline,.live-range-ring.range-weapon polyline {stroke-width:2;}
+.live-range-ring:not(.state-active) polyline {stroke-dasharray:6 6;stroke-opacity:.57;}
+.live-range-ring text {fill:var(--range-color);stroke:#0c1215;stroke-width:3px;paint-order:stroke;stroke-linejoin:round;font:11px var(--font-mono,monospace);}
+.live-range-legend {position:absolute;top:104px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;max-width:70vw;padding:5px 10px;border:1px solid #66707555;border-radius:3px;background:#0c131acf;color:var(--text,#e1e8e9);font:10px var(--font-mono,monospace);}
+.live-range-legend span {display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.live-range-legend i {width:17px;border-top:2px solid var(--range-color);}
+.live-range-legend .range-radar i,.live-range-legend .range-build i,.live-range-legend .range-weapon-min i,.live-range-legend span:not(.state-active) i {border-top-style:dashed;}
+.live-range-legend small {opacity:.72;font:inherit;}
+@media(max-width:700px) {.live-range-legend {top:86px;max-width:88vw;gap:4px 8px;font-size:9px;}}

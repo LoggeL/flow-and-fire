@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { signal } from '@preact/signals';
-import { CmdFlags, FrameFlags, FrameWriter, Op, decodeBatch, decodeBuild, frameCapacityBytes } from '@faf/protocol';
+import { CmdFlags, FrameFlags, FrameWriter, Op, UnitFlags, decodeBatch, decodeBuild, frameCapacityBytes } from '@faf/protocol';
+import { PlacementVerdict } from '@faf/rules';
 import { GameClient, ClientMap } from '@faf/client';
 import { GameHudController } from '../src/hud/live.ts';
 import type { Game } from '../src/game.ts';
@@ -12,23 +13,28 @@ function fixture(readOnlyCommands = false, spots: readonly { readonly kind: 'mas
   const map = new ClientMap({ ...plane.map, meta: { ...plane.map.meta, spots } });
   const client = new GameClient({ canvas, keyTarget: win, renderer: new FakeRenderer(), link, map, visuals: [], playerArmy: 0, raf: new ManualRaf(), readOnlyCommands });
   const bp = {
+    count: 3,
     ids: ['core:cmd_commander', 'core:str_t1_pgen', 'core:str_t1_mex'], indexOf: (id: string) => bp.ids.indexOf(id),
     buildPowerQ16PerTickCol: Int32Array.of(65536, 0, 0), massCostCol: Int32Array.of(0, 75, 36), spotKindCol: Int32Array.of(-1, -1, 0),
     upgradesTo: () => -1, maxHpCol: Int32Array.of(10000, 400, 400), firstMount: () => 0, mountCount: () => 0, footprintW: () => 2, footprintH: () => 2, maxSlope: () => 4096,
     buildableByExpr: () => 0, unitMatchesExpr: () => true, maxHp: () => 10000, speedPerTick: () => 4096, vision: () => 40960,
-    categoryNames: [] as string[], categoryWord: () => 0,
+    categoryNames: ['ENERGYPRODUCTION', 'MASSEXTRACTION'], categoryWord: (index: number) => index === 1 ? 1 : index === 2 ? 2 : 0,
   };
   const game = { client, bp, map, unitCap: 8192, replayMode: readOnlyCommands, hud: signal({ contextLost: false }), params: { preset: 'medium' }, buildHash: 'test', transport: 'transfer', ready: null } as unknown as Game;
   const controller = new GameHudController(game);
   let seq = 0;
-  const publish = (blocked = false): void => {
-    const caps = { units: 4, parts: 0, projectiles: 0, beams: 0, events: 0, debugBytes: 0, footprints: 4 };
+  const publish = (blocked = false, intents: readonly { readonly x: number; readonly z: number }[] = []): void => {
+    const caps = { units: 4, parts: 0, projectiles: 0, beams: 0, events: 0, debugBytes: 0, footprints: 4, buildIntents: 32 };
     const writer = new FrameWriter(caps), bytes = new Uint8Array(frameCapacityBytes(caps));
     writer.beginFrame(bytes, ++seq, seq, 0, 1000, 0, FrameFlags.FootprintSnapshot, 0, 0, 0);
     writer.writeUnit(32 * 4096, 0, 32 * 4096, 32 * 4096, 0, 32 * 4096, 0, 0, 0, 0, 255, 255, 0, 0, 42, 0, 0);
     // visual is the ninth argument; partBase follows handle. This selected unit is a nonbuilder pgen.
     writer.writeUnit(45 * 4096, 0, 45 * 4096, 45 * 4096, 0, 45 * 4096, 0, 0, 1, 0, 255, 255, 0, 0, 43, 0, 0);
-    if (blocked) writer.writeFootprint(29, 29, 2, 2, 1, 88);
+    if (blocked) {
+      writer.writeUnit(30 * 4096, 0, 30 * 4096, 30 * 4096, 0, 30 * 4096, 0, 0, 2, 0, 255, 255, 0, UnitFlags.Building, 88, 0, 0);
+      writer.writeFootprint(29, 29, 2, 2, 1, 88);
+    }
+    intents.forEach((site, index) => writer.writeBuildIntent(42, 1, 0, site.x, site.z, index, 0, 0xffffffff));
     link.frames.deliver(bytes, seq, writer.endFrame()); client.frame(seq * 100); client.selectHandles([42]); controller.update(true);
   };
   publish();
@@ -75,6 +81,14 @@ describe('live building Shift drag uses actual placement and Build commands', ()
       .toEqual(valid.map(site => ({ bp: site.bp, x: site.x, z: site.z, yaw: site.yaw })));
     f.dispose();
   });
+  it('keeps a short Shift click as a single queued build at the release point', () => {
+    const f = fixture(); f.arm(); f.start(28, 30); f.release(28.2, 30);
+    const commands = f.link.sentBatches.flatMap(bytes => decodeBatch(bytes));
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toMatchObject({ op: Op.Build, flags: CmdFlags.Queue, units: [42] });
+    expect(decodeBuild(commands[0]!.payload)).toEqual({ bp: 1, x: 28 * 4096, z: 30 * 4096, yaw: 0 });
+    expect(f.controller.model.card.placingTypeId.peek()).toBe('core:str_t1_pgen'); f.dispose();
+  });
   it('fills a footprint-spaced rectangle without overlaps', () => {
     const f = fixture(); f.arm(); f.start(); f.move(36, 34);
     const sites = f.controller.dragGhosts.peek();
@@ -85,6 +99,37 @@ describe('live building Shift drag uses actual placement and Build commands', ()
       expect(Math.abs(sites[i]!.x - sites[j]!.x) >= 2 * 4096 || Math.abs(sites[i]!.z - sites[j]!.z) >= 2 * 4096).toBe(true);
     }
     f.release(36, 34); expect(f.link.sentBatches).toHaveLength(sites.length); f.dispose();
+  });
+  it('shows raised pgen volumes around an existing mex and queues surrounding sites once', () => {
+    const f = fixture(); f.publish(true); f.arm(); f.start(28, 28); f.move(32.25, 32.25);
+    const sites = f.controller.dragGhosts.peek(), valid = sites.filter(site => site.verdict === PlacementVerdict.Valid);
+    expect(sites).toHaveLength(9); expect(valid).toHaveLength(8);
+    expect(sites.find(site => site.x === 30 * 4096 && site.z === 30 * 4096)?.verdict).toBe(PlacementVerdict.Occupied);
+    expect(sites.every(site => site.role === 'energy' && site.corners.length === 4 && site.roof?.length === 4)).toBe(true);
+    expect(sites.every(site => site.roof!.some((point, i) => point[1] !== site.corners[i]![1]))).toBe(true);
+    expect(f.link.sentBatches).toEqual([]);
+    f.release(32.25, 32.25); f.release(32.25, 32.25);
+    const commands = f.link.sentBatches.flatMap(bytes => decodeBatch(bytes));
+    expect(commands.map(command => decodeBuild(command.payload))).toEqual(valid.map(site => ({ bp: 1, x: site.x, z: site.z, yaw: site.yaw })));
+    expect(commands.every(command => command.op === Op.Build && command.flags === CmdFlags.Queue)).toBe(true);
+    const frame = f.client.lastFrame!;
+    expect(frame.unitHandle(2)).toBe(88); expect(frame.unitVisual(2)).toBe(2); expect(frame.unitBuild(2)).toBe(255);
+    f.dispose();
+  });
+  it('reserves accepted queued sites for later drags and frees them when the accepted snapshot clears', () => {
+    const f = fixture(); f.publish(true); f.arm(); f.start(28, 28); f.move(32.25, 32.25);
+    const sites = f.controller.dragGhosts.peek().filter(site => site.verdict === PlacementVerdict.Valid);
+    f.release(32.25, 32.25); const sent = f.link.sentBatches.length;
+    f.publish(true, sites);
+    expect(f.controller.queuedGhosts.peek()).toHaveLength(8);
+    expect(f.controller.queuedGhosts.peek().every(site => site.verdict === null && site.roof?.length === 4 && site.role === 'energy')).toBe(true);
+    f.start(28, 28); f.move(32.25, 32.25);
+    expect(f.controller.dragGhosts.peek()).toHaveLength(9);
+    expect(f.controller.dragGhosts.peek().every(site => site.verdict === PlacementVerdict.Occupied)).toBe(true);
+    f.release(32.25, 32.25); expect(f.link.sentBatches).toHaveLength(sent);
+    f.publish(true); f.start(28, 28); f.move(32.25, 32.25);
+    expect(f.controller.dragGhosts.peek().filter(site => site.verdict === PlacementVerdict.Valid)).toHaveLength(8);
+    f.dispose();
   });
   it.each(['Escape', 'menu', 'pause'] as const)('cleans a preview on %s and never enqueues its physical release', action => {
     const f = fixture(); f.arm(); f.start(); f.move(); expect(f.controller.dragGhosts.peek().length).toBeGreaterThan(1);

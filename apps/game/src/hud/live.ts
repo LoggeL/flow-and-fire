@@ -34,8 +34,9 @@ const MESSAGES = {
 import { LOCAL_SETTINGS, restoreSettings, uiLocale } from '../session-settings.ts';
 import { FrameHudAlerts } from './alerts.ts';
 import { frameFlowConsumers, frameFactoryAssistance } from './flow.ts';
-import { FrameBuildIntents, equalQueuedGhosts, type QueuedBuildGhost } from './build-intents.ts';
+import { FrameBuildIntents, equalQueuedGhosts, type IntentFootprint, type QueuedBuildGhost } from './build-intents.ts';
 import { WorldCursor, gameCursor, type GameCursor } from '../cursors.ts';
+import { FrameRangeRings, equalRangeRings, type RangeRing } from './range-rings.ts';
 import { completedFactoryHandles, contextOrders, contextTarget } from './context-orders.ts';
 export { restoreSettings } from '../session-settings.ts';
 
@@ -117,6 +118,8 @@ export class GameHudController {
   private dragPickValid = false;
   private readonly buildGesture = (gesture: BuildGesture): void => this.onBuildGesture(gesture);
   readonly queuedGhosts = signal<readonly QueuedBuildGhost[]>([]);
+  readonly rangeRings = signal<readonly RangeRing[]>([]);
+  private readonly frameRangeRings = new FrameRangeRings();
   private readonly frameBuildIntents = new FrameBuildIntents();
   readonly result = signal<MatchResult | null>(null);
   readonly commanderUpgrade = signal<CommanderUpgradeState | null>(null);
@@ -438,7 +441,8 @@ export class GameHudController {
         if ((spot.kind === 'mass' ? 0 : 1) === kind && distance < best) { best = distance; sx = spot.x; sz = spot.z; }
       }
     }
-    const verdict = canPlace(world, {x:sx,z:sz,w:game.bp.footprintW(p.bp),h:game.bp.footprintH(p.bp),yaw:p.yaw,maxSlopeRaw:game.bp.maxSlope(p.bp),spotKind:kind});
+    let verdict = canPlace(world, {x:sx,z:sz,w:game.bp.footprintW(p.bp),h:game.bp.footprintH(p.bp),yaw:p.yaw,maxSlopeRaw:game.bp.maxSlope(p.bp),spotKind:kind});
+    if (verdict === PlacementVerdict.Valid && this.frameBuildIntents.overlaps(game.client.lastFrame, bp => this.intentFootprint(bp), { x: sx, z: sz, width: w, height: h })) verdict = PlacementVerdict.Occupied;
     const corners: [number, number][] = [], roof: [number, number][] = []; const tmp = new Float64Array(4);
     const role = buildRole(game.bp, p.bp).role, lift = (PREVIEW_HEIGHT_WU[role] ?? 2) * 4096;
     let base = -Infinity;
@@ -514,9 +518,7 @@ export class GameHudController {
     const game = this.game, world = this.placementWorld;
     if (!game) return;
     game.client.camera.update();
-    const ghosts = this.frameBuildIntents.project(frame, bp => bp < game.bp.count ? {
-      typeId: this.typeId(bp), width: game.bp.footprintW(bp), height: game.bp.footprintH(bp),
-    } : null, {
+    const ghosts = this.frameBuildIntents.project(frame, bp => this.intentFootprint(bp), {
       heightAt: (x, z) => game.client.heightAtRaw(x, z),
       project: (x, y, z, out) => game.client.camera.project(x, y, z, out),
       ...(world ? { blocker: (site: { readonly bp: number; readonly x: number; readonly z: number; readonly yaw: number }) => canPlace(world, {
@@ -525,6 +527,36 @@ export class GameHudController {
       }) } : {}),
     });
     if (!equalQueuedGhosts(this.queuedGhosts.peek(), ghosts)) this.queuedGhosts.value = ghosts;
+  }
+  private intentFootprint(bp: number): IntentFootprint | null {
+    const game = this.game;
+    if (!game || bp < 0 || bp >= game.bp.count) return null;
+    const role = buildRole(game.bp, bp).role;
+    return { typeId: this.typeId(bp), width: game.bp.footprintW(bp), height: game.bp.footprintH(bp),
+      role, previewHeightRaw: (PREVIEW_HEIGHT_WU[role] ?? 2) * 4096 };
+  }
+  private updateRangeRings(): void {
+    const game = this.game;
+    if (!game || this.screen.peek() !== 'game' || this.model.menus.gameMenu.open.peek() || !game.bp.radarCol) {
+      if (this.rangeRings.peek().length > 0) this.rangeRings.value = [];
+      return;
+    }
+    const client = game.client;
+    let placement = this.ghost.peek();
+    const drag = this.dragGhosts.peek(), end = this.dragEnd ?? this.dragAnchor;
+    if (drag.length > 0 && end) {
+      placement = drag[0]!;
+      for (const site of drag) if (Math.hypot(site.x - end.x, site.z - end.z) < Math.hypot(placement.x - end.x, placement.z - end.z)) placement = site;
+    }
+    client.camera.update();
+    const rings = this.frameRangeRings.project(client.lastFrame, game.bp, client.selection.selected(), {
+      heightAt: (x, z) => client.heightAtRaw(x, z),
+      project: (x, y, z, out) => client.camera.project(x, y, z, out),
+      mapSizeRaw: game.map.sizeWu * 4096,
+      viewportWidth: client.camera.viewportWidth,
+      viewportHeight: client.camera.viewportHeight,
+    }, placement, army => game.replayMode ? army === client.viewArmy : this.allied(army), client.stream.lastAlpha);
+    if (!equalRangeRings(this.rangeRings.peek(), rings)) this.rangeRings.value = rings;
   }
   handleKey(event: KeyboardEvent): boolean {
     const m = this.model; const target = event.target as HTMLElement | null;
@@ -647,7 +679,7 @@ export class GameHudController {
     if (r) this.frameAlerts?.present(r, viewer);
     c.input.setSuspended(this.screen.peek()!=='game'||m.menus.gameMenu.open.peek());
     if(this.destructAt>0){const left=Math.max(0,Math.ceil((this.destructAt-now)/1000));this.model.orders.selfDestructCountdown.value=left;if(left===0){c.commands.issue(Op.SelfDestruct,this.destructHandles,new Uint8Array(0),false,now);this.destructAt=0;this.destructHandles=[];this.model.orders.selfDestructCountdown.value=null;}}
-    this.updateFootprints(r); this.updateGhost(); this.updateQueuedGhosts(r); this.updateMinimapFog(now); this.updateCursor();
+    this.updateFootprints(r); this.updateGhost(); this.updateQueuedGhosts(r); this.updateRangeRings(); this.updateMinimapFog(now); this.updateCursor();
     if(m.card.flashSlot.peek()&&now>=this.flashUntil)m.card.flashSlot.value=null;
     // The clock follows the accepted frame tick at once (seek, rewind, replay end); whole seconds only.
     const seconds = Math.floor((r?.tick ?? c.tick) / 10);

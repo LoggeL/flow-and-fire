@@ -28,9 +28,13 @@
 .live-build-ghost .live-build-volume polygon {fill:var(--ghost-role,#5cfa87);fill-opacity:.13;stroke:var(--ghost-role,#5cfa87);stroke-opacity:.7;stroke-width:1;stroke-linejoin:round;}
 .live-build-ghost .live-build-volume polygon.roof {fill-opacity:.24;stroke-width:1.5;}
 .live-build-ghost .live-build-volume.invalid polygon {fill:#c63f44;stroke:#ff555b;fill-opacity:.12;}
+.live-build-drag-ghosts polygon[data-testid="build-drag-ghost"].invalid {fill:url(#build-drag-blocked-hatch);}
 .live-queued-build-ghosts {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .live-queued-build-ghosts polygon {fill:#66bde51a;stroke:#94d1eb;stroke-width:1.5;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;}
 .live-queued-build-ghosts polygon.blocked {fill:#c63f4414;stroke:#df8b87;}
+.live-queued-build-ghosts .live-build-volume polygon {fill:var(--ghost-role,#94d1eb);stroke:var(--ghost-role,#94d1eb);fill-opacity:.05;stroke-opacity:.55;stroke-width:1;stroke-linejoin:round;}
+.live-queued-build-ghosts .live-build-volume polygon.roof {fill-opacity:.09;}
+.live-queued-build-ghosts .live-build-volume.invalid polygon {fill:#c63f44;stroke:#df8b87;}
 .faf-diagnostics {position:fixed;top:8rem;left:12px;z-index:30;pointer-events:auto;}
 .faf-diagnostics summary {cursor:pointer;background:#161916;padding:4px 8px;color:#eee;}
 .faf-diagnostics .faf-hud {position:relative;inset:auto;max-height:50vh;overflow:auto;}
