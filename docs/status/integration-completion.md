@@ -5,7 +5,7 @@ spielbare Entwicklungsversion läuft auf der HomeBox:
 [Flow & Fire starten](https://faf.logge.top/?menu=1).
 Das [Repository](https://github.com/LoggeL/flow-and-fire) ist öffentlich;
 [README](../../README.md) und [Docker-Anleitung](../deployment.md) beschreiben Start
-und Bedienung. Der ausgelieferte Spielbuild ist `eba29249180c`, Sim-Version
+und Bedienung. Der ausgelieferte Spielbuild ist `fe3c4b7670eb`, Sim-Version
 `faf-sim/ms6.4-commander-enhancements`. Die ältere Adresse bleibt als Alias erreichbar.
 
 ## Umgesetzter Umfang
@@ -52,6 +52,10 @@ reguläre Wirtschaft und der Fabrikausbau bis zur T2-Produktion geprüft: 56 Scr
 vier Fenstergrößen, untainted Replay, keine Browser-, Host-, HTTP- oder Layoutfehler und
 keine Lautsprecherverbindungen. Die Originalvideos sind mit
 [Zeitmarken und Beobachtungsgrenzen](../design/gameplay-reference-2026-10-02.md) dokumentiert.
+
+Die [runderen HUD-Rahmen](../design/rounded-ui-2026-10-02/README.md) folgen mit echten
+Kurven, konzentrischer Innenkante und kleineren passenden Radien an den Bedienflächen.
+Der Vergleich zeigt die ACU-Auswahl und den Fabrikausbau im öffentlichen Build.
 
 ## Nachweise und ihre Grenzen
 

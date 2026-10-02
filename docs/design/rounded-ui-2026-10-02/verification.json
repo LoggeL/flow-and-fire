@@ -1,0 +1,44 @@
+{
+  "publicURL": "https://faf.logge.top",
+  "build": "fe3c4b7670eb",
+  "simHash": 40017171,
+  "passed": true,
+  "screenshots": 56,
+  "layouts": 56,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "width": 800,
+      "height": 600
+    }
+  ],
+  "maxDesktopDockHeight": 209.765625,
+  "pageErrors": [],
+  "failedRequests": [],
+  "layoutFailures": [],
+  "speakerConnections": 0,
+  "blockedConnections": 0,
+  "tainted": false,
+  "screens": [
+    {
+      "name": "commander-right-cannon-offer-1440x900",
+      "sha256": "fab45c88fbdda8d78749150898192cb71c7dd21d71befc953da659ab1fcd0d21"
+    },
+    {
+      "name": "factory-t1-t2-running-1440x900",
+      "sha256": "c694d658d9b353040a64c2a52a3498cb2e6d9e2b87c846f8b24a876dc75451b2"
+    }
+  ],
+  "completedAt": "2026-10-02T08:02:13.439Z"
+}
