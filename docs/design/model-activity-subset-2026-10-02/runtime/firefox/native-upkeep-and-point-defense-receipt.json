@@ -1,0 +1,7990 @@
+{
+  "engine": "firefox",
+  "actors": [
+    {
+      "id": "core:str_t1_mex",
+      "label": "Zapfstelle I",
+      "handle": 2,
+      "axis": "pitch"
+    },
+    {
+      "id": "core:str_t2_mex",
+      "label": "Zapfstelle II",
+      "handle": 3,
+      "axis": "pitch"
+    },
+    {
+      "id": "core:str_t1_radar",
+      "label": "Horcher I",
+      "handle": 4,
+      "axis": "yaw"
+    }
+  ],
+  "start": {
+    "buildHash": "0a7920400419",
+    "tick": 13,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 13,
+      "flowTick": 13,
+      "readOnlyCommands": false,
+      "sentCommands": 3,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3897800,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": []
+    },
+    "actors": [
+      {
+        "handle": 2,
+        "unit": {
+          "x": 110,
+          "y": 24.1015625,
+          "z": 104,
+          "visual": 19,
+          "orders": null,
+          "blocked": false,
+          "hp": 400,
+          "hpMax": 400,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 2,
+          "tick": 13,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 61380,
+          "bodyCurYaw": 61380,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 788,
+              "curPitch": 879
+            }
+          ]
+        }
+      },
+      {
+        "handle": 3,
+        "unit": {
+          "x": 118,
+          "y": 24.0703125,
+          "z": 105,
+          "visual": 23,
+          "orders": null,
+          "blocked": false,
+          "hp": 2100,
+          "hpMax": 2100,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 3,
+          "tick": 13,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 5266,
+          "bodyCurYaw": 5266,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 455,
+              "curPitch": 644
+            }
+          ]
+        }
+      },
+      {
+        "handle": 4,
+        "unit": {
+          "x": 126,
+          "y": 24.078125,
+          "z": 112,
+          "visual": 22,
+          "orders": null,
+          "blocked": false,
+          "hp": 200,
+          "hpMax": 200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 4,
+          "tick": 13,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 56568,
+          "bodyCurYaw": 56568,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 1092,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 4,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 137,
+      "drawCalls": 20,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 0
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 0
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 15,
+        "unknown": 0,
+        "explored": 4048,
+        "visible": 48,
+        "uploads": 15,
+        "uploadBytes": 245760,
+        "draws": 2,
+        "transition": 0.2746666666666685
+      },
+      "zoomLevel": 1,
+      "iconCount": 0,
+      "dynamicDecals": 0,
+      "instances": 89,
+      "unitInstances": 4,
+      "culledInstances": 0,
+      "lodInstances": [
+        0,
+        4,
+        0
+      ],
+      "terrainPatches": 34,
+      "decals": 34,
+      "lost": false,
+      "cpuMs": 0.1799999999998363,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "samples": [
+    {
+      "buildHash": "0a7920400419",
+      "tick": 13,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 13,
+        "flowTick": 13,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3897800,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 13,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 788,
+                "curPitch": 879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 13,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 455,
+                "curPitch": 644
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 13,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 1092,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 137,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 15,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 15,
+          "uploadBytes": 245760,
+          "draws": 2,
+          "transition": 0.2746666666666685
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 14,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 14,
+        "flowTick": 14,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3896700,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 14,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 14,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 644,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 14,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 1092,
+                "curYaw": 2184,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 141,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 16,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 16,
+          "uploadBytes": 262144,
+          "draws": 2,
+          "transition": 0.10679999999999988
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 15,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 15,
+        "flowTick": 15,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3895600,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 15,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 910,
+                "curPitch": 879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 15,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 788,
+                "curPitch": 879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 15,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 2184,
+                "curYaw": 3276,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 146,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 17,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 17,
+          "uploadBytes": 278528,
+          "draws": 2,
+          "transition": 0.16199999999999817
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.18000000000029104,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 16,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 16,
+        "flowTick": 16,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3894500,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 16,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 16,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 16,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 3276,
+                "curYaw": 4368,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 150,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 18,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 18,
+          "uploadBytes": 294912,
+          "draws": 2,
+          "transition": 0.11039999999999964
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 17,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 17,
+        "flowTick": 17,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3893400,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 17,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 788,
+                "curPitch": 643
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 17,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 910,
+                "curPitch": 879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 17,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 4368,
+                "curYaw": 5460,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 154,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 19,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 19,
+          "uploadBytes": 311296,
+          "draws": 2,
+          "transition": 0.11039999999999964
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.18000000000029104,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 18,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 18,
+        "flowTick": 18,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3892300,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 18,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 643,
+                "curPitch": 455
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 18,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 18,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 5460,
+                "curYaw": 6552,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 158,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 20,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 20,
+          "uploadBytes": 327680,
+          "draws": 2,
+          "transition": 0.11119999999999891
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 19,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 19,
+        "flowTick": 19,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3891200,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 19,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 455,
+                "curPitch": 235
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 19,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 788,
+                "curPitch": 643
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 19,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 6552,
+                "curYaw": 7644,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 162,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 21,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 21,
+          "uploadBytes": 344064,
+          "draws": 2,
+          "transition": 0.1139999999999994
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.22000000000025466,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 20,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 20,
+        "flowTick": 20,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3890100,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 20,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 235,
+                "curPitch": 0
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 20,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 643,
+                "curPitch": 455
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 20,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 7644,
+                "curYaw": 8736,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 166,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 22,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 22,
+          "uploadBytes": 360448,
+          "draws": 2,
+          "transition": 0.10839999999999843
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.3400000000001455,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 21,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 21,
+        "flowTick": 21,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3889000,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 21,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 0,
+                "curPitch": -236
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 21,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 455,
+                "curPitch": 235
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 21,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 8736,
+                "curYaw": 9828,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 170,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 23,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 23,
+          "uploadBytes": 376832,
+          "draws": 2,
+          "transition": 0.10426666666666885
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.13999999999987267,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 22,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 22,
+        "flowTick": 22,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3887900,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 22,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -236,
+                "curPitch": -455
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 22,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 235,
+                "curPitch": 0
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 22,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 9828,
+                "curYaw": 10920,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 174,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 24,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 24,
+          "uploadBytes": 393216,
+          "draws": 2,
+          "transition": 0.11093333333333552
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.25999999999976353,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 23,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 23,
+        "flowTick": 23,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3886800,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 23,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -455,
+                "curPitch": -644
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 23,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 0,
+                "curPitch": -236
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 23,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 10920,
+                "curYaw": 12012,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 179,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 25,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 25,
+          "uploadBytes": 409600,
+          "draws": 2,
+          "transition": 0.1551999999999983
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 24,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 24,
+        "flowTick": 24,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3885700,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 24,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -644,
+                "curPitch": -788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 24,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -236,
+                "curPitch": -455
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 24,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 12012,
+                "curYaw": 13104,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 183,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 26,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 26,
+          "uploadBytes": 425984,
+          "draws": 2,
+          "transition": 0.1170666666666663
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.16000000000030923,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 25,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 25,
+        "flowTick": 25,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3884600,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 25,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -788,
+                "curPitch": -879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 25,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -455,
+                "curPitch": -644
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 25,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 13104,
+                "curYaw": 14196,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 188,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 27,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 27,
+          "uploadBytes": 442368,
+          "draws": 2,
+          "transition": 0.16759999999999914
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.16000000000030923,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 26,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 26,
+        "flowTick": 26,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3883500,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 26,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -879,
+                "curPitch": -910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 26,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -644,
+                "curPitch": -788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 26,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 14196,
+                "curYaw": 15288,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 193,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 28,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 28,
+          "uploadBytes": 458752,
+          "draws": 2,
+          "transition": 0.16826666666666823
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 27,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 27,
+        "flowTick": 27,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3882400,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 27,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -910,
+                "curPitch": -879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 27,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -788,
+                "curPitch": -879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 27,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 15288,
+                "curYaw": 16380,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 197,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 29,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 29,
+          "uploadBytes": 475136,
+          "draws": 2,
+          "transition": 0.106266666666664
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 28,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 28,
+        "flowTick": 28,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3881300,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 28,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -879,
+                "curPitch": -788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 28,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -879,
+                "curPitch": -910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 28,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 16380,
+                "curYaw": 17472,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 201,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 30,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 30,
+          "uploadBytes": 491520,
+          "draws": 2,
+          "transition": 0.113733333333336
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 29,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 29,
+        "flowTick": 29,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3880200,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 29,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -788,
+                "curPitch": -643
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 29,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -910,
+                "curPitch": -879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 29,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 17472,
+                "curYaw": 18564,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 205,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 31,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 31,
+          "uploadBytes": 507904,
+          "draws": 2,
+          "transition": 0.11466666666666546
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.14000000000032742,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 30,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 30,
+        "flowTick": 30,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3879100,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 30,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -643,
+                "curPitch": -454
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 30,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -879,
+                "curPitch": -788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 30,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 18564,
+                "curYaw": 19656,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 209,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 32,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 32,
+          "uploadBytes": 524288,
+          "draws": 2,
+          "transition": 0.11159999999999855
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.42000000000007276,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 31,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 31,
+        "flowTick": 31,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3878000,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 31,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -454,
+                "curPitch": -235
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 31,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -788,
+                "curPitch": -643
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 31,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 19656,
+                "curYaw": 20748,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 213,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 33,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 33,
+          "uploadBytes": 540672,
+          "draws": 2,
+          "transition": 0.11240000000000085
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 32,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 32,
+        "flowTick": 32,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3876900,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 32,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -235,
+                "curPitch": 1
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 32,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -643,
+                "curPitch": -454
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 32,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 20748,
+                "curYaw": 21840,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 217,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 34,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 34,
+          "uploadBytes": 557056,
+          "draws": 2,
+          "transition": 0.11479999999999867
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 33,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 33,
+        "flowTick": 33,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3875800,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 33,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 1,
+                "curPitch": 236
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 33,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -454,
+                "curPitch": -235
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 33,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 21840,
+                "curYaw": 22932,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 221,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 35,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 35,
+          "uploadBytes": 573440,
+          "draws": 2,
+          "transition": 0.10466666666666849
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 34,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 34,
+        "flowTick": 34,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3874700,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 34,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 236,
+                "curPitch": 456
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 34,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": -235,
+                "curPitch": 1
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 34,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 22932,
+                "curYaw": 24024,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 225,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 36,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 36,
+          "uploadBytes": 589824,
+          "draws": 2,
+          "transition": 0.11119999999999891
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.13999999999987267,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 35,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 35,
+        "flowTick": 35,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3873600,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 35,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 456,
+                "curPitch": 644
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 35,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 1,
+                "curPitch": 236
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 35,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 24024,
+                "curYaw": 25116,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 229,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 37,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 37,
+          "uploadBytes": 606208,
+          "draws": 2,
+          "transition": 0.11933333333333394
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 36,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 36,
+        "flowTick": 36,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3872500,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 36,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 644,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 36,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 236,
+                "curPitch": 456
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 36,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 25116,
+                "curYaw": 26208,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 233,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 38,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 38,
+          "uploadBytes": 622592,
+          "draws": 2,
+          "transition": 0.10960000000000036
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.2600000000002183,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 37,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 37,
+        "flowTick": 37,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3871400,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 37,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 788,
+                "curPitch": 879
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 37,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 456,
+                "curPitch": 644
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 37,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 26208,
+                "curYaw": 27300,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 237,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 39,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 39,
+          "uploadBytes": 638976,
+          "draws": 2,
+          "transition": 0.1110666666666657
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.15999999999985448,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "buildHash": "0a7920400419",
+      "tick": 38,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 38,
+        "flowTick": 38,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3870300,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 644,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 27300,
+                "curYaw": 28392,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 241,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 40,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 40,
+          "uploadBytes": 655360,
+          "draws": 2,
+          "transition": 0.11493333333333187
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.1799999999998363,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    }
+  ],
+  "wallPause": {
+    "before": {
+      "buildHash": "0a7920400419",
+      "tick": 38,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 38,
+        "flowTick": 38,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3870300,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 644,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 27300,
+                "curYaw": 28392,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 247,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 40,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 40,
+          "uploadBytes": 655360,
+          "draws": 2,
+          "transition": 0.4435999999999998
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.16000000000030923,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    },
+    "after": {
+      "buildHash": "0a7920400419",
+      "tick": 38,
+      "paused": true,
+      "tainted": true,
+      "inspection": {
+        "viewer": 0,
+        "viewArmy": 0,
+        "tick": 38,
+        "flowTick": 38,
+        "readOnlyCommands": false,
+        "sentCommands": 3,
+        "eco": [
+          {
+            "army": 0,
+            "massStored": 650000,
+            "massCapacity": 650000,
+            "massOverflow": 900,
+            "energyStored": 3870300,
+            "energyCapacity": 3900000
+          }
+        ],
+        "watches": []
+      },
+      "actors": [
+        {
+          "handle": 2,
+          "unit": {
+            "x": 110,
+            "y": 24.1015625,
+            "z": 104,
+            "visual": 19,
+            "orders": null,
+            "blocked": false,
+            "hp": 400,
+            "hpMax": 400,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 2,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 61380,
+            "bodyCurYaw": 61380,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 879,
+                "curPitch": 910
+              }
+            ]
+          }
+        },
+        {
+          "handle": 3,
+          "unit": {
+            "x": 118,
+            "y": 24.0703125,
+            "z": 105,
+            "visual": 23,
+            "orders": null,
+            "blocked": false,
+            "hp": 2100,
+            "hpMax": 2100,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 3,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 5266,
+            "bodyCurYaw": 5266,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 0,
+                "curYaw": 0,
+                "prevPitch": 644,
+                "curPitch": 788
+              }
+            ]
+          }
+        },
+        {
+          "handle": 4,
+          "unit": {
+            "x": 126,
+            "y": 24.078125,
+            "z": 112,
+            "visual": 22,
+            "orders": null,
+            "blocked": false,
+            "hp": 200,
+            "hpMax": 200,
+            "build": 1,
+            "flags": 512
+          },
+          "pose": {
+            "handle": 4,
+            "tick": 38,
+            "viewer": 0,
+            "alpha": 1,
+            "observationMask": 0,
+            "bodyPrevYaw": 56568,
+            "bodyCurYaw": 56568,
+            "parts": [
+              {
+                "id": 1,
+                "prevYaw": 27300,
+                "curYaw": 28392,
+                "prevPitch": 0,
+                "curPitch": 0
+              }
+            ]
+          }
+        }
+      ],
+      "stats": {
+        "animatedUnits": 4,
+        "walkingUnits": 0,
+        "observedMounts": 0,
+        "overflowUnits": 0
+      },
+      "render": {
+        "frames": 282,
+        "drawCalls": 20,
+        "drawsByPass": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "passDraws": {
+          "terrain": 1,
+          "water": 1,
+          "fog": 2,
+          "units": 4,
+          "icons": 1,
+          "overlay": 0
+        },
+        "visibilityFog": {
+          "enabled": true,
+          "active": true,
+          "dim": 64,
+          "version": 40,
+          "unknown": 0,
+          "explored": 4048,
+          "visible": 48,
+          "uploads": 40,
+          "uploadBytes": 655360,
+          "draws": 2,
+          "transition": 1
+        },
+        "zoomLevel": 1,
+        "iconCount": 0,
+        "dynamicDecals": 0,
+        "instances": 89,
+        "unitInstances": 4,
+        "culledInstances": 0,
+        "lodInstances": [
+          0,
+          4,
+          0
+        ],
+        "terrainPatches": 34,
+        "decals": 34,
+        "lost": false,
+        "cpuMs": 0.14000000000032742,
+        "gpuMs": null,
+        "preset": "medium",
+        "backbuffer": {
+          "width": 1440,
+          "height": 900
+        },
+        "css": {
+          "width": 1440,
+          "height": 900
+        },
+        "devicePixelRatio": 1
+      },
+      "hostErrors": []
+    }
+  },
+  "rows": [
+    {
+      "unit": {
+        "id": "core:str_t1_mex",
+        "label": "Zapfstelle I",
+        "handle": 2,
+        "axis": "pitch"
+      },
+      "paused": {
+        "buildHash": "0a7920400419",
+        "tick": 41,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 41,
+          "flowTick": 41,
+          "readOnlyCommands": false,
+          "sentCommands": 4,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 700,
+              "energyStored": 3867400,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.1015625,
+              "z": 104,
+              "visual": 19,
+              "orders": 0,
+              "blocked": false,
+              "hp": 400,
+              "hpMax": 400,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 41,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 61380,
+              "bodyCurYaw": 61380,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 879,
+                  "curPitch": 879
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 309,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 44,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 44,
+            "uploadBytes": 720896,
+            "draws": 2,
+            "transition": 0.11013333333333321
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 47,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.13999999999987267,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "held": {
+        "buildHash": "0a7920400419",
+        "tick": 50,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 50,
+          "flowTick": 50,
+          "readOnlyCommands": false,
+          "sentCommands": 4,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 700,
+              "energyStored": 3859300,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.1015625,
+              "z": 104,
+              "visual": 19,
+              "orders": 0,
+              "blocked": false,
+              "hp": 400,
+              "hpMax": 400,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 50,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 61380,
+              "bodyCurYaw": 61380,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 879,
+                  "curPitch": 879
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 323,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 53,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 53,
+            "uploadBytes": 868352,
+            "draws": 2,
+            "transition": 0.16586666666666738
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 47,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.18000000000029104,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "resumed": {
+        "buildHash": "0a7920400419",
+        "tick": 52,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 52,
+          "flowTick": 52,
+          "readOnlyCommands": false,
+          "sentCommands": 5,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 900,
+              "energyStored": 3857100,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.1015625,
+              "z": 104,
+              "visual": 19,
+              "orders": 0,
+              "blocked": false,
+              "hp": 400,
+              "hpMax": 400,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 52,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 61380,
+              "bodyCurYaw": 61380,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 788,
+                  "curPitch": 643
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:str_t1_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 104
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 333,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 55,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 55,
+            "uploadBytes": 901120,
+            "draws": 2,
+            "transition": 0.11626666666666399
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 47,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.1799999999998363,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      }
+    },
+    {
+      "unit": {
+        "id": "core:str_t2_mex",
+        "label": "Zapfstelle II",
+        "handle": 3,
+        "axis": "pitch"
+      },
+      "paused": {
+        "buildHash": "0a7920400419",
+        "tick": 55,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 55,
+          "flowTick": 55,
+          "readOnlyCommands": false,
+          "sentCommands": 6,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 300,
+              "energyStored": 3855600,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 118,
+              "y": 24.0703125,
+              "z": 105,
+              "visual": 23,
+              "orders": 0,
+              "blocked": false,
+              "hp": 2100,
+              "hpMax": 2100,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 55,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 5266,
+              "bodyCurYaw": 5266,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": -879,
+                  "curPitch": -879
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 366,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 59,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 59,
+            "uploadBytes": 966656,
+            "draws": 2,
+            "transition": 0.14906666666667054
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 49,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 12,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.13999999999941792,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "held": {
+        "buildHash": "0a7920400419",
+        "tick": 64,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 64,
+          "flowTick": 64,
+          "readOnlyCommands": false,
+          "sentCommands": 6,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 300,
+              "energyStored": 3853800,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 118,
+              "y": 24.0703125,
+              "z": 105,
+              "visual": 23,
+              "orders": 0,
+              "blocked": false,
+              "hp": 2100,
+              "hpMax": 2100,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 64,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 5266,
+              "bodyCurYaw": 5266,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": -879,
+                  "curPitch": -879
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 379,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 68,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 68,
+            "uploadBytes": 1114112,
+            "draws": 2,
+            "transition": 0.11079999999999927
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 49,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 12,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.2600000000002183,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "resumed": {
+        "buildHash": "0a7920400419",
+        "tick": 66,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 66,
+          "flowTick": 66,
+          "readOnlyCommands": false,
+          "sentCommands": 7,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 900,
+              "energyStored": 3851600,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 118,
+              "y": 24.0703125,
+              "z": 105,
+              "visual": 23,
+              "orders": 0,
+              "blocked": false,
+              "hp": 2100,
+              "hpMax": 2100,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 66,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 5266,
+              "bodyCurYaw": 5266,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": -787,
+                  "curPitch": -643
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:str_t2_mex",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 118,
+                "z": 105
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 391,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 70,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 70,
+            "uploadBytes": 1146880,
+            "draws": 2,
+            "transition": 0.1530666666666669
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 49,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 12,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.14000000000032742,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      }
+    },
+    {
+      "unit": {
+        "id": "core:str_t1_radar",
+        "label": "Horcher I",
+        "handle": 4,
+        "axis": "yaw"
+      },
+      "paused": {
+        "buildHash": "0a7920400419",
+        "tick": 69,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 69,
+          "flowTick": 69,
+          "readOnlyCommands": false,
+          "sentCommands": 8,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 900,
+              "energyStored": 3852300,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 4,
+            "unit": {
+              "x": 126,
+              "y": 24.078125,
+              "z": 112,
+              "visual": 22,
+              "orders": 0,
+              "blocked": false,
+              "hp": 200,
+              "hpMax": 200,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 4,
+              "tick": 69,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 56568,
+              "bodyCurYaw": 56568,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 60060,
+                  "curYaw": 60060,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 422,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 74,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 74,
+            "uploadBytes": 1212416,
+            "draws": 2,
+            "transition": 0.10986666666666375
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 39,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 7,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.11999999999989086,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "held": {
+        "buildHash": "0a7920400419",
+        "tick": 78,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 78,
+          "flowTick": 78,
+          "readOnlyCommands": false,
+          "sentCommands": 8,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 900,
+              "energyStored": 3860400,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 4,
+            "unit": {
+              "x": 126,
+              "y": 24.078125,
+              "z": 112,
+              "visual": 22,
+              "orders": 0,
+              "blocked": false,
+              "hp": 200,
+              "hpMax": 200,
+              "build": 1,
+              "flags": 2560
+            },
+            "pose": {
+              "handle": 4,
+              "tick": 78,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 56568,
+              "bodyCurYaw": 56568,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 60060,
+                  "curYaw": 60060,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 435,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 83,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 83,
+            "uploadBytes": 1359872,
+            "draws": 2,
+            "transition": 0.16146666666666837
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 39,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 7,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.28000000000065484,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "resumed": {
+        "buildHash": "0a7920400419",
+        "tick": 80,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 80,
+          "flowTick": 80,
+          "readOnlyCommands": false,
+          "sentCommands": 9,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650000,
+              "massCapacity": 650000,
+              "massOverflow": 900,
+              "energyStored": 3858200,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 4,
+            "unit": {
+              "x": 126,
+              "y": 24.078125,
+              "z": 112,
+              "visual": 22,
+              "orders": 0,
+              "blocked": false,
+              "hp": 200,
+              "hpMax": 200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 4,
+              "tick": 80,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 56568,
+              "bodyCurYaw": 56568,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 61152,
+                  "curYaw": 62244,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 4,
+              "typeId": "core:str_t1_radar",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 126,
+                "z": 112
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 447,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 1,
+            "overlay": 1
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 85,
+            "unknown": 0,
+            "explored": 4048,
+            "visible": 48,
+            "uploads": 85,
+            "uploadBytes": 1392640,
+            "draws": 2,
+            "transition": 0.2093333333333309
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 1,
+          "instances": 39,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 7,
+          "decals": 35,
+          "lost": false,
+          "cpuMs": 0.17999999999938154,
+          "gpuMs": null,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      }
+    }
+  ],
+  "foreign": [
+    6,
+    7
+  ],
+  "privateBefore": {
+    "buildHash": "0a7920400419",
+    "tick": 84,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 84,
+      "flowTick": 84,
+      "readOnlyCommands": false,
+      "sentCommands": 11,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3853800,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 4,
+          "typeId": "core:str_t1_radar",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 126,
+            "z": 112
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 6,
+        "unit": {
+          "x": 138,
+          "y": 24.0859375,
+          "z": 112,
+          "visual": 22,
+          "orders": null,
+          "blocked": false,
+          "hp": 200,
+          "hpMax": 200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 6,
+          "tick": 84,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 4977,
+          "bodyCurYaw": 4977,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      },
+      {
+        "handle": 7,
+        "unit": {
+          "x": 138,
+          "y": 24.09375,
+          "z": 106,
+          "visual": 23,
+          "orders": null,
+          "blocked": false,
+          "hp": 2100,
+          "hpMax": 2100,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 7,
+          "tick": 84,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 50942,
+          "bodyCurYaw": 50942,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 6,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 475,
+      "drawCalls": 21,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 89,
+        "unknown": 0,
+        "explored": 4048,
+        "visible": 48,
+        "uploads": 89,
+        "uploadBytes": 1458176,
+        "draws": 2,
+        "transition": 0.27586666666666737
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 45,
+      "unitInstances": 6,
+      "culledInstances": 0,
+      "lodInstances": [
+        6,
+        0,
+        0
+      ],
+      "terrainPatches": 7,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.14000000000032742,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "privateAfter": {
+    "buildHash": "0a7920400419",
+    "tick": 89,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 89,
+      "flowTick": 89,
+      "readOnlyCommands": false,
+      "sentCommands": 11,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3848300,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 4,
+          "typeId": "core:str_t1_radar",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 126,
+            "z": 112
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 6,
+        "unit": {
+          "x": 138,
+          "y": 24.0859375,
+          "z": 112,
+          "visual": 22,
+          "orders": null,
+          "blocked": false,
+          "hp": 200,
+          "hpMax": 200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 6,
+          "tick": 89,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 4977,
+          "bodyCurYaw": 4977,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      },
+      {
+        "handle": 7,
+        "unit": {
+          "x": 138,
+          "y": 24.09375,
+          "z": 106,
+          "visual": 23,
+          "orders": null,
+          "blocked": false,
+          "hp": 2100,
+          "hpMax": 2100,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 7,
+          "tick": 89,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 50942,
+          "bodyCurYaw": 50942,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 6,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 484,
+      "drawCalls": 21,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 1,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 94,
+        "unknown": 0,
+        "explored": 4048,
+        "visible": 48,
+        "uploads": 94,
+        "uploadBytes": 1540096,
+        "draws": 2,
+        "transition": 0.16599999999999757
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 45,
+      "unitInstances": 6,
+      "culledInstances": 0,
+      "lodInstances": [
+        6,
+        0,
+        0
+      ],
+      "terrainPatches": 7,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.11999999999989086,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "pd": 8,
+  "target": 9,
+  "idle": {
+    "buildHash": "0a7920400419",
+    "tick": 92,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 92,
+      "flowTick": 92,
+      "readOnlyCommands": false,
+      "sentCommands": 12,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3845000,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 8,
+        "unit": {
+          "x": 180,
+          "y": 15.0234375,
+          "z": 90,
+          "visual": 20,
+          "orders": 0,
+          "blocked": false,
+          "hp": 1350,
+          "hpMax": 1350,
+          "build": 1,
+          "flags": 4608
+        },
+        "pose": {
+          "handle": 8,
+          "tick": 92,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 99,
+          "bodyCurYaw": 99,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            },
+            {
+              "id": 2,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        },
+        "work": {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 7,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 504,
+      "drawCalls": 18,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 1,
+        "icons": 1,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 1,
+        "icons": 1,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 98,
+        "unknown": 0,
+        "explored": 4022,
+        "visible": 74,
+        "uploads": 98,
+        "uploadBytes": 1605632,
+        "draws": 2,
+        "transition": 0.11026666666666643
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 42,
+      "unitInstances": 1,
+      "culledInstances": 6,
+      "lodInstances": [
+        1,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.11999999999989086,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "aimed": {
+    "buildHash": "0a7920400419",
+    "tick": 96,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 96,
+      "flowTick": 96,
+      "readOnlyCommands": false,
+      "sentCommands": 14,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3840600,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 8,
+        "unit": {
+          "x": 180,
+          "y": 15.0234375,
+          "z": 90,
+          "visual": 20,
+          "orders": 1,
+          "blocked": false,
+          "hp": 1350,
+          "hpMax": 1350,
+          "build": 1,
+          "flags": 4096
+        },
+        "pose": {
+          "handle": 8,
+          "tick": 96,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 1,
+          "bodyPrevYaw": 99,
+          "bodyCurYaw": 99,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 4815,
+              "curYaw": 6217,
+              "prevPitch": 0,
+              "curPitch": 0
+            },
+            {
+              "id": 2,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": -371,
+              "curPitch": -371
+            }
+          ]
+        },
+        "work": {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 8,
+      "walkingUnits": 0,
+      "observedMounts": 1,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 524,
+      "drawCalls": 21,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 2
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 2
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 102,
+        "unknown": 0,
+        "explored": 4022,
+        "visible": 74,
+        "uploads": 102,
+        "uploadBytes": 1671168,
+        "draws": 2,
+        "transition": 0.1679999999999988
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 2,
+      "instances": 47,
+      "unitInstances": 2,
+      "culledInstances": 6,
+      "lodInstances": [
+        2,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 36,
+      "lost": false,
+      "cpuMs": 0.2999999999992724,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "lost": {
+    "buildHash": "0a7920400419",
+    "tick": 198,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 198,
+      "flowTick": 198,
+      "readOnlyCommands": false,
+      "sentCommands": 14,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3728400,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 8,
+        "unit": {
+          "x": 180,
+          "y": 15.0234375,
+          "z": 90,
+          "visual": 20,
+          "orders": 0,
+          "blocked": false,
+          "hp": 1350,
+          "hpMax": 1350,
+          "build": 1,
+          "flags": 4608
+        },
+        "pose": {
+          "handle": 8,
+          "tick": 198,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 99,
+          "bodyCurYaw": 99,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            },
+            {
+              "id": 2,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        },
+        "work": {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 8,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 965,
+      "drawCalls": 20,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 204,
+        "unknown": 0,
+        "explored": 4022,
+        "visible": 74,
+        "uploads": 204,
+        "uploadBytes": 3342336,
+        "draws": 2,
+        "transition": 0.16120000000000195
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 243,
+      "unitInstances": 2,
+      "culledInstances": 6,
+      "lodInstances": [
+        2,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.21999999999934516,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "final": {
+    "buildHash": "0a7920400419",
+    "tick": 198,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 198,
+      "flowTick": 198,
+      "readOnlyCommands": false,
+      "sentCommands": 14,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 650000,
+          "massCapacity": 650000,
+          "massOverflow": 900,
+          "energyStored": 3728400,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 8,
+          "typeId": "core:str_t1_pd",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 180,
+            "z": 90
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 2,
+        "unit": {
+          "x": 110,
+          "y": 24.1015625,
+          "z": 104,
+          "visual": 19,
+          "orders": null,
+          "blocked": false,
+          "hp": 400,
+          "hpMax": 400,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 2,
+          "tick": 198,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 61380,
+          "bodyCurYaw": 61380,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 451,
+              "curPitch": 230
+            }
+          ]
+        }
+      },
+      {
+        "handle": 3,
+        "unit": {
+          "x": 118,
+          "y": 24.0703125,
+          "z": 105,
+          "visual": 23,
+          "orders": null,
+          "blocked": false,
+          "hp": 2100,
+          "hpMax": 2100,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 3,
+          "tick": 198,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 5266,
+          "bodyCurYaw": 5266,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 786,
+              "curPitch": 640
+            }
+          ]
+        }
+      },
+      {
+        "handle": 4,
+        "unit": {
+          "x": 126,
+          "y": 24.078125,
+          "z": 112,
+          "visual": 22,
+          "orders": null,
+          "blocked": false,
+          "hp": 200,
+          "hpMax": 200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 4,
+          "tick": 198,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 56568,
+          "bodyCurYaw": 56568,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 58936,
+              "curYaw": 60028,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 8,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 966,
+      "drawCalls": 20,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 2,
+        "icons": 2,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 204,
+        "unknown": 0,
+        "explored": 4022,
+        "visible": 74,
+        "uploads": 204,
+        "uploadBytes": 3342336,
+        "draws": 2,
+        "transition": 0.2196000000000034
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 243,
+      "unitInstances": 2,
+      "culledInstances": 6,
+      "lodInstances": [
+        2,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.15999999999985448,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "silent": {
+    "installed": true,
+    "contexts": 1,
+    "speakerConnections": 0,
+    "blockedConnections": 0,
+    "streamDestinations": 1
+  },
+  "fixture": "Bounded explicitly tainted actual Spawn commands, actual billed upkeep and accepted ticks, native TogglePause/resume and point-defense Attack, submitted rig buffers; no fake Frames or hidden World."
+}

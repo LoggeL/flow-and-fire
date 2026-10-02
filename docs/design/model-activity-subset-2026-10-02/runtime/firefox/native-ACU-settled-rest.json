@@ -1,0 +1,136 @@
+{
+  "engine": "firefox",
+  "commander": 0,
+  "firstRest": {
+    "pose": {
+      "handle": 0,
+      "tick": 61,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 0,
+      "bodyCurYaw": 0,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": -174,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 174,
+          "curPitch": 0
+        },
+        {
+          "id": 3,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 4,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 5,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    },
+    "position": {
+      "x": 103.974609375,
+      "y": 24.078125,
+      "z": 95.998779296875
+    },
+    "watch": {
+      "handle": 0,
+      "orders": 0,
+      "flags": 0,
+      "points": [],
+      "targets": []
+    },
+    "stats": {
+      "animatedUnits": 1,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    }
+  },
+  "settledRest": {
+    "pose": {
+      "handle": 0,
+      "tick": 63,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 0,
+      "bodyCurYaw": 0,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 3,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 4,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 5,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    },
+    "position": {
+      "x": 103.974609375,
+      "y": 24.078125,
+      "z": 95.998779296875
+    },
+    "watch": {
+      "handle": 0,
+      "orders": 0,
+      "flags": 0,
+      "points": [],
+      "targets": []
+    },
+    "stats": {
+      "animatedUnits": 1,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    }
+  }
+}

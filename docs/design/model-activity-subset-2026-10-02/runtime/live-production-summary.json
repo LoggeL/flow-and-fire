@@ -1,0 +1,212 @@
+[
+  {
+    "engine": "chromium",
+    "factory": "core:fac_land_t1",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 25,
+        "paused": false,
+        "pitch": 10920,
+        "product": "core:lnd_t1_tank",
+        "progress": 3744
+      },
+      "liveOpen": {
+        "tick": 44,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 12639
+      },
+      "liveHeldOpen": {
+        "tick": 51,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 15915
+      },
+      "livePaused": {
+        "tick": 51,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 15915
+      }
+    }
+  },
+  {
+    "engine": "chromium",
+    "factory": "core:fac_land_t2",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 194,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 3276
+      },
+      "liveOpen": {
+        "tick": 213,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 8936
+      },
+      "liveHeldOpen": {
+        "tick": 220,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 11021
+      },
+      "livePaused": {
+        "tick": 220,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 11021
+      }
+    }
+  },
+  {
+    "engine": "firefox",
+    "factory": "core:fac_land_t1",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 29,
+        "paused": false,
+        "pitch": 10920,
+        "product": "core:lnd_t1_tank",
+        "progress": 3744
+      },
+      "liveOpen": {
+        "tick": 47,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 12170
+      },
+      "liveHeldOpen": {
+        "tick": 53,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 14979
+      },
+      "livePaused": {
+        "tick": 54,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 15447
+      }
+    }
+  },
+  {
+    "engine": "firefox",
+    "factory": "core:fac_land_t2",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 197,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 3276
+      },
+      "liveOpen": {
+        "tick": 215,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 8638
+      },
+      "liveHeldOpen": {
+        "tick": 221,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 10426
+      },
+      "livePaused": {
+        "tick": 222,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 10724
+      }
+    }
+  },
+  {
+    "engine": "webkit",
+    "factory": "core:fac_land_t1",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 34,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 5149
+      },
+      "liveOpen": {
+        "tick": 53,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 14043
+      },
+      "liveHeldOpen": {
+        "tick": 60,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 17320
+      },
+      "livePaused": {
+        "tick": 60,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t1_tank",
+        "progress": 17320
+      }
+    }
+  },
+  {
+    "engine": "webkit",
+    "factory": "core:fac_land_t2",
+    "buildHash": "0a7920400419",
+    "states": {
+      "liveStart": {
+        "tick": 203,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 3276
+      },
+      "liveOpen": {
+        "tick": 223,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 9234
+      },
+      "liveHeldOpen": {
+        "tick": 230,
+        "paused": false,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 11319
+      },
+      "livePaused": {
+        "tick": 230,
+        "paused": true,
+        "pitch": 14564,
+        "product": "core:lnd_t2_tank",
+        "progress": 11319
+      }
+    }
+  }
+]

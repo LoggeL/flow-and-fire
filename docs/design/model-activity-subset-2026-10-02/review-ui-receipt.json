@@ -1,0 +1,383 @@
+{
+  "purpose": "Read-only gallery and model-viewer UI verification. Animation toggles are illustrative viewer controls, not proof of accepted game activity.",
+  "gallery": {
+    "title": "Flow & Fire · Gebäude und Animationen",
+    "units": [
+      {
+        "id": "str_t1_fac_land",
+        "name": "Landfabrik T1 · Landwerk I",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t1_fac_land",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t1_fac_land-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t1_fac_land-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "id": "str_t2_fac_land",
+        "name": "Landfabrik T2 · Landwerk II",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t2_fac_land",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t2_fac_land-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t2_fac_land-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "id": "str_t1_mex",
+        "name": "Masseextraktor T1 · Zapfstelle I",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t1_mex",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t1_mex-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t1_mex-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "id": "str_t2_mex",
+        "name": "Masseextraktor T2 · Zapfstelle II",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t2_mex",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t2_mex-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t2_mex-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "id": "str_t1_radar",
+        "name": "Radar T1 · Horcher I",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t1_radar",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t1_radar-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t1_radar-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "id": "str_t1_pd",
+        "name": "Punktverteidigung T1 · Riegel I",
+        "viewerUrl": "http://127.0.0.1:5356/#/model/varkan/str_t1_pd",
+        "pairs": [
+          {
+            "src": "http://127.0.0.1:5357/str_t1_pd-before.png",
+            "width": 960,
+            "height": 720
+          },
+          {
+            "src": "http://127.0.0.1:5357/str_t1_pd-after.png",
+            "width": 960,
+            "height": 720
+          }
+        ]
+      }
+    ],
+    "meta": "Varkan · 2. Oktober 2026 · Build 755b4177e62f"
+  },
+  "viewer": [
+    {
+      "id": "str_t1_fac_land",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t1_fac_land",
+      "name": "Landwerk I",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t2782\n1\tgate\thull\t0.00, 2.10, -0.52\tpitch\t206",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 24 WU · Länge 378 px · LOD0 · 2988 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 24 WU · Länge 378 px · LOD1 · 422 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 24 WU · Länge 378 px · LOD2 · 64 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    },
+    {
+      "id": "str_t2_fac_land",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t2_fac_land",
+      "name": "Landwerk II",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t2934\n1\tgate\thull\t0.00, 2.52, -0.52\tpitch\t506",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 25 WU · Länge 353 px · LOD0 · 3440 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 25 WU · Länge 353 px · LOD1 · 272 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 25 WU · Länge 353 px · LOD2 · 96 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    },
+    {
+      "id": "str_t1_mex",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t1_mex",
+      "name": "Zapfstelle I",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t1244\n1\tpump\thull\t0.00, 0.21, 0.00\tpitch\t362",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 6 WU · Länge 372 px · LOD0 · 1606 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 6 WU · Länge 372 px · LOD1 · 64 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 6 WU · Länge 372 px · LOD2 · 54 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    },
+    {
+      "id": "str_t2_mex",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t2_mex",
+      "name": "Zapfstelle II",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t1982\n1\tpump\thull\t0.00, 0.25, 0.00\tpitch\t614",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 6 WU · Länge 361 px · LOD0 · 2596 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 6 WU · Länge 361 px · LOD1 · 282 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 6 WU · Länge 361 px · LOD2 · 126 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    },
+    {
+      "id": "str_t1_radar",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t1_radar",
+      "name": "Horcher I",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t634\n1\twing\thull\t0.00, 2.05, 0.05\tyaw\t948",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 8 WU · Länge 269 px · LOD0 · 1582 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 8 WU · Länge 269 px · LOD1 · 310 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 8 WU · Länge 269 px · LOD2 · 74 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    },
+    {
+      "id": "str_t1_pd",
+      "url": "http://127.0.0.1:5356/#/model/varkan/str_t1_pd",
+      "name": "Riegel I",
+      "canvasSize": [
+        888,
+        820
+      ],
+      "lodOptions": [
+        {
+          "value": "auto",
+          "text": "auto (Distanz)"
+        },
+        {
+          "value": "0",
+          "text": "0"
+        },
+        {
+          "value": "1",
+          "text": "1"
+        },
+        {
+          "value": "2",
+          "text": "2"
+        }
+      ],
+      "animationLabel": " Parts animieren",
+      "partTable": "#\tName\tParent\tPivot\tAnim\tTris\n0\thull\t–\t0.00, 0.00, 0.00\tnone\t934\n1\tturret\thull\t0.00, 0.29, -0.08\tyaw\t400\n2\tbarrel\tturret\t0.00, 0.48, 0.16\tpitch\t448",
+      "lods": [
+        {
+          "selected": "0",
+          "hud": "Distanz 3 WU · Länge 366 px · LOD0 · 1782 Tris"
+        },
+        {
+          "selected": "1",
+          "hud": "Distanz 3 WU · Länge 366 px · LOD1 · 192 Tris"
+        },
+        {
+          "selected": "2",
+          "hud": "Distanz 3 WU · Länge 366 px · LOD2 · 80 Tris"
+        }
+      ],
+      "animationToggleOnOff": true
+    }
+  ],
+  "screenshots": [
+    "docs/design/model-activity-subset-2026-10-02/preview-t2-factory.png",
+    "docs/design/model-activity-subset-2026-10-02/preview-radar.png"
+  ],
+  "errors": [],
+  "httpFailures": []
+}

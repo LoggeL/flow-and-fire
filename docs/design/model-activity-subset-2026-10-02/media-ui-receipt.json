@@ -1,0 +1,37 @@
+{
+  "pairs": 12,
+  "pairNaturalSize": [
+    960,
+    720
+  ],
+  "gameScreenshots": 6,
+  "gameNaturalSize": [
+    1440,
+    900
+  ],
+  "videos": [
+    {
+      "src": "game/radar-operation.mp4",
+      "duration": 7.88,
+      "width": 1440,
+      "height": 900,
+      "muted": true
+    },
+    {
+      "src": "game/mex-operation.mp4",
+      "duration": 6.2,
+      "width": 1440,
+      "height": 900,
+      "muted": true
+    },
+    {
+      "src": "game/factory-production.mp4",
+      "duration": 8.08,
+      "width": 1440,
+      "height": 900,
+      "muted": true
+    }
+  ],
+  "errors": [],
+  "bad": []
+}

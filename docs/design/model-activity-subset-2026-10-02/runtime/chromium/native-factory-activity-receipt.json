@@ -1,0 +1,5977 @@
+{
+  "engine": "chromium",
+  "rows": [
+    {
+      "factory": {
+        "id": "core:fac_land_t1",
+        "product": "core:lnd_t1_tank",
+        "label": "Punze",
+        "handle": 2
+      },
+      "idle": {
+        "buildHash": "0a7920400419",
+        "tick": 7,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 7,
+          "flowTick": 7,
+          "readOnlyCommands": false,
+          "sentCommands": 2,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 650500,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 7,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 3,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 38,
+          "drawCalls": 21,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 3,
+            "icons": 1,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 3,
+            "icons": 1,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 9,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 9,
+            "uploadBytes": 147456,
+            "draws": 2,
+            "transition": 0.3304666668176651
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 45,
+          "unitInstances": 3,
+          "culledInstances": 0,
+          "lodInstances": [
+            3,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.3100000023841858,
+          "gpuMs": 3.60875,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "begun": {
+        "buildHash": "0a7920400419",
+        "tick": 10,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 10,
+          "flowTick": 10,
+          "readOnlyCommands": false,
+          "sentCommands": 3,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 649601,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 1404,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 10,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 2730,
+                  "curPitch": 4095
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 1404,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 46,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 12,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 12,
+            "uploadBytes": 196608,
+            "draws": 2,
+            "transition": 0.2214666666587194
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 88,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.21000000834465027,
+          "gpuMs": 3.434,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "samples": [
+        {
+          "buildHash": "0a7920400419",
+          "tick": 10,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 10,
+            "flowTick": 10,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 649601,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 1404,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 10,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 2730,
+                    "curPitch": 4095
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 1404,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 46,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 12,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 12,
+              "uploadBytes": 196608,
+              "draws": 2,
+              "transition": 0.2214666666587194
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 88,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.21000000834465027,
+            "gpuMs": 3.434,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 11,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 11,
+            "flowTick": 11,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 649301,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 1872,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 11,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 4095,
+                    "curPitch": 5460
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 1872,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 49,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 13,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 13,
+              "uploadBytes": 212992,
+              "draws": 2,
+              "transition": 0.2221666665871938
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 103,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.1550000011920929,
+            "gpuMs": 3.55475,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 12,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 12,
+            "flowTick": 12,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 649001,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2340,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 12,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 5460,
+                    "curPitch": 6825
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2340,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 52,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 14,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 14,
+              "uploadBytes": 229376,
+              "draws": 2,
+              "transition": 0.22180000007152556
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 116,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.29499998688697815,
+            "gpuMs": 3.64325,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 13,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 13,
+            "flowTick": 13,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 648701,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 13,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 55,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 15,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 15,
+              "uploadBytes": 245760,
+              "draws": 2,
+              "transition": 0.22433333337306977
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 126,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.22499999403953552,
+            "gpuMs": 1.45675,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      ],
+      "operating": {
+        "buildHash": "0a7920400419",
+        "tick": 13,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 13,
+          "flowTick": 13,
+          "readOnlyCommands": false,
+          "sentCommands": 3,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 648701,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 13,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 6825,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 55,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 15,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 15,
+            "uploadBytes": 245760,
+            "draws": 2,
+            "transition": 0.22433333337306977
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 126,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.22499999403953552,
+          "gpuMs": 1.45675,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "wallPause": {
+        "before": {
+          "buildHash": "0a7920400419",
+          "tick": 13,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 13,
+            "flowTick": 13,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 648701,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 13,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 55,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 15,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 15,
+              "uploadBytes": 245760,
+              "draws": 2,
+              "transition": 0.22433333337306977
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 126,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.22499999403953552,
+            "gpuMs": 1.45675,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "after": {
+          "buildHash": "0a7920400419",
+          "tick": 13,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 13,
+            "flowTick": 13,
+            "readOnlyCommands": false,
+            "sentCommands": 3,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 648701,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 13,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 2808,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 73,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 15,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 15,
+              "uploadBytes": 245760,
+              "draws": 2,
+              "transition": 1
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 126,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.16999998688697815,
+            "gpuMs": 3.342416,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      },
+      "paused": {
+        "buildHash": "0a7920400419",
+        "tick": 15,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 15,
+          "flowTick": 15,
+          "readOnlyCommands": false,
+          "sentCommands": 4,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 648901,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 2048
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 15,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 8190,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 79,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 17,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 17,
+            "uploadBytes": 278528,
+            "draws": 2,
+            "transition": 0.22209999998410543
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 120,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.14499998092651367,
+          "gpuMs": 1.438041,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "held": {
+        "buildHash": "0a7920400419",
+        "tick": 23,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 23,
+          "flowTick": 23,
+          "readOnlyCommands": false,
+          "sentCommands": 4,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 649701,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 2048
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 23,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 8190,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 2808,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 89,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 25,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 25,
+            "uploadBytes": 409600,
+            "draws": 2,
+            "transition": 0.21963333328564963
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 129,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.15000000596046448,
+          "gpuMs": 4.289375,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "resumed": {
+        "buildHash": "0a7920400419",
+        "tick": 25,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 25,
+          "flowTick": 25,
+          "readOnlyCommands": false,
+          "sentCommands": 5,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 649101,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 3744,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 25,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 9555,
+                  "curPitch": 10920
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": "core:lnd_t1_tank",
+              "progress": 3744,
+              "queue": [
+                "core:lnd_t1_tank"
+              ],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 96,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 27,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 27,
+            "uploadBytes": 442368,
+            "draws": 2,
+            "transition": 0.22076666673024495
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 158,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.24000000953674316,
+          "gpuMs": 1.63975,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "liveRun": {
+        "liveStart": {
+          "buildHash": "0a7920400419",
+          "tick": 25,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 25,
+            "flowTick": 25,
+            "readOnlyCommands": false,
+            "sentCommands": 5,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 649101,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3900000,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 3744,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 25,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 10920,
+                    "curPitch": 10920
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 3744,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 97,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 28,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 28,
+              "uploadBytes": 458752,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 158,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.3100000023841858,
+            "gpuMs": 1.459249,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "liveOpen": {
+          "buildHash": "0a7920400419",
+          "tick": 44,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 44,
+            "flowTick": 44,
+            "readOnlyCommands": false,
+            "sentCommands": 5,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 643401,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3899996,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 12639,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 44,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 12639,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 135,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 47,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 47,
+              "uploadBytes": 770048,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 343,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.20500001311302185,
+            "gpuMs": 3.577083,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "liveHeldOpen": {
+          "buildHash": "0a7920400419",
+          "tick": 51,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 51,
+            "flowTick": 51,
+            "readOnlyCommands": false,
+            "sentCommands": 5,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 641301,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3899999,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 15915,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 51,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 15915,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 149,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 54,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 54,
+              "uploadBytes": 884736,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 366,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.2150000035762787,
+            "gpuMs": 3.437125,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "livePaused": {
+          "buildHash": "0a7920400419",
+          "tick": 51,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 51,
+            "flowTick": 51,
+            "readOnlyCommands": false,
+            "sentCommands": 5,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 641301,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3899999,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 15915,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 2,
+              "unit": {
+                "x": 110,
+                "y": 24.0390625,
+                "z": 88,
+                "visual": 10,
+                "orders": 0,
+                "blocked": false,
+                "hp": 4200,
+                "hpMax": 4200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 2,
+                "tick": 51,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 3750,
+                "bodyCurYaw": 3750,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 2,
+                "typeId": "core:fac_land_t1",
+                "product": "core:lnd_t1_tank",
+                "progress": 15915,
+                "queue": [
+                  "core:lnd_t1_tank"
+                ],
+                "rally": {
+                  "x": 110,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 4,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 158,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 55,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 55,
+              "uploadBytes": 901120,
+              "draws": 2,
+              "transition": 0.8870666666825613
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 366,
+            "unitInstances": 4,
+            "culledInstances": 0,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 11,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.1550000011920929,
+            "gpuMs": 3.348625,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      },
+      "completed": {
+        "buildHash": "0a7920400419",
+        "tick": 158,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 158,
+          "flowTick": 158,
+          "readOnlyCommands": false,
+          "sentCommands": 6,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 609600,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 158,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 13199,
+                  "curPitch": 11834
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 327,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 162,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 162,
+            "uploadBytes": 2654208,
+            "draws": 2,
+            "transition": 0.2205666665236155
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 364,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.12000000476837158,
+          "gpuMs": 1.842416,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "closed": {
+        "buildHash": "0a7920400419",
+        "tick": 172,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 172,
+          "flowTick": 172,
+          "readOnlyCommands": false,
+          "sentCommands": 6,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 611000,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 2,
+            "unit": {
+              "x": 110,
+              "y": 24.0390625,
+              "z": 88,
+              "visual": 10,
+              "orders": 0,
+              "blocked": false,
+              "hp": 4200,
+              "hpMax": 4200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 2,
+              "tick": 172,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 3750,
+              "bodyCurYaw": 3750,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 2,
+              "typeId": "core:fac_land_t1",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 110,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 343,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 176,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 176,
+            "uploadBytes": 2883584,
+            "draws": 2,
+            "transition": 0.21776666661103566
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 157,
+          "unitInstances": 4,
+          "culledInstances": 0,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 11,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.14500001072883606,
+          "gpuMs": 2.414999,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      }
+    },
+    {
+      "factory": {
+        "id": "core:fac_land_t2",
+        "product": "core:lnd_t2_tank",
+        "label": "Meißel",
+        "handle": 3
+      },
+      "idle": {
+        "buildHash": "0a7920400419",
+        "tick": 173,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 173,
+          "flowTick": 173,
+          "readOnlyCommands": false,
+          "sentCommands": 6,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 611100,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 173,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 4,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 348,
+          "drawCalls": 22,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 3,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 3,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 177,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 177,
+            "uploadBytes": 2899968,
+            "draws": 2,
+            "transition": 0.22220000008742014
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 151,
+          "unitInstances": 3,
+          "culledInstances": 1,
+          "lodInstances": [
+            3,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.125,
+          "gpuMs": 2.407499,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "begun": {
+        "buildHash": "0a7920400419",
+        "tick": 176,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 176,
+          "flowTick": 176,
+          "readOnlyCommands": false,
+          "sentCommands": 7,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 608703,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3892511,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 893,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 176,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 2730,
+                  "curPitch": 4095
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 893,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 356,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 180,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 180,
+            "uploadBytes": 2949120,
+            "draws": 2,
+            "transition": 0.22153333326180777
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 154,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.12000000476837158,
+          "gpuMs": 3.254124,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "samples": [
+        {
+          "buildHash": "0a7920400419",
+          "tick": 176,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 176,
+            "flowTick": 176,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 608703,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3892511,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 893,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 176,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 2730,
+                    "curPitch": 4095
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 893,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 356,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 180,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 180,
+              "uploadBytes": 2949120,
+              "draws": 2,
+              "transition": 0.22153333326180777
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 154,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.12000000476837158,
+            "gpuMs": 3.254124,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 177,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 177,
+            "flowTick": 177,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 607902,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3890009,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1191,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 177,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 4095,
+                    "curPitch": 5460
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1191,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 359,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 181,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 181,
+              "uploadBytes": 2965504,
+              "draws": 2,
+              "transition": 0.21763333320617675
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 125,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.13499999046325684,
+            "gpuMs": 3.339999,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 178,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 178,
+            "flowTick": 178,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 607102,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3887507,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1489,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 178,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 5460,
+                    "curPitch": 6825
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1489,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 362,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 182,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 182,
+              "uploadBytes": 2981888,
+              "draws": 2,
+              "transition": 0.22113333344459535
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 140,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.15000000596046448,
+            "gpuMs": 3.375541,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        {
+          "buildHash": "0a7920400419",
+          "tick": 179,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 179,
+            "flowTick": 179,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 606302,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3885006,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 179,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 365,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 183,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 183,
+              "uploadBytes": 2998272,
+              "draws": 2,
+              "transition": 0.22616666654745737
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 123,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.14000001549720764,
+            "gpuMs": 3.203875,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      ],
+      "operating": {
+        "buildHash": "0a7920400419",
+        "tick": 179,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 179,
+          "flowTick": 179,
+          "readOnlyCommands": false,
+          "sentCommands": 7,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 606302,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3885006,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 179,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 6825,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 365,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 183,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 183,
+            "uploadBytes": 2998272,
+            "draws": 2,
+            "transition": 0.22616666654745737
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 123,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.14000001549720764,
+          "gpuMs": 3.203875,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "wallPause": {
+        "before": {
+          "buildHash": "0a7920400419",
+          "tick": 179,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 179,
+            "flowTick": 179,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 606302,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3885006,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 179,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 365,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 183,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 183,
+              "uploadBytes": 2998272,
+              "draws": 2,
+              "transition": 0.22616666654745737
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 123,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.14000001549720764,
+            "gpuMs": 3.203875,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "after": {
+          "buildHash": "0a7920400419",
+          "tick": 179,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 179,
+            "flowTick": 179,
+            "readOnlyCommands": false,
+            "sentCommands": 7,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 606302,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3885006,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 179,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 6825,
+                    "curPitch": 8190
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 1787,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 383,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 183,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 183,
+              "uploadBytes": 2998272,
+              "draws": 2,
+              "transition": 1
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 123,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.20500001311302185,
+            "gpuMs": 3.244208,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      },
+      "paused": {
+        "buildHash": "0a7920400419",
+        "tick": 181,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 181,
+          "flowTick": 181,
+          "readOnlyCommands": false,
+          "sentCommands": 8,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 606502,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3889006,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 2048
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 181,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 8190,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 389,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 185,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 185,
+            "uploadBytes": 3031040,
+            "draws": 2,
+            "transition": 0.2208999999364217
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 117,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.12000000476837158,
+          "gpuMs": 3.727833,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "held": {
+        "buildHash": "0a7920400419",
+        "tick": 189,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 189,
+          "flowTick": 189,
+          "readOnlyCommands": false,
+          "sentCommands": 8,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 607302,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3900000,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 2048
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 189,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 8190,
+                  "curPitch": 8190
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 1787,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 399,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 193,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 193,
+            "uploadBytes": 3162112,
+            "draws": 2,
+            "transition": 0.2176333334048589
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 126,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.11500000953674316,
+          "gpuMs": 2.27475,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "resumed": {
+        "buildHash": "0a7920400419",
+        "tick": 191,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 191,
+          "flowTick": 191,
+          "readOnlyCommands": false,
+          "sentCommands": 9,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 605701,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3894996,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 2383,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 0
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 191,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 9555,
+                  "curPitch": 10920
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": "core:lnd_t2_tank",
+              "progress": 2383,
+              "queue": [
+                "core:lnd_t2_tank"
+              ],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 406,
+          "drawCalls": 24,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 3,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 195,
+            "unknown": 0,
+            "explored": 4053,
+            "visible": 43,
+            "uploads": 195,
+            "uploadBytes": 3194880,
+            "draws": 2,
+            "transition": 0.22049999992052713
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 155,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.1549999713897705,
+          "gpuMs": 2.346124,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "liveRun": {
+        "liveStart": {
+          "buildHash": "0a7920400419",
+          "tick": 194,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 194,
+            "flowTick": 194,
+            "readOnlyCommands": false,
+            "sentCommands": 9,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 603303,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3887507,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 3276,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 194,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 13650,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 3276,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 413,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 199,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 199,
+              "uploadBytes": 3260416,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 196,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.16999998688697815,
+            "gpuMs": 2.602208,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "liveOpen": {
+          "buildHash": "0a7920400419",
+          "tick": 213,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 213,
+            "flowTick": 213,
+            "readOnlyCommands": false,
+            "sentCommands": 9,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 588103,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3840005,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 8936,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 213,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 8936,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 451,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 218,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 218,
+              "uploadBytes": 3571712,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 345,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.15000000596046448,
+            "gpuMs": 1.737708,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "liveHeldOpen": {
+          "buildHash": "0a7920400419",
+          "tick": 220,
+          "paused": false,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 220,
+            "flowTick": 220,
+            "readOnlyCommands": false,
+            "sentCommands": 9,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 582503,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3822509,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 11021,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 220,
+                "viewer": 0,
+                "alpha": 0,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 11021,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 465,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 225,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 225,
+              "uploadBytes": 3686400,
+              "draws": 2,
+              "transition": 0
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 392,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.16500002145767212,
+            "gpuMs": 1.427,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        },
+        "livePaused": {
+          "buildHash": "0a7920400419",
+          "tick": 220,
+          "paused": true,
+          "tainted": true,
+          "inspection": {
+            "viewer": 0,
+            "viewArmy": 0,
+            "tick": 220,
+            "flowTick": 220,
+            "readOnlyCommands": false,
+            "sentCommands": 9,
+            "eco": [
+              {
+                "army": 0,
+                "massStored": 582503,
+                "massCapacity": 890000,
+                "massOverflow": 0,
+                "energyStored": 3822509,
+                "energyCapacity": 3900000
+              }
+            ],
+            "watches": [
+              {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 11021,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            ]
+          },
+          "actors": [
+            {
+              "handle": 3,
+              "unit": {
+                "x": 121,
+                "y": 24.09375,
+                "z": 88,
+                "visual": 11,
+                "orders": 0,
+                "blocked": false,
+                "hp": 8200,
+                "hpMax": 8200,
+                "build": 1,
+                "flags": 0
+              },
+              "pose": {
+                "handle": 3,
+                "tick": 220,
+                "viewer": 0,
+                "alpha": 1,
+                "observationMask": 0,
+                "bodyPrevYaw": 15035,
+                "bodyCurYaw": 15035,
+                "parts": [
+                  {
+                    "id": 1,
+                    "prevYaw": 0,
+                    "curYaw": 0,
+                    "prevPitch": 14564,
+                    "curPitch": 14564
+                  }
+                ]
+              },
+              "work": {
+                "handle": 3,
+                "typeId": "core:fac_land_t2",
+                "product": "core:lnd_t2_tank",
+                "progress": 11021,
+                "queue": [
+                  "core:lnd_t2_tank"
+                ],
+                "rally": {
+                  "x": 121,
+                  "z": 88
+                }
+              }
+            }
+          ],
+          "stats": {
+            "animatedUnits": 5,
+            "walkingUnits": 0,
+            "observedMounts": 0,
+            "overflowUnits": 0
+          },
+          "render": {
+            "frames": 474,
+            "drawCalls": 24,
+            "drawsByPass": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "passDraws": {
+              "terrain": 1,
+              "water": 1,
+              "fog": 2,
+              "units": 4,
+              "icons": 3,
+              "overlay": 2
+            },
+            "visibilityFog": {
+              "enabled": true,
+              "active": true,
+              "dim": 64,
+              "version": 226,
+              "unknown": 0,
+              "explored": 4053,
+              "visible": 43,
+              "uploads": 226,
+              "uploadBytes": 3702784,
+              "draws": 2,
+              "transition": 0.8873999998966853
+            },
+            "zoomLevel": 0,
+            "iconCount": 0,
+            "dynamicDecals": 3,
+            "instances": 392,
+            "unitInstances": 4,
+            "culledInstances": 1,
+            "lodInstances": [
+              4,
+              0,
+              0
+            ],
+            "terrainPatches": 9,
+            "decals": 37,
+            "lost": false,
+            "cpuMs": 0.1899999976158142,
+            "gpuMs": 3.392708,
+            "preset": "medium",
+            "backbuffer": {
+              "width": 1440,
+              "height": 900
+            },
+            "css": {
+              "width": 1440,
+              "height": 900
+            },
+            "devicePixelRatio": 1
+          },
+          "hostErrors": []
+        }
+      },
+      "completed": {
+        "buildHash": "0a7920400419",
+        "tick": 407,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 407,
+          "flowTick": 407,
+          "readOnlyCommands": false,
+          "sentCommands": 10,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 436500,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3372994,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 407,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 9104,
+                  "curPitch": 7739
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 754,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 413,
+            "unknown": 0,
+            "explored": 4043,
+            "visible": 53,
+            "uploads": 413,
+            "uploadBytes": 6766592,
+            "draws": 2,
+            "transition": 0.2175
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 309,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.11499997973442078,
+          "gpuMs": 1.402083,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      },
+      "closed": {
+        "buildHash": "0a7920400419",
+        "tick": 421,
+        "paused": true,
+        "tainted": true,
+        "inspection": {
+          "viewer": 0,
+          "viewArmy": 0,
+          "tick": 421,
+          "flowTick": 421,
+          "readOnlyCommands": false,
+          "sentCommands": 10,
+          "eco": [
+            {
+              "army": 0,
+              "massStored": 437900,
+              "massCapacity": 890000,
+              "massOverflow": 0,
+              "energyStored": 3400994,
+              "energyCapacity": 3900000
+            }
+          ],
+          "watches": [
+            {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          ]
+        },
+        "actors": [
+          {
+            "handle": 3,
+            "unit": {
+              "x": 121,
+              "y": 24.09375,
+              "z": 88,
+              "visual": 11,
+              "orders": 0,
+              "blocked": false,
+              "hp": 8200,
+              "hpMax": 8200,
+              "build": 1,
+              "flags": 512
+            },
+            "pose": {
+              "handle": 3,
+              "tick": 421,
+              "viewer": 0,
+              "alpha": 1,
+              "observationMask": 0,
+              "bodyPrevYaw": 15035,
+              "bodyCurYaw": 15035,
+              "parts": [
+                {
+                  "id": 1,
+                  "prevYaw": 0,
+                  "curYaw": 0,
+                  "prevPitch": 0,
+                  "curPitch": 0
+                }
+              ]
+            },
+            "work": {
+              "handle": 3,
+              "typeId": "core:fac_land_t2",
+              "product": null,
+              "progress": 0,
+              "queue": [],
+              "rally": {
+                "x": 121,
+                "z": 88
+              }
+            }
+          }
+        ],
+        "stats": {
+          "animatedUnits": 5,
+          "walkingUnits": 0,
+          "observedMounts": 0,
+          "overflowUnits": 0
+        },
+        "render": {
+          "frames": 770,
+          "drawCalls": 23,
+          "drawsByPass": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "passDraws": {
+            "terrain": 1,
+            "water": 1,
+            "fog": 2,
+            "units": 4,
+            "icons": 2,
+            "overlay": 2
+          },
+          "visibilityFog": {
+            "enabled": true,
+            "active": true,
+            "dim": 64,
+            "version": 427,
+            "unknown": 0,
+            "explored": 4045,
+            "visible": 51,
+            "uploads": 427,
+            "uploadBytes": 6995968,
+            "draws": 2,
+            "transition": 0.21973333338896434
+          },
+          "zoomLevel": 0,
+          "iconCount": 0,
+          "dynamicDecals": 3,
+          "instances": 72,
+          "unitInstances": 4,
+          "culledInstances": 1,
+          "lodInstances": [
+            4,
+            0,
+            0
+          ],
+          "terrainPatches": 9,
+          "decals": 37,
+          "lost": false,
+          "cpuMs": 0.09000000357627869,
+          "gpuMs": 2.308875,
+          "preset": "medium",
+          "backbuffer": {
+            "width": 1440,
+            "height": 900
+          },
+          "css": {
+            "width": 1440,
+            "height": 900
+          },
+          "devicePixelRatio": 1
+        },
+        "hostErrors": []
+      }
+    }
+  ],
+  "site": {
+    "x": 100.5,
+    "z": 96.5
+  },
+  "incomplete": 8,
+  "before": {
+    "buildHash": "0a7920400419",
+    "tick": 428,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 428,
+      "flowTick": 428,
+      "readOnlyCommands": false,
+      "sentCommands": 12,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 435403,
+          "massCapacity": 890000,
+          "massOverflow": 0,
+          "energyStored": 3387021,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 0,
+          "typeId": "core:cmd_commander",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 96,
+            "z": 96
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 8,
+        "unit": {
+          "x": 100.5,
+          "y": 24.080078125,
+          "z": 96.5,
+          "visual": 10,
+          "orders": null,
+          "blocked": false,
+          "hp": 49,
+          "hpMax": 4200,
+          "build": 0.011764705882352941,
+          "flags": 769
+        },
+        "pose": {
+          "handle": 8,
+          "tick": 428,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 0,
+          "bodyCurYaw": 0,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 6,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 788,
+      "drawCalls": 23,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 434,
+        "unknown": 0,
+        "explored": 4045,
+        "visible": 51,
+        "uploads": 434,
+        "uploadBytes": 7110656,
+        "draws": 2,
+        "transition": 0.21700000007947287
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 105,
+      "unitInstances": 6,
+      "culledInstances": 0,
+      "lodInstances": [
+        6,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.10499998927116394,
+      "gpuMs": 3.339874,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "after": {
+    "buildHash": "0a7920400419",
+    "tick": 433,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 433,
+      "flowTick": 433,
+      "readOnlyCommands": false,
+      "sentCommands": 12,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 435903,
+          "massCapacity": 890000,
+          "massOverflow": 0,
+          "energyStored": 3397021,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 0,
+          "typeId": "core:cmd_commander",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 96,
+            "z": 96
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 8,
+        "unit": {
+          "x": 100.5,
+          "y": 24.080078125,
+          "z": 96.5,
+          "visual": 10,
+          "orders": null,
+          "blocked": false,
+          "hp": 49,
+          "hpMax": 4200,
+          "build": 0.011764705882352941,
+          "flags": 769
+        },
+        "pose": {
+          "handle": 8,
+          "tick": 433,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 0,
+          "bodyCurYaw": 0,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 6,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 795,
+      "drawCalls": 23,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 439,
+        "unknown": 0,
+        "explored": 4045,
+        "visible": 51,
+        "uploads": 439,
+        "uploadBytes": 7192576,
+        "draws": 2,
+        "transition": 0.22016666670640309
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 101,
+      "unitInstances": 6,
+      "culledInstances": 0,
+      "lodInstances": [
+        6,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.13999998569488525,
+      "gpuMs": 1.964916,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "final": {
+    "buildHash": "0a7920400419",
+    "tick": 433,
+    "paused": true,
+    "tainted": true,
+    "inspection": {
+      "viewer": 0,
+      "viewArmy": 0,
+      "tick": 433,
+      "flowTick": 433,
+      "readOnlyCommands": false,
+      "sentCommands": 12,
+      "eco": [
+        {
+          "army": 0,
+          "massStored": 435903,
+          "massCapacity": 890000,
+          "massOverflow": 0,
+          "energyStored": 3397021,
+          "energyCapacity": 3900000
+        }
+      ],
+      "watches": [
+        {
+          "handle": 0,
+          "typeId": "core:cmd_commander",
+          "product": null,
+          "progress": 0,
+          "queue": [],
+          "rally": {
+            "x": 96,
+            "z": 96
+          }
+        }
+      ]
+    },
+    "actors": [
+      {
+        "handle": 2,
+        "unit": {
+          "x": 110,
+          "y": 24.0390625,
+          "z": 88,
+          "visual": 10,
+          "orders": null,
+          "blocked": false,
+          "hp": 4200,
+          "hpMax": 4200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 2,
+          "tick": 433,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 3750,
+          "bodyCurYaw": 3750,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      },
+      {
+        "handle": 3,
+        "unit": {
+          "x": 121,
+          "y": 24.09375,
+          "z": 88,
+          "visual": 11,
+          "orders": null,
+          "blocked": false,
+          "hp": 8200,
+          "hpMax": 8200,
+          "build": 1,
+          "flags": 512
+        },
+        "pose": {
+          "handle": 3,
+          "tick": 433,
+          "viewer": 0,
+          "alpha": 1,
+          "observationMask": 0,
+          "bodyPrevYaw": 15035,
+          "bodyCurYaw": 15035,
+          "parts": [
+            {
+              "id": 1,
+              "prevYaw": 0,
+              "curYaw": 0,
+              "prevPitch": 0,
+              "curPitch": 0
+            }
+          ]
+        }
+      }
+    ],
+    "stats": {
+      "animatedUnits": 6,
+      "walkingUnits": 0,
+      "observedMounts": 0,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 795,
+      "drawCalls": 23,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 5,
+        "icons": 2,
+        "overlay": 1
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 439,
+        "unknown": 0,
+        "explored": 4045,
+        "visible": 51,
+        "uploads": 439,
+        "uploadBytes": 7192576,
+        "draws": 2,
+        "transition": 0.22016666670640309
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 1,
+      "instances": 101,
+      "unitInstances": 6,
+      "culledInstances": 0,
+      "lodInstances": [
+        6,
+        0,
+        0
+      ],
+      "terrainPatches": 10,
+      "decals": 35,
+      "lost": false,
+      "cpuMs": 0.13999998569488525,
+      "gpuMs": 1.964916,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    },
+    "hostErrors": []
+  },
+  "silent": {
+    "installed": true,
+    "contexts": 1,
+    "speakerConnections": 0,
+    "blockedConnections": 0,
+    "streamDestinations": 1
+  },
+  "fixture": "Bounded explicitly tainted actual Spawn of completed factory tiers; ordinary HUD production, TogglePause and clear queue, native Build/Stop for incomplete site; actual accepted Frames and submitted rig buffers."
+}
