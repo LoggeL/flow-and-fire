@@ -1,0 +1,3336 @@
+{
+  "sourceCommit": "d900618c178024cf8f88fee3554a9f92f2c84e0c",
+  "buildHash": "d900618c1780",
+  "checks": {
+    "nodeTests": {
+      "passed": 538,
+      "files": 64,
+      "scope": [
+        "apps/game",
+        "packages/hud"
+      ]
+    },
+    "typecheck": "passed",
+    "fullLint": "passed",
+    "productionBuild": "passed",
+    "native": {
+      "startTime": "2026-10-02T11:45:05.715Z",
+      "duration": 47515.205,
+      "expected": 21,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "nativeMenuCases": 9,
+    "nativeArmyColorCases": 12
+  },
+  "fixture": "Actual frontend controls, media preferences, real compositor frames, native mouse and keyboard, persisted settings across reload, real Human/AI skirmish and return. No cheats or injected game frames.",
+  "nativeReadbacks": [
+    {
+      "engine": "chromium",
+      "case": "chosen blue house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "chromium",
+      "case": "chosen red house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "chromium",
+      "case": "chosen green house colors the live HUD in relation display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "chromium",
+      "case": "chosen orange house colors the live HUD in cvd display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "firefox",
+      "case": "chosen blue house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "firefox",
+      "case": "chosen red house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "firefox",
+      "case": "chosen green house colors the live HUD in relation display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "firefox",
+      "case": "chosen orange house colors the live HUD in cvd display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "webkit",
+      "case": "chosen blue house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "webkit",
+      "case": "chosen red house colors the live HUD in house display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "webkit",
+      "case": "chosen green house colors the live HUD in relation display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "webkit",
+      "case": "chosen orange house colors the live HUD in cvd display mode",
+      "status": "passed",
+      "readbacks": []
+    },
+    {
+      "engine": "chromium",
+      "case": "cinematic main menu: built artwork and native keyboard navigation",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-desktop-receipt",
+          "data": {
+            "browser": "chromium",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layout": {
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              },
+              "navigation": [
+                {
+                  "routed": true,
+                  "fontSize": 20,
+                  "opacity": "1",
+                  "text": "\u203aGefecht",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 434.59375,
+                    "width": 366,
+                    "height": 58
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aReplays",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 505.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinstellungen",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 560.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinweisung",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 615.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aMitwirkende",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 670.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                }
+              ],
+              "widths": {
+                "html": 1440,
+                "body": 1440,
+                "viewport": 1440
+              }
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            },
+            "keyboard": "ArrowUp/ArrowDown wrap and next enabled item, Enter settings/back, Enter skirmish/back"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "case": "cinematic main menu: narrow and short viewports keep native controls reachable",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-responsive-receipt",
+          "data": {
+            "browser": "chromium",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layouts": [
+              {
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 24,
+                      "y": 382.640625,
+                      "width": 342,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 24,
+                      "y": 453.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 24,
+                      "y": 508.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 24,
+                      "y": 563.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 24,
+                      "y": 618.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 390,
+                  "body": 390,
+                  "viewport": 390
+                }
+              },
+              {
+                "viewport": {
+                  "width": 1024,
+                  "height": 600
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 248.5,
+                      "width": 366,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 319.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 374.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 429.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 484.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 1024,
+                  "body": 1024,
+                  "viewport": 1024
+                }
+              }
+            ],
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "case": "cinematic main menu: reduced motion, manual pause and real skirmish transition",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-motion-skirmish-receipt",
+          "data": {
+            "browser": "chromium",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "gameLogo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "reducedAnimations": [
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none"
+            ],
+            "reduced": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ]
+            },
+            "movingPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "moving": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02631, 0, 0, 1.02631, 1.21515, 0.604733)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02763, 0, 0, 1.02763, 4.48795, 1.59784)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07898, 0, 0, 1.07898, 9.9053, 3.06552)"
+                }
+              ]
+            },
+            "paused": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ]
+              }
+            },
+            "persistedPause": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ]
+              }
+            },
+            "resumedPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "resumed": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02631, 0, 0, 1.02631, 1.21515, 0.604733)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02763, 0, 0, 1.02763, 4.48795, 1.59784)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07898, 0, 0, 1.07898, 9.90531, 3.06552)"
+                }
+              ]
+            },
+            "commander": 0,
+            "game": {
+              "tick": 2,
+              "units": 1,
+              "own": 1,
+              "tainted": false
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 1,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "engine": "firefox",
+      "case": "cinematic main menu: built artwork and native keyboard navigation",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-desktop-receipt",
+          "data": {
+            "browser": "firefox",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layout": {
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              },
+              "navigation": [
+                {
+                  "routed": true,
+                  "fontSize": 20,
+                  "opacity": "1",
+                  "text": "\u203aGefecht",
+                  "bounds": {
+                    "x": 80.63333129882812,
+                    "y": 434.6000061035156,
+                    "width": 366,
+                    "height": 58
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aReplays",
+                  "bounds": {
+                    "x": 80.63333129882812,
+                    "y": 505.6000061035156,
+                    "width": 366,
+                    "height": 48.999969482421875
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinstellungen",
+                  "bounds": {
+                    "x": 80.63333129882812,
+                    "y": 560.5999755859375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinweisung",
+                  "bounds": {
+                    "x": 80.63333129882812,
+                    "y": 615.5999755859375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aMitwirkende",
+                  "bounds": {
+                    "x": 80.63333129882812,
+                    "y": 670.5999755859375,
+                    "width": 366,
+                    "height": 49
+                  }
+                }
+              ],
+              "widths": {
+                "html": 1440,
+                "body": 1440,
+                "viewport": 1440
+              }
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            },
+            "keyboard": "ArrowUp/ArrowDown wrap and next enabled item, Enter settings/back, Enter skirmish/back"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "firefox",
+      "case": "cinematic main menu: narrow and short viewports keep native controls reachable",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-responsive-receipt",
+          "data": {
+            "browser": "firefox",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layouts": [
+              {
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 24,
+                      "y": 382.6333312988281,
+                      "width": 342,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 24,
+                      "y": 453.6333312988281,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 24,
+                      "y": 508.6333312988281,
+                      "width": 342,
+                      "height": 48.999969482421875
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 24,
+                      "y": 563.6333618164062,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 24,
+                      "y": 618.6333618164062,
+                      "width": 342,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 390,
+                  "body": 390,
+                  "viewport": 390
+                }
+              },
+              {
+                "viewport": {
+                  "width": 1024,
+                  "height": 600
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 57.33333206176758,
+                      "y": 248.5,
+                      "width": 366.0000114440918,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 57.33333206176758,
+                      "y": 319.5,
+                      "width": 366.0000114440918,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 57.33333206176758,
+                      "y": 374.5,
+                      "width": 366.0000114440918,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 57.33333206176758,
+                      "y": 429.5,
+                      "width": 366.0000114440918,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 57.33333206176758,
+                      "y": 484.5,
+                      "width": 366.0000114440918,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 1024,
+                  "body": 1024,
+                  "viewport": 1024
+                }
+              }
+            ],
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "engine": "firefox",
+      "case": "cinematic main menu: reduced motion, manual pause and real skirmish transition",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-motion-skirmish-receipt",
+          "data": {
+            "browser": "firefox",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "gameLogo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "reducedAnimations": [
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none"
+            ],
+            "reduced": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ]
+            },
+            "movingPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "moving": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02629, 0, 0, 1.02629, 1.22791, 0.608723)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02759, 0, 0, 1.02759, 4.52151, 1.60883)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07889, 0, 0, 1.07889, 10.0116, 3.09944)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02632, 0, 0, 1.02632, 1.2098, 0.603063)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02765, 0, 0, 1.02765, 4.47389, 1.59324)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07902, 0, 0, 1.07902, 9.86065, 3.05127)"
+                }
+              ]
+            },
+            "paused": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ]
+              }
+            },
+            "persistedPause": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.02629, 0, 0, 1.02629, 1.23003, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.02758, 0, 0, 1.02758, 4.52707, 1.61065)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.07887, 0, 0, 1.07887, 10.0292, 3.10505)"
+                  }
+                ]
+              }
+            },
+            "resumedPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "resumed": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02629, 0, 0, 1.02629, 1.22798, 0.608743)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02759, 0, 0, 1.02759, 4.52168, 1.60888)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07889, 0, 0, 1.07889, 10.0121, 3.09961)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02632, 0, 0, 1.02632, 1.21194, 0.603731)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.02765, 0, 0, 1.02765, 4.47952, 1.59508)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.07901, 0, 0, 1.07901, 9.87854, 3.05698)"
+                }
+              ]
+            },
+            "commander": 0,
+            "game": {
+              "tick": 3,
+              "units": 1,
+              "own": 1,
+              "tainted": false
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 1,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "case": "cinematic main menu: built artwork and native keyboard navigation",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-desktop-receipt",
+          "data": {
+            "browser": "webkit",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layout": {
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              },
+              "navigation": [
+                {
+                  "routed": true,
+                  "fontSize": 20,
+                  "opacity": "1",
+                  "text": "\u203aGefecht",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 434.59375,
+                    "width": 366,
+                    "height": 58
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aReplays",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 505.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinstellungen",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 560.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aEinweisung",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 615.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                },
+                {
+                  "routed": true,
+                  "fontSize": 18,
+                  "opacity": "1",
+                  "text": "\u203aMitwirkende",
+                  "bounds": {
+                    "x": 80.625,
+                    "y": 670.59375,
+                    "width": 366,
+                    "height": 49
+                  }
+                }
+              ],
+              "widths": {
+                "html": 1440,
+                "body": 1440,
+                "viewport": 1440
+              }
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            },
+            "keyboard": "ArrowUp/ArrowDown wrap and next enabled item, Enter settings/back, Enter skirmish/back"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "case": "cinematic main menu: narrow and short viewports keep native controls reachable",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-responsive-receipt",
+          "data": {
+            "browser": "webkit",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "layouts": [
+              {
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 24,
+                      "y": 382.640625,
+                      "width": 342,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 24,
+                      "y": 453.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 24,
+                      "y": 508.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 24,
+                      "y": 563.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 24,
+                      "y": 618.640625,
+                      "width": 342,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 390,
+                  "body": 390,
+                  "viewport": 390
+                }
+              },
+              {
+                "viewport": {
+                  "width": 1024,
+                  "height": 600
+                },
+                "navigation": [
+                  {
+                    "routed": true,
+                    "fontSize": 20,
+                    "opacity": "1",
+                    "text": "\u203aGefecht",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 248.5,
+                      "width": 366,
+                      "height": 58
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aReplays",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 319.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinstellungen",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 374.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aEinweisung",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 429.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  },
+                  {
+                    "routed": true,
+                    "fontSize": 18,
+                    "opacity": "1",
+                    "text": "\u203aMitwirkende",
+                    "bounds": {
+                      "x": 57.34375,
+                      "y": 484.5,
+                      "width": 366,
+                      "height": 49
+                    }
+                  }
+                ],
+                "widths": {
+                  "html": 1024,
+                  "body": 1024,
+                  "viewport": 1024
+                }
+              }
+            ],
+            "audio": {
+              "installed": true,
+              "contexts": 0,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "case": "cinematic main menu: reduced motion, manual pause and real skirmish transition",
+      "status": "passed",
+      "readbacks": [
+        {
+          "name": "menu-motion-skirmish-receipt",
+          "data": {
+            "browser": "webkit",
+            "build": "d900618c1780",
+            "artwork": [
+              {
+                "layer": "background",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-background-v1-Bnaa5ExL.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "commander",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-commander-v1-BXI5sDXI.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              },
+              {
+                "layer": "foreground",
+                "url": "http://localhost:4527/b/d900618c1780/assets/parallax-foreground-v1-CmFeujY9.webp",
+                "width": 1672,
+                "height": 941,
+                "pointerEvents": "none"
+              }
+            ],
+            "logo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "gameLogo": {
+              "url": "http://localhost:4527/b/d900618c1780/assets/flow-fire-logo-v1-Cl6fc7e3.webp",
+              "width": 1774,
+              "height": 887
+            },
+            "reducedAnimations": [
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none",
+              "none"
+            ],
+            "reduced": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "none"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "none"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "none"
+                }
+              ]
+            },
+            "movingPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "moving": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.026297, 0, 0, 1.026297, 1.225983, 0.60812)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.027597, 0, 0, 1.027597, 4.516427, 1.607163)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.078905, 0, 0, 1.078905, 9.995507, 3.094311)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.02632, 0, 0, 1.02632, 1.209902, 0.603094)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.027653, 0, 0, 1.027653, 4.474148, 1.593322)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.079024, 0, 0, 1.079024, 9.861485, 3.051538)"
+                }
+              ]
+            },
+            "paused": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.026292, 0, 0, 1.026292, 1.230034, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.027583, 0, 0, 1.027583, 4.527071, 1.610648)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.078875, 0, 0, 1.078875, 10.02916, 3.105051)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.026292, 0, 0, 1.026292, 1.230034, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.027583, 0, 0, 1.027583, 4.527071, 1.610648)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.078875, 0, 0, 1.078875, 10.02916, 3.105051)"
+                  }
+                ]
+              }
+            },
+            "persistedPause": {
+              "playStates": [
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__image",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                  "animation": "ff-menu-background-drift",
+                  "duration": "60s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "11s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "14s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-light",
+                  "animation": "ff-menu-factory-light",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-smoke",
+                  "animation": "ff-menu-factory-smoke",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                  "animation": "ff-menu-mist",
+                  "duration": "43s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                  "animation": "ff-menu-commander-drift",
+                  "duration": "48s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-scene-emitter",
+                  "animation": "ff-menu-emitter-breathe",
+                  "duration": "9s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__mist",
+                  "animation": "ff-menu-mist",
+                  "duration": "31s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                  "animation": "ff-menu-foreground-drift",
+                  "duration": "34s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "17s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "21s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "19s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "24s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "22s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "27s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "26s",
+                  "playState": "paused"
+                },
+                {
+                  "layer": null,
+                  "animation": "ff-menu-ember",
+                  "duration": "20s",
+                  "playState": "paused"
+                }
+              ],
+              "transforms": {
+                "before": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.026292, 0, 0, 1.026292, 1.230034, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.027583, 0, 0, 1.027583, 4.527071, 1.610648)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.078875, 0, 0, 1.078875, 10.02916, 3.105051)"
+                  }
+                ],
+                "after": [
+                  {
+                    "layer": "background",
+                    "transform": "matrix(1.026292, 0, 0, 1.026292, 1.230034, 0.609386)"
+                  },
+                  {
+                    "layer": "commander",
+                    "transform": "matrix(1.027583, 0, 0, 1.027583, 4.527071, 1.610648)"
+                  },
+                  {
+                    "layer": "foreground",
+                    "transform": "matrix(1.078875, 0, 0, 1.078875, 10.02916, 3.105051)"
+                  }
+                ]
+              }
+            },
+            "resumedPlayStates": [
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__image",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--background",
+                "animation": "ff-menu-background-drift",
+                "duration": "60s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "11s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "14s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-light",
+                "animation": "ff-menu-factory-light",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-smoke",
+                "animation": "ff-menu-factory-smoke",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist menu-backdrop__mist--far",
+                "animation": "ff-menu-mist",
+                "duration": "43s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__scene-effects menu-backdrop__scene-effects--commander",
+                "animation": "ff-menu-commander-drift",
+                "duration": "48s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-scene-emitter",
+                "animation": "ff-menu-emitter-breathe",
+                "duration": "9s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__mist",
+                "animation": "ff-menu-mist",
+                "duration": "31s",
+                "playState": "running"
+              },
+              {
+                "layer": "menu-backdrop__layer menu-backdrop__foreground",
+                "animation": "ff-menu-foreground-drift",
+                "duration": "34s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "17s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "21s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "19s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "24s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "22s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "27s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "26s",
+                "playState": "running"
+              },
+              {
+                "layer": null,
+                "animation": "ff-menu-ember",
+                "duration": "20s",
+                "playState": "running"
+              }
+            ],
+            "resumed": {
+              "before": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.026292, 0, 0, 1.026292, 1.230034, 0.609386)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.027583, 0, 0, 1.027583, 4.527071, 1.610648)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.078875, 0, 0, 1.078875, 10.02916, 3.105051)"
+                }
+              ],
+              "after": [
+                {
+                  "layer": "background",
+                  "transform": "matrix(1.026313, 0, 0, 1.026313, 1.214327, 0.604477)"
+                },
+                {
+                  "layer": "commander",
+                  "transform": "matrix(1.027638, 0, 0, 1.027638, 4.485789, 1.597134)"
+                },
+                {
+                  "layer": "foreground",
+                  "transform": "matrix(1.078991, 0, 0, 1.078991, 9.898445, 3.063334)"
+                }
+              ]
+            },
+            "commander": 0,
+            "game": {
+              "tick": 6,
+              "units": 1,
+              "own": 1,
+              "tainted": false
+            },
+            "audio": {
+              "installed": true,
+              "contexts": 1,
+              "speakerConnections": 0,
+              "blockedConnections": 0,
+              "streamDestinations": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    "main-menu-desktop.png",
+    "main-menu-mobile.png",
+    "main-menu-short.png"
+  ],
+  "localUrl": "http://127.0.0.1:5295/?menu=1"
+}

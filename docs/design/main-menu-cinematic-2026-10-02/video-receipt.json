@@ -1,0 +1,118 @@
+{
+  "before": {
+    "build": "d900618c1780",
+    "motion": "active",
+    "images": [
+      {
+        "layer": "background",
+        "transform": "matrix(1.0263, 0, 0, 1.0263, 1.22579, 0.60806)"
+      },
+      {
+        "layer": "commander",
+        "transform": "matrix(1.0276, 0, 0, 1.0276, 4.51593, 1.607)"
+      },
+      {
+        "layer": "foreground",
+        "transform": "matrix(1.07891, 0, 0, 1.07891, 9.99395, 3.09381)"
+      }
+    ],
+    "effects": [
+      {
+        "effect": "factory-light",
+        "opacity": "0.295774",
+        "transform": "matrix(1, 0, 0, 1, -70.7734, -63.1172)"
+      },
+      {
+        "effect": "factory-light",
+        "opacity": "0.46197",
+        "transform": "matrix(1, 0, 0, 1, -28.6875, -32.5156)"
+      },
+      {
+        "effect": "factory-light",
+        "opacity": "0.533125",
+        "transform": "matrix(1, 0, 0, 1, -34.4297, -24.8594)"
+      },
+      {
+        "effect": "smoke",
+        "opacity": "0.34708",
+        "transform": "matrix(0.835814, 0, 0, 0.835814, -40.6256, -137.305)"
+      },
+      {
+        "effect": "smoke",
+        "opacity": "0.220077",
+        "transform": "matrix(1.07911, 0, 0, 1.07911, -21.739, -164.435)"
+      },
+      {
+        "effect": "emitter",
+        "opacity": "0.332936",
+        "transform": "matrix(0.983696, 0, 0, 0.983696, -71.7266, -90.8594)"
+      }
+    ],
+    "audio": {
+      "installed": true,
+      "contexts": 0,
+      "speakerConnections": 0,
+      "blockedConnections": 0,
+      "streamDestinations": 0
+    }
+  },
+  "after": {
+    "build": "d900618c1780",
+    "motion": "active",
+    "images": [
+      {
+        "layer": "background",
+        "transform": "matrix(1.02915, 0, 0, 1.02915, -0.829916, -0.0343487)"
+      },
+      {
+        "layer": "commander",
+        "transform": "matrix(1.03502, 0, 0, 1.03502, -1.09784, -0.230842)"
+      },
+      {
+        "layer": "foreground",
+        "transform": "matrix(1.09523, 0, 0, 1.09523, -8.4196, -2.78285)"
+      }
+    ],
+    "effects": [
+      {
+        "effect": "factory-light",
+        "opacity": "0.565571",
+        "transform": "matrix(1, 0, 0, 1, -70.7734, -63.1172)"
+      },
+      {
+        "effect": "factory-light",
+        "opacity": "0.570685",
+        "transform": "matrix(1, 0, 0, 1, -28.6875, -32.5156)"
+      },
+      {
+        "effect": "factory-light",
+        "opacity": "0.612438",
+        "transform": "matrix(1, 0, 0, 1, -34.4297, -24.8594)"
+      },
+      {
+        "effect": "smoke",
+        "opacity": "0.0572424",
+        "transform": "matrix(1.23, 0, 0, 1.23, -20.7825, -224.388)"
+      },
+      {
+        "effect": "smoke",
+        "opacity": "0.0164834",
+        "transform": "matrix(0.751406, 0, 0, 0.751406, -34.3755, -102.127)"
+      },
+      {
+        "effect": "emitter",
+        "opacity": "0.329349",
+        "transform": "matrix(0.982671, 0, 0, 0.982671, -71.7266, -90.8594)"
+      }
+    ],
+    "audio": {
+      "installed": true,
+      "contexts": 0,
+      "speakerConnections": 0,
+      "blockedConnections": 0,
+      "streamDestinations": 0
+    }
+  },
+  "durationMs": 12000,
+  "mode": "native Chromium real-time screen recording, no audio"
+}
