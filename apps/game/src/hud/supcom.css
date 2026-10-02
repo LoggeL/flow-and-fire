@@ -1,6 +1,6 @@
 /*
  * In-game HUD after the Forged Alliance reference (test-results/supcom-ui-20261001): machined steel frames with
- * clipped corners, graphite faces and an icy inner rim. Geometry is plain CSS; gunmetal-v1.png only adds surface grain.
+ * rounded steel corners, graphite faces and an icy inner rim. Geometry is plain CSS; gunmetal-v1.png only adds surface grain.
  * One shared frame mechanism (.sc-frame plus the package panels listed below) draws the rim in ::before and the face
  * in ::after, so the framed element itself is never clipped and popovers can leave it.
  */
@@ -15,7 +15,7 @@
   --text-hi:#eef4f8;--text:#d0dbe3;--text-mid:#a9b7c2;--text-lo:#8b9ba7;
   --mass:#b4e83a;--mass-dim:#5b7a1d;--energy:#ffd23a;--energy-dim:#8a6c12;
   --hud-top-h:2.4rem;--cell-gap:.3rem;
-  --sc-frame:4px;--sc-cut:.6rem;
+  --sc-frame:4px;--sc-radius:.95rem;--sc-control-radius:.45rem;
   --sc-steel:linear-gradient(180deg,#e3e9ed 0,#a3aeb6 7%,#69747d 30%,#3e464d 55%,#66717a 80%,#b2bcc3 95%,#dfe6ea 100%);
   --sc-steel-hot:linear-gradient(180deg,#f2fbff 0,#a8dcfb 30%,#4f95c2 60%,#9fd6f7 100%);
   --sc-joint:#161b20;--sc-ice:#a6e1ff;--sc-ice-soft:rgba(140,205,250,.38);--sc-face:#12171c;
@@ -25,37 +25,41 @@
 
 /* ---------- Shared steel frame ---------- */
 .live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools) {
-  --c:var(--sc-cut);
   position:relative;isolation:isolate;background:none;clip-path:none;box-shadow:none;border:0;
 }
 .live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)>* {position:relative;z-index:1;}
 .live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)::before {
   content:"";display:block;position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
-    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--c) + .5rem) top 0/2px var(--sc-frame) no-repeat,
-    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--c) + .5rem) top 0/2px var(--sc-frame) no-repeat,
-    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--c) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
-    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--c) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--sc-radius) + .5rem) top 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--sc-radius) + .5rem) top 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) left calc(var(--sc-radius) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
+    linear-gradient(var(--sc-joint),var(--sc-joint)) right calc(var(--sc-radius) + .5rem) bottom 0/2px var(--sc-frame) no-repeat,
     linear-gradient(90deg,rgba(255,255,255,.2),transparent 1.2rem,transparent calc(100% - 1.2rem),rgba(255,255,255,.16)),
     var(--sc-steel);
-  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c));
+  border-radius:var(--sc-radius);
+  box-shadow:0 0 0 1px #05090de6,0 2px 3px #0006,inset 0 1px 0 #f1f8fc,inset 0 -1px 0 #25313b;
 }
-/* Face inset by the rim width; the inner chamfer is c - 0.59 * rim so both diagonals stay parallel. */
+/* Concentric radii keep the steel rim equally thick around the curved corners. Only the paint
+ * layers round their bounds: the panel itself stays open for tooltips and selection details. */
 .live-hud .live-game-presentation :is(.sc-frame,.eco,.status,.banner,.flow,.menu-modal,.live-commander-upgrade,.live-selection-tools)::after {
-  --ci:max(2px,calc(var(--c) - var(--sc-frame) * .59));
   content:"";display:block;position:absolute;inset:var(--sc-frame);z-index:0;pointer-events:none;
   background:
-    linear-gradient(135deg,transparent 50%,var(--sc-ice) 50%,var(--sc-ice) calc(50% + 1.2px),transparent calc(50% + 1.2px)) left top/var(--ci) var(--ci) no-repeat,
-    linear-gradient(45deg,transparent calc(50% - 1.2px),var(--sc-ice) calc(50% - 1.2px),var(--sc-ice) 50%,transparent 50%) right top/var(--ci) var(--ci) no-repeat,
-    linear-gradient(45deg,transparent 50%,var(--sc-ice) 50%,var(--sc-ice) calc(50% + 1.2px),transparent calc(50% + 1.2px)) left bottom/var(--ci) var(--ci) no-repeat,
-    linear-gradient(135deg,transparent calc(50% - 1.2px),var(--sc-ice) calc(50% - 1.2px),var(--sc-ice) 50%,transparent 50%) right bottom/var(--ci) var(--ci) no-repeat,
     linear-gradient(180deg,rgba(150,210,255,.11),transparent 1.4rem),
     linear-gradient(rgba(10,14,18,.42),rgba(10,14,18,.42)),
     url('./assets/gunmetal-v1.png') 0 0/420px auto,
     var(--sc-face);
   box-shadow:inset 0 0 0 1px var(--sc-ice),inset 0 0 0 2px rgba(5,9,13,.85),inset 0 0 .7rem rgba(110,185,240,.26);
-  clip-path:polygon(var(--ci) 0,calc(100% - var(--ci)) 0,100% var(--ci),100% calc(100% - var(--ci)),calc(100% - var(--ci)) 100%,var(--ci) 100%,0 calc(100% - var(--ci)),0 var(--ci));
+  border-radius:max(2px,calc(var(--sc-radius) - var(--sc-frame)));
 }
+/* The package primitives use chamfered clipping. Match their face and rim curves here,
+ * retaining the existing hover, focus, armed and disabled colors. */
+.live-hud .live-game-presentation :is(.ff-btn,.ff-order,.ff-cell) {clip-path:none;border-radius:var(--sc-control-radius);}
+.live-hud .live-game-presentation :is(.ff-btn,.ff-order,.ff-cell)::before {clip-path:none;border-radius:calc(var(--sc-control-radius) - 1px);}
+.live-hud .live-game-presentation .ff-cell.is-active::after {border-radius:calc(var(--sc-control-radius) - 1px);}
+.live-hud .live-game-presentation :is(.stat__step,.live-detail-toggle,.live-details-close,.live-details-body button,.live-group,.live-type-group,.fqi,.live-upgrade-start,.live-upgrade-running-actions>button,.live-enhancement-slot,.live-enhancement-installed,.live-paused-row,.live-paused-row>button) {border-radius:.3rem;}
+.live-hud .live-game-presentation .live-strip-nav {border-radius:.35rem;}
+.live-hud .live-game-presentation .live-build-strip>.ff-ph {border-radius:calc(var(--sc-radius) - var(--sc-frame)) 0 0 calc(var(--sc-radius) - var(--sc-frame));}
 .live-hud .live-game-presentation .ff-ph {height:1.3rem;padding:0 .55rem;letter-spacing:.04em;color:#bfe6ff;}
 .live-hud .live-game-presentation .ff-ph::before {display:none;}
 .live-hud .live-game-presentation .flow {position:absolute;top:calc(var(--hud-gutter) + 5.9rem);width:34.25rem;max-width:calc(100vw - 1rem);z-index:35;padding:var(--sc-frame);}
