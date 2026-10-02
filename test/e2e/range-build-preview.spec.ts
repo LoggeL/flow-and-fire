@@ -82,25 +82,41 @@ test('native radar, weapon and planned radar rings follow real blueprint radii a
 });
 
 test('native raised pgen ghosts paint around a mex and accepted queues reserve the surrounding sites', async ({ page }, info) => {
+  test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   const commander = await startHumanAiSkirmish(page); await pause(page);
-  const mex = await spawn(page, 'core:str_t1_mex', 134, 82);
   await clickUnit(page, commander);
-  await page.evaluate(() => window.__faf!.setCamera(134, 82, 85)); await rendered(page);
+  await page.keyboard.press('KeyQ');
+  const massSpot = await groundPixel(page, 116, 100);
+  await page.mouse.move(massSpot.x, massSpot.y);
+  await expect(page.getByTestId('build-ghost')).toHaveAttribute('data-verdict', '0');
+  await page.mouse.click(massSpot.x, massSpot.y);
+  const mexBp = SKIRMISH_BLUEPRINTS.indexOf('core:str_t1_mex');
+  let mex: number | undefined;
+  for (let n = 0; n < 60; n++) {
+    await stepTicks(page, 5); await rendered(page);
+    mex = await page.evaluate(bp => window.__faf!.ownHandles().find(h => {
+      const u = window.__faf!.unitInfo(h); return u?.visual === bp && u.build === 1;
+    }), mexBp);
+    if (mex !== undefined) break;
+  }
+  expect(mex, 'a completed mex from a native Build on the real mass spot').toBeDefined();
+  const mexHandle = mex!;
+  await page.evaluate(() => window.__faf!.setCamera(116, 100, 85)); await rendered(page);
   await page.keyboard.press('KeyW');
-  const start = await groundPixel(page, 132, 80), end = await groundPixel(page, 136.25, 84.25);
+  const start = await groundPixel(page, 114, 98), end = await groundPixel(page, 118.25, 102.25);
   const sites = () => page.getByTestId('build-drag-ghost').evaluateAll(elements => elements.map(el => ({
     x: Number(el.getAttribute('data-x')), z: Number(el.getAttribute('data-z')), verdict: Number(el.getAttribute('data-verdict')),
   })));
-  const before = await page.evaluate(h => ({ mex: window.__faf!.unitInfo(h), sent: window.__faf!.inspection()!.sentCommands }), mex);
+  const before = await page.evaluate(h => ({ mex: window.__faf!.unitInfo(h), sent: window.__faf!.inspection()!.sentCommands }), mexHandle);
   await page.keyboard.down('Shift');
   let proposed: Awaited<ReturnType<typeof sites>>;
   try {
     await page.mouse.move(start.x, start.y); await page.mouse.down(); await page.mouse.move(end.x, end.y, { steps: 6 });
     await expect(page.getByTestId('build-drag-ghosts')).toHaveAttribute('data-count', '9');
     proposed = await sites();
-    const center = proposed.find(s => s.x === 134 * 4096 && s.z === 82 * 4096);
+    const center = proposed.find(s => s.x === 116 * 4096 && s.z === 100 * 4096);
     expect(center?.verdict).toBe(PlacementVerdict.Occupied);
     expect(proposed.filter(s => s.verdict === PlacementVerdict.Valid).length).toBeGreaterThanOrEqual(4);
     await expect(page.getByTestId('build-drag-ghost-volume')).toHaveCount(9);
@@ -131,12 +147,12 @@ test('native raised pgen ghosts paint around a mex and accepted queues reserve t
     await page.mouse.up();
   } finally { await page.mouse.up(); await page.keyboard.up('Shift'); }
   expect(await page.evaluate(() => window.__faf!.inspection()!.sentCommands)).toBe(sent);
-  const afterMex = await page.evaluate(h => window.__faf!.unitInfo(h), mex);
+  const afterMex = await page.evaluate(h => window.__faf!.unitInfo(h), mexHandle);
   expect(afterMex?.hp).toBe(before.mex!.hp); expect(afterMex?.visual).toBe(before.mex!.visual);
   await page.keyboard.press('Escape');
   await info.attach('accepted-raised-grid', { body: await page.screenshot(), contentType: 'image/png' });
   await assertSilentOutput(page); expectNoErrors(errors);
-  const final = await receipt(page); expect(final.hostErrors).toEqual([]);
-  await attachJson(info, 'raised-build-preview-receipt', { engine: info.project.name, commander, mex, before, proposed, valid, watch, accepted, repeated, afterMex, final,
-    fixture: 'Explicitly tainted diagnostic Spawn of the existing mex. Native Shift drag, accepted build queues and current HP; no injected frames or sim World access.' });
+  const final = await receipt(page); expect(final.hostErrors).toEqual([]); expect(final.tainted).toBe(false);
+  await attachJson(info, 'raised-build-preview-receipt', { engine: info.project.name, commander, mex: mexHandle, before, proposed, valid, watch, accepted, repeated, afterMex, final,
+    fixture: 'Original skirmish commander and a normal completed Build on a real mass spot. Native Shift drag and accepted queues; no cheats, injected frames or sim World access.' });
 });
