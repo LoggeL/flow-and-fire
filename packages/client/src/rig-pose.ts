@@ -128,9 +128,11 @@ export class RigPoseAdapter {
       const mask = frame.unitMountAimMask(i) & ((1 << Math.min(sourceCount, MAX_PARTS_PER_UNIT)) - 1);
       const history = bounded && this.seen[slot] !== 0 && this.seen[slot] === epoch - 1 && this.handles[slot] === handle && this.visuals[slot] === visual && (flags & UnitFlags.NoInterp) === 0;
       const previousMask = history ? this.masks[slot]! : 0;
-      const frozen = repeated || frame.paused;
+      // A paused host can still emit explicitly stepped, advancing Sim ticks. Only
+      // repeated accepted ticks hold the pose; the header alone cannot suppress a step.
+      const frozen = repeated;
       // One four-WU travel cycle, opposite 24-degree hip swings. There is no wall-clock
-      // motion: stationary accepted frames return to rest; paused/repeated frames hold.
+      // motion: stationary accepted frames return to rest; repeated ticks hold.
       const distance = frozen || (flags & UnitFlags.NoInterp) !== 0 ? 0 : Math.hypot(
         frame.unitCur(i, 0) - frame.unitPrev(i, 0), frame.unitCur(i, 2) - frame.unitPrev(i, 2)) / 4096;
       const previousPhase = history ? this.gaitPhase[slot]! : 0;

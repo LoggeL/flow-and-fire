@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseViewJson } from '@faf/blueprints/view';
-import { FrameReader, FrameSection, FrameWriter, UnitFlags } from '@faf/protocol';
+import { FrameFlags, FrameReader, FrameSection, FrameWriter, UnitFlags } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import { parseGlb, type ModelPartInfo } from '../src/assets/glb.ts';
 import { GameClient } from '../src/client.ts';
@@ -20,8 +20,8 @@ const tankParts: readonly ModelPartInfo[] = [
   { name: 'barrel', parent: 1, pivot: [0.2, 1.2, 0], anim: 'pitch' },
 ];
 const tank: RigVisualEntry = { spec: { hull: 'box', size: [1, 1, 1] }, modelParts: tankParts, rig: combatRig('core:lnd_t1_tank', tankParts) };
-function frame(tick: number, yaw = 16384, pitch = 1000, opts: { viewer?: number; flags?: number; mask?: number; prevBody?: number; body?: number; secondYaw?: number; handle?: number; legacy?: boolean; prevX?: number; prevZ?: number; x?: number; z?: number } = {}): FrameReader {
-  writer.beginFrame(buffer, tick, tick, 0, 1000, opts.viewer ?? 0, 0, 0, 0, 0);
+function frame(tick: number, yaw = 16384, pitch = 1000, opts: { viewer?: number; flags?: number; paused?: boolean; mask?: number; prevBody?: number; body?: number; secondYaw?: number; handle?: number; legacy?: boolean; prevX?: number; prevZ?: number; x?: number; z?: number } = {}): FrameReader {
+  writer.beginFrame(buffer, tick, tick, 0, 1000, opts.viewer ?? 0, opts.paused ? FrameFlags.Paused : 0, 0, 0, 0);
   writer.writePart(yaw, yaw, pitch, pitch);
   if (opts.secondYaw !== undefined) writer.writePart(opts.secondYaw, opts.secondYaw, -pitch, -pitch);
   writer.writeUnit(opts.prevX ?? 10, 20, opts.prevZ ?? 30, opts.x ?? 40, 50, opts.z ?? 60, opts.prevBody ?? 0, opts.body ?? 0, 0, 0, 255, 255, 0,
@@ -163,6 +163,23 @@ function walkingFrame(tick: number, prevX: number, x: number, opts: Parameters<t
 }
 
 describe('ACU accepted-movement gait', () => {
+  it('keeps native manually stepped movement animated with the paused host header, then holds repeated ticks and returns to rest on an accepted stop', () => {
+    const a = new RigPoseAdapter(), first = walkingFrame(1, 0, 2048, { paused: true });
+    expect(first.paused).toBe(true);
+    update(a, first, commander);
+    expect(angles(a, first)[0]).toMatchObject({ prevPitch: 0, curPitch: 3089 });
+    expect(angles(a, first)[1]).toMatchObject({ prevPitch: 0, curPitch: -3089 });
+    const next = walkingFrame(2, 2048, 4096, { paused: true }); update(a, next, commander);
+    expect(angles(a, next)[0]).toMatchObject({ prevPitch: 3089, curPitch: 4369 });
+    expect(angles(a, next)[1]).toMatchObject({ prevPitch: -3089, curPitch: -4369 });
+    update(a, next, commander);
+    expect(angles(a, next)[0]).toMatchObject({ prevPitch: 4369, curPitch: 4369 });
+    expect(angles(a, next)[1]).toMatchObject({ prevPitch: -4369, curPitch: -4369 });
+    const stopped = walkingFrame(3, 4096, 4096, { paused: true, mask: 0 }); update(a, stopped, commander);
+    expect(angles(a, stopped)[0]).toMatchObject({ prevPitch: 4369, curPitch: 0 });
+    expect(angles(a, stopped)[1]).toMatchObject({ prevPitch: -4369, curPitch: 0 });
+  });
+
   it('swings the authored hip pivots in opposition while keeping independent torso and barrel aim', () => {
     const a = new RigPoseAdapter(), f = walkingFrame(1, 0, 2048);
     const original = f.section(FrameSection.Units).slice(), sourceParts = f.section(FrameSection.Parts).slice();

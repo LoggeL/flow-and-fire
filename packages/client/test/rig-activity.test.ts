@@ -137,7 +137,7 @@ describe('accepted-frame structure activity', () => {
     expect(update(a, frame(32, { flags: UnitFlags.Stalled }), v)).toMatchObject({ prevPitch: 910, curPitch: 910 });
   });
 
-  it.each([factory, mex, radar])('holds during unit pause, stall, repeated tick and frame pause; resumes without wall-clock catch-up', v => {
+  it.each([factory, mex, radar])('holds during unit pause, stall and repeated paused ticks; resumes without wall-clock catch-up', v => {
     const a = new RigPoseAdapter();
     const active = { producing: v === factory };
     update(a, frame(1, active), v);
@@ -146,19 +146,35 @@ describe('accepted-frame structure activity', () => {
       [2, { ...active, paused: true }],
       [3, { ...active, flags: UnitFlags.Paused }],
       [4, { ...active, flags: UnitFlags.Stalled }],
-      [5, { ...active, paused: true }],
+      [4, { ...active, paused: true }],
     ] as const) {
       const held = update(a, frame(tick, observation), v);
       expect(held).toMatchObject({ prevYaw: pose.curYaw, curYaw: pose.curYaw, prevPitch: pose.curPitch, curPitch: pose.curPitch });
     }
-    const resumed = update(a, frame(6, active), v);
+    const resumed = update(a, frame(5, active), v);
     expect(resumed.prevYaw).toBe(pose.curYaw); expect(resumed.prevPitch).toBe(pose.curPitch);
     expect(resumed.curYaw !== pose.curYaw || resumed.curPitch !== pose.curPitch).toBe(true);
   });
 
+  it.each([factory, mex, radar])('animates explicit accepted steps while the host remains paused, and holds repeated paused ticks', v => {
+    const stepped = new RigPoseAdapter(), running = new RigPoseAdapter();
+    const active = { producing: v === factory };
+    const firstFrame = frame(1, { ...active, paused: true });
+    expect(firstFrame.paused).toBe(true);
+    const first = update(stepped, firstFrame, v);
+    expect(first).toEqual(update(running, frame(1, active), v));
+    const next = frame(2, { ...active, paused: true });
+    const second = update(stepped, next, v);
+    expect(second).toEqual(update(running, frame(2, active), v));
+    expect(second.curYaw !== first.curYaw || second.curPitch !== first.curPitch).toBe(true);
+    expect(update(stepped, next, v)).toMatchObject({ prevYaw: second.curYaw, curYaw: second.curYaw,
+      prevPitch: second.curPitch, curPitch: second.curPitch });
+    expect(update(stepped, frame(3, { ...active, paused: true }), v)).toEqual(update(running, frame(3, active), v));
+  });
+
   it.each([factory, mex, radar])('keeps incomplete, paused, stalled and unobserved structures static on first sight', v => {
     for (const observation of [
-      { build: 254 }, { flags: UnitFlags.Paused }, { flags: UnitFlags.Stalled }, { paused: true },
+      { build: 254 }, { flags: UnitFlags.Paused }, { flags: UnitFlags.Stalled },
       { flow: false }, { flowTick: -1 }, { flowTick: 0 }, { viewer: 1 },
       { flowFlags: FlowFlags.Billed }, { flowFlags: FlowFlags.Enabled | FlowFlags.Paused | FlowFlags.Billed },
       { flowFlags: FlowFlags.Enabled | FlowFlags.BuildSite | FlowFlags.Billed },
