@@ -307,7 +307,12 @@ describe('content', () => {
     expect(game.units.map((u) => u.id)).toEqual([
       'core:cmd_commander',
       'core:cmd_commander_armored',
+      'core:cmd_commander_cannon',
+      'core:cmd_commander_cannon_protection',
       'core:cmd_commander_engineering',
+      'core:cmd_commander_engineering_cannon',
+      'core:cmd_commander_enhanced',
+      'core:cmd_commander_protection',
       'core:cube',
       'core:eng_t1',
       'core:fac_land_t1',

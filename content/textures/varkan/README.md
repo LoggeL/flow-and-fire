@@ -30,4 +30,3 @@ Composition: seamless repeating edges, uniform detail scale across the whole sam
 Lighting: completely flat diffuse albedo, no directional light, no highlights, no shadow, no ambient occlusion, no vignette, no perspective.
 Constraints: genuinely tileable on both axes; no text, logos, symbols, watermark, objects, panels, seams, large stains, thick scratches, dark cracks, directional gradients, or baked 3D lighting. This is one material texture, not a scene or rendered object.
 ```
-
