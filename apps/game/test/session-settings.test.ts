@@ -18,6 +18,14 @@ describe('persisted game settings', () => {
     vi.stubGlobal('localStorage', { getItem: () => '[1,2]' });
     expect(storedSettings()).toBeNull();
   });
+  it('restores the menu animation preference and defaults older or invalid storage to enabled', () => {
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ locale: 'en', backgroundAnimation: false }) });
+    expect(restoreSettings()).toMatchObject({ locale: 'en', backgroundAnimation: false });
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ locale: 'en' }) });
+    expect(restoreSettings()).toMatchObject({ locale: 'en', backgroundAnimation: true });
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ backgroundAnimation: 'false' }) });
+    expect(restoreSettings().backgroundAnimation).toBe(true);
+  });
   it('maps values older builds offered but never applied to the supported neighbour', () => {
     vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ antialias: 'msaa4', splatLayers: 2, shadowCascades: 3, bloom: false }) });
     expect(storedSettings()).toEqual({ ...DEFAULT_SETTINGS, antialias: 'fxaa', splatLayers: 4, shadowCascades: 2, bloom: false });

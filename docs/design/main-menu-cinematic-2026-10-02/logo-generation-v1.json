@@ -1,0 +1,21 @@
+{
+  "generator": "built-in image_gen.imagegen",
+  "mode": "new logo generation",
+  "transparentBackground": true,
+  "source": "docs/design/main-menu-cinematic-2026-10-02/flow-fire-logo-source-v1.png",
+  "runtime": "apps/game/src/hud/assets/menu/flow-fire-logo-v1.webp",
+  "prompt": "Use case: logo-design. Create a finished premium original game logo for the industrial real-time strategy game FLOW & FIRE, on a truly transparent background. The exact and ONLY text is FLOW & FIRE, spelled correctly. Two stacked lines: FLOW & on the first line and FIRE on the second line, forming a compact very readable wordmark. Broad engineered uppercase letterforms with crisp chamfered corners and heavy clean geometry, carefully spaced; no thin calligraphy, no tiny details, no extra slogan. FLOW is cold pale brushed steel with restrained blue edge light. FIRE is warmer bronze-steel with a subtle amber inner glow and small clean beveled depth. The ampersand is a lighter cyan accent. Add one compact original angular insignia seamlessly integrated at the LEFT of the wordmark: an industrial hexagonal reactor/command crest suggesting two interlocking flows and a small central amber ignition, simple memorable silhouette, NOT any existing game's or brand's emblem. Classic serious PC RTS identity, refined metallic finish, exact readable typography, sharp silhouette, just enough depth to feel manufactured but no excessive gritty damage or dramatic explosion. Logo and insignia together should occupy almost all the image area with tight small transparent outer margins; the complete mark fits in an approximately 2:1 wide rectangle, with no huge empty canvas. No backdrop, no floor, no pedestal, no rectangular panel, no scenery, no character, no black fill behind the art, no solid-colored background, no checkerboard baked in, no watermark. RGBA transparent cutout ready for a real game menu and compact pause-menu UI.",
+  "dimensions": [
+    1774,
+    887
+  ],
+  "alphaBoundingBox": [
+    29,
+    9,
+    1759,
+    887
+  ],
+  "runtimeBytes": 466104,
+  "runtimeSha256": "c93ca41e055029993d6a9666a7ddbc84f466a645b09902c818728375982db9af",
+  "encoding": "WebP quality92, full source dimensions and exact alpha preserved, no image edits"
+}

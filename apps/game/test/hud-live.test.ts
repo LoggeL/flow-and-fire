@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
 import { CmdFlags, EcoField, FrameFlags, FrameWriter, Op, decodeBatch, decodeBuild, frameCapacityBytes } from '@faf/protocol';
 import { GameClient, ClientMap } from '@faf/client';
@@ -23,8 +23,31 @@ function fixture(readOnlyCommands = false) {
     link.frames.deliver(bytes,seq,writer.endFrame());client.frame(seq*100);client.selectHandles([42]);controller.update(true);}; publish();
   return {controller,client,link,canvas,win,publish};
 }
+afterEach(() => vi.unstubAllGlobals());
 const click={button:0,shift:false,ctrl:false,alt:false} as const;
 describe('real game HUD adapter',()=>{
+  it('applies, persists, restores and resets menu animation without a game or settings port', () => {
+    const saved = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); } });
+    const controller = new GameHudController(null);
+    try {
+      expect(controller.model.menus.settings.values.value.backgroundAnimation).toBe(true);
+      controller.commands.setSetting('backgroundAnimation', false);
+      expect(controller.model.menus.settings.values.value.backgroundAnimation).toBe(false);
+      expect(controller.error.value).toBeNull();
+      const reloaded = new GameHudController(null);
+      try {
+        expect(reloaded.model.menus.settings.values.value.backgroundAnimation).toBe(false);
+        reloaded.commands.setSetting('reducedMotion', 'on');
+        expect(reloaded.model.reducedMotion.value).toBe('on');
+        reloaded.commands.resetSettings();
+        expect(reloaded.model.menus.settings.values.value.backgroundAnimation).toBe(true);
+        expect(reloaded.model.reducedMotion.value).toBe('system');
+        const afterReset = new GameHudController(null);
+        try { expect(afterReset.model.menus.settings.values.value.backgroundAnimation).toBe(true); } finally { afterReset.dispose(); }
+      } finally { reloaded.dispose(); }
+    } finally { controller.dispose(); }
+  });
   it('binds economy milli/tick values and real selection to presentation signals',()=>{const f=fixture();expect(f.controller.model.eco.mass.stored.value).toBe(125);expect(f.controller.model.eco.mass.income.value).toBe(5);expect(f.controller.model.eco.mass.demand.value).toBe(10);expect(f.controller.model.eco.mass.flow.value).toBe(.5);expect(f.controller.model.card.selectedTypes.value).toEqual(['core:cmd_commander']);expect(f.controller.model.selection.single.value?.handle).toBe(42);f.controller.dispose();f.client.dispose();});
   it('physical grid key arms a real pgen, shared placement blocks occupancy and shift serializes build',()=>{const f=fixture();
     expect(f.controller.handleKey(key('keydown','KeyW') as unknown as KeyboardEvent)).toBe(true);

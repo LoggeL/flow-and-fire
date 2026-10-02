@@ -1,7 +1,7 @@
 import { assertSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 import { expect, test } from './support/silent-test.ts';
 import { COI_URL, captureErrors, expectNoErrors } from './support/game.ts';
-import { findOwnUnit } from './support/skirmish.ts';
+import { findOwnUnit, setFrontendLocale } from './support/skirmish.ts';
 
 for (const { color, mode, hex, channel } of [
   { color: 'blue', mode: 'house', hex: '#2f6fd0', channel: 2 },
@@ -17,7 +17,7 @@ for (const { color, mode, hex, channel } of [
     await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 60_000 });
     const main = page.getByTestId('MainMenu');
     await expect(main).toBeVisible();
-    await main.getByRole('combobox').selectOption('de');
+    await setFrontendLocale(page, 'de');
     await main.getByRole('button', { name: /Gefecht/ }).click();
     const setup = page.getByTestId('SkirmishSetup');
     await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();

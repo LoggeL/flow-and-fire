@@ -1,17 +1,18 @@
+import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { useHud, useCommands } from '../../model/index.ts';
 import { t } from '../../i18n/t.ts';
 import { fmtTime } from '../../format/index.ts';
 import { Panel, PanelHead, Button } from '../../ui/index.ts';
 import { MenuShell } from '../shared/Shell.tsx';
-export function MainMenu() {
+export function MainMenu({ logo }: { readonly logo?: ComponentChildren } = {}) {
     const m = useHud(), c = useCommands(), ref = useRef<HTMLElement>(null), last = m.menus.main.lastMatch.value, wordmark = t('ui.menu.title').split('&');
     useLayoutEffect(() => { ref.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); }, []);
     const meta = [t('ui.menu.build', { build: m.menus.main.build.value }), m.menus.main.simId.value && t('ui.menu.sim', { sim: m.menus.main.simId.value }), m.menus.main.preset.value && t('ui.menu.preset', { preset: m.menus.main.preset.value })].filter(Boolean).join(' · ');
-    return <MenuShell title={t('ui.menu.title')} component="MainMenu" back={false} footer={<span data-testid="menu-build-meta">{meta}</span>}>
+    return <MenuShell title={t('ui.menu.title')} component="MainMenu" back={false} language={false} footer={<span data-testid="menu-build-meta">{meta}</span>}>
         <main class="main">
             <div class="main__command">
-                <div class="logo" aria-hidden="true">{wordmark[0]}<span class="amp">{'&'}</span><br/><span class="fire">{wordmark[1]}</span></div>
+                <div class="logo" aria-hidden="true">{logo ?? <>{wordmark[0]}<span class="amp">{'&'}</span><br/><span class="fire">{wordmark[1]}</span></>}</div>
                 <div class="tagline">{t('ui.menu.tagline')}</div>
                 <nav class="mainnav" aria-label={t('ui.menu.title')} ref={ref} onKeyDown={(e) => {
                     if (!['ArrowUp', 'ArrowDown'].includes(e.key)) return;

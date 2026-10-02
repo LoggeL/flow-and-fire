@@ -196,7 +196,7 @@ export class GameHudController {
       togglePause: () => { game?.client.input.cancelBuildGesture(); game?.client.togglePause(); },
       changeSpeed: (delta: number) => { if (game) game.client.setSpeed(Math.max(.25, Math.min(3, game.client.speed + delta * .25))); },
       setSetting: <K extends SettingKey>(key: K, value: SettingsValues[K]) => this.setSetting(key, value),
-      resetSettings: () => { for (const key of ['preset', 'renderScale', 'shadowCascades', 'splatLayers', 'particleCap', 'bloom', 'antialias', 'frameCap', 'cameraShake', 'volMaster', 'volSfx', 'volVoice', 'volUi', 'volMusic', 'volAmbient', 'alertVoice', 'audibleStall', 'audioInBackground', 'locale', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'pauseInBackground', 'autoSaveReplays'] as const) this.setSetting(key, DEFAULT_SETTINGS[key]); },
+      resetSettings: () => { for (const key of ['preset', 'renderScale', 'shadowCascades', 'splatLayers', 'particleCap', 'bloom', 'antialias', 'frameCap', 'cameraShake', 'volMaster', 'volSfx', 'volVoice', 'volUi', 'volMusic', 'volAmbient', 'alertVoice', 'audibleStall', 'audioInBackground', 'locale', 'backgroundAnimation', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'pauseInBackground', 'autoSaveReplays'] as const) this.setSetting(key, DEFAULT_SETTINGS[key]); },
       saveReplay: () => { if (this.ports?.saveReplay) this.ports.saveReplay(); else if (game) void game.exportLog().catch(e => this.fail(String(e))); else unavailable('saveReplay'); },
       // From the score screen, open the finished match itself; elsewhere the recording library.
       watchReplay: () => { if (game && !game.replayMode && this.result.peek() !== null && this.ports?.watchMatchReplay) this.ports.watchMatchReplay(); else this.invoke('openReplay'); },
@@ -297,7 +297,7 @@ export class GameHudController {
   setSetting<K extends SettingKey>(key: K, value: SettingsValues[K]): void {
     const m = this.model, candidate = { ...m.menus.settings.values.peek(), [key]: value };
     if (validateSettings(candidate).length > 0) { this.say('invalidSetting'); return; }
-    const local = ['locale', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'tooltips'].includes(key);
+    const local = ['locale', 'backgroundAnimation', 'uiScale', 'reducedMotion', 'teamColors', 'edgePan', 'keyScheme', 'tooltips'].includes(key);
     if (!local && !this.ports?.applySetting?.(key, value)) { this.say('settingUnsupported'); return; }
     const preset = key === 'preset' ? parsePresetName(String(value)) : undefined;
     // Without a running Game the preset's own values are stored too, so a later match starts with exactly that preset.

@@ -10,6 +10,8 @@
   background: #070d12;
 }
 .live-hud[data-screen='main'] .menu-backdrop {
+  --scene-align-x: .65;
+  --scene-align-y: .48;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -17,14 +19,62 @@
   pointer-events: none;
   background: #070d12;
 }
-.live-hud[data-screen='main'] .menu-backdrop__image {
+.live-hud[data-screen='main'] .menu-backdrop__layer {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: 65% 48%;
-  transform-origin: 73% 46%;
-  animation: ff-menu-drift 38s ease-in-out infinite alternate;
+  transform-origin: 65% 48%;
+}
+.live-hud[data-screen='main'] .menu-backdrop__image,
+.live-hud[data-screen='main'] .menu-backdrop__scene-effects--background {
+  animation: ff-menu-background-drift 60s ease-in-out -15s infinite alternate;
+}
+.live-hud[data-screen='main'] .menu-backdrop__commander,
+.live-hud[data-screen='main'] .menu-backdrop__scene-effects--commander {
+  animation: ff-menu-commander-drift 48s ease-in-out -12s infinite alternate;
+}
+.live-hud[data-screen='main'] .menu-backdrop__foreground {
+  animation: ff-menu-foreground-drift 34s ease-in-out -8.5s infinite alternate;
+}
+/* Companion planes reproduce object-fit: cover before their shared image transform. */
+.live-hud[data-screen='main'] .menu-backdrop__scene-effects {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 65% 48%;
+  --scene-cover-width: max(100vw, calc(100vh * 1672 / 941));
+  --scene-cover-height: max(100vh, calc(100vw * 941 / 1672));
+}
+.live-hud[data-screen='main'] .menu-backdrop__scene-plane {
+  position: absolute;
+  width: var(--scene-cover-width);
+  height: var(--scene-cover-height);
+  left: calc((100vw - var(--scene-cover-width)) * var(--scene-align-x));
+  top: calc((100vh - var(--scene-cover-height)) * var(--scene-align-y));
+}
+.live-hud[data-screen='main'] .menu-backdrop [data-scene-effect] { position: absolute; display: block; }
+.live-hud[data-screen='main'] .menu-scene-light {
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, #ffb75945, #ff92301c 35%, transparent 70%);
+  opacity: .3;
+  animation: ff-menu-factory-light 11s ease-in-out infinite alternate;
+}
+.live-hud[data-screen='main'] .menu-scene-smoke {
+  background: radial-gradient(ellipse at 42% 66%, #c0bec820, transparent 53%), radial-gradient(ellipse at 61% 43%, #b1afbb14, transparent 48%);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: ff-menu-factory-smoke 21s ease-in-out infinite;
+}
+.live-hud[data-screen='main'] .menu-scene-emitter {
+  background: radial-gradient(ellipse at 50% 28%, #b0f0ff4d, #6bd8ff1a 36%, transparent 66%), radial-gradient(ellipse at 50% 62%, #75dfff20, transparent 65%);
+  transform: translate(-50%, -50%);
+  opacity: .3;
+  animation: ff-menu-emitter-breathe 9s ease-in-out -3s infinite alternate;
 }
 .live-hud[data-screen='main'] .menu-backdrop__shade,
 .live-hud[data-screen='main'] .menu-backdrop__vignette {
@@ -64,10 +114,14 @@
   opacity: 0;
   animation: ff-menu-ember 20s linear infinite;
 }
-.live-hud[data-screen='main'] .menu-backdrop__image,
+.live-hud[data-screen='main'] .menu-backdrop__layer,
+.live-hud[data-screen='main'] .menu-backdrop__scene-effects,
+.live-hud[data-screen='main'] .menu-backdrop [data-scene-effect],
 .live-hud[data-screen='main'] .menu-backdrop__mist,
 .live-hud[data-screen='main'] .menu-backdrop__embers i { animation-play-state: paused; }
-.live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__image,
+.live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__layer,
+.live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__scene-effects,
+.live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] [data-scene-effect],
 .live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__mist,
 .live-hud[data-screen='main'] .menu-backdrop[data-motion='active'] .menu-backdrop__embers i { animation-play-state: running; }
 
@@ -78,13 +132,24 @@
   height: 100%;
   min-height: 0;
   padding: clamp(20px, 3.5vh, 40px) var(--menu-gutter) clamp(20px, 3.2vh, 38px);
-  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  grid-template-rows: minmax(min-content, 1fr) auto;
   gap: 16px;
   background: transparent;
   color: var(--menu-steel);
   overflow: auto;
 }
-.live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-top { min-height: 34px; }
+.live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-top h1 {
   position: absolute;
   width: 1px;
@@ -134,6 +199,12 @@
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
+}
+.live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] :is(img.main-menu-logo, .main-menu-logo img) {
+  display: block;
+  width: min(100%, 440px);
+  height: auto;
+  object-fit: contain;
 }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .tagline {
   max-width: 360px;
@@ -187,8 +258,7 @@
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .navbtn:disabled { color: #a1b0b9; cursor: not-allowed; background: #0b17232e; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .navbtn:disabled > span:first-child { opacity: .5; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .navbtn small { color: #96aab5; font-size: 11px; letter-spacing: 0; }
-.live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] :is(button, select):focus-visible,
-.live-hud[data-screen='main'] .menu-motion-control:focus-visible { outline: 2px solid var(--menu-accent-light); outline-offset: 4px; }
+.live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] :is(button, select):focus-visible { outline: 2px solid var(--menu-accent-light); outline-offset: 4px; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .side { align-self: end; justify-self: end; justify-items: end; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .card-m { width: min(330px, 100%); background: #0a141cde; border-color: #8da8b645; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .card-m .ff-ph { background: transparent; }
@@ -202,41 +272,27 @@
 }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-foot .sp { min-width: 0; }
 .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] [data-testid='menu-build-meta'] { overflow-wrap: anywhere; text-align: right; }
-.live-hud[data-screen='main'] .menu-motion-control {
-  position: absolute;
-  left: var(--menu-gutter);
-  top: clamp(20px, 3.5vh, 40px);
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 34px;
-  padding: 4px 8px;
-  margin-left: -8px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: #a9bdc8;
-  font: 12px var(--font-ui);
-  letter-spacing: .04em;
-  pointer-events: auto;
-  cursor: pointer;
-}
-.live-hud[data-screen='main'] .menu-motion-control:hover:not(:disabled) { color: var(--menu-accent-light); border-color: color-mix(in srgb, var(--menu-accent-light) 32%, transparent); background: #0a151e88; }
-.live-hud[data-screen='main'] .menu-motion-control:disabled { cursor: default; color: #91a5b0; }
-.live-hud[data-screen='main'] .menu-motion-control > span:first-child { min-width: 13px; text-align: center; font-size: 15px; }
-
-@keyframes ff-menu-drift { from { transform: scale(1.015) translate3d(0, 0, 0); } to { transform: scale(1.065) translate3d(-.7%, -.4%, 0); } }
+/* Registered images share the same frame. Increasing travel and shorter cycles reveal depth. */
+@keyframes ff-menu-background-drift { from { transform: translate3d(.15%, .1%, 0) scale(1.025); } to { transform: translate3d(-.35%, -.15%, 0) scale(1.035); } }
+@keyframes ff-menu-commander-drift { from { transform: translate3d(.45%, .25%, 0) scale(1.025); } to { transform: translate3d(-.6%, -.3%, 0) scale(1.045); } }
+@keyframes ff-menu-foreground-drift { from { transform: translate3d(1%, .5%, 0) scale(1.075); } to { transform: translate3d(-1.35%, -.7%, 0) scale(1.105); } }
+@keyframes ff-menu-factory-light { from { opacity: .22; } to { opacity: .7; } }
+@keyframes ff-menu-factory-smoke { 0% { transform: translate3d(-50%, -75%, 0) scale(.75); opacity: 0; } 25% { opacity: .35; } 60% { opacity: .22; } 100% { transform: translate3d(-22%, -145%, 0) scale(1.25); opacity: 0; } }
+@keyframes ff-menu-emitter-breathe { from { transform: translate(-50%, -50%) scale(.96); opacity: .25; } to { transform: translate(-50%, -50%) scale(1.06); opacity: .6; } }
 @keyframes ff-menu-mist { from { transform: translate3d(-4%, 5%, 0) scale(1); opacity: .45; } to { transform: translate3d(6%, -3%, 0) scale(1.07); opacity: .9; } }
 @keyframes ff-menu-ember { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 18% { opacity: .45; } 75% { opacity: .25; } 100% { transform: translate3d(-45px, -165px, 0); opacity: 0; } }
 
 @media (max-height: 740px) {
+  .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] :is(img.main-menu-logo, .main-menu-logo img) { width: min(100%, 320px); }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .logo { font-size: clamp(68px, 11vh, 96px); }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .main { padding-top: 4px; padding-bottom: 8px; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .mainnav { margin-top: 22px; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .tagline { margin-top: 16px; }
 }
 @media (max-width: 760px) {
-  .live-hud[data-screen='main'] .menu-backdrop__image { object-position: 68% 48%; }
+  .live-hud[data-screen='main'] .menu-backdrop { --scene-align-x: .68; }
+  .live-hud[data-screen='main'] .menu-backdrop__layer { object-position: 68% 48%; transform-origin: 68% 48%; }
+  .live-hud[data-screen='main'] .menu-backdrop__scene-effects { transform-origin: 68% 48%; }
   .live-hud[data-screen='main'] .menu-backdrop__shade { background: linear-gradient(90deg, #050a0ff0, #070d12ab 52%, #070d1266); }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .main { grid-template-columns: minmax(0, 1fr); gap: 22px; align-content: center; padding-top: 22px; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .logo { font-size: clamp(68px, 15vw, 96px); }
@@ -244,13 +300,22 @@
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .card-m { width: 100%; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .menu-foot .sp { margin-left: 0; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] [data-testid='menu-build-meta'] { text-align: left; }
-  .live-hud[data-screen='main'] .menu-motion-control { font-size: 11px; gap: 6px; max-width: calc(100% - 172px); }
 }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__layer, .menu-backdrop__scene-effects, [data-scene-effect], .menu-backdrop__mist, .menu-backdrop__embers i) { animation: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-backdrop__layer, .menu-backdrop__scene-effects) { transform: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-scene-smoke, .menu-backdrop__embers) { display: none; }
+.live-hud[data-screen='main'] .menu-backdrop[data-motion-reason='reduced'] :is(.menu-scene-light, .menu-scene-emitter) { opacity: .18; }
 @media (prefers-reduced-motion: reduce) {
-  .live-hud[data-screen='main'] .menu-backdrop__image,
+  .live-hud[data-screen='main'] .menu-backdrop__layer,
+  .live-hud[data-screen='main'] .menu-backdrop__scene-effects,
+  .live-hud[data-screen='main'] .menu-backdrop [data-scene-effect],
   .live-hud[data-screen='main'] .menu-backdrop__mist,
   .live-hud[data-screen='main'] .menu-backdrop__embers i { animation: none; }
-  .live-hud[data-screen='main'] .menu-backdrop__image { transform: none; }
+  .live-hud[data-screen='main'] .menu-backdrop__layer { transform: none; }
+  .live-hud[data-screen='main'] .menu-backdrop__scene-effects { transform: none; }
+  .live-hud[data-screen='main'] .menu-backdrop .menu-scene-smoke { display: none; }
+  .live-hud[data-screen='main'] .menu-scene-light,
+  .live-hud[data-screen='main'] .menu-scene-emitter { opacity: .18; }
   .live-hud[data-screen='main'] .menu-backdrop__embers { display: none; }
   .live-hud[data-screen='main'] .menu-root[data-component='MainMenu'] .navbtn { transition: none; }
 }

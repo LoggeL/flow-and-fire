@@ -5,6 +5,7 @@ import { readRtsReplay, ReplayFlags } from '../../packages/formats/src/index.ts'
 import { assertSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 import { expect, test } from './support/silent-test.ts';
 import { attachJson, captureErrors, COI_URL, expectNoErrors } from './support/game.ts';
+import { setFrontendLocale } from './support/skirmish.ts';
 
 const fixturePath = process.env['FAF_RETAINED_REPLAY_FILE'];
 const sha256 = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
@@ -28,7 +29,7 @@ test('actual retained build: native byte handoff, HASH seeks and continuous brow
   await expect(page.getByTestId('loading-screen')).toHaveCount(0);
   const main = page.getByTestId('MainMenu');
   await expect(main).toBeVisible();
-  await main.getByRole('combobox').selectOption('de');
+  await setFrontendLocale(page, 'de');
   const currentBuild = await page.evaluate(() => document.documentElement.dataset['build']);
   expect(currentBuild).toBeTruthy();
   expect(currentBuild).not.toBe(recordedBuild);

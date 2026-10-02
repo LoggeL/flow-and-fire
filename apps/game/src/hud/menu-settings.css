@@ -1,0 +1,14 @@
+/* Language and menu motion controls must also remain reachable on narrow screens. */
+@media (max-width: 1000px) {
+  .live-hud .menu-root[data-component='Settings'] .settings { grid-template-columns: 170px minmax(0, 1fr); }
+  .live-hud .menu-root[data-component='Settings'] .aside-card { display: none; }
+}
+@media (max-width: 640px) {
+  .live-hud .menu-root[data-component='Settings'] .settings { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-height: 0; }
+  .live-hud .menu-root[data-component='Settings'] .ff-tabs.vtabs { display: flex; flex-wrap: wrap; gap: 4px; overflow: visible; }
+  .live-hud .menu-root[data-component='Settings'] .vtab { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+  .live-hud .menu-root[data-component='Settings'] .srows { min-width: 0; min-height: 0; overflow: auto; }
+  .live-hud .menu-root[data-component='Settings'] .srow { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .live-hud .menu-root[data-component='Settings'] .srow__c { min-width: 0; }
+  .live-hud .menu-root[data-component='Settings'] .detect { grid-template-columns: minmax(0, 1fr); }
+}

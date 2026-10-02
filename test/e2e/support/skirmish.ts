@@ -8,6 +8,18 @@ import { COI_URL } from './game.ts';
 /** IDs come from the same generated content as the production asset pipeline. */
 export const SKIRMISH_BLUEPRINTS = decodeSimBin(new Uint8Array(readFileSync(resolve(import.meta.dirname, '../../../content/generated/sim.bin'))));
 
+/** Language now lives in Settings, reached through the actual frontend controls. */
+export async function setFrontendLocale(page: Page, locale: 'de' | 'en'): Promise<void> {
+  const main = page.getByTestId('MainMenu');
+  await main.getByRole('button', { name: /Einstellungen|Settings/ }).click();
+  const settings = page.getByTestId('Settings');
+  await expect(settings).toBeVisible();
+  await settings.getByRole('tab', { name: /Spiel & Sprache|Game & language/ }).click();
+  await settings.getByRole('combobox', { name: /^(Sprache|Language)$/ }).selectOption(locale);
+  await settings.getByRole('button', { name: /^(Zurück|Back)$/ }).click();
+  await expect(main).toBeVisible();
+}
+
 /** Uses the actual menu; openGame deliberately starts the legacy cube sandbox. */
 export async function startHumanAiSkirmish(page: Page): Promise<number> {
   await installSilentOutput(page);
@@ -19,7 +31,7 @@ export async function startHumanAiSkirmish(page: Page): Promise<number> {
   await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 60_000 });
   const main = page.getByTestId('MainMenu');
   await expect(main).toBeVisible({ timeout: 60_000 });
-  await main.getByRole('combobox').selectOption('de');
+  await setFrontendLocale(page, 'de');
   await main.getByRole('button', { name: /Gefecht/ }).click();
   const setup = page.getByTestId('SkirmishSetup');
   await expect(setup).toBeVisible();

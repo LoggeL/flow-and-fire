@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useHud } from '@faf/hud';
-import commanderDusk from './assets/menu/commander-dusk-v1.webp';
+import parallaxBackground from './assets/menu/parallax-background-v1.webp';
+import parallaxCommander from './assets/menu/parallax-commander-v1.webp';
+import parallaxForeground from './assets/menu/parallax-foreground-v1.webp';
 
 // Decorative atmosphere runs entirely on compositor transforms and opacity.
 const EMBERS = [
@@ -8,16 +10,26 @@ const EMBERS = [
   [91, 20, 22, -5], [62, 25, 27, -16], [79, 28, 26, -21], [95, 8, 20, -13],
 ] as const;
 
+// Coordinates in the registered 1672 × 941 source frame, tied to actual scene details.
+const FACTORY_LIGHTS = [
+  [939, 582, 148, 132, 11, -3],
+  [816, 551, 60, 68, 14, -7],
+  [928, 413, 72, 52, 17, -10],
+] as const;
+const FACTORY_SMOKE = [[824, 553, 94, 165, 21, -6], [1121, 532, 72, 142, 27, -16]] as const;
+function sceneBox(x: number, y: number, width: number, height: number) {
+  return {left: `${x / 1672 * 100}%`, top: `${y / 941 * 100}%`, width: `${width / 1672 * 100}%`, height: `${height / 941 * 100}%`};
+}
+
 /** Mounted only on the main screen. OS motion preference always takes precedence. */
 export function MenuBackdrop() {
-  const en = useHud().locale.value === 'en';
-  const [enabled, setEnabled] = useState(true);
-  const [reduced, setReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const m = useHud(), enabled = m.menus.settings.values.value.backgroundAnimation;
+  const [systemReduced, setSystemReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [visible, setVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updatePreference = () => setReduced(preference.matches);
+    const updatePreference = () => setSystemReduced(preference.matches);
     const updateVisibility = () => setVisible(document.visibilityState !== 'hidden');
     updatePreference();
     updateVisibility();
@@ -29,25 +41,22 @@ export function MenuBackdrop() {
     };
   }, []);
 
+  const reduced = systemReduced || m.reducedMotion.value === 'on';
   const active = enabled && !reduced && visible;
-  const action = reduced
-    ? (en ? 'Reduced motion' : 'Bewegung reduziert')
-    : enabled
-      ? (en ? 'Pause background animation' : 'Hintergrundanimation pausieren')
-      : (en ? 'Play background animation' : 'Hintergrundanimation abspielen');
 
-  return <>
-    <div class="menu-backdrop" data-testid="menu-backdrop" data-motion={active ? 'active' : 'paused'} data-motion-reason={reduced ? 'reduced' : !enabled ? 'user' : !visible ? 'hidden' : 'enabled'} aria-hidden="true">
-      <img class="menu-backdrop__image" src={commanderDusk} alt="" draggable={false} loading="eager" fetchpriority="high" decoding="async" data-testid="menu-background-image"/>
-      <div class="menu-backdrop__shade"/>
-      <div class="menu-backdrop__mist"/>
+  return <div class="menu-backdrop" data-testid="menu-backdrop" data-parallax="layered" data-motion={active ? 'active' : 'paused'} data-motion-reason={reduced ? 'reduced' : !enabled ? 'user' : !visible ? 'hidden' : 'enabled'} aria-hidden="true">
+      <img class="menu-backdrop__layer menu-backdrop__image" src={parallaxBackground} alt="" draggable={false} loading="eager" fetchpriority="high" decoding="async" data-testid="menu-background-image" data-menu-layer="background"/>
+      <div class="menu-backdrop__scene-effects menu-backdrop__scene-effects--background" data-testid="menu-background-effects" data-scene-layer="background"><div class="menu-backdrop__scene-plane">
+        {FACTORY_LIGHTS.map(([x, y, width, height, duration, delay], index) => <i key={`light-${index}`} class="menu-scene-light" data-scene-effect="factory-light" style={{...sceneBox(x, y, width, height), animationDuration: `${duration}s`, animationDelay: `${delay}s`}}/>)}
+        {FACTORY_SMOKE.map(([x, y, width, height, duration, delay], index) => <i key={`smoke-${index}`} class="menu-scene-smoke" data-scene-effect="smoke" style={{...sceneBox(x, y, width, height), animationDuration: `${duration}s`, animationDelay: `${delay}s`}}/>)}
+      </div></div>
       <div class="menu-backdrop__mist menu-backdrop__mist--far"/>
+      <img class="menu-backdrop__layer menu-backdrop__commander" src={parallaxCommander} alt="" draggable={false} loading="eager" fetchpriority="high" decoding="async" data-testid="menu-commander-image" data-menu-layer="commander"/>
+      <div class="menu-backdrop__scene-effects menu-backdrop__scene-effects--commander" data-testid="menu-commander-effects" data-scene-layer="commander"><div class="menu-backdrop__scene-plane"><i class="menu-scene-emitter" data-scene-effect="emitter" style={sceneBox(1508, 495, 150, 190)}/></div></div>
+      <div class="menu-backdrop__mist"/>
+      <img class="menu-backdrop__layer menu-backdrop__foreground" src={parallaxForeground} alt="" draggable={false} loading="eager" decoding="async" data-testid="menu-foreground-image" data-menu-layer="foreground"/>
       <div class="menu-backdrop__embers">{EMBERS.map(([left, bottom, duration, delay], index) => <i key={index} style={{left: `${left}%`, bottom: `${bottom}%`, animationDuration: `${duration}s`, animationDelay: `${delay}s`}}/>)}</div>
+      <div class="menu-backdrop__shade"/>
       <div class="menu-backdrop__vignette"/>
-    </div>
-    <button type="button" class="menu-motion-control" data-testid="menu-motion-toggle" aria-label={action} aria-pressed={enabled && !reduced} disabled={reduced} title={action} onClick={() => setEnabled(value => !value)}>
-      <span aria-hidden="true">{enabled && !reduced ? 'Ⅱ' : '▷'}</span>
-      <span>{reduced ? action : 'Animation'}</span>
-    </button>
-  </>;
+    </div>;
 }
