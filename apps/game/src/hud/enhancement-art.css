@@ -1,0 +1,20 @@
+.live-hud .live-game-presentation .live-enhancement-art {
+  display: block;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  border-radius: .25rem;
+  background: radial-gradient(ellipse at 45% 38%, color-mix(in srgb, var(--sc-accent) 18%, #1c242b), #060a0d 80%);
+  box-shadow: inset 0 0 0 1px #596b774d, inset 0 2px 4px #0008;
+  pointer-events: none;
+}
+.live-hud .live-game-presentation .live-enhancement-installed {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+.live-hud .live-game-presentation .live-enhancement-installed>.live-enhancement-art {
+  grid-row: 1 / 3;
+}
+.live-hud .live-game-presentation .live-enhancement-installed>small {
+  grid-column: 2 / -1;
+}

@@ -56,6 +56,7 @@ uniform float uAltOn[${MAX_ALTS}];
 uniform float uGlow;
 uniform float uSilhouette;
 uniform float uGray;
+uniform float uPortrait;
 uniform vec3 uSunDir;
 varying vec3 vColor;
 varying vec4 vMask;
@@ -89,7 +90,12 @@ void main() {
   float metal = vMask.b;
   float spec = pow(max(dot(n, h), 0.0), mix(16.0, 48.0, metal)) * mix(0.06, 1.1, metal) * ndl;
   vec3 specCol = mix(vec3(1.0), albedo, metal);
-  vec3 col = albedo * (hemi * 0.9 + sun) * ao + specCol * spec;
+  vec3 col = albedo * (hemi * mix(0.9, 0.58, uPortrait) + sun) * ao + specCol * spec;
+  // Portrait-only cool back light separates dark armor from the studio backdrop.
+  // The default remains zero so gallery lighting and palette inputs are unchanged.
+  vec3 rimDir = normalize(vec3(-0.7, 0.45, -0.65));
+  float rim = max(dot(n, rimDir), 0.0) * pow(1.0 - max(dot(n, v), 0.0), 1.5);
+  col += uPortrait * rim * (albedo * vec3(0.7, 1.0, 1.25) + vec3(0.10, 0.16, 0.22));
   vec3 glow = base * uGlow * vMask.g * 3.0;
   if (uGray > 0.5) glow = vec3(dot(glow, vec3(0.2126, 0.7152, 0.0722)));
   gl_FragColor = vec4(col * (1.0 - vMask.g) + glow + col * vMask.g * 0.2, 1.0);
@@ -108,6 +114,7 @@ export interface UnitMaterialUniforms {
   uGlow: THREE.IUniform<number>;
   uSilhouette: THREE.IUniform<number>;
   uGray: THREE.IUniform<number>;
+  uPortrait: THREE.IUniform<number>;
   uSunDir: THREE.IUniform<THREE.Vector3>;
 }
 
@@ -133,6 +140,7 @@ export function createUnitMaterial(): UnitMaterial {
     uGlow: { value: 1 },
     uSilhouette: { value: 0 },
     uGray: { value: 0 },
+    uPortrait: { value: 0 },
     uSunDir: { value: new THREE.Vector3(0.45, 0.8, 0.4).normalize() },
   };
   const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, vertexColors: true }) as UnitMaterial;

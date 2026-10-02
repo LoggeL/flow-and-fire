@@ -12,7 +12,12 @@ const view = JSON.parse(readFileSync(resolve(root, 'content/generated/view.json'
   visuals: { id: string; mesh: string; tech: number }[];
 };
 const meshes = [...new Set(view.visuals.map(v => v.mesh).filter(m => m.startsWith('units/varkan/')))].sort();
-const options = { size: 192, team: '#2F6FD0', azimuth: 35, elevation: 32, background: '#304038' };
+const options = { size: 192, team: '#2F6FD0', azimuth: 35, elevation: 32, background: '#10191d', portrait: true };
+// Match the actual unit's silhouette: low angle for upright machines, higher for structures.
+const cameraFor = (unit: string) => ({
+  azimuth: unit.includes('radar') ? 48 : 35,
+  elevation: unit.startsWith('str_') ? 36 : unit.startsWith('cmd_') || unit.endsWith('_bot') ? 22 : 28,
+});
 const server = await createServer({
   configFile: resolve(root, 'apps/model-viewer/vite.config.ts'),
   root: resolve(root, 'apps/model-viewer'), logLevel: 'error',
@@ -32,6 +37,7 @@ try {
   const images = [];
   for (const mesh of meshes) {
     const unit = mesh.split('/').at(-1)!;
+    const renderOptions = { ...options, ...cameraFor(unit) };
     const shot = await page.evaluate(async ({ unit, options }) => {
       const modelsUrl = '/src/models.ts', thumbsUrl = '/src/thumbs.ts';
       const { loadManifest } = await import(/* @vite-ignore */ modelsUrl);
@@ -40,11 +46,11 @@ try {
       const meta = manifest.models.find((m: { faction: string; unit: string }) => m.faction === 'varkan' && m.unit === unit);
       if (!meta) throw new Error(`Missing model: ${unit}`);
       return { data: await thumbnail(meta, options), modelSha256: meta.sha256 };
-    }, { unit, options });
+    }, { unit, options: renderOptions });
     const bytes = Buffer.from(shot.data.slice(shot.data.indexOf(',') + 1), 'base64');
     const file = `${unit}.png`;
     writeFileSync(resolve(output, file), bytes);
-    images.push({ mesh, file, modelSha256: shot.modelSha256, sha256: createHash('sha256').update(bytes).digest('hex') });
+    images.push({ mesh, file, camera: cameraFor(unit), modelSha256: shot.modelSha256, sha256: createHash('sha256').update(bytes).digest('hex') });
     process.stdout.write(`${file}\n`);
   }
   // The model viewer creates no audio contexts; the strict sink is still installed before navigation.
@@ -55,7 +61,9 @@ try {
   if (!silent) throw new Error('Model thumbnail renderer has an audible audio connection');
   if (errors.length) throw new Error(errors.join('\n'));
   const blueprints = Object.fromEntries(view.visuals.filter(v => v.mesh.startsWith('units/varkan/')).map(v => [v.id, v.mesh.split('/').at(-1)!]));
-  writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({ generator: 'pnpm exec tsx tools/model-shots/scripts/hud-icons.ts', options, blueprints, images }, null, 2) + '\n');
+  const rendererSources = Object.fromEntries(['apps/model-viewer/src/thumbs.ts', 'apps/model-viewer/src/material.ts', 'apps/model-viewer/src/armor-surface.ts']
+    .map(file => [file, createHash('sha256').update(readFileSync(resolve(root, file))).digest('hex')]));
+  writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({ generator: 'pnpm exec tsx tools/model-shots/scripts/hud-icons.ts', options, rendererSources, blueprints, images }, null, 2) + '\n');
   writeFileSync(resolve(output, '../../build-portraits.gen.ts'), '/** Generated from the live visual-to-model mapping by hud-icons.ts. */\nexport const BUILD_PORTRAIT_MODELS: Readonly<Record<string, string>> = ' + JSON.stringify(blueprints, null, 2) + ';\n');
 } finally {
   await browser?.close();

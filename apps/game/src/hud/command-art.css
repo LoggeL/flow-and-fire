@@ -1,0 +1,39 @@
+.live-command-art {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--command-art-size, 36px);
+  height: var(--command-art-size, 36px);
+  flex: 0 0 auto;
+  border: 1px solid #020609;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at 50% 38%, #1b2830 0%, #0c141a 60%, #060b0f 100%);
+  box-shadow: inset 0 2px 4px #000c, inset 0 -1px 0 #5b6f7a38, 0 1px 0 #8597a326;
+  pointer-events: none;
+}
+
+.live-command-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px #000a);
+}
+
+.live-hud .live-game-presentation .live-primary-orders .ff-order>.live-command-art {
+  --command-art-size: 2.4rem;
+  position: absolute;
+  left: 50%;
+  top: .2rem;
+  transform: translateX(-50%);
+}
+
+:is(.is-armed, .is-on, .is-active) > .live-command-art {
+  border-color: var(--command-color);
+  box-shadow: inset 0 2px 4px #000c, 0 0 4px color-mix(in srgb, var(--command-color) 45%, transparent);
+}
+
+:is(.is-disabled, [aria-disabled="true"]) > .live-command-art img {
+  filter: grayscale(.72) brightness(.48);
+  opacity: .6;
+}

@@ -2,6 +2,7 @@ import { Bar, Panel, fmtDec, fmtPct, useHud } from '@faf/hud';
 import { useState } from 'preact/hooks';
 import type { GameHudController } from './live.ts';
 import { liveUnitText } from './unit-text.ts';
+import { EnhancementArt } from './EnhancementArt.tsx';
 
 type UpgradeController = Pick<GameHudController, 'commanderUpgrade' | 'startCommanderUpgrade' | 'pauseCommanderUpgrade' | 'cancelCommanderUpgrade'>;
 type Enhancement = NonNullable<GameHudController['commanderUpgrade']['value']>['enhancements'][number];
@@ -63,8 +64,9 @@ export function LiveCommanderUpgrade({ controller }: { readonly controller: Upgr
       <Bar kind="build" value={upgrade.progress} testId="commander-upgrade-progress" label={`${name(working)}: ${percentage}`}/>
       <div class="live-upgrade-running-actions"><button type="button" data-testid="commander-upgrade-pause" disabled={!upgrade.active || !upgrade.controllable} onClick={() => controller.pauseCommanderUpgrade()}>{upgrade.paused ? (en ? 'Resume' : 'Fortsetzen') : 'Pause'}</button><button type="button" data-testid="commander-upgrade-cancel" disabled={!upgrade.controllable} title={upgrade.paused ? (en ? 'Cancels the upgrade and resumes the unit' : 'Bricht den Ausbau ab und setzt die Einheit fort') : undefined} onClick={() => controller.cancelCommanderUpgrade()}>{upgrade.paused ? (en ? 'Cancel & resume' : 'Abbrechen + fortsetzen') : (en ? 'Cancel' : 'Abbrechen')}</button></div>
       {upgrade.paused && <div class="live-upgrade-paused-note" data-testid="commander-upgrade-paused-note">{en ? `Paused: the ${commander}'s own income and build power are idle.` : `Pausiert: Eigenproduktion und Baukraft des ${commander}s ruhen.`}</div>}
-    </div> : selected.installed ? <div class="live-enhancement-installed" data-testid="commander-enhancement-installed"><b>{name(selected)}</b><span>{en ? 'Installed' : 'Installiert'} ✓</span><small>{en ? 'Build power' : 'Baukraft'} {number(upgrade.buildPower)} · HP {number(upgrade.hpMax)} · {en ? 'Range' : 'Reichweite'} {number(upgrade.weaponRange)} · DPS {number(upgrade.weaponDps)}</small></div>
+    </div> : selected.installed ? <div class="live-enhancement-installed" data-testid="commander-enhancement-installed"><EnhancementArt module={selected.id}/><b>{name(selected)}</b><span>{en ? 'Installed' : 'Installiert'} ✓</span><small>{en ? 'Build power' : 'Baukraft'} {number(upgrade.buildPower)} · HP {number(upgrade.hpMax)} · {en ? 'Range' : 'Reichweite'} {number(upgrade.weaponRange)} · DPS {number(upgrade.weaponDps)}</small></div>
       : <button class="live-upgrade-start" type="button" data-testid="commander-upgrade-start" data-enhancement={selected.id} disabled={!selected.enabled || !upgrade.controllable} aria-label={`${en ? 'Install' : 'Einbauen'}: ${name(selected)}. ${number(selected.mass)} M, ${number(selected.energy)} E. ${improvements(selected)}`} title={improvements(selected)} onClick={() => controller.startCommanderUpgrade(selected.id)}>
+        <EnhancementArt module={selected.id}/>
         <span class="live-upgrade-target"><b>{name(selected)}</b><small>{improvements(selected)}</small></span>
         <span class="live-upgrade-cost"><span class="live-upgrade-mass">{number(selected.mass)} M</span><span>{number(selected.energy)} E</span></span><span class="live-enhancement-install-mark" aria-hidden="true">＋</span>
       </button>}

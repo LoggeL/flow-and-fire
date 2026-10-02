@@ -51,6 +51,7 @@ import { presetSettings } from './preset-settings.ts';
 import { storedSettings } from './session-settings.ts';
 import { FrameVisibility } from './visibility.ts';
 import { isReplayStartupCompatibilityNotice } from './replay/startup-failure.ts';
+import { armyColorsForSkirmish } from './army-colors.ts';
 
 /** Army of the local player. */
 export const PLAYER_ARMY = 0;
@@ -271,7 +272,9 @@ export class Game {
     const capacity = frameCapacityBytes(DEFAULT_FRAME_CAPS);
     this.link = new WorkerSimLink(opts.createWorker(), this.transport, capacity);
     this.link.onCommandBatch = (batch) => this.tapCommands(batch);
-    this.renderer = createRenderer(opts.canvas, { clearColor: [0.043, 0.059, 0.078], preset: opts.params.preset });
+    const armyColors = armyColorsForSkirmish(this.skirmishConfig);
+    this.renderer = createRenderer(opts.canvas, { clearColor: [0.043, 0.059, 0.078], preset: opts.params.preset,
+      ...(armyColors !== undefined ? { armyColors } : {}) });
     if (opts.assets.iconAtlas !== undefined) {
       const { pixels, metrics } = opts.assets.iconAtlas;
       this.renderer.setIconAtlas(pixels, metrics.width, metrics.height, metrics);
@@ -282,6 +285,7 @@ export class Game {
       link: this.link,
       visuals,
       playerArmy: this.playerArmy,
+      ...(armyColors !== undefined ? { armyColors } : {}),
       readOnlyCommands: this.replayMode,
       movePrediction: this.bp,
       map: this.map,

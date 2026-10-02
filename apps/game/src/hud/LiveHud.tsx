@@ -14,8 +14,10 @@ import { LiveExtractorUpgrade } from './LiveExtractorUpgrade.tsx';
 import { LiveCommanderUpgrade } from './LiveCommanderUpgrade.tsx';
 import { LiveFactoryUpgrade } from './LiveFactoryUpgrade.tsx';
 import { BuildPortrait } from './BuildPortrait.tsx';
+import { CommandArt } from './CommandArt.tsx';
 import { LiveBriefing, LiveCredits } from './LiveInfoScreens.tsx';
 import { BUILD_ROLE_COLORS, buildRole, type BuildRole } from './build-role.ts';
+import { hudArmyTheme } from './faction-theme.ts';
 
 const PRIMARY_ORDERS=['move','attack','patrol','stop','assist','reclaim'] as const;
 
@@ -156,6 +158,7 @@ function BuildTileArt({typeId,role,tier}: {typeId:string;role:BuildRole;tier:num
 
 function LivePresentation({controller}: {controller:GameHudController}) {
   const m=controller.model,spec=cardSpec(m.card).value,game=controller.game,selected=m.card.unitCount.value>0;
+  const theme=hudArmyTheme(game);
   const [detailsOpen,setDetailsOpen]=useState(false);
   useEffect(()=>{if(!selected)setDetailsOpen(false);},[selected]);
   // The build strip is a single row: Left/Right step with wrap-around, Home/End jump; there is no row above or below.
@@ -191,7 +194,7 @@ function LivePresentation({controller}: {controller:GameHudController}) {
         {showOrders&&<><LiveCommanderUpgrade controller={controller}/><LiveExtractorUpgrade controller={controller}/><LiveFactoryUpgrade controller={controller}/></>}
       </div>
     </div>
-    {showOrders&&<div class="live-command-context"><Panel class="live-primary-orders sc-frame" panelId="orders" testId="order-bar" component="OrderBar"><div class="live-primary-order-row">{PRIMARY_ORDERS.map(id=><div class="live-primary-order" key={id} data-order={id} role="group" aria-label={t('ui.orders.label',{name:t(`ui.orders.${id}.name`),keys:`Alt+${keyLabel(orderDef(id).key!,m.keyboardLayout.value)}`})}><OrderButton id={id} compact/><span class="live-primary-order-caption" aria-hidden="true">{t(`ui.orders.${id}.short`)}</span></div>)}</div></Panel>{card}</div>}
+    {showOrders&&<div class="live-command-context"><Panel class="live-primary-orders sc-frame" panelId="orders" testId="order-bar" component="OrderBar"><div class="live-primary-order-row">{PRIMARY_ORDERS.map(id=><div class="live-primary-order" key={id} data-order={id} role="group" aria-label={t('ui.orders.label',{name:t(`ui.orders.${id}.name`),keys:`Alt+${keyLabel(orderDef(id).key!,m.keyboardLayout.value)}`})}><OrderButton id={id} compact glyph={<CommandArt order={id}/>}/><span class="live-primary-order-caption" aria-hidden="true">{t(`ui.orders.${id}.short`)}</span></div>)}</div></Panel>{card}</div>}
   </div>;
-  return <div class="hud live-game-presentation" onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer">{controller.ecoAvailable.value&&<ResourceBar/>}<MatchStatus/><PauseBanner/><LiveNotices/>{dock}{m.menus.settings.values.value.tooltips!=='off'&&<TooltipLayer/>}<GameMenu/></div></div>;
+  return <div class="hud live-game-presentation" style={theme.style} data-hud-army={theme.army} data-hud-color={theme.color} onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer">{controller.ecoAvailable.value&&<ResourceBar/>}<MatchStatus/><PauseBanner/><LiveNotices/>{dock}{m.menus.settings.values.value.tooltips!=='off'&&<TooltipLayer/>}<GameMenu/></div></div>;
 }

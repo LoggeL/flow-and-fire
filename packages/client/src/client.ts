@@ -131,6 +131,8 @@ export interface GameClientOptions {
   readonly frameStream?: FrameStreamOptions;
   /** Public compiled motion table enables bounded visual-only first-Move prediction (SPK6). */
   readonly movePrediction?: MovePredictionMotion;
+  /** Display colors by army (0xRRGGBB), shared with the renderer. Rings follow the viewed army. */
+  readonly armyColors?: readonly number[];
   /** Click marker color (0xRRGGBB). */
   readonly markerColor?: number;
   /** Waypoint line color (0xRRGGBB). */
@@ -257,7 +259,8 @@ export class GameClient {
   private readonly nowFn: () => number;
   private terrainPicker: TerrainPicker;
   private bounds: MapBounds;
-  private readonly markerColor: number;
+  private readonly markerColorOverride: number | undefined;
+  private readonly armyColors: readonly number[] | undefined;
   private readonly lineColor: number;
   private readonly unsubscribeHost: () => void;
   private readonly unsubscribeAck: () => void;
@@ -303,8 +306,8 @@ export class GameClient {
     this.callbacks = opts.callbacks ?? {};
     this.rafImpl = opts.raf;
     this.nowFn = opts.now ?? (() => performance.now());
-    const team = DEFAULT_ARMY_COLORS[(opts.playerArmy < 0 ? 0 : opts.playerArmy) % DEFAULT_ARMY_COLORS.length]!;
-    this.markerColor = opts.markerColor ?? ((Math.round(team[0] * 255) << 16) | (Math.round(team[1] * 255) << 8) | Math.round(team[2] * 255));
+    this.markerColorOverride = opts.markerColor;
+    this.armyColors = opts.armyColors;
     this.lineColor = opts.lineColor ?? 0x40ff60;
 
     const map = opts.map ?? ClientMap.testPlane();
@@ -521,6 +524,18 @@ export class GameClient {
   /** Replay inspection follows only the accepted perspective; command identity never changes. */
   get viewArmy(): number {
     return this.readOnlyCommands ? this.lastFrame?.viewer ?? this.playerArmy : this.playerArmy;
+  }
+
+  private displayArmyColor(army: number): number {
+    const index = Math.max(0, army);
+    const chosen = this.armyColors?.[index];
+    if (chosen !== undefined) return chosen;
+    const team = DEFAULT_ARMY_COLORS[index % DEFAULT_ARMY_COLORS.length]!;
+    return (Math.round(team[0] * 255) << 16) | (Math.round(team[1] * 255) << 8) | Math.round(team[2] * 255);
+  }
+
+  private get markerColor(): number {
+    return this.markerColorOverride ?? this.displayArmyColor(this.viewArmy);
   }
 
   /** Sends a control message to the host. */
@@ -779,7 +794,8 @@ export class GameClient {
     for (let k = 0; k < sel.count; k++) {
       const i = sel.indices[k]!;
       interpolatedPos(r, i, alpha, this.pos);
-      d.ring(this.pos[0]!, this.pos[2]!, this.visuals[r.unitVisual(i)]?.selectionRadius ?? 0.7, this.markerColor);
+      d.ring(this.pos[0]!, this.pos[2]!, this.visuals[r.unitVisual(i)]?.selectionRadius ?? 0.7,
+        this.markerColorOverride ?? this.displayArmyColor(r.unitArmy(i)));
     }
     let n = 0;
     if (this.showPaths) for (let w = 0; w < r.watchCount; w++) {

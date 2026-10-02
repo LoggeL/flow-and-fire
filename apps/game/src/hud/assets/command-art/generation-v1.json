@@ -1,0 +1,160 @@
+{
+  "mode": "built-in image_gen.imagegen",
+  "transparent_background": true,
+  "model": "Tool selected model; model identifier is not exposed by built-in API",
+  "generationDate": "2026-10-02",
+  "assets": [
+    {
+      "id": "move",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: a single cyan four-way movement arrow with four chunky triangular arrowheads extending up, down, left and right from a compact center. Color: luminous icy cyan with teal bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-c3ebca1e-1806-4024-85e7-4a59956b24b1.png",
+      "source": "source-v1/move.png",
+      "sourceSha256": "f8e25191beaf5eb78a0697d01f61b77f840990dce35fc6e3550467ec9f8b4ec3",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        81,
+        95,
+        1170,
+        1168
+      ],
+      "compiled": "move-v1.webp",
+      "compiledSha256": "8acc50cb51697f714bf08d157007f229d887a4053769b9c8c75e92a713e89d2c",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 8304
+    },
+    {
+      "id": "attack",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: a single red targeting crosshair: one thick circular targeting ring with four broad short cardinal tabs extending beyond its outside edge, clear round central opening. Color: luminous saturated red with dark crimson bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-99861e21-4863-4828-8197-1a19dac9a274.png",
+      "source": "source-v1/attack.png",
+      "sourceSha256": "db0777182d1b2b917622e4d9a5723909ebb576bcc513781b10e095b0d72c1496",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        77,
+        77,
+        1177,
+        1158
+      ],
+      "compiled": "attack-v1.webp",
+      "compiledSha256": "70269118fc329d9bc4302d89743d62f192bb1b0e33d039b6e2f302a76b69659a",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 8484
+    },
+    {
+      "id": "patrol",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: two broad cyan curved arrows chasing one another around a clear central opening, making a circular patrol loop; simple chunky arrowheads at opposite diagonal positions. Color: luminous icy cyan with teal bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-1aef4ab3-451f-458b-bf30-986387439267.png",
+      "source": "source-v1/patrol.png",
+      "sourceSha256": "e0140a94a76fba63de11c15b25ffcaa0e5ba1f101136abc588a6603c492c866a",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        82,
+        123,
+        1173,
+        1142
+      ],
+      "compiled": "patrol-v1.webp",
+      "compiledSha256": "4922a0bb4c87d9846ad1c1dc23da72ba66ca7b02697b6cd19cdbe399d73d1edc",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 10348
+    },
+    {
+      "id": "stop",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: a single red open hand, palm facing forward, five broad fingers upright and a short cuff. The hand is a clean iconic stop gesture with one simple thumb and rounded chunky fingertips, no anatomical fine details. Color: luminous saturated red with dark crimson bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-5c1b053b-47a0-4e8e-ae62-5631229f0e6d.png",
+      "source": "source-v1/stop.png",
+      "sourceSha256": "c2cc1741c34e527d59d29adf4d1ff325b8afa10e4e2f7498a7b592a665a1f68a",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        186,
+        70,
+        1041,
+        1167
+      ],
+      "compiled": "stop-v1.webp",
+      "compiledSha256": "f9e63f4241262ec45e60d01d48c3b89d7804419e12ad60d899620a95f04464c9",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 8008
+    },
+    {
+      "id": "assist",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: a single gold plus sign centered within one thick circular gold ring, the ring and plus visually separate with a clear transparent gap, broad even strokes. Color: luminous warm gold with amber bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-c0e5fd74-bae2-4150-b162-c11151dca158.png",
+      "source": "source-v1/assist.png",
+      "sourceSha256": "6f32bc1faa5b8392ee87da0ead19a76c9675a5562110318e23390bf858b6c764",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        94,
+        96,
+        1160,
+        1154
+      ],
+      "compiled": "assist-v1.webp",
+      "compiledSha256": "89da5612dc39ca091f185137b594323cf99bfc77b71bb8ba734e20c348e8ac83",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 12916
+    },
+    {
+      "id": "reclaim",
+      "prompt": "Use case: stylized-concept\nAsset type: production RTS HUD command icon, one square isolated symbol.\nStyle/medium: bold sculpted luminous enamel, inspired by Supreme Commander Forged Alliance command icons; shallow 3D bevel, thick readable silhouette, restrained edge glow, sharp simple geometry, dark recessed bevel edges integral to the symbol.\nComposition/framing: straight-on, perfectly centered, square transparent canvas; symbol occupies 78% of canvas width and height, even clear margin. Must read clearly at 26 to 32 pixels. Exterior background is genuinely transparent; no rectangular tile or socket plate.\nLighting: bright upper-left edge, subtle darker lower-right bevel. No fine texture or tiny highlights.\nConstraints: only the requested symbol; no text, numbers, watermark, logo, decoration, scene, border, UI mockup, or unit portrait. Preserve alpha channel.\nSubject: a single gold recycling symbol made of three chunky bent arrows chasing one another in a triangular recycling loop, with broad arrowheads and a clear large central triangular opening; unmistakable salvage/reclaim command. Color: luminous yellow gold with amber bevel sides.",
+      "generatedPath": "/Users/logge/.codex/generated_images/01a0fbb3-3dda-76a3-816f-e4dcf56d5abd/exec-911945b5-1254-4c90-ab0e-0695a5b07e3c.png",
+      "source": "source-v1/reclaim.png",
+      "sourceSha256": "ebd7ebf2f3fab1e2e3852453c0ecb3e1ec39fe622e5edf892b29fc8f375f8aba",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "sourceAlphaBounds": [
+        64,
+        83,
+        1198,
+        1173
+      ],
+      "compiled": "reclaim-v1.webp",
+      "compiledSha256": "3147e034fb549db1bde61c3193a61d5c827b3df0abaddf145af907d451c954c6",
+      "compiledDimensions": [
+        128,
+        128
+      ],
+      "compiledBytes": 12862
+    }
+  ],
+  "compilation": {
+    "tool": "Python Pillow",
+    "pillowVersion": "12.3.0",
+    "size": 128,
+    "maxSymbolOccupancy": 0.78,
+    "format": "lossless WebP RGBA",
+    "resampling": "Lanczos"
+  }
+}

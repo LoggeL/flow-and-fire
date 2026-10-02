@@ -1,0 +1,39 @@
+{
+  "mode": "built-in image_gen",
+  "transparent_background": true,
+  "assets": [
+    {
+      "id": "engineering",
+      "source": "engineering-source.png",
+      "sourceSha256": "3f3f045ec411c3262a1af8c31499218e40b384a594908055a8bc99ac966afe6d",
+      "asset": "engineering-v1.webp",
+      "assetSha256": "97e8437ba120711f32bee2015d23dc9a297eb4af069520424ed75d10733265eb",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": "cannon",
+      "source": "cannon-source.png",
+      "sourceSha256": "d5dbc2f83cb9f05a44f9c9585f2aff926b1a4929beef35d4436e33cf65c58e28",
+      "asset": "cannon-v1.webp",
+      "assetSha256": "f8849e7deef5e039e9204f6f1c9e614f22c2e909c6e90f9bed4ffff90b6d99c8",
+      "size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": "armor",
+      "source": "armor-source.png",
+      "sourceSha256": "c92e72031b1466b9b121babdc895dfbc71ec1bae42f7dc32fb4bde4b53f38ba9",
+      "asset": "armor-v1.webp",
+      "assetSha256": "ffe605a10326c980ca8b6d9d6bce2af41c641585707d2744171851a42b82dde2",
+      "size": [
+        128,
+        128
+      ]
+    }
+  ]
+}

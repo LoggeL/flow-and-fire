@@ -122,7 +122,8 @@ test('native ACU independent slots: engineering pauses, cancels without refund a
     await expect(button.locator('img, canvas')).toHaveCount(0);
   }
   await expect(start).toHaveAttribute('data-enhancement', 'engineering');
-  await expect(start.locator('img, canvas')).toHaveCount(0);
+  await expect(start.locator('img.live-enhancement-art')).toHaveCount(1);
+  await expect.poll(() => start.locator('img.live-enhancement-art').evaluate(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0)).toBe(true);
   await page.getByTestId('commander-slot-back').click();
   await expect(start).toHaveAttribute('data-enhancement', 'armor');
   await expect(start).toContainText('400 M'); await expect(start).toContainText('5.000 E');

@@ -5,7 +5,13 @@
     "team": "#2F6FD0",
     "azimuth": 35,
     "elevation": 32,
-    "background": "#304038"
+    "background": "#10191d",
+    "portrait": true
+  },
+  "rendererSources": {
+    "apps/model-viewer/src/thumbs.ts": "99607d170fc3432dd12b0bbc1311eb6904ed056178fb23a597109a94b0edcd73",
+    "apps/model-viewer/src/material.ts": "277df7644cce9efa4af92d0b25ee25792e4e80785134be7d518cfe0988e2f1b2",
+    "apps/model-viewer/src/armor-surface.ts": "782da4a544e680739774180912057a3482ca4497b30777fb0e243df4ae4358e5"
   },
   "blueprints": {
     "core:cmd_commander": "cmd_commander",
@@ -37,104 +43,172 @@
     {
       "mesh": "units/varkan/cmd_commander",
       "file": "cmd_commander.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 22
+      },
       "modelSha256": "72935d2f815f63be993e92c3865c14aa3c2893abdaca0729e9dcbe28868d356a",
-      "sha256": "3634a11b70d135d6ccd000a96a8355dbf72045503ebe23512b111e73500f4e7f"
+      "sha256": "883a3f0757db72c82ff95341f328096c66c4524f9b7df3df8dbfd25635e4b8a0"
     },
     {
       "mesh": "units/varkan/lnd_t1_arty",
       "file": "lnd_t1_arty.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 28
+      },
       "modelSha256": "d60cef92150884340e137839c4b5942d35fc0bd2fc35e367421f8aeb3573f524",
-      "sha256": "21fcaafe0d0dd90e1db44f4e4798f282498171d0fca8ddaa3e2ba8b376825b07"
+      "sha256": "8db34ed44e1c9f76a02455ab9c01a24b94a9fe1625050b440afe4fa219d3143d"
     },
     {
       "mesh": "units/varkan/lnd_t1_engineer",
       "file": "lnd_t1_engineer.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 28
+      },
       "modelSha256": "dff172d5f78c8cbb25acf3f7d6f326b5dfc64dd026d507f65e73c64c5a660b69",
-      "sha256": "c4a969253c45175f768e382826d022c9af90e4c66666160970a0351bf6ae777c"
+      "sha256": "1ea935c6c027d5c751bb3b5165e5baf8255042d705047bc66c0bd7a3eaede633"
     },
     {
       "mesh": "units/varkan/lnd_t1_scout",
       "file": "lnd_t1_scout.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 28
+      },
       "modelSha256": "ce6b9e2b52f9f8b73b101ada4d3a06b063a32b43eed4816e696e8a46c7c183ba",
-      "sha256": "c5082006e469c0a80f8ad3c82f8c663bd2237dfdc5da92cb8fdd906eff842033"
+      "sha256": "038a567082fb2554347a05c274c483bdba519d5b6586620c41e5172efad309ea"
     },
     {
       "mesh": "units/varkan/lnd_t1_tank",
       "file": "lnd_t1_tank.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 28
+      },
       "modelSha256": "25b22c76113fd035feb1d89be26098fd9bb2fe9f3b9d8ee367e5380cd07e3943",
-      "sha256": "d65a7334609c0a7926df6643221f5876dc4c5bc9041e9df577392e01f9a8bc54"
+      "sha256": "aa7f49a2dcea12be5d405bb15d52b02741c3ee23967d363cb100608cc02275f4"
     },
     {
       "mesh": "units/varkan/lnd_t2_tank",
       "file": "lnd_t2_tank.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 28
+      },
       "modelSha256": "daeeee604aae49d1ce6426a6be01d1937dc7d166776ce4badc4bf893c9e27dcf",
-      "sha256": "cda491a47a62e51c1794277fd8f98a154616d11d36fee5f36c66568446f3bfda"
+      "sha256": "ca10bafca747c67bd5839b0440ad820e4b3885c3b1c3cf82977b611e76210148"
     },
     {
       "mesh": "units/varkan/lnd_t3_bot",
       "file": "lnd_t3_bot.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 22
+      },
       "modelSha256": "07cdf6c84a214b4cc337bbf8f741f2be6765e00e0c9147a1b02f715964ca8c68",
-      "sha256": "f11bfe4a258909c596a838865882eef63a9f44f6bbccfa395210e245a988c7c8"
+      "sha256": "b2dacbe266a154b5f190a48c6c7a7423f053d49827b4060f5feca285eb6ec93d"
     },
     {
       "mesh": "units/varkan/str_t1_estore",
       "file": "str_t1_estore.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "0058dd134e6cbfc1f49b6b0b3af89edc926969f556c14809c6929dc80bdd3844",
-      "sha256": "9776aabb9b8cbd56ec4d35fd4350f714f811346d3263a286d9f35deb62529ad4"
+      "sha256": "31ef6d103291e76a753afe8ba0f1ce9731b9ed7a6f0bf9f06fa686e2a7ef917c"
     },
     {
       "mesh": "units/varkan/str_t1_fac_land",
       "file": "str_t1_fac_land.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "6ddc83ae41aff785394264416897870b033a3b0929fbe6a7054c8138cb4f83cc",
-      "sha256": "2793409e90b3c4c7a1435626c2a6388a2c7ce349c98cf9f7eadd3b90df53ae0f"
+      "sha256": "9628fee5d37806907e065e92a356d4f26417a5f69e72ae30d60ba01d0c48a89f"
     },
     {
       "mesh": "units/varkan/str_t1_mex",
       "file": "str_t1_mex.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "fe5125304099ca29bc32d82b69c470f366c2d78c57db1d268ef24da414cc3b43",
-      "sha256": "01c3e836a1e4355187d59beb3af34c5f66bdc06b5fb223aaaf12dc78423d405c"
+      "sha256": "4641488739f75f353e6bc7b39fa90ee2518408d13e15ecf8e009b379d189612d"
     },
     {
       "mesh": "units/varkan/str_t1_pd",
       "file": "str_t1_pd.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "c63cc534b0c263c8ee47b8984f499c8f493967f5988f76a4f2c6ff80428ec3d5",
-      "sha256": "a5a2ac8d51f6a540942f75832002393db97b068326ad54e0739084fed04a22d8"
+      "sha256": "139579ca482b7592bbd1970375ac37a1b6f693c7e9b4eca5e225a245f1cc4682"
     },
     {
       "mesh": "units/varkan/str_t1_pgen",
       "file": "str_t1_pgen.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "99e0a851f6bd13960aeb4dfad36f895b8713393963f06f286a6fabb78aed03fb",
-      "sha256": "f1c75d7a83ef781b63b47c2ee4fc4decae187cc11d936faae73a8fdd132179b8"
+      "sha256": "5caec5c00d9abf89772e0063083463e832b7e7d1acff830a55f534c913c5721e"
     },
     {
       "mesh": "units/varkan/str_t1_radar",
       "file": "str_t1_radar.png",
+      "camera": {
+        "azimuth": 48,
+        "elevation": 36
+      },
       "modelSha256": "4d46f6a4ff7e5eeb4d2e10d632e5d61352324f67ba6245d25b96b5aef508aa6d",
-      "sha256": "3355c7c85774ddc802e2fbbd084ee3c820059bfabe7557066572b052647970a9"
+      "sha256": "8e836ffce149ac9e96e14c246232e25c5e77518aa061a0284596578313f7eb9d"
     },
     {
       "mesh": "units/varkan/str_t2_fac_land",
       "file": "str_t2_fac_land.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "1759983f2d78a0979b489c0da7cfa248f9dff3c72c801d4280a9204af647595f",
-      "sha256": "77a4a49ea8ce916eb55e23cd394b33c64a58b0b688d54370939e9c69142daf53"
+      "sha256": "226cf6f307ff4417698e0de2c524a18261737cafc6d160482a70a3b8eea4dcb1"
     },
     {
       "mesh": "units/varkan/str_t2_mex",
       "file": "str_t2_mex.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "5443f6c3bcf80b71b87d6eaf608b8251dfef58479e712e8b10a3e76128068c98",
-      "sha256": "aa3ed11b0be80bba0ef4b754a3248396cb73d66914f448525ec8eace8b63fc25"
+      "sha256": "0e34881d3ebac85c5688af725f0b68e35f27c3fb87f72b0469c99f45d754b696"
     },
     {
       "mesh": "units/varkan/str_t3_fac_land",
       "file": "str_t3_fac_land.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "6b3b1db7cd0796215bd34f742da3429ad2842650760dbbddda2e5c8e1d4a1f15",
-      "sha256": "b555b56bac5927b7a36021cb64206b7ffa457bac0f28453db098f37e0f262cd2"
+      "sha256": "70e012375804b50683af4d04328f9c6bfe07afacaf511840da5a75a50e92126d"
     },
     {
       "mesh": "units/varkan/str_t3_mex",
       "file": "str_t3_mex.png",
+      "camera": {
+        "azimuth": 35,
+        "elevation": 36
+      },
       "modelSha256": "f4c811f01e686111bf11ee75c332d5a3c149bac659212f1a22ebb6245e0d450b",
-      "sha256": "b55b10efdd36916a39959cff977cdafc44af38912f8d86b7ba92ae3a91fbd508"
+      "sha256": "f7b949287dafb7c832ed5bf8262cbc39da2b70650a424e48140432ffc830add9"
     }
   ]
 }
