@@ -526,3 +526,10 @@ Integrationsanleitung: `docs/status/track-renderfx.md`.
     (Schilde + Partikel + Beams/Trails) ≤ 6 und Gesamt ≤ 40 je Frame. Draws sind hardwareunabhängig, ms-Werte nicht.
     ms-Werte sind lokal gemessen (Apple M5 Pro, Playwright headless, kein Iris Xe, Punkt 5) und stehen als
     Wertebereiche in `docs/status/track-renderfx.md`.
+
+## Nachtrag 2026-10-07: Worktree-Nachlauf
+
+- **Zu 30:** Die Archive unter `.worktrees/` sind aufgelöst. Ihr Nachlauf nach dem Erhaltungscheck
+  ist per Merge eingebracht (Editor, Audio, Render-FX) oder bewusst durch den weiterentwickelten
+  Root-Stand ersetzt (Replay, HUD, KI, MS3). Alle Branches gelten als gemergt; Details:
+  [Konsolidierung](status/consolidation.md).
