@@ -9,7 +9,8 @@
  *   (the `visualName` callback and the string lookup run once per visual id);
  * - events are staged in preallocated struct-of-arrays tables, aggregated per
  *   (sound, time cell) through an open-addressing hash with generation stamps, then issued
- *   through one reused `PlayRequest`.
+ *   through one reused `PlayRequest` whose numeric fields stay doubles (position switched with
+ *   `PlayRequest.spatial`, never by assigning `undefined`).
  *
  * Timing: `when = ctxTime + (tick − firstTick + subTick / 256) × tickDurationS`, so the shots of
  * one tick are spread over the tick instead of starting together. Aggregation: all plays of the
@@ -19,12 +20,19 @@
 
 import {
   ALERT_KINDS,
+  DEATH_CODE_AIR,
+  DEATH_CODE_STRUCTURE,
   DEATH_SIZE_CLASSES,
   DEFAULT_EVENT_TYPE_TABLE,
   EVENT_FLAG_AIR,
   EVENT_FLAG_STRUCTURE,
   EVENT_FLAG_UNLOCATED,
   IMPACT_SURFACES,
+  packDeathProfile,
+  provisionalDeathCode,
+  provisionalImpactSurface,
+  type DeathProfile,
+  type EventCodec,
   SIM_EVENT_KINDS,
   collapseAfterDeath,
   deathSound,
@@ -60,6 +68,11 @@ export interface EventRouterOptions {
   faction: string;
   /** Weapon visual id → weapon ref ('core:wpn_*'); called once per visual id. */
   visualName?: ((visual: number) => string | undefined) | undefined;
+  /**
+   * Decoders of the kind-specific fields (flags bits, aux enums, death class). Default: the
+   * provisional encoding of kinds.ts. MS5: built from @faf/protocol + view data (codec.ts).
+   */
+  codec?: EventCodec | undefined;
   alerts: AlertSink;
   /**
    * Optional: used to pick the loudest (= nearest, least attenuated) position when several events
@@ -117,7 +130,11 @@ const UNRESOLVED = -2;
 
 const SURFACES = IMPACT_SURFACES.length;
 const SIZES = DEATH_SIZE_CLASSES.length;
+/** Size-class bits of a packed death code (codec.ts); SIZES must stay 4. */
+const DEATH_SIZE_MASK = 3;
 const NO_SLOT = -1;
+/** `visualDeath` entry: callback not asked yet. */
+const DEATH_NOT_ASKED = -2;
 
 function dbToGain(db: number): number {
   return Math.pow(10, db / 20);
@@ -148,6 +165,14 @@ export class EventRouter {
   private readonly alerts: AlertSink;
   private readonly spatial: SpatialModel | undefined;
   private tickDurationS = BASE_TICK_S;
+
+  // Field decoding (codec.ts).
+  private readonly unlocatedMask: number;
+  private readonly impactSurfaceOf: ((aux: number, flags: number) => number) | undefined;
+  private readonly alertIndexOf: ((aux: number) => number) | undefined;
+  private readonly visualDeathProfile: ((visual: number) => DeathProfile | undefined) | undefined;
+  /** Packed death code per visual id (−1 no profile → aux/flags fallback, −2 not asked yet). */
+  private readonly visualDeath: Int8Array;
 
   /** Event type (u16) → kind index, −1 unknown. */
   private readonly typeKind = new Int16Array(65536).fill(-1);
@@ -222,19 +247,32 @@ export class EventRouter {
   private hSlot = new Int32Array(0);
   private hStamp = new Int32Array(0);
   private stamp = 0;
+  // Arguments of `stage` (see there): double-initialised fields instead of parameters.
+  private aOffS = 0.5;
+  private aX = 0.5;
+  private aZ = 0.5;
+  private aGain = 0.5;
+  private aRate = 0.5;
 
+  /**
+   * Reused play request. The numeric fields start as non-integral doubles and are never set to
+   * `undefined` (the position is switched with `spatial`): V8 then keeps them in double
+   * representation and stores into them do not allocate HeapNumbers.
+   */
   private readonly req: PlayRequest = {
     sound: 0,
     faction: undefined,
-    x: undefined,
-    z: undefined,
-    gain: 1,
-    rate: 1,
-    when: undefined,
+    x: 0.5,
+    z: 0.5,
+    gain: 0.5,
+    rate: 0.5,
+    when: 0.5,
     priorityBoost: undefined,
     loop: undefined,
+    spatial: false,
   };
-  private readonly alertReq: AlertRequest = { kind: '', x: undefined, z: undefined, faction: undefined };
+  /** Reused alert request; x/z stay doubles, the position is switched with `located`. */
+  private readonly alertReq: AlertRequest = { kind: '', x: 0.5, z: 0.5, faction: undefined, located: false };
   private readonly spatialOut: SpatialResult = { gain: 1, pan: 0 };
 
   constructor(opts: EventRouterOptions) {
@@ -245,6 +283,13 @@ export class EventRouter {
     this.alerts = opts.alerts;
     this.spatial = opts.spatial;
     const map = opts.map;
+    if (SIZES !== DEATH_SIZE_MASK + 1) throw new Error('death size classes must fit the packed code');
+    const codec = opts.codec ?? {};
+    this.unlocatedMask = codec.unlocatedMask ?? EVENT_FLAG_UNLOCATED;
+    this.impactSurfaceOf = codec.impactSurface;
+    this.alertIndexOf = codec.alertIndex;
+    this.visualDeathProfile = codec.visualDeathProfile;
+    this.visualDeath = new Int8Array(codec.visualDeathProfile === undefined ? 0 : 65536).fill(DEATH_NOT_ASKED);
 
     // Type table.
     const types = opts.eventTypes ?? DEFAULT_EVENT_TYPE_TABLE;
@@ -382,14 +427,24 @@ export class EventRouter {
         continue;
       }
       const flags = src.eventFlags(i);
-      const located = (flags & EVENT_FLAG_UNLOCATED) === 0;
+      const located = (flags & this.unlocatedMask) === 0;
       const x = located ? src.eventPos(i, 0) / FX_ONE : 0;
       const z = located ? src.eventPos(i, 2) / FX_ONE : 0;
 
       if (route === ROUTE_ALERT) {
-        const name = this.kTable[k] === KIND_ALERT ? (this.alertByAux[src.eventAux(i)] ?? null) : this.kAlertRoute[k]!;
+        let name: string | null;
+        if (this.kTable[k] === KIND_ALERT) {
+          const aux = src.eventAux(i);
+          name = this.alertByAux[this.alertIndexOf === undefined ? aux : this.alertIndexOf(aux)] ?? null;
+        } else {
+          name = this.kAlertRoute[k]!;
+        }
         if (name === null) st.eventsUnmapped++;
-        else this.pushAlert(name, located, x, z);
+        else {
+          this.aX = x;
+          this.aZ = z;
+          this.pushAlert(name, located);
+        }
         continue;
       }
 
@@ -415,23 +470,37 @@ export class EventRouter {
         case TABLE_IMPACT: {
           const slot = this.slotOf(src.eventVisual(i));
           const aux = src.eventAux(i);
-          const j = this.slotFamily[slot]! * SURFACES + (aux >= 0 && aux < SURFACES ? aux : 0);
-          snd = this.impSound[j]!;
-          gain = this.impGain[j]!;
-          rate = this.impRate[j]!;
+          const surface = this.impactSurfaceOf === undefined ? provisionalImpactSurface(aux) : this.impactSurfaceOf(aux, flags);
+          if (surface >= 0 && surface < SURFACES) {
+            const j = this.slotFamily[slot]! * SURFACES + surface;
+            snd = this.impSound[j]!;
+            gain = this.impGain[j]!;
+            rate = this.impRate[j]!;
+          } else {
+            snd = SILENT;
+            gain = 0;
+            rate = 1;
+          }
           break;
         }
         case TABLE_DEATH: {
-          const aux = src.eventAux(i);
-          const size = aux >= 0 && aux < SIZES ? aux : aux < 0 ? 0 : SIZES - 1;
-          const air = (flags & EVENT_FLAG_AIR) !== 0 ? 1 : 0;
+          const code = this.deathCode(src.eventVisual(i), src.eventAux(i), flags);
+          const size = code & DEATH_SIZE_MASK;
+          const air = (code & DEATH_CODE_AIR) !== 0 ? 1 : 0;
           const j = size * 2 + air;
           snd = this.deathSnd[j]!;
           gain = this.deathGain[j]!;
           rate = this.deathRate[j]!;
-          if (air === 0 && (flags & EVENT_FLAG_STRUCTURE) !== 0) {
+          if (air === 0 && (code & DEATH_CODE_STRUCTURE) !== 0) {
             const c = this.collapseSnd[size]!;
-            if (c >= 0) this.stage(c, offS + this.collapseDelayS[size]!, positional, x, z, this.collapseGain[size]! * ruleGain, this.collapseRate[size]! * ruleRate);
+            if (c >= 0) {
+              this.aOffS = offS + this.collapseDelayS[size]!;
+              this.aX = x;
+              this.aZ = z;
+              this.aGain = this.collapseGain[size]! * ruleGain;
+              this.aRate = this.collapseRate[size]! * ruleRate;
+              this.stage(c, positional);
+            }
           }
           break;
         }
@@ -447,14 +516,31 @@ export class EventRouter {
           rate = 1;
       }
 
-      if (snd >= 0) this.stage(snd, offS, positional, x, z, gain * ruleGain, rate * ruleRate);
-      else if (snd === UNRESOLVED) st.eventsUnmapped++;
+      if (snd >= 0) {
+        this.aOffS = offS;
+        this.aX = x;
+        this.aZ = z;
+        this.aGain = gain * ruleGain;
+        this.aRate = rate * ruleRate;
+        this.stage(snd, positional);
+      } else if (snd === UNRESOLVED) st.eventsUnmapped++;
       else st.eventsIgnored++;
 
       const thenSnd = this.kThenSound[k]!;
-      if (thenSnd >= 0) this.stage(thenSnd, offS + this.kThenDelayS[k]!, positional, x, z, this.kThenGain[k]!, this.kThenRate[k]!);
+      if (thenSnd >= 0) {
+        this.aOffS = offS + this.kThenDelayS[k]!;
+        this.aX = x;
+        this.aZ = z;
+        this.aGain = this.kThenGain[k]!;
+        this.aRate = this.kThenRate[k]!;
+        this.stage(thenSnd, positional);
+      }
       const extra = this.kAlertExtra[k]!;
-      if (extra !== null) this.pushAlert(extra, located, x, z);
+      if (extra !== null) {
+        this.aX = x;
+        this.aZ = z;
+        this.pushAlert(extra, located);
+      }
     }
 
     this.issue(sink, ctxTime, nowMs);
@@ -479,13 +565,33 @@ export class EventRouter {
     rate[j] = ref.rate;
   }
 
-  private pushAlert(name: string, located: boolean, x: number, z: number): void {
+  /** Pushes alert `name` at (`aX`, `aZ`) if `located` (doubles via fields, see `stage`). */
+  private pushAlert(name: string, located: boolean): void {
     const a = this.alertReq;
     a.kind = name;
-    a.x = located ? x : undefined;
-    a.z = located ? z : undefined;
+    a.located = located;
+    a.x = this.aX;
+    a.z = this.aZ;
     if (this.alerts.push(a)) this.stats.alertsPushed++;
     else this.stats.alertsSuppressed++;
+  }
+
+  /**
+   * Packed death code (codec.ts) of a unitDeath: from the visual's view-data profile if the codec
+   * has one (cached per visual id), else the provisional aux/flags encoding.
+   */
+  private deathCode(visual: number, aux: number, flags: number): number {
+    const profileOf = this.visualDeathProfile;
+    if (profileOf !== undefined && visual >= 0 && visual <= 0xffff) {
+      let c = this.visualDeath[visual]!;
+      if (c === DEATH_NOT_ASKED) {
+        const p = profileOf(visual);
+        c = p === undefined ? -1 : packDeathProfile(p);
+        this.visualDeath[visual] = c;
+      }
+      if (c >= 0) return c;
+    }
+    return provisionalDeathCode(aux, flags);
   }
 
   /** Weapon slot of a visual id (computed once per id). */
@@ -527,8 +633,20 @@ export class EventRouter {
     return slot;
   }
 
-  /** Stages one play, merging it into an existing play of the same sound and time cell. */
-  private stage(snd: number, offS: number, positional: boolean, x: number, z: number, gain: number, rate: number): void {
+  /**
+   * Stages one play (offset, position, gain and rate in `aOffS`/`aX`/`aZ`/`aGain`/`aRate`),
+   * merging it into an existing play of the same sound and time cell.
+   *
+   * The double arguments travel through fields rather than parameters: a non-inlined call boxes
+   * every double argument into a fresh HeapNumber, which alone made up ≈ 25 B of garbage per
+   * event (measured with bench/heap.ts).
+   */
+  private stage(snd: number, positional: boolean): void {
+    const offS = this.aOffS;
+    const x = this.aX;
+    const z = this.aZ;
+    const gain = this.aGain;
+    const rate = this.aRate;
     let loud = gain;
     if (positional && this.spatial !== undefined) {
       const out = this.spatialOut;
@@ -560,7 +678,7 @@ export class EventRouter {
     }
     if (this.count === this.cap) {
       this.grow(this.cap * 2);
-      this.stage(snd, offS, positional, x, z, gain, rate);
+      this.stage(snd, positional);
       return;
     }
     const p = this.count++;
@@ -586,18 +704,16 @@ export class EventRouter {
       if (n > AGGREGATE_MAX_COUNT) n = AGGREGATE_MAX_COUNT;
       const off = this.pOffS[p]!;
       req.sound = this.pSound[p]!;
-      if (this.pHasPos[p] === 1) {
-        req.x = this.pX[p]!;
-        req.z = this.pZ[p]!;
-      } else {
-        req.x = undefined;
-        req.z = undefined;
-      }
+      req.spatial = this.pHasPos[p] === 1;
+      req.x = this.pX[p]!;
+      req.z = this.pZ[p]!;
       req.gain = n > 1 ? this.pGain[p]! * Math.sqrt(n) : this.pGain[p]!;
       req.rate = this.pRate[p]!;
       req.when = ctxTime + off;
       st.plays++;
-      if (sink.play(req, nowMs + off * 1000) === null) st.dropped++;
+      // Whole milliseconds: an integral value is passed as a Smi, a fractional double would be
+      // boxed into a HeapNumber per play (cooldowns are whole ms anyway).
+      if (sink.play(req, Math.round(nowMs + off * 1000)) === null) st.dropped++;
     }
     this.count = 0;
   }

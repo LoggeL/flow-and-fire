@@ -18,6 +18,7 @@
     "test:full": "vitest run",
     "build:e2e": "pnpm assets && pnpm --filter @faf/game build",
     "test:e2e": "pnpm build:e2e && playwright test",
+    "test:e2e:audio": "FAF_AUDIO_SKIP_BUILD=1 pnpm --filter @faf/audio-demo test:e2e",
     "test:xengine": "pnpm -r --workspace-concurrency=1 --if-present run test:xengine",
     "bench": "pnpm -r --workspace-concurrency=1 --if-present run bench",
     "ci:local": "pnpm typecheck && pnpm lint && pnpm test:full && pnpm test:xengine && pnpm test:e2e && pnpm bench && pnpm bench:nav -- --quick && pnpm bench:spk2 -- --quick && pnpm bench:spk3 -- --quick && pnpm bench:ms3 -- --quick && pnpm --filter @faf/assets-pipeline run check && pnpm bench:spk4 -- --quick",

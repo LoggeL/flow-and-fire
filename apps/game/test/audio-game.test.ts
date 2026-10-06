@@ -234,7 +234,7 @@ describe('game audio bridge, fake context only (no speaker API)', () => {
     bridge.onFrame(storage);
     expect(storage.eventAux(0)).toBe(0xffffffff); // adapter never mutates the source overflow
     expect(STORAGE_FULL_ALERT_INDEX).toBe(10);
-    expect(requests.at(-1)).toMatchObject({ kind: 'alt_storage_full', x: undefined, z: undefined });
+    expect(requests.at(-1)).toMatchObject({ kind: 'alt_storage_full', located: false });
     const energyStorage = frame(5, { event: EventType.StorageFull, eventAux: 999999,
       eventFlags: EconomyEventFlags.NoPosition | EconomyEventFlags.Energy });
     bridge.onFrame(energyStorage);

@@ -171,8 +171,9 @@ export class LoopSet {
   private copy(dst: PlayRequest, src: PlayRequest): void {
     dst.sound = src.sound;
     dst.faction = src.faction;
-    dst.x = src.x;
-    dst.z = src.z;
+    // Normalised: an explicitly unpositioned request keeps no position.
+    dst.x = src.spatial === false ? undefined : src.x;
+    dst.z = src.spatial === false ? undefined : src.z;
     dst.gain = src.gain;
     dst.rate = src.rate;
     dst.priorityBoost = src.priorityBoost;

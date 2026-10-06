@@ -9,7 +9,7 @@
 
 import { SoundCatalog } from '@faf/audio/catalog';
 import { createDecodeChain, DecodeError, loadManifest, nativeLengthWindow, type DecodeChain } from '@faf/audio/loader';
-import { Mixer } from '@faf/audio/mixer';
+import { LIMITER_MAKEUP_DB, Mixer, compressorMakeupDb } from '@faf/audio/mixer';
 import { CameraSpatialModel } from '@faf/audio/spatial';
 import { createVoiceStats, VoiceManager, type VoiceMixer } from '@faf/audio/voices';
 import {
@@ -55,6 +55,8 @@ export interface PathComparison {
   corr: number | null;
   lag: number;
   lengthEqual: boolean | null;
+  /** Forced-path length − default-path length (null if not decoded). */
+  lengthDelta: number | null;
   error: string | null;
 }
 
@@ -85,8 +87,13 @@ export interface DecodeCaseResult extends CaseResultBase {
   /** Default chain: successful decodes per path. */
   byPath: Record<DecodePath, number>;
   msByPath: Record<DecodePath, number>;
-  /** Whether the browser's WebCodecs decoder applied the Opus pre-skip itself (b2). */
+  /**
+   * Whether the browser's WebCodecs decoder applied the Opus pre-skip itself (b2), from the chain
+   * that forced 'webcodecs' ('unknown' if WebCodecs could not run).
+   */
   webcodecsTrim: string;
+  /** Largest |forced − default| length difference (native side within ±nativeTolerance). */
+  maxLengthDelta: number;
   hasAudioDecoder: boolean;
   /** Paths the forced comparisons used, with the number of successful files. */
   forced: Record<DecodePath, number>;
@@ -130,11 +137,21 @@ export interface LimiterCaseResult extends CaseResultBase {
   name: 'limiter';
   voices: number;
   byCategory: Record<string, number>;
-  /** Peak through the mixer (limiter). */
+  /** Peak through the complete mixer (limiter → makeup compensation → safety clip). */
   peak: number;
+  /** Peak through the mixer without the safety clip (limiter + makeup compensation alone). */
+  peakBeforeClip: number;
   /** Peak of the same voices summed without the mixer (proves the input is loud). */
   unlimitedPeak: number;
   limiterReductionDb: number;
+  /**
+   * The Web Audio compressor applies an automatic makeup gain of (1 / fullRangeGain)^0.6 (spec,
+   * "makeup gain"); for the limiter settings that is this many dB of boost after the gain
+   * reduction, which the mixer's `makeup` node removes again.
+   */
+  makeupGainDb: number;
+  /** Diagnosis: peak of the bare compressor (makeup not compensated, no clip) – ≈ 1.17 in Blink/WebKit. */
+  peakUncompensated: number;
 }
 
 export interface LoopCaseResult extends CaseResultBase {
@@ -147,6 +164,20 @@ export interface LoopCaseResult extends CaseResultBase {
   /** Correlation of loop pass 2 and pass 3 (identical content if the loop points are honoured). */
   passCorrelation: number;
   lastPassRms: number;
+  /**
+   * Same loop in a 44.1 kHz context with buffers decoded (resampled) for that rate: the loop
+   * points are seconds, so they must hold for any buffer rate.
+   */
+  resampled: {
+    sampleRate: number;
+    bufferRate: number;
+    decodePath: DecodePath;
+    seams: { index: number; jump: number; medianDiff: number; ratio: number }[];
+    /** Best correlation of pass 2 and pass 3 around the expected pass length (± 2 frames). */
+    passCorrelation: number;
+    /** Lag of the best correlation minus the expected pass length in frames. */
+    lagError: number;
+  };
 }
 
 export interface LimitsCaseResult extends CaseResultBase {
@@ -420,19 +451,23 @@ async function runDecode(bench: OfflineBench): Promise<CaseBody<DecodeCaseResult
       continue;
     }
     for (const path of comparePaths) {
-      const cmp: PathComparison = { path, supported: true, length: null, corr: null, lag: 0, lengthEqual: null, error: null };
+      const cmp: PathComparison = { path, supported: true, length: null, corr: null, lag: 0, lengthEqual: null, lengthDelta: null, error: null };
       f.compare.push(cmp);
       try {
         const res = await forcedChains.get(path)!.decode(await bench.fileBytes(i, 0), { samples: v.samples, channels: s.channels });
         forced[path]++;
         cmp.length = res.buffer.length;
         cmp.lengthEqual = res.buffer.length === base.length;
+        cmp.lengthDelta = res.buffer.length - base.length;
         const c = compareBuffers(base, res.buffer);
         cmp.corr = round(c.corr, 6);
         cmp.lag = c.lag;
         if (res.buffer.length !== v.samples) failures.push(`${id}: forced ${path} length ${res.buffer.length} ≠ manifest ${v.samples}`);
         if (f.path !== path) {
-          if (!cmp.lengthEqual) failures.push(`${id}: ${path} length ${res.buffer.length} ≠ ${f.path} length ${base.length}`);
+          // Software paths are sample-exact; a native default path may deviate within its window
+          // (b2: ±2 Opus frames — Firefox's decodeAudioData yields one sample less, see status).
+          const allowed = f.path === 'native' ? f.tolerance : 0;
+          if (Math.abs(cmp.lengthDelta) > allowed) failures.push(`${id}: ${path} length ${res.buffer.length} vs ${f.path} length ${base.length} (allowed ±${allowed})`);
           if (!(c.corr > 0.99)) failures.push(`${id}: ${path} vs ${f.path} correlation ${c.corr}`);
         }
       } catch (e: unknown) {
@@ -446,7 +481,10 @@ async function runDecode(bench: OfflineBench): Promise<CaseBody<DecodeCaseResult
       }
     }
   }
+  const webcodecsTrim = forcedChains.get('webcodecs')?.stats.webcodecsTrim ?? bench.chain.stats.webcodecsTrim;
   for (const c of forcedChains.values()) c.dispose();
+  let maxLengthDelta = 0;
+  for (const f of files) for (const c of f.compare) if (c.lengthDelta !== null) maxLengthDelta = Math.max(maxLengthDelta, Math.abs(c.lengthDelta));
   const categories = new Set(files.filter((f) => f.lengthOk).map((f) => f.category));
   for (const c of SOUND_CATEGORIES) if (!categories.has(c)) failures.push(`category ${c}: no correctly decoded file`);
   if (files.filter((f) => f.lengthOk).length < 12) failures.push('fewer than 12 correctly decoded files');
@@ -458,7 +496,8 @@ async function runDecode(bench: OfflineBench): Promise<CaseBody<DecodeCaseResult
     nativeSupport: bench.chain.nativeSupport,
     byPath: { ...st.byPath },
     msByPath: Object.fromEntries(DECODE_PATHS.map((p) => [p, round(st.msByPath[p], 2)])) as Record<DecodePath, number>,
-    webcodecsTrim: st.webcodecsTrim,
+    webcodecsTrim,
+    maxLengthDelta,
     hasAudioDecoder: hasAudioDecoder(),
     forced,
   };
@@ -556,6 +595,23 @@ class PlainSum implements VoiceMixer {
   }
 }
 
+/** Re-exported for older callers/tests; the formula lives in @faf/audio/mixer. */
+export { compressorMakeupDb };
+
+type LimiterVariant = 'full' | 'noClip' | 'uncompensated';
+
+/**
+ * Mixer options per variant: the full mixer (verdict), without the safety clip, and the bare
+ * compressor (a +makeup gain after the mixer undoes its compensation; diagnosis only).
+ */
+function limiterDestination(ctx: OfflineAudioContext, variant: LimiterVariant): AudioNodeLike | undefined {
+  if (variant !== 'uncompensated') return undefined;
+  const undo = ctx.createGain();
+  undo.gain.value = 10 ** (LIMITER_MAKEUP_DB / 20);
+  undo.connect(ctx.destination);
+  return undo;
+}
+
 async function runLimiter(bench: OfflineBench): Promise<CaseBody<LimiterCaseResult>> {
   await bench.ensureDecoded(LIMITER_MIX.map(([id]) => id));
   const startAll = (voices: VoiceManager): void => {
@@ -569,17 +625,29 @@ async function runLimiter(bench: OfflineBench): Promise<CaseBody<LimiterCaseResu
       }
     }
   };
-  const { ctx, voices, mixer } = makeRig(bench, 1.0);
-  startAll(voices);
-  const byCategory: Record<string, number> = {};
-  SOUND_CATEGORIES.forEach((c, i) => {
-    const n = voices.categoryVoices(i);
-    if (n > 0) byCategory[c] = n;
-  });
-  const count = voices.voiceCount;
-  const out = await render(ctx);
-  const limited = peak(out);
-  const reduction = mixer.limiterReductionDb;
+  const renderWith = async (variant: LimiterVariant): Promise<{ peak: number; count: number; byCategory: Record<string, number>; reduction: number }> => {
+    const ctx = new OfflineAudioContext(2, SAMPLE_RATE, SAMPLE_RATE);
+    const mixer = new Mixer(ctx, {
+      volumes: { master: 1, sfx: 1, ui: 1, alerts: 1, music: 1, ambience: 1 },
+      safetyClip: variant === 'full',
+      destination: limiterDestination(ctx, variant),
+    });
+    const spatial = new CameraSpatialModel();
+    spatial.setListener(TEST_LISTENER);
+    const voices = new VoiceManager({ ctx, mixer, resolver: bench.catalog, spatial, faction: FACTION, random: seededRandom(7), rateJitter: 0, clockMs: () => 0 });
+    startAll(voices);
+    const byCategory: Record<string, number> = {};
+    SOUND_CATEGORIES.forEach((c, i) => {
+      const n = voices.categoryVoices(i);
+      if (n > 0) byCategory[c] = n;
+    });
+    const count = voices.voiceCount;
+    const p = peak(await render(ctx));
+    return { peak: p, count, byCategory, reduction: mixer.limiterReductionDb };
+  };
+  const main = await renderWith('full');
+  const noClip = await renderWith('noClip');
+  const uncompensated = await renderWith('uncompensated');
 
   const plainCtx = new OfflineAudioContext(2, SAMPLE_RATE, SAMPLE_RATE);
   const spatial = new CameraSpatialModel();
@@ -589,10 +657,23 @@ async function runLimiter(bench: OfflineBench): Promise<CaseBody<LimiterCaseResu
   const unlimited = peak(await render(plainCtx));
 
   const failures: string[] = [];
-  if (count !== 32) failures.push(`expected 32 simultaneous voices, got ${count}`);
-  if (!(limited <= 1.0)) failures.push(`peak ${limited} > 1.0 with 32 loud voices`);
+  if (main.count !== 32) failures.push(`expected 32 simultaneous voices, got ${main.count}`);
+  if (!(main.peak <= 1.0)) failures.push(`peak ${main.peak} > 1.0 with 32 loud voices`);
+  // The limiter itself (with makeup compensation) must hold 1.0; the clip is only the last resort.
+  if (!(noClip.peak <= 1.0)) failures.push(`peak without safety clip ${noClip.peak} > 1.0`);
   if (!(unlimited > 1.0)) failures.push(`test input not loud enough: unlimited peak ${unlimited} ≤ 1.0`);
-  return { name: 'limiter', failures, voices: count, byCategory, peak: round(limited, 5), unlimitedPeak: round(unlimited, 3), limiterReductionDb: round(reduction, 2) };
+  return {
+    name: 'limiter',
+    failures,
+    voices: main.count,
+    byCategory: main.byCategory,
+    peak: round(main.peak, 5),
+    unlimitedPeak: round(unlimited, 3),
+    limiterReductionDb: round(main.reduction, 2),
+    peakBeforeClip: round(noClip.peak, 5),
+    makeupGainDb: round(LIMITER_MAKEUP_DB, 3),
+    peakUncompensated: round(uncompensated.peak, 5),
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -601,36 +682,75 @@ async function runLimiter(bench: OfflineBench): Promise<CaseBody<LimiterCaseResu
 
 const LOOP_SOUND = 'varkan:bld_pour_loop';
 
-async function runLoop(bench: OfflineBench): Promise<CaseBody<LoopCaseResult>> {
-  await bench.ensureDecoded([LOOP_SOUND]);
-  const s = bench.catalog.manifestSound(bench.index(LOOP_SOUND));
-  const loop = s.loop!;
-  const loopLen = loop.endSample - loop.startSample;
-  // Seam k: output sample where the k-th wrap reads loopStart (rate 1, start offset 0).
-  const seam1 = loop.endSample;
-  const seam2 = seam1 + loopLen;
-  const total = seam2 + loopLen + Math.round(0.1 * SAMPLE_RATE);
-  const { ctx, voices } = makeRig(bench, total / SAMPLE_RATE);
-  const h = voices.play(req(LOOP_SOUND), 0);
-  if (h === null) throw new Error(`loop: play dropped (${String(voices.lastDrop)})`);
-  const ch = await render(ctx);
-  const half = Math.round(0.005 * SAMPLE_RATE);
+/** Seam checks and pass correlation of a loop rendered at `rate` (loop points in seconds). */
+function analyseLoop(ch: Float32Array[], startS: number, endS: number, rate: number) {
+  const passLen = (endS - startS) * rate;
+  // Seam k: output frame where the k-th wrap reads loopStart (rate 1, start offset 0).
+  const seam1 = Math.round(endS * rate);
+  const seam2 = Math.round(endS * rate + passLen);
+  const half = Math.round(0.005 * rate);
   const seams = [seamCheck(ch, seam1, half), seamCheck(ch, seam2, half)].map((x) => ({
     index: x.index,
     jump: round(x.jump, 6),
     medianDiff: round(x.medianDiff, 6),
     ratio: round(x.ratio, 3),
   }));
-  // Pass 2 = [seam1, seam2), pass 3 = [seam2, seam2 + loopLen): identical if the loop points hold.
-  const n = Math.min(loopLen, SAMPLE_RATE);
+  // Pass 2 starts at seam1, pass 3 one pass later: identical content if the loop points hold.
+  const n = Math.min(Math.floor(passLen), rate);
   const p2 = ch[0]!.subarray(seam1, seam1 + n);
-  const p3 = ch[0]!.subarray(seam2, seam2 + n);
-  const passCorrelation = correlation(p2, p3, 0);
-  const lastPassRms = rms(ch, seam2, seam2 + loopLen);
+  const expectedLag = Math.round(passLen);
+  let best = { corr: Number.NEGATIVE_INFINITY, lag: 0 };
+  for (let d = -2; d <= 2; d++) {
+    const from = seam1 + expectedLag + d;
+    const c = correlation(p2, ch[0]!.subarray(from, from + n), 0);
+    if (c > best.corr) best = { corr: c, lag: d };
+  }
+  return { seams, passCorrelation: best.corr, lagError: best.lag, seam2, passLen };
+}
+
+const RESAMPLED_RATE = 44_100;
+
+async function runLoop(bench: OfflineBench): Promise<CaseBody<LoopCaseResult>> {
+  await bench.ensureDecoded([LOOP_SOUND]);
+  const idx = bench.index(LOOP_SOUND);
+  const s = bench.catalog.manifestSound(idx);
+  const loop = s.loop!;
+  const loopLen = loop.endSample - loop.startSample;
+  const total = loop.endSample + 2 * loopLen + Math.round(0.1 * SAMPLE_RATE);
+  const { ctx, voices } = makeRig(bench, total / SAMPLE_RATE);
+  const h = voices.play(req(LOOP_SOUND), 0);
+  if (h === null) throw new Error(`loop: play dropped (${String(voices.lastDrop)})`);
+  const ch = await render(ctx);
+  const a = analyseLoop(ch, loop.startS, loop.endS, SAMPLE_RATE);
+  const lastPassRms = rms(ch, a.seam2, a.seam2 + loopLen);
+
+  // 44.1 kHz: own catalog with buffers decoded for a 44.1 kHz context (native decoding resamples).
+  const rCatalog = new SoundCatalog(bench.manifest);
+  const rChain = createDecodeChain(new OfflineAudioContext(2, RESAMPLED_RATE, RESAMPLED_RATE));
+  let decodePath: DecodePath = 'native';
+  for (let v = 0; v < s.variants.length; v++) {
+    const res = await rChain.decode(await bench.fileBytes(idx, v), { samples: s.variants[v]!.samples, channels: s.channels });
+    rCatalog.setBuffer(idx, v, res.buffer);
+    decodePath = res.path;
+  }
+  rChain.dispose();
+  const bufferRate = rCatalog.buffer(idx, 0)!.sampleRate;
+  const rTotal = Math.ceil((loop.endS + 2 * (loop.endS - loop.startS) + 0.1) * RESAMPLED_RATE);
+  const rCtx = new OfflineAudioContext(2, rTotal, RESAMPLED_RATE);
+  const rMixer = new Mixer(rCtx, { volumes: { master: 1, sfx: 1, ui: 1, alerts: 1, music: 1, ambience: 1 } });
+  const rSpatial = new CameraSpatialModel();
+  rSpatial.setListener(TEST_LISTENER);
+  const rVoices = new VoiceManager({ ctx: rCtx, mixer: rMixer, resolver: rCatalog, spatial: rSpatial, faction: FACTION, random: seededRandom(7), rateJitter: 0, clockMs: () => 0 });
+  if (rVoices.play(req(LOOP_SOUND), 0) === null) throw new Error(`loop@44.1k: play dropped (${String(rVoices.lastDrop)})`);
+  const r = analyseLoop(await render(rCtx), loop.startS, loop.endS, RESAMPLED_RATE);
+
   const failures: string[] = [];
-  for (const x of seams) if (!(x.ratio <= 3)) failures.push(`seam at ${x.index}: jump ${x.jump} > 3 × median ${x.medianDiff} (ratio ${x.ratio})`);
-  if (!(passCorrelation > 0.99)) failures.push(`loop passes differ: correlation ${passCorrelation}`);
+  for (const x of a.seams) if (!(x.ratio <= 3)) failures.push(`seam at ${x.index}: jump ${x.jump} > 3 × median ${x.medianDiff} (ratio ${x.ratio})`);
+  if (!(a.passCorrelation > 0.99) || a.lagError !== 0) failures.push(`loop passes differ: correlation ${a.passCorrelation} at lag error ${a.lagError}`);
   if (!(lastPassRms > 1e-4)) failures.push(`third pass silent (RMS ${lastPassRms})`);
+  for (const x of r.seams) if (!(x.ratio <= 3)) failures.push(`44.1 kHz seam at ${x.index}: jump ${x.jump} > 3 × median ${x.medianDiff} (ratio ${x.ratio})`);
+  // Fractional pass length at 44.1 kHz: passes are shifted by < 1 frame and interpolated.
+  if (!(r.passCorrelation > 0.9) || Math.abs(r.lagError) > 1) failures.push(`44.1 kHz loop passes differ: correlation ${r.passCorrelation} at lag error ${r.lagError}`);
   return {
     name: 'loop',
     failures,
@@ -638,9 +758,17 @@ async function runLoop(bench: OfflineBench): Promise<CaseBody<LoopCaseResult>> {
     startS: loop.startS,
     endS: loop.endS,
     passesRendered: round((total - loop.startSample) / loopLen, 2),
-    seams,
-    passCorrelation: round(passCorrelation, 6),
+    seams: a.seams,
+    passCorrelation: round(a.passCorrelation, 6),
     lastPassRms,
+    resampled: {
+      sampleRate: RESAMPLED_RATE,
+      bufferRate,
+      decodePath,
+      seams: r.seams,
+      passCorrelation: round(r.passCorrelation, 6),
+      lagError: r.lagError,
+    },
   };
 }
 

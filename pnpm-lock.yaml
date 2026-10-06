@@ -306,6 +306,10 @@ importers:
       opus-decoder:
         specifier: ^0.7.12
         version: 0.7.12
+    devDependencies:
+      '@faf/protocol':
+        specifier: workspace:*
+        version: link:../protocol
 
   packages/blueprints:
     dependencies:

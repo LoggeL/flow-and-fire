@@ -133,7 +133,8 @@ export class RecordingSink implements SoundSink {
     if (!this.record) return this.shared;
     const soundId =
       typeof req.sound === 'number' && this.resolver !== undefined ? this.resolver.byIndex(req.sound).id : String(req.sound);
-    this.plays.push({ sound: req.sound, soundId, x: req.x, z: req.z, gain: req.gain, rate: req.rate, when: req.when, nowMs });
+    const pos = req.spatial !== false;
+    this.plays.push({ sound: req.sound, soundId, x: pos ? req.x : undefined, z: pos ? req.z : undefined, gain: req.gain, rate: req.rate, when: req.when, nowMs });
     const h = new FakeHandle(this.handles.length + 1);
     this.handles.push(h);
     return h;
@@ -146,7 +147,7 @@ export class RecordingAlerts {
   accept = true;
   record = true;
   push(req: AlertRequest): boolean {
-    if (this.record) this.pushed.push({ kind: req.kind, x: req.x, z: req.z });
+    if (this.record) this.pushed.push({ kind: req.kind, x: req.located === false ? undefined : req.x, z: req.located === false ? undefined : req.z });
     return this.accept;
   }
 }

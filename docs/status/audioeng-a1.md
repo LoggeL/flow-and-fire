@@ -45,7 +45,7 @@ DEFAULT_EVENT_MAP_JSON; DEFAULT_EVENT_SOUND_MAP
 weaponSound(map, ref); impactFamilyOf(map, ref); impactSound(map, family, surfaceAux)
 deathSound(map, sizeAux, flags); collapseAfterDeath(map, sizeAux, flags); alertForIndex(map, aux)
 referencedSounds(map): {path, sound, use: 'oneShot'|'loop'|'alert'}[]
-CLIENT_SIDE_SOUNDS; DEFERRED_SOUNDS; clientSideSoundNames(); deferredSoundNames()
+CLIENT_SIDE_SOUNDS; DEFERRED_SOUNDS (die Namens-Helfer `clientSideSoundNames()`/`deferredSoundNames()` wurden im Review als toter Code entfernt)
 validateEventSoundMap(map, manifest: ManifestLike, factions, {weaponRefs?}): EventMapIssue[]
 resolveSoundId(ids: ReadonlySet<string>, name, faction): string | null
 ```

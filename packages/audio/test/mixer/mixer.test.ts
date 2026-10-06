@@ -2,16 +2,18 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   CHANNEL_BUSES,
+  LIMITER_MAKEUP_DB,
   LIMITER_SETTINGS,
   Mixer,
   RAMP_TAU_S,
+  compressorMakeupDb,
   dbToGain,
   gainToDb,
   gainToSlider,
   sliderToGain,
 } from '../../src/mixer/index.ts';
 import { BUS_IDS } from '../../src/types.ts';
-import { FakeAudioContext, type FakeAudioParam, type FakeDynamicsCompressorNode, type FakeGainNode } from '../support/index.ts';
+import { FakeAudioContext, type FakeAudioParam, type FakeDynamicsCompressorNode, type FakeGainNode, type FakeWaveShaperNode } from '../support/index.ts';
 
 async function running(): Promise<FakeAudioContext> {
   const ctx = new FakeAudioContext();
@@ -59,42 +61,63 @@ describe('sliderToGain', () => {
 });
 
 describe('Mixer graph', () => {
-  it('builds input → user → duck → master → mute → limiter → destination for every channel bus', async () => {
+  it('builds input → user → duck → master → mute → limiter → makeup → clip → destination for every channel bus', async () => {
     const ctx = await running();
     const mixer = new Mixer(ctx);
     const g = mixer.graph;
     for (const b of CHANNEL_BUSES) {
       expect(mixer.busInput(b)).toBe(g.input[b]);
       const path = ctx.graphPathToDestination(mixer.busInput(b))!;
-      const expected: unknown[] = [g.input[b], g.user[b], g.duck[b], g.user.master, g.mute, g.limiter, ctx.destination];
+      const expected: unknown[] = [g.input[b], g.user[b], g.duck[b], g.user.master, g.mute, g.limiter, g.makeup, g.clip, ctx.destination];
       expect(path.length).toBe(expected.length);
       path.forEach((n, i) => expect(n === expected[i], `${b} #${i}`).toBe(true));
     }
     expect(ctx.createdByKind.compressor).toBe(1);
-    expect(ctx.createdByKind.gain).toBe(CHANNEL_BUSES.length * 3 + 2);
+    expect(ctx.createdByKind.shaper).toBe(1);
+    expect(ctx.createdByKind.gain).toBe(CHANNEL_BUSES.length * 3 + 3);
   });
 
-  it('configures the safety limiter (−6 dB, knee 0, ratio 20, 3 ms / 120 ms)', async () => {
+  it('compensates the compressor makeup gain and ends in a hard clip at ±1', async () => {
+    const ctx = await running();
+    const mixer = new Mixer(ctx);
+    // Spec: makeup = (1 / fullRangeGain)^0.6; fullRange at 0 dBFS = −3 + 3/20 = −2.85 dB → +1.71 dB.
+    expect(compressorMakeupDb(-3, 20)).toBeCloseTo(1.71, 10);
+    expect(LIMITER_MAKEUP_DB).toBeCloseTo(1.71, 10);
+    expect(compressorMakeupDb(0, 20)).toBe(0);
+    expect(compressorMakeupDb(-12, 1)).toBeCloseTo(0, 12);
+    expect(param(mixer.graph.makeup).value).toBeCloseTo(dbToGain(-1.71), 12);
+    expect(param(mixer.graph.makeup).events).toHaveLength(0);
+    const clip = mixer.graph.clip as FakeWaveShaperNode;
+    expect(Array.from(clip.curve!)).toEqual([-1, 1]);
+    expect(clip.oversample).toBe('none');
+  });
+
+  it('skips the clip when disabled or when the context cannot create a WaveShaper', async () => {
+    const ctx = await running();
+    const noClip = new Mixer(ctx, { safetyClip: false });
+    expect(noClip.graph.clip).toBeNull();
+    const path = ctx.graphPathToDestination(noClip.busInput('ui'))!;
+    expect(path[path.length - 2]).toBe(noClip.graph.makeup);
+
+    const bare = await running();
+    Object.defineProperty(bare, 'createWaveShaper', { value: undefined });
+    const m = new Mixer(bare);
+    expect(m.graph.clip).toBeNull();
+    expect(bare.graphPathToDestination(m.busInput('sfx'))).not.toBeNull();
+  });
+
+  it('configures the safety limiter (−3 dB, knee 0, ratio 20, 3 ms / 120 ms)', async () => {
     const ctx = await running();
     const mixer = new Mixer(ctx);
     const l = mixer.graph.limiter as FakeDynamicsCompressorNode;
-    expect(l.threshold.value).toBe(-6);
+    expect(l.threshold.value).toBe(-3);
     expect(l.knee.value).toBe(0);
     expect(l.ratio.value).toBe(20);
     expect(l.attack.value).toBe(0.003);
     expect(l.release.value).toBe(0.12);
-    expect(LIMITER_SETTINGS.thresholdDb).toBe(-6);
+    expect(LIMITER_SETTINGS.thresholdDb).toBe(-3);
     l.reduction = -2.5;
     expect(mixer.limiterReductionDb).toBe(-2.5);
-  });
-
-  it('disconnects the final browser peak guard together with the mixer', async () => {
-    const ctx = await running();
-    const guard = Object.assign(ctx.createGain(), { curve: null as Float32Array<ArrayBuffer> | null, oversample: 'none' as 'none' | '2x' | '4x' });
-    const mixer = new Mixer(Object.assign(ctx, { createWaveShaper: () => guard }));
-    expect(ctx.graphPathToDestination(mixer.busInput('sfx'))).toContain(guard);
-    expect(guard.curve![0]).toBe(-1); expect(guard.curve![128]).toBe(0); expect(guard.curve![256]).toBe(1); expect(guard.oversample).toBe('none');
-    mixer.dispose(); expect(ctx.graphPathToDestination(guard)).toBeNull();
   });
 
   it('applies initial volumes and mute without automation events', async () => {

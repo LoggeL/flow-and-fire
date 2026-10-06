@@ -4,7 +4,7 @@
  * Graph per channel bus:
  *
  *   input(bus) → user(bus) → duck(bus) ─┐
- *                                       ├→ user(master) → mute → limiter → peak guard → destination
+ *                                       ├→ user(master) → mute → limiter → makeup → clip → destination
  *   input(…)   → user(…)   → duck(…)   ─┘
  *
  * - `input`: unity gain, the node voices connect to (`busInput`).
@@ -12,8 +12,15 @@
  * - `duck`: temporary attenuation (alerts duck sfx/music); overlapping ducks: the deepest
  *   attenuation wins and the hold time extends.
  * - `mute`: 0/1, combining several mute sources (user setting, hidden tab, …).
- * - `limiter`: safety DynamicsCompressor (−6 dB, knee 0, ratio 20, 3 ms / 120 ms) so that many
+ * - `limiter`: safety DynamicsCompressor (−3 dB, knee 0, ratio 20, 3 ms / 120 ms) so that many
  *   loud voices at once never clip the output.
+ * - `makeup`: fixed gain of −{@link LIMITER_MAKEUP_DB}. The Web Audio compressor adds an automatic
+ *   makeup gain of (1 / fullRangeGain)^0.6 after its gain reduction (+1.71 dB for the settings
+ *   below); without compensation 32 loud voices peak at ≈ 1.17 in Chromium/WebKit. Compensated,
+ *   signals below the threshold pass at unity again.
+ * - `clip`: WaveShaper with a 2-point identity curve (hard clip at ±1) as the last safety stage,
+ *   because the compressor's look-ahead/attack can still let single transients through. Omitted
+ *   when the context has no `createWaveShaper` (never the case in browsers).
  *
  * Every parameter change after construction goes through `setTargetAtTime` (τ 15 ms), never a
  * jump, so volume changes cannot click.
@@ -28,17 +35,40 @@ export const RAMP_TAU_S = 0.015;
 
 /** Parameters of the master safety limiter. */
 export const LIMITER_SETTINGS = Object.freeze({
-  thresholdDb: -6,
+  thresholdDb: -3,
   kneeDb: 0,
   ratio: 20,
   attackS: 0.003,
   releaseS: 0.12,
 });
 
-/** Optional browser-only final ceiling. The fixed ports contract stays compatible with fakes. */
-interface PeakGuardNode extends AudioNodeLike { curve: Float32Array<ArrayBuffer> | null; oversample: 'none' | '2x' | '4x' }
-interface PeakGuardContext { createWaveShaper?: () => PeakGuardNode }
-const PEAK_GUARD_CURVE = Float32Array.from({ length: 257 }, (_, i) => i / 128 - 1);
+/**
+ * Automatic makeup gain of a DynamicsCompressorNode in dB for a hard knee (Web Audio spec:
+ * makeup = (1 / fullRangeGain)^0.6, fullRangeGain = compression curve at 0 dBFS).
+ */
+export function compressorMakeupDb(thresholdDb: number, ratio: number): number {
+  if (!(thresholdDb < 0) || !(ratio >= 1)) return 0;
+  const fullRangeDb = thresholdDb - thresholdDb / ratio;
+  return -0.6 * fullRangeDb;
+}
+
+/** Makeup gain the limiter adds (and the `makeup` node removes again), ≈ 1.71 dB. */
+export const LIMITER_MAKEUP_DB = compressorMakeupDb(LIMITER_SETTINGS.thresholdDb, LIMITER_SETTINGS.ratio);
+
+/** Structural WaveShaperNode subset used for the safety clip (not part of ports.ts). */
+export interface WaveShaperNodeLike extends AudioNodeLike {
+  curve: Float32Array | null;
+  oversample: string;
+}
+
+/** A context that can create a WaveShaperNode (every browser context; the Fake as well). */
+interface WaveShaperFactory {
+  createWaveShaper(): WaveShaperNodeLike;
+}
+
+function hasWaveShaper(ctx: BaseAudioContextLike): ctx is BaseAudioContextLike & WaveShaperFactory {
+  return typeof (ctx as Partial<WaveShaperFactory>).createWaveShaper === 'function';
+}
 
 /** Channel buses (everything below master) in fixed order. */
 export const CHANNEL_BUSES: readonly ChannelBus[] = ['sfx', 'ui', 'alerts', 'music', 'ambience'];
@@ -56,6 +86,8 @@ export interface MixerOptions {
   muted?: boolean | undefined;
   /** Output node (default `ctx.destination`). */
   destination?: AudioNodeLike | undefined;
+  /** Hard safety clip at ±1 after the limiter (default true; false only for measurements). */
+  safetyClip?: boolean | undefined;
 }
 
 /** The mixer nodes (read-only; for diagnostics, metering and tests). */
@@ -65,6 +97,10 @@ export interface MixerGraph {
   readonly duck: Readonly<Record<ChannelBus, GainNodeLike>>;
   readonly mute: GainNodeLike;
   readonly limiter: DynamicsCompressorNodeLike;
+  /** Compensation of the compressor's automatic makeup gain (−{@link LIMITER_MAKEUP_DB}). */
+  readonly makeup: GainNodeLike;
+  /** Hard clip at ±1 (null if disabled or unsupported by the context). */
+  readonly clip: WaveShaperNodeLike | null;
 }
 
 const BUS_INDEX: Readonly<Record<ChannelBus, number>> = { sfx: 0, ui: 1, alerts: 2, music: 3, ambience: 4 };
@@ -74,7 +110,6 @@ export class Mixer {
   private readonly sliders: Record<BusId, number> = { master: 1, sfx: 1, ui: 1, alerts: 1, music: 1, ambience: 1 };
   private muteMask = 0;
   private disposed = false;
-  private readonly peakGuard: PeakGuardNode | null;
   /** Active duck per channel bus: gain (1 = none) and context time the release starts. */
   private readonly duckGain = new Float64Array(5).fill(1);
   private readonly duckReleaseAt = new Float64Array(5);
@@ -102,20 +137,26 @@ export class Mixer {
       user[b].connect(duck[b]);
       duck[b].connect(user.master);
     }
+    const makeup = ctx.createGain();
+    makeup.gain.value = dbToGain(-LIMITER_MAKEUP_DB);
+    let clip: WaveShaperNodeLike | null = null;
+    if (opts.safetyClip !== false && hasWaveShaper(ctx)) {
+      clip = ctx.createWaveShaper();
+      // Inputs outside −1..1 map to the curve ends: a 2-point identity curve is a hard clip at ±1.
+      clip.curve = new Float32Array([-1, 1]);
+      clip.oversample = 'none';
+    }
     user.master.connect(mute);
     mute.connect(limiter);
-    // A DynamicsCompressor is not a brick-wall limiter: Chromium/WebKit transient
-    // overshoot reached 1.17267 for the real 32-voice test. Headroom reduces this,
-    // and an identity WaveShaper with clamped endpoints guarantees the final ceiling.
-    const peakContext = ctx as BaseAudioContextLike & PeakGuardContext;
-    this.peakGuard = peakContext.createWaveShaper?.() ?? null;
-    if (this.peakGuard !== null) {
-      this.peakGuard.curve = PEAK_GUARD_CURVE;
-      this.peakGuard.oversample = 'none'; // Oversampling filters can introduce their own overshoot.
-      limiter.connect(this.peakGuard);
-      this.peakGuard.connect(opts.destination ?? ctx.destination);
-    } else limiter.connect(opts.destination ?? ctx.destination);
-    this.graph = { input, user, duck, mute, limiter };
+    limiter.connect(makeup);
+    const out = opts.destination ?? ctx.destination;
+    if (clip !== null) {
+      makeup.connect(clip);
+      clip.connect(out);
+    } else {
+      makeup.connect(out);
+    }
+    this.graph = { input, user, duck, mute, limiter, makeup, clip };
 
     for (const b of BUS_IDS) {
       const v = opts.volumes?.[b];
@@ -219,7 +260,8 @@ export class Mixer {
     g.user.master.disconnect();
     g.mute.disconnect();
     g.limiter.disconnect();
-    this.peakGuard?.disconnect();
+    g.makeup.disconnect();
+    g.clip?.disconnect();
   }
 
   private rampTo(node: GainNodeLike, value: number, immediate: boolean): void {

@@ -10,6 +10,7 @@
  * `exactOptionalPropertyTypes`.
  */
 
+import type { EventCodec } from './events/codec.ts';
 import type { AudioBufferLike, AudioContextLike } from './ports.ts';
 
 // ---------------------------------------------------------------------------------------------
@@ -288,7 +289,10 @@ export interface PlayRequest {
   sound: string | number;
   /** Faction scope for the name lookup (default: the engine faction). */
   faction?: string | undefined;
-  /** World x in WU; spatial only if x AND z are set and the sound is spatial. */
+  /**
+   * World x in WU; spatial only if x AND z are set, `spatial` is not false and the sound is
+   * spatial.
+   */
   x?: number | undefined;
   /** World z in WU. */
   z?: number | undefined;
@@ -302,6 +306,12 @@ export interface PlayRequest {
   priorityBoost?: number | undefined;
   /** Loop the sound (default: `sound.loop !== null`). */
   loop?: boolean | undefined;
+  /**
+   * false: play unpositioned even if x/z carry numbers (default true). Lets pooled hot-path
+   * requests keep x/z permanently numeric: toggling them between a number and `undefined` gives
+   * the fields a tagged representation in V8 and every double store then allocates a HeapNumber.
+   */
+  spatial?: boolean | undefined;
 }
 
 /** Handle to a started voice; stays valid (as a no-op) after the voice ended or was stolen. */
@@ -508,6 +518,11 @@ export interface AlertRequest {
   /** World z in WU. */
   z?: number | undefined;
   faction?: string | undefined;
+  /**
+   * false: the alert has no location even if x/z carry numbers (default true); same purpose as
+   * `PlayRequest.spatial` (pooled requests keep x/z numeric).
+   */
+  located?: boolean | undefined;
 }
 
 /** An alert that was announced (history entry). */
@@ -688,6 +703,16 @@ export interface CreateAudioEngineOptions {
   faction?: string | undefined;
   /** EventSoundMap JSON (default: built-in map). */
   eventMap?: unknown;
+  /**
+   * Weapon ref → sound entry (JSON like the map's `weapons`), merged OVER the map's weapons —
+   * e.g. collected from the blueprint view data (MS5), so a new weapon needs no event-map edit.
+   */
+  weaponSounds?: unknown;
+  /**
+   * Decoders of the kind-specific event fields (flags bits, aux enums, death class from the view
+   * data). Default: the provisional encoding of events/kinds.ts. MS5: from @faf/protocol.
+   */
+  eventCodec?: EventCodec | undefined;
   /** Numeric event type → SimEventKind (default: built-in provisional table). */
   eventTypes?: Readonly<Record<number, string>> | undefined;
   /** Visual id → blueprint ref, e.g. 'core:wpn_cannon_t1'. */

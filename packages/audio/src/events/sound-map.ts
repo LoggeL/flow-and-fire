@@ -392,6 +392,23 @@ export function parseEventSoundMap(json: unknown): EventSoundMap {
   return { version: 1, kinds, weapons, weaponDefault, impacts, deaths, airDeath, structureCollapse, commanderDeath, alerts };
 }
 
+/**
+ * Returns `map` with weapon entries from `json` (weapon ref → entry, same format as the map's
+ * `weapons`) merged OVER its own: new refs are added, existing ones replaced, the rest kept.
+ * Lets the weapon → sound assignment come from the blueprint view data (docs/design/audio.md §6)
+ * instead of editing the whole event map. Throws EventMapError (path `$weapons.<ref>`).
+ */
+export function withWeaponSounds(map: EventSoundMap, json: unknown): EventSoundMap {
+  const wo = obj(json, '$weapons');
+  const weapons: Record<string, WeaponSound> = { ...map.weapons };
+  for (const [ref, wv] of Object.entries(wo)) {
+    const wp = `$weapons.${ref}`;
+    if (!WEAPON_REF.test(ref)) throw new EventMapError(wp, "weapon ref must look like 'core:wpn_name'");
+    weapons[ref] = parseWeapon(wv, wp, map.impacts.families, map.impacts.defaultFamily);
+  }
+  return { ...map, weapons };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Lookups (pure; the router calls them when building its caches, not per event)
 // ---------------------------------------------------------------------------------------------

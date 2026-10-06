@@ -3,15 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Web Audio engine of Flow & Fire: mixer, voice manager, spatial model, alert queue, event\u2192sound routing, Opus/WebM loading (presentation code, no sim state)",
+  "description": "Web Audio engine of Flow & Fire: mixer, voice manager, spatial model, alert queue, event→sound routing, Opus/WebM loading (presentation code, no sim state)",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*/index.ts"
   },
+  "scripts": {
+    "bench": "node --expose-gc --import tsx bench/run.ts"
+  },
   "dependencies": {
     "opus-decoder": "^0.7.12"
   },
-  "scripts": {
-    "bench": "node --import tsx bench/run.ts"
+  "devDependencies": {
+    "@faf/protocol": "workspace:*"
   }
 }

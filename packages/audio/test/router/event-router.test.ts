@@ -8,6 +8,7 @@ import {
   EVENT_FLAG_STRUCTURE,
   EVENT_FLAG_UNLOCATED,
   parseEventSoundMap,
+  type DeathProfile,
   type SimEventKind,
 } from '../../src/events/index.ts';
 import { EventRouter, type EventRouterOptions } from '../../src/router/index.ts';
@@ -155,6 +156,67 @@ describe('EventRouter mapping per kind', () => {
     expect([collapse.x, collapse.z]).toEqual([5, 6]);
   });
 
+  it('codec.visualDeathProfile: death class from the view data per visual id (cached), aux/flags only as fallback', () => {
+    const asked: number[] = [];
+    const profiles: Record<number, DeathProfile> = {
+      40: { sizeClass: 3, air: false, structure: false }, // experimental
+      41: { sizeClass: 2, air: false, structure: true }, // T2 factory
+      42: { sizeClass: 0, air: true, structure: false }, // gunship
+    };
+    const r = router({
+      codec: {
+        visualDeathProfile: (v) => {
+          asked.push(v);
+          return profiles[v];
+        },
+      },
+    });
+    // aux/flags deliberately contradict the profiles: the sim does not have to fill them.
+    ev('unitDeath', { visual: 40, aux: 0 });
+    ev('unitDeath', { visual: 41, aux: 0, sub: 64, x: 5, z: 6 });
+    ev('unitDeath', { visual: 42, aux: 3, sub: 128, flags: EVENT_FLAG_STRUCTURE });
+    ev('unitDeath', { visual: 99, aux: 1, tick: 101 }); // no profile → provisional aux fallback
+    ev('unitDeath', { visual: 40, aux: 1, tick: 102 }); // cached
+    r.handle(src, sink, 1, 0);
+    expect(sink.plays.map((p) => [p.soundId, +(p.when! - 1).toFixed(6)])).toEqual([
+      ['varkan:exp_large', 0],
+      ['varkan:exp_structure_collapse', 0.625], // staged before its death sound
+      ['varkan:exp_large', 0.025],
+      ['varkan:exp_air_crash', 0.05],
+      ['varkan:exp_medium', 0.1],
+      ['varkan:exp_large', 0.2],
+    ]);
+    expect(asked).toEqual([40, 41, 42, 99]);
+  });
+
+  it('codec.impactSurface / alertIndex / unlocatedMask translate a foreign field encoding', () => {
+    // E.g. render-fx-like impact classes 0 ground, 1 ground_large, 2 unit, 3 shield, 4 water.
+    const FOREIGN_TO_AUDIO = [0, 0, 1, 3, 2];
+    const r = router({
+      codec: {
+        impactSurface: (aux) => FOREIGN_TO_AUDIO[aux] ?? -1,
+        alertIndex: (aux) => aux - 100,
+        unlocatedMask: 0x40,
+      },
+    });
+    ev('projectileImpact', { visual: 3, aux: 2 }); // unit → metal
+    ev('projectileImpact', { visual: 3, aux: 4, sub: 64 }); // water
+    ev('projectileImpact', { visual: 3, aux: 7, sub: 128 }); // unknown → silent
+    ev('alert', { aux: 103, x: 7, z: 8 });
+    ev('alert', { aux: 104, flags: 0x40, x: 7, z: 8 });
+    ev('alert', { aux: 3 }); // → −97: unknown
+    r.handle(src, sink, 0, 0);
+    expect(sink.plays.map((p) => [p.soundId, p.rate])).toEqual([
+      ['common:imp_bullet_metal', 1],
+      ['common:imp_bullet_ground', 0.8],
+    ]);
+    expect(alerts.pushed).toEqual([
+      { kind: 'alt_base_attacked', x: 7, z: 8 },
+      { kind: 'alt_mass_stall', x: undefined, z: undefined },
+    ]);
+    expect(r.stats).toMatchObject({ eventsIgnored: 1, eventsUnmapped: 1 });
+  });
+
   it('commanderDeath plays map-wide by default, positioned on request', () => {
     ev('commanderDeath', { x: 300, z: 400 });
     router().handle(src, sink, 0, 0);
@@ -278,7 +340,7 @@ describe('EventRouter mapping per kind', () => {
 });
 
 describe('EventRouter timing', () => {
-  it('schedules by subTick and tick (when = ctxTime + (Δtick + subTick/256) × tick) and passes scheduled nowMs', () => {
+  it('schedules by subTick and tick (when = ctxTime + (Δtick + subTick/256) × tick) and passes scheduled nowMs (whole ms)', () => {
     const r = router();
     ev('weaponFire', { visual: 1, sub: 0 });
     ev('weaponFire', { visual: 3, sub: 64 });
@@ -288,7 +350,8 @@ describe('EventRouter timing', () => {
     ev('weaponFire', { visual: 6, tick: 99, sub: 32 }); // earlier tick → offset 0
     r.handle(src, sink, 5, 2000);
     expect(sink.plays.map((p) => +(p.when! - 5).toFixed(9))).toEqual([0, 0.025, +((255 / 256) * 0.1).toFixed(9), 0.15, 0.3, 0.0125]);
-    expect(sink.plays.map((p) => +p.nowMs.toFixed(6))).toEqual([2000, 2025, +(2000 + (255 / 256) * 100).toFixed(6), 2150, 2300, 2012.5]);
+    // Rounded to whole ms (Smi, no HeapNumber per play): 2099.61 → 2100, 2012.5 → 2013.
+    expect(sink.plays.map((p) => p.nowMs)).toEqual([2000, 2025, 2100, 2150, 2300, 2013]);
   });
 
   it('scales with the sim speed', () => {
@@ -384,42 +447,5 @@ describe('EventRouter aggregation', () => {
     r.handle(src, sink, 0, 0);
     r.handle(src, sink, 0, 0);
     expect(resolver.resolveCalls).toBe(calls);
-  });
-});
-
-describe('EventRouter allocation', () => {
-  it('routes 100,000 events after warm-up with < 1 MB heap growth', () => {
-    const gc = (globalThis as { gc?: () => void }).gc;
-    const spatial = new CameraSpatialModel();
-    spatial.setListener({ focusX: 256, focusZ: 256, height: 60, viewHalfWidth: 40, rightX: 1, rightZ: 0 });
-    alerts.record = false;
-    alerts.accept = false;
-    const r = router({ spatial });
-    sink.record = false;
-    // One 10-Hz tick of a big battle: 200 events of all MS5 kinds + alerts.
-    const kinds: SimEventKind[] = ['weaponFire', 'weaponFire', 'weaponFire', 'projectileImpact', 'projectileImpact', 'unitDeath', 'buildComplete', 'alert', 'reclaimStart'];
-    const batch = (tick: number): void => {
-      src.clear();
-      for (let i = 0; i < 200; i++) {
-        const k = kinds[i % kinds.length]!;
-        ev(k, { visual: 1 + (i % 7), tick, sub: (i * 53) % 256, aux: i % 4, flags: i % 11 === 0 ? EVENT_FLAG_STRUCTURE : 0, x: (i * 17) % 512, z: (i * 29) % 512 });
-      }
-    };
-    batch(0);
-    for (let t = 0; t < 200; t++) {
-      for (let i = 0; i < src.count; i++) src.events[i]!.tick = t;
-      r.handle(src, sink, t * 0.1, t * 100);
-    }
-    gc?.();
-    const before = process.memoryUsage().heapUsed;
-    for (let t = 200; t < 700; t++) {
-      for (let i = 0; i < src.count; i++) src.events[i]!.tick = t;
-      r.handle(src, sink, t * 0.1, t * 100);
-    }
-    gc?.();
-    const grown = process.memoryUsage().heapUsed - before;
-    expect(r.stats.events).toBe(700 * 200);
-    expect(sink.count).toBeGreaterThan(0);
-    if (gc !== undefined) expect(grown).toBeLessThan(1024 * 1024);
   });
 });

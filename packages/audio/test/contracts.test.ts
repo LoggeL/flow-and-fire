@@ -1,3 +1,4 @@
+import { FrameReader, FrameWriter } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import type {
   AudioBufferLike,
@@ -25,6 +26,9 @@ import {
   type AudioEventSource,
 } from '../src/types.ts';
 import * as barrel from '../src/index.ts';
+import { DEFAULT_EVENT_SOUND_MAP, DEFAULT_EVENT_TYPES, EVENT_FLAG_UNLOCATED } from '../src/events/index.ts';
+import { EventRouter } from '../src/router/index.ts';
+import { ManifestResolver, RecordingAlerts, RecordingSink } from './router/fakes.ts';
 import { FakeAudioContext, FakeOfflineAudioContext } from './support/fake-audio-context.ts';
 import { loadRealManifest } from './support/manifest.ts';
 
@@ -32,19 +36,6 @@ import { loadRealManifest } from './support/manifest.ts';
 // Static compatibility (checked by `tsc -p tsconfig.tests.json`; the functions only exist so
 // the assignments are type-checked — no casts, no any).
 // ---------------------------------------------------------------------------------------------
-
-/** Event accessors of FrameReader (packages/protocol/src/frame.ts), copied verbatim — not imported. */
-interface FrameReaderEventAccessors {
-  get eventCount(): number;
-  eventType(i: number): number;
-  eventVisual(i: number): number;
-  eventTick(i: number): number;
-  eventSubTick(i: number): number;
-  eventFlags(i: number): number;
-  eventPos(i: number, c: number): number;
-  eventAux(i: number): number;
-  eventHandle(i: number): number;
-}
 
 const staticCompat = [
   (c: AudioContext): AudioContextLike => c,
@@ -57,9 +48,46 @@ const staticCompat = [
   (n: AudioBufferSourceNode): AudioBufferSourceNodeLike => n,
   (c: FakeAudioContext): AudioContextLike => c,
   (c: FakeOfflineAudioContext): OfflineAudioContextLike => c,
-  (r: FrameReaderEventAccessors): AudioEventSource => r,
+  // The real FrameReader of @faf/protocol (devDependency; src/ never imports protocol).
+  (r: FrameReader): AudioEventSource => r,
   (s: ArrayEventSource): AudioEventSource => s,
 ] as const;
+
+describe('FrameReader → EventRouter (runtime, @faf/protocol)', () => {
+  it('events written with FrameWriter.writeEvent are routed like an ArrayEventSource', () => {
+    const w = new FrameWriter();
+    const buf = new Uint8Array(w.capacityBytes);
+    w.beginFrame(buf, 1, 100, 0, 1000, 0, 0, 0, 0, 0);
+    const T = DEFAULT_EVENT_TYPES;
+    const X = Math.round(12.5 * FX_ONE);
+    const Z = Math.round(-3.25 * FX_ONE);
+    w.writeEvent(T.unitDeath, 0, 100, 0, 0, X, 0, Z, 2, 7);
+    w.writeEvent(T.buildComplete, 0, 100, 128, 0, X, 0, Z, 0, 8);
+    w.writeEvent(T.alert, 0, 101, 0, EVENT_FLAG_UNLOCATED, 0, 0, 0, 4, 0);
+    w.writeEvent(0xfffe, 0, 101, 0, 0, 0, 0, 0, 0xffffffff, 0xffffffff); // unknown type
+    const len = w.endFrame();
+    const reader = new FrameReader();
+    expect(reader.reset(buf.subarray(0, len))).toBe(true);
+
+    const array = new ArrayEventSource();
+    for (let i = 0; i < reader.eventCount; i++) {
+      array.push(reader.eventType(i), reader.eventVisual(i), reader.eventTick(i), reader.eventSubTick(i), reader.eventFlags(i), reader.eventPos(i, 0), reader.eventPos(i, 1), reader.eventPos(i, 2), reader.eventAux(i), reader.eventHandle(i));
+    }
+    const route = (src: AudioEventSource): { plays: unknown[]; alerts: unknown[]; stats: unknown } => {
+      const resolver = new ManifestResolver(loadRealManifest());
+      const sink = new RecordingSink(resolver);
+      const alerts = new RecordingAlerts();
+      const r = new EventRouter({ map: DEFAULT_EVENT_SOUND_MAP, resolver, faction: 'varkan', alerts });
+      r.handle(src, sink, 2, 1000);
+      return { plays: sink.plays.map((p) => [p.soundId, p.x, p.z, p.when]), alerts: alerts.pushed, stats: { ...r.stats } };
+    };
+    const viaReader = route(reader);
+    expect(viaReader).toEqual(route(array));
+    expect(viaReader.plays).toContainEqual(['varkan:exp_large', 12.5, -3.25, 2]);
+    expect(viaReader.alerts).toEqual([{ kind: 'alt_mass_stall', x: undefined, z: undefined }]);
+    expect(viaReader.stats).toMatchObject({ events: 4, eventsUnmapped: 1 });
+  });
+});
 
 describe('type contract', () => {
   it('static compatibility functions exist (checked by tsc)', () => {

@@ -25,7 +25,7 @@
 
 import { AlertQueue } from '../alerts/index.ts';
 import { SoundCatalog, parseManifest } from '../catalog/index.ts';
-import { DEFAULT_EVENT_SOUND_MAP, parseEventSoundMap, type EventSoundMap } from '../events/index.ts';
+import { DEFAULT_EVENT_SOUND_MAP, parseEventSoundMap, withWeaponSounds, type EventSoundMap } from '../events/index.ts';
 import {
   SoundLoader,
   createDecodeChain,
@@ -97,6 +97,7 @@ export const ALERT_DUCK_ATTACK_MS = 30;
 export const ALERT_DUCK_RELEASE_MS = 400;
 
 const DUCK_SFX: readonly ChannelBus[] = ['sfx'];
+const DROP_NOT_LOADED = DROP_REASONS.indexOf('notLoaded');
 const DUCK_BED: readonly ChannelBus[] = ['music', 'ambience'];
 
 /**
@@ -279,6 +280,7 @@ function copyRequest(src: PlayRequest): PlayRequest {
     when: src.when,
     priorityBoost: src.priorityBoost,
     loop: src.loop,
+    spatial: src.spatial,
   };
 }
 
@@ -376,7 +378,8 @@ class AudioEngineImpl implements FafAudioEngine {
     const perf = defaultTimer();
     this.clock = opts.clock ?? perf ?? (() => Date.now());
     this.timer = opts.timer ?? perf ?? this.clock;
-    this.eventMap = opts.eventMap === undefined ? DEFAULT_EVENT_SOUND_MAP : parseEventSoundMap(opts.eventMap);
+    const baseMap = opts.eventMap === undefined ? DEFAULT_EVENT_SOUND_MAP : parseEventSoundMap(opts.eventMap);
+    this.eventMap = opts.weaponSounds === undefined ? baseMap : withWeaponSounds(baseMap, opts.weaponSounds);
 
     // Settings first: they exist even if the context cannot be created.
     const store = opts.settingsStore === undefined ? localStorageSettingsStore() : opts.settingsStore;
@@ -464,6 +467,7 @@ class AudioEngineImpl implements FafAudioEngine {
       resolver: catalog,
       faction: this.faction,
       visualName: opts.visualName,
+      codec: opts.eventCodec,
       alerts,
       spatial: this.spatial,
     });
@@ -561,7 +565,7 @@ class AudioEngineImpl implements FafAudioEngine {
     if (core === null) {
       const n = src.eventCount;
       this.preReadyEvents += n;
-      this.preReadyDrops[DROP_REASONS.indexOf('notLoaded')]! += n;
+      this.preReadyDrops[DROP_NOT_LOADED]! += n;
     } else {
       core.router.handle(src, core.eventSink, this.context.currentTime, this.clock());
     }
@@ -589,7 +593,7 @@ class AudioEngineImpl implements FafAudioEngine {
   private playInternal(req: PlayRequest): VoiceHandle | null {
     const core = this.core;
     if (core === null) {
-      this.preReadyDrops[DROP_REASONS.indexOf('notLoaded')]!++;
+      this.preReadyDrops[DROP_NOT_LOADED]!++;
       return null;
     }
     return core.eventSink.play(req, this.clock());
@@ -750,7 +754,8 @@ class AudioEngineImpl implements FafAudioEngine {
 }
 
 /**
- * Creates the audio engine. Throws synchronously on an invalid `manifest` or `eventMap`; a
+ * Creates the audio engine. Throws synchronously on an invalid `manifest`, `eventMap` or
+ * `weaponSounds`; a
  * failing `manifestUrl` fetch rejects `engine.ready` and every `load()`.
  */
 export function createAudioEngine(opts: AudioEngineOptions): FafAudioEngine {
