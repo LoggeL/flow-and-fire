@@ -1,0 +1,35 @@
+/*
+ * Strip above the dock (ui.md §4.2, §5.9, §5.10): selection filters + idle engineer over the minimap,
+ * control groups left-aligned over the selection panel (R1), order bar right-aligned over the card.
+ * Ported 1:1 from docs/design/ui-mockups/assets/hud.css (sections "Dock", "Selection-Filter + Idle-Engineer",
+ * "Control Groups"); additions are marked "added".
+ */
+.strip { position: absolute; left: var(--hud-gutter); right: var(--hud-gutter); bottom: calc(var(--hud-gutter) + var(--hud-dock-h) + var(--sp-1)); height: 2.5rem; display: grid; grid-template-columns: var(--hud-minimap) minmax(0, 1fr) auto; gap: var(--sp-1); align-items: end; pointer-events: none; }
+.strip > * { pointer-events: auto; }
+
+/* Selection-Filter + Idle-Engineer */
+.filters { display: flex; gap: 2px; align-self: end; }
+.filters .ff-order { width: 2.125rem; height: 2.125rem; }
+.filters .ff-order .ff-gi { width: 1.125rem; height: 1.125rem; }
+.idle { position: relative; margin-left: auto; }
+.idle .ff-order { width: 3rem; --fg: var(--ember-300); }
+.idle__n { position: absolute; right: -0.25rem; top: -0.375rem; min-width: 1.125rem; height: 1.125rem; padding: 0 0.25rem; border-radius: var(--radius-pill); background: var(--ember-500); color: var(--text-on-ember); font: var(--fw-bold) var(--fs-micro)/1.125rem var(--font-mono); text-align: center; z-index: 2; pointer-events: none; }
+
+/* Control Groups */
+.groups { display: flex; gap: 2px; justify-self: start; align-self: end; }
+.grp { position: relative; width: 3.25rem; height: 2.125rem; border: 1px solid var(--line); background: rgba(14,13,12,0.88); display: grid; grid-template-columns: 1.125rem 1fr; align-items: center; padding: 0 0.25rem 0 0.125rem; color: var(--text); }
+.grp__k { font: var(--fw-bold) var(--fs-micro)/1 var(--font-mono); color: var(--text-lo); align-self: start; padding-top: 0.1875rem; }
+.grp .ff-si { width: 1.125rem; height: 1.25rem; justify-self: center; }
+.grp__n { position: absolute; right: 0.1875rem; bottom: 0.0625rem; font-size: var(--fs-micro); font-weight: var(--fw-bold); color: var(--text-hi); }
+.grp.is-empty { background: rgba(14,13,12,0.5); border-style: dashed; border-color: var(--iron-700); }
+.grp.is-empty .grp__k { color: var(--iron-600); }
+.grp.is-active { border-color: var(--ember-500); background: rgba(58,33,15,0.92); }
+.grp:hover { border-color: var(--copper-500); }
+
+/* added: demo states, keyboard focus (ceramic, never ember) and fixed geometry */
+.grp { contain: strict; font: inherit; cursor: pointer; }
+.grp.is-hover { border-color: var(--copper-500); }
+.grp:focus-visible, .grp.is-focus { outline: none; border-color: var(--ceramic-50); }
+.grp.is-active:hover, .grp.is-active.is-hover { border-color: var(--ember-300); }
+.idle .ff-order.is-idle-zero { --fg: var(--text-mid); }
+.filters, .groups { contain: layout style; } /* no paint containment: the idle badge overhangs the row */

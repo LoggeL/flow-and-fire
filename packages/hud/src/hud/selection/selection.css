@@ -1,0 +1,177 @@
+/*
+ * Selection panel and factory queue (ui.md §5.5, §5.7). Ported from docs/design/ui-mockups/assets/hud.css
+ * (sections "Auswahl-Panel", "Mehrfachauswahl: Typ-Kacheln", "Fabrik-Queue", "Einzeleinheiten").
+ * Changes against the mockup are marked "changed", additions "added":
+ *   - type tile = <button> + <svg><use> + count + damaged count; HP bar = ::after, track = ::before
+ *     background, vet diamonds = ::after of the damaged count (ui.md §9.2: 5 nodes per tile);
+ *   - single unit = one <button>: icon = CSS mask on ::before (icons-mask.gen.css), HP strip = ::after;
+ *   - order chain rows and queue blocks are buttons (click / right click), empty and "+N" states.
+ */
+
+/* ---------- Panel frame (added: fixed dock height, the middle dock column is the only flexible width) ---------- */
+.sel { display: grid; grid-template-rows: 1.5rem minmax(0, 1fr); min-width: 0; height: var(--hud-dock-h); }
+.sel__body { min-height: 0; overflow: hidden; padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-3); display: grid; gap: var(--sp-3); }
+.sel__body--single { grid-template-columns: 6.5rem minmax(0, 30rem) minmax(14rem, 1fr); }
+.sel__body--multi { grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--sp-2); }
+.sel__body--factory { grid-template-columns: 6.5rem minmax(0, 24rem) minmax(0, 1fr); }
+/* added: empty selection (mockup used inline styles) */
+.sel__body--empty { place-items: center; text-align: center; color: var(--text-lo); font-size: var(--fs-cap); }
+.sel__help { display: grid; gap: var(--sp-1); justify-items: center; line-height: 1.6; }
+.sel__help-title { color: var(--text-mid); }
+.sel__help .ff-key { vertical-align: middle; }
+
+/* ---------- Portrait + unit info ---------- */
+.portrait { position: relative; width: 6.5rem; height: 100%; max-height: 9.5rem; display: grid; place-items: center; background: radial-gradient(70% 60% at 50% 45%, #2a2521, #141210); border: 1px solid var(--line); }
+.portrait .ff-si { width: 4.25rem; height: 4.75rem; }
+.portrait__tech { position: absolute; left: 0.375rem; top: 0.25rem; font: var(--fw-bold) var(--fs-micro)/1 var(--font-mono); color: var(--ceramic-100); }
+.portrait__vet { position: absolute; left: 0; right: 0; bottom: 0.375rem; display: flex; justify-content: center; }
+.uinfo { display: grid; align-content: start; gap: 0.375rem var(--sp-2); min-width: 0; grid-template-columns: minmax(3.25rem, max-content) minmax(0, 1fr) 7rem; }
+/* changed: the meters share the label column through subgrid – it grows to the longest label (+30 % pass,
+   „ABSTICH“) instead of clipping it, and the bars stay aligned. */
+.uinfo > * { grid-column: 1 / -1; }
+.uinfo__name { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; white-space: nowrap; overflow: hidden; }
+.uinfo__name b { font-size: var(--fs-h3); color: var(--text-hi); font-weight: var(--fw-bold); }
+.uinfo__name span { color: var(--text-mid); font-size: var(--fs-cap); overflow: hidden; text-overflow: ellipsis; }
+.meter { display: grid; grid-template-columns: subgrid; gap: var(--sp-2); align-items: center; font-size: var(--fs-cap); }
+.meter > span:first-child { color: var(--text-lo); text-transform: uppercase; font-size: var(--fs-micro); letter-spacing: 0.06em; font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; }
+.meter .num { text-align: right; color: var(--text); white-space: nowrap; }
+.meter .ff-bar { height: 0.5rem; }
+/* changed: vet/BP bar colours as classes instead of inline --bar */
+.meter .ff-bar.is-vet, .meter .ff-bar.is-bp { height: 0.3125rem; }
+.ff-bar.is-vet > i { --bar: var(--copper-300); }
+.ff-bar.is-bp > i { --bar: var(--ember-300); }
+.meter__total { color: var(--ember-100); font-weight: var(--fw-semi); }
+.meter .meter__tap { color: var(--text-mid); }
+.meter .meter__tap.is-ready { color: var(--ember-300); font-weight: var(--fw-semi); } /* added: tap shot ready (U8) */
+.stats { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-cap); color: var(--text-mid); margin-top: 0.125rem; }
+.stats b { color: var(--text-hi); font-weight: var(--fw-semi); }
+.stats b.is-adjacency { color: var(--verdigris-300); }
+.stats b.is-set { color: var(--ok); }
+
+/* ---------- Order chain (OrderQueue) ---------- */
+.qlist { display: grid; align-content: start; gap: 0.25rem; min-width: 0; min-height: 0; overflow: hidden; }
+.qlist__h { font-size: var(--fs-micro); color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.06em; font-weight: var(--fw-semi); display: flex; justify-content: space-between; gap: var(--sp-2); white-space: nowrap; }
+.qlist__h .ff-lo { text-transform: none; letter-spacing: 0.02em; }
+.qi {
+  position: relative;
+  display: grid; grid-template-columns: 1.125rem 1rem minmax(0, 1fr) auto; gap: 0.375rem; align-items: center;
+  width: 100%; height: 1.375rem; padding: 0 0.375rem; margin: 0;
+  border: 0; border-left: 2px solid var(--iron-600); background: var(--iron-850); color: var(--text);
+  font-size: var(--fs-cap); text-align: left; white-space: nowrap; overflow: hidden;
+}
+.qi .ff-gi { width: 0.875rem; height: 0.875rem; color: var(--text-mid); }
+.qi .ff-si { width: 1rem; height: 1.125rem; }
+.qi .n { color: var(--text-lo); font: var(--fw-bold) var(--fs-micro)/1 var(--font-mono); }
+.qi__l { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.qi.is-now { border-left-color: var(--ember-500); background: #251a12; }
+.qi.is-now .ff-gi { color: var(--ember-300); }
+/* added: progress of the running order as a 2 px ember line (transform only) */
+.qi.is-now::after { --v: inherit; content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--ember-500); transform-origin: left center; transform: scaleX(var(--v, 0)); }
+.qi__p { color: var(--ember-300); font-weight: var(--fw-semi); }
+button.qi:hover { background: var(--surface-hover); }
+button.qi.is-now:hover { background: #2e2014; }
+button.qi:focus-visible { outline: 1px solid var(--ceramic-50); outline-offset: -1px; }
+.qi.is-empty, .qi.is-more { color: var(--text-lo); background: transparent; border-left-color: var(--iron-700); }
+.qi.is-empty .ff-gi { color: var(--text-lo); }
+
+/* ---------- Multi selection: type tiles (changed: 5 nodes, one fixed row) ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, 4.25rem); grid-template-rows: 4.75rem; grid-auto-rows: 4.75rem; height: 4.75rem; gap: var(--sp-1); align-content: start; overflow: hidden; min-width: 0; }
+.tile {
+  --c: 0.25rem;
+  position: relative; border: 0; padding: 0; margin: 0; color: var(--text-hi);
+  background: var(--line);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  isolation: isolate; contain: strict;
+}
+.tile::before {
+  content: ""; position: absolute; inset: 1px; z-index: -1;
+  background:
+    linear-gradient(var(--iron-900), var(--iron-900)) no-repeat left calc(0.3125rem - 1px) bottom calc(1.125rem - 1px) / calc(100% + 2px - 0.625rem) 0.25rem,
+    radial-gradient(90% 70% at 50% 35%, #2a2521, #171412);
+}
+.tile::after { --v: inherit; content: ""; position: absolute; left: 0.3125rem; right: 0.3125rem; bottom: 1.125rem; height: 0.25rem; background: var(--ok); transform-origin: left center; transform: scaleX(var(--v, 1)); }
+.tile.is-warn::after { background: var(--warn); }
+.tile.is-crit::after { background: var(--crit) repeating-linear-gradient(135deg, rgba(0,0,0,0.35) 0 3px, transparent 3px 6px); }
+.tile .ff-si { position: absolute; left: 50%; top: 0.375rem; width: 2.125rem; height: 2.375rem; transform: translateX(-50%); }
+.tile__n { position: absolute; right: 0.3125rem; top: 0.25rem; font-size: var(--fs-cap); font-weight: var(--fw-bold); color: var(--text-hi); line-height: 1.2; }
+.tile__dmg { --vet: inherit; position: absolute; left: 0.3125rem; right: 0.3125rem; bottom: 0.3125rem; height: 0.6875rem; display: flex; align-items: center; gap: 2px; font-size: var(--fs-micro); line-height: 1; color: var(--crit); font-weight: var(--fw-bold); white-space: nowrap; }
+/* Highest vet of the type: up to 5 copper diamonds (6 px pitch), right-aligned over the damaged count's
+   free space, clipped to --vet (clip-path only, no layout change). */
+.tile__dmg::after {
+  --vet: inherit;
+  content: ""; position: absolute; right: 0; top: 50%; width: 1.875rem; height: 0.375rem; transform: translateY(-50%);
+  background: var(--copper-300);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath d='M3 .5 5.5 3 3 5.5 .5 3z'/%3E%3C/svg%3E");
+  mask-size: 0.375rem 0.375rem; mask-repeat: repeat-x; mask-position: right center;
+  clip-path: inset(0 0 0 calc((5 - var(--vet, 0)) * 0.375rem));
+}
+.tile:hover { background: var(--copper-500); }
+.tile.is-focus { background: var(--ember-500); }
+.tile:focus-visible { outline: none; background: var(--ceramic-50); }
+.tile.is-more { display: grid; place-items: center; color: var(--text-mid); font-size: var(--fs-cap); font-weight: var(--fw-semi); }
+.tile.is-more::before { background: var(--iron-900); }
+.tile.is-more::after { display: none; }
+.tile.is-more:hover { background: var(--line); }
+
+/* ---------- Multi selection: single units (changed: one node per unit) ---------- */
+.units { display: grid; grid-template-columns: repeat(auto-fill, 2.125rem); grid-auto-rows: 2.375rem; gap: 2px; align-content: start; overflow: hidden; min-height: 0; min-width: 0; }
+.unit {
+  position: relative; border: 1px solid var(--line); padding: 0; margin: 0; contain: strict;
+  background: linear-gradient(var(--iron-950), var(--iron-950)) no-repeat left 2px bottom 2px / calc(100% - 4px) 3px, var(--iron-850);
+}
+.unit::before {
+  content: ""; position: absolute; left: 50%; top: 0.125rem; width: 1.375rem; height: 1.5rem; transform: translateX(-50%);
+  background-color: var(--team, var(--team-self));
+  mask-image: var(--si-mask); mask-repeat: no-repeat; mask-position: center; mask-size: contain;
+}
+.unit::after { --v: inherit; content: ""; position: absolute; left: 2px; right: 2px; bottom: 2px; height: 3px; background: var(--ok); transform-origin: left center; transform: scaleX(var(--v, 1)); }
+.unit.is-warn::after { background: var(--warn); }
+.unit.is-crit::after { background: var(--crit); }
+.unit.is-crit { border-color: #6a2a20; }
+.unit:hover { border-color: var(--copper-500); }
+.unit:focus-visible { outline: none; border-color: var(--ceramic-50); }
+.unit.is-more { display: grid; place-items: center; font-size: var(--fs-micro); font-weight: var(--fw-semi); color: var(--text-mid); background: var(--iron-900); }
+.unit.is-more::before, .unit.is-more::after { display: none; }
+.unit.is-more:hover { border-color: var(--line); }
+.units__hint { grid-column: 1 / -1; align-self: center; font-size: var(--fs-cap); color: var(--text-lo); white-space: nowrap; }
+
+/* ---------- Totals ---------- */
+.sumrow { display: flex; align-items: center; gap: var(--sp-4); font-size: var(--fs-cap); color: var(--text-mid); border-top: 1px solid var(--line); padding-top: 0.375rem; white-space: nowrap; overflow: hidden; }
+.sumrow b { color: var(--text-hi); font-weight: var(--fw-semi); display: inline-block; min-width: 2.5ch; }
+.sumrow .ff-key { margin-right: 0.125rem; }
+.sumrow__tab { margin-left: auto; }
+
+/* ---------- Factory queue (changed: head row, tighter gaps so five rows fit the 220 px dock) ---------- */
+.fq { display: grid; grid-template-rows: auto auto auto auto auto; align-content: start; gap: 0.25rem; min-width: 0; min-height: 0; overflow: hidden; }
+.fq__h { font-size: var(--fs-micro); color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.06em; font-weight: var(--fw-semi); display: flex; justify-content: space-between; gap: var(--sp-2); white-space: nowrap; }
+.fq__multi { color: var(--ember-300); text-transform: none; letter-spacing: 0.02em; }
+.fq__now { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) auto; gap: var(--sp-2); align-items: center; padding: 0.3125rem var(--sp-2); background: #211810; border: 1px solid var(--ember-800); }
+.fq__now .ff-si { width: 2.5rem; height: 2.75rem; }
+.fq__now > div { min-width: 0; white-space: nowrap; overflow: hidden; }
+.fq__now b { color: var(--text-hi); font-size: var(--fs-body); }
+.fq__now .ff-bar { height: 0.375rem; margin-top: 0.25rem; }
+.fq__now .num { font-size: var(--fs-num); color: var(--ember-100); font-weight: var(--fw-semi); min-width: 3.5ch; text-align: right; }
+/* added: paused (E13) – bar dimmed and hatched, no ember glow; idle – neutral frame */
+.fq__now.is-paused { background: var(--iron-850); border-color: var(--line-strong); }
+.fq__now.is-paused .ff-bar > i { opacity: 0.55; background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.35) 0 3px, transparent 3px 6px); }
+.fq__now.is-paused .num { color: var(--text-mid); }
+.fq__now.is-idle { background: var(--iron-850); border-color: var(--line); }
+.fq__now.is-idle > .ff-gi { width: 1.5rem; height: 1.5rem; justify-self: center; color: var(--text-lo); }
+.fq__now.is-idle b { color: var(--text-mid); }
+.fq__list { display: flex; gap: 2px; align-items: stretch; height: 2.75rem; min-width: 0; overflow: hidden; }
+.fqi { position: relative; width: 2.625rem; height: 2.75rem; flex: none; border: 1px solid var(--line); background: var(--iron-850); display: grid; place-items: center; padding: 0; margin: 0; color: var(--text-hi); contain: strict; }
+.fqi .ff-si { width: 1.625rem; height: 1.8rem; }
+.fqi b { position: absolute; right: 0.125rem; bottom: 0; font-size: var(--fs-micro); color: var(--text-hi); font-weight: var(--fw-bold); }
+.fqi:hover { border-color: var(--copper-500); }
+.fqi:focus-visible { outline: none; border-color: var(--ceramic-50); }
+.fqi.is-first { border-color: var(--ember-600); }
+.fqi.is-loop::after { content: "↻"; position: absolute; left: 0.1875rem; top: 0; font-size: var(--fs-micro); color: var(--ember-300); }
+.fqi.is-more { color: var(--text-mid); font-size: var(--fs-cap); font-weight: var(--fw-semi); background: var(--iron-900); }
+.fqi.is-more:hover { border-color: var(--line); }
+.fq__empty { align-self: center; padding-left: var(--sp-1); font-size: var(--fs-cap); color: var(--text-lo); }
+.fq__ctl { display: flex; gap: var(--sp-1); align-items: center; flex-wrap: wrap; }
+.fq__ctl .ff-btn { height: 1.75rem; font-size: var(--fs-micro); padding: 0 var(--sp-2); }
+.fq__ctl .ff-btn svg { width: 0.875rem; height: 0.875rem; }
+.fq__ctl .ff-btn.is-on { --b: var(--ember-500); --bg: var(--surface-select); --fg: var(--ember-100); }
+.fq__help { font-size: var(--fs-micro); color: var(--text-lo); display: flex; gap: var(--sp-1) var(--sp-3); flex-wrap: wrap; align-items: center; }
+.fq__help .ff-key { height: 1rem; }

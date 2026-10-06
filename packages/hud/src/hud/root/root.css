@@ -1,0 +1,30 @@
+/*
+ * HUD root, dock and tooltip layer (ui.md §3.5, §4.2, §4.4, §5.12). Ported from
+ * docs/design/ui-mockups/assets/hud.css (".hud-layer", "Dock", "Tooltip-Schicht"); additions are marked "added".
+ */
+.hud-root { position: absolute; inset: 0; z-index: var(--z-hud); pointer-events: none; }
+/* :where() keeps the specificity at 0 so the strip's own click-through rule (.strip) still wins. */
+:where(.hud-root) > * { pointer-events: auto; }
+
+.dock { position: absolute; left: var(--hud-gutter); right: var(--hud-gutter); bottom: var(--hud-gutter); height: var(--hud-dock-h); display: grid; grid-template-columns: var(--hud-minimap) minmax(0, 1fr) var(--hud-card-w); gap: var(--sp-1); }
+
+.tipbox { position: absolute; z-index: var(--z-tooltip); pointer-events: none; }
+.tipbox .ff-tip { box-shadow: none; }
+
+/* added: the root never grows with its content and isolates HUD layout from the world overlays */
+.hud-root { overflow: hidden; contain: strict; font-size: var(--fs-body); color: var(--text); }
+/* added: gaps between the dock panels are click-through, the panels are not (§4.4) */
+.dock { pointer-events: none; contain: layout style; }
+.dock > * { pointer-events: auto; }
+/* added: control groups fixed at x = 232 @1.0, 4 px inside the selection column (R1, §4.2) */
+.hud-root .groups { margin-left: var(--sp-1); }
+/* added: tooltip anchors – "card": right-aligned above the strip over the command card (mockup: 8 px above
+   the order bar); "free": positioned by a transform measured once when it opens */
+.tipbox--card { right: var(--hud-gutter); bottom: calc(var(--hud-gutter) + var(--hud-dock-h) + var(--sp-1) + 2.5rem + var(--sp-2)); }
+.tipbox--free { left: 0; top: 0; will-change: transform; }
+.tipbox { contain: layout style; }
+/* added: 10-px floor at scale 0.8 (R6) for two HUD texts that the 1280 × 720 view showed below it or clipped:
+   the tooltip foot used 0.6875rem (8.8 px at 0.8) instead of --fs-micro, and the longest 10-character cell
+   label ("Reparieren") is 1.7 px wider than the 46-px cell at 0.8 – the label may use the full cell width there */
+.hud-root .ff-tip__foot { font-size: var(--fs-micro); }
+:root[data-scale="0.8"] .hud-root .ff-cell__name { left: 0; right: 0; letter-spacing: -0.01em; }

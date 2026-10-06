@@ -1,0 +1,20 @@
+{
+  "ui.status.region": "Match status",
+  "ui.status.timer": "Match time (sim time)",
+  "ui.status.speed": "Sim speed {value}",
+  "ui.status.speedValue": "×{value}",
+  "ui.status.slower": "Decrease sim speed",
+  "ui.status.faster": "Increase sim speed",
+  "ui.status.units": "Units {units} of {cap}",
+  "ui.status.capNear": "Unit cap nearly reached: {units} of {cap}",
+  "ui.status.capReached": "Unit cap reached: {units} of {cap}",
+  "ui.status.score": "Score: own house {self}, enemy {enemy}",
+  "ui.status.menu": "Menu",
+  "ui.status.banner.pause": "PAUSED",
+  "ui.status.banner.pauseSub": "Sim halted · camera and orders stay active ·",
+  "ui.status.banner.resume": "resume",
+  "ui.status.banner.background": "Paused – tab was hidden",
+  "ui.status.banner.speed": "SIM SPEED ×{value}",
+  "ui.status.banner.lag": "Sim is lagging · ×{value} effective",
+  "ui.status.banner.contextLoss": "Restoring graphics · sim keeps running"
+}

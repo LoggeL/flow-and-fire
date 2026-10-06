@@ -1,0 +1,5 @@
+{
+  "ui.hud.region": "Game HUD",
+  "ui.hud.dock": "Dock: map, selection and orders",
+  "ui.hud.tooltip": "Tooltip"
+}

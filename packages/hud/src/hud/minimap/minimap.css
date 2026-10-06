@@ -1,0 +1,29 @@
+/*
+ * Minimap (ui.md §5.4). Ported 1:1 from docs/design/ui-mockups/assets/hud.css (section "Minimap");
+ * additions are marked "added".
+ */
+.minimap { display: grid; grid-template-rows: 1.5rem 1fr; }
+.minimap__wrap { position: relative; margin: 0.3125rem; overflow: hidden; background: #0a0908; }
+.minimap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.minimap__tools { display: flex; gap: 2px; }
+.minimap__tools button { width: 1.25rem; height: 1.125rem; padding: 0; border: 1px solid var(--line); background: var(--iron-850); color: var(--text-lo); display: grid; place-items: center; }
+.minimap__tools button:hover { color: var(--text-hi); border-color: var(--copper-500); }
+.minimap__tools button.is-on { color: var(--ember-300); border-color: var(--ember-700); }
+.minimap__tools .ff-gi { width: 0.75rem; height: 0.75rem; }
+
+/* added: fixed geometry (dock slot 216 × 220 @1.0), containment, square map (the mockup stretched the canvas) */
+.minimap { width: var(--hud-minimap); height: var(--hud-dock-h); min-width: 0; contain: layout paint style; }
+.minimap__wrap { min-height: 0; contain: strict; touch-action: none; }
+.minimap canvas.minimap__layer { left: 50%; right: auto; width: auto; height: 100%; aspect-ratio: 1 / 1; transform: translateX(-50%); }
+.minimap__overlay { cursor: crosshair; }
+.minimap__tools button { cursor: pointer; font: inherit; }
+.minimap__tools button:focus-visible { outline: none; border-color: var(--ceramic-50); color: var(--text-hi); }
+.minimap .ff-ph > span[data-fit] { flex: none; }
+
+/* added: map key figures before MS11 (UI-E2) */
+.minimap__facts { min-height: 0; padding: var(--sp-2) var(--sp-3); display: grid; align-content: start; gap: var(--sp-2); font-size: var(--fs-cap); color: var(--text-mid); }
+.minimap__name { font-size: var(--fs-label); font-weight: var(--fw-semi); color: var(--text-hi); white-space: nowrap; overflow: hidden; }
+.minimap__dl { display: grid; grid-template-columns: 1fr auto; gap: 0.3125rem var(--sp-2); margin: 0; }
+.minimap__dl dt { color: var(--text-lo); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.06em; align-self: center; }
+.minimap__dl dd { margin: 0; color: var(--text-hi); text-align: right; }
+.minimap__note { margin: 0; font-size: var(--fs-micro); color: var(--text-lo); line-height: 1.35; }

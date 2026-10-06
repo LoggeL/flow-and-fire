@@ -1,0 +1,15 @@
+{
+  "ui.gamemenu.title": "Spielmenü",
+  "ui.gamemenu.paused": "Die Simulation ist pausiert.",
+  "ui.gamemenu.running": "Die Partie läuft weiter.",
+  "ui.gamemenu.resume": "Fortsetzen",
+  "ui.gamemenu.settings": "Einstellungen",
+  "ui.gamemenu.keys": "Tastenübersicht",
+  "ui.gamemenu.surrender": "Aufgeben",
+  "ui.gamemenu.quit": "Ins Hauptmenü",
+  "ui.gamemenu.confirm.title": "Aufgeben?",
+  "ui.gamemenu.confirm.text": "Dein Lot wird gebrochen – die Partie endet als Niederlage.",
+  "ui.gamemenu.confirm.yes": "Aufgeben",
+  "ui.gamemenu.confirm.no": "Weiterspielen",
+  "ui.gamemenu.escHint": "schließt"
+}

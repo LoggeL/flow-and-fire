@@ -1,0 +1,194 @@
+/* Gallery chrome (developer tool). Uses the HUD tokens so it sits visually next to the components. */
+
+.gal-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+.gal-muted { color: var(--text-lo); }
+.gal-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--line-copper);
+  color: var(--copper-300);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.gal-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.gal-btn:hover { border-color: var(--copper-500); }
+.gal-btn:disabled { opacity: 0.5; cursor: default; }
+.gal-seg { display: inline-flex; border: 1px solid var(--line-strong); }
+.gal-seg a {
+  padding: 2px 8px;
+  color: var(--text-mid);
+  text-decoration: none;
+  font-size: 12px;
+  border-right: 1px solid var(--line);
+}
+.gal-seg a:last-child { border-right: 0; }
+.gal-seg a:hover { color: var(--text-hi); background: var(--surface-hover); }
+.gal-seg a.is-on { color: var(--ember-300); background: var(--surface-select); }
+.gal-alert {
+  margin: 12px 24px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--crit);
+  background: var(--crit-bg);
+  color: var(--text-hi);
+}
+.gal-alert--warn { border-color: var(--warn); background: var(--warn-bg); }
+.gal-alert ul { margin: 4px 0 0; padding-left: 18px; }
+.gal-error {
+  margin: 0;
+  padding: 16px;
+  color: var(--crit);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* ---------- Index ---------- */
+.gal-index__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; padding: 20px 24px 0; }
+.gal-index__head h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+.gal-index__head p { margin: 0; }
+.gal-index__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  padding: 16px 24px 32px;
+}
+.gal-comp { background: var(--surface-1); border: 1px solid var(--line); padding: 10px 12px; }
+.gal-comp.is-pending { opacity: 0.55; }
+.gal-comp h2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: var(--text-hi);
+}
+.gal-comp h2 a { color: var(--ember-300); text-decoration: none; }
+.gal-comp h2 small { color: var(--text-lo); font-weight: 400; font-size: 12px; }
+.gal-comp ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.gal-comp li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 12px; }
+.gal-comp li a { color: var(--copper-300); font-family: var(--font-mono); font-size: 11px; }
+.gal-comp li.is-missing .gal-state { color: var(--text-off); text-decoration: line-through; }
+.gal-comp li.is-extra .gal-state { color: var(--text-lo); font-style: italic; }
+.gal-state { min-width: 9em; color: var(--text); }
+
+/* ---------- Story page ---------- */
+.gal-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  background: var(--iron-1000);
+  border-bottom: 1px solid var(--line-strong);
+}
+.gal-bar__back { color: var(--copper-300); text-decoration: none; white-space: nowrap; }
+.gal-bar__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; flex: 1 1 auto; min-width: 0; }
+.gal-bar__title b { color: var(--text-hi); }
+.gal-bar__title code { font-size: 11px; }
+.gal-bar__opts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.gal-stage { flex: 1 1 auto; overflow: auto; padding: 16px; background: var(--iron-1000); }
+
+/* Story viewport: fixed size; containing block for fixed-position HUD layers. */
+.gal-viewport {
+  position: relative;
+  overflow: hidden;
+  contain: layout paint;
+  background: var(--iron-950);
+  color: var(--text);
+}
+.gal-viewport--component {
+  padding: 24px;
+  background:
+    linear-gradient(45deg, var(--iron-900) 25%, transparent 25%, transparent 75%, var(--iron-900) 75%) 0 0 / 32px 32px,
+    linear-gradient(45deg, var(--iron-900) 25%, transparent 25%, transparent 75%, var(--iron-900) 75%) 16px 16px / 32px 32px,
+    var(--iron-950);
+}
+/* Placeholder world behind full-screen stories (dark terrain tones; the HUD panels are translucent). */
+.gal-viewport--fullscreen {
+  background:
+    radial-gradient(ellipse 40% 30% at 30% 40%, rgba(74, 86, 58, 0.55), transparent 70%),
+    radial-gradient(ellipse 35% 25% at 70% 60%, rgba(96, 84, 62, 0.5), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 55% 25%, rgba(40, 58, 70, 0.45), transparent 70%),
+    linear-gradient(160deg, #2b3024 0%, #22251d 45%, #1d1f1a 100%);
+}
+
+/* Screenshot mode: only the story box, at 0,0. */
+body.is-shot { overflow: hidden; background: var(--iron-1000); }
+body.is-shot .gal-viewport { position: absolute; left: 0; top: 0; }
+
+/* ---------- Command log ---------- */
+.gal-log {
+  position: sticky;
+  bottom: 0;
+  max-height: 30vh;
+  overflow: auto;
+  padding: 6px 16px 10px;
+  background: var(--iron-1000);
+  border-top: 1px solid var(--line-strong);
+  font-size: 12px;
+}
+.gal-log__head { display: flex; gap: 12px; align-items: center; margin-bottom: 4px; }
+.gal-log__list { margin: 0; padding-left: 28px; font-family: var(--font-mono); font-size: 11px; color: var(--text-mid); }
+
+/* ---------- Matrix ---------- */
+.gal-matrix { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; align-items: flex-start; }
+.gal-tile { margin: 0; display: grid; gap: 6px; }
+.gal-tile__frame { position: relative; overflow: hidden; border: 1px solid var(--line-strong); background: var(--iron-1000); }
+.gal-tile__frame iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+.gal-tile figcaption a { color: var(--text); text-decoration: none; font-size: 12px; }
+
+/* ---------- Data stories (StrategicIcon overview) ---------- */
+.gal-icons { display: grid; gap: 16px; }
+.gal-icons__mode h3 {
+  margin: 0 0 6px;
+  font-size: var(--fs-cap);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.gal-icons__grid { display: grid; grid-template-columns: repeat(auto-fill, 5.25rem); gap: 4px; }
+.gal-icons__cell {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  background: var(--surface-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-lo);
+  text-align: center;
+  word-break: break-all;
+}
+.gal-icons__pair { display: flex; gap: 4px; }
+.gal-icons__pair .ff-si { width: 2.25rem; height: 2.5rem; }
+.gal-icons__mask { display: inline-block; width: 2.25rem; height: 2.5rem; }
+.gal-icons__mask--enemy { --team: var(--team-enemy); }
+.gal-icons__row { display: flex; gap: 10px; align-items: center; }
+.gal-icons__swatch { width: 12px; height: 12px; border: 1px solid var(--line-strong); }

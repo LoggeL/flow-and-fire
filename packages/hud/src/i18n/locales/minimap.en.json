@@ -1,0 +1,18 @@
+{
+  "ui.minimap.title": "Map",
+  "ui.minimap.region": "Minimap",
+  "ui.minimap.mode.terrain": "Terrain",
+  "ui.minimap.mode.tactical": "Tactical",
+  "ui.minimap.mode.toggle": "View {mode} · click switches to {next}",
+  "ui.minimap.resources": "Resource spots",
+  "ui.minimap.wholeMap": "Whole map (strategic zoom)",
+  "ui.minimap.canvas": "Minimap: left click or drag moves the camera, right click gives an order, ⇧ queues",
+  "ui.minimap.facts.region": "Map key figures",
+  "ui.minimap.facts.unknownMap": "Unknown map",
+  "ui.minimap.facts.size": "Size",
+  "ui.minimap.facts.sizeValue": "{n} × {n} WU",
+  "ui.minimap.facts.mex": "Mex free / taken",
+  "ui.minimap.facts.hydro": "Hydro free / taken",
+  "ui.minimap.facts.pair": "{free} / {taken}",
+  "ui.minimap.facts.note": "Overview via strategic zoom · minimap with C16 (MS11)"
+}

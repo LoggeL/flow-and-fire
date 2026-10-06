@@ -71,7 +71,27 @@ module.exports = {
     onlyWorkspaceDeps('render-deps', 'render', ['protocol', 'fixed']),
     // Kitbash DSL: pure TypeScript, independent of render/sim (only @gltf-transform/core from npm).
     onlyWorkspaceDeps('modelkit-is-leaf', 'modelkit', []),
-    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
+    // HUD/menus (TRACK-HUD): data only via HudModel signals + HudCommands callbacks, no workspace imports.
+    onlyWorkspaceDeps('hud-deps', 'hud', []),
+    {
+      name: 'hud-npm-deps',
+      severity: 'error',
+      comment: 'hud only depends on preact, @preact/signals and @fontsource/* from npm (TRACK-HUD contract).',
+      from: { path: '^packages/hud/src/' },
+      to: {
+        dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-no-pkg', 'npm-unknown'],
+        pathNot: ['/preact/', '/@preact/signals', '/@preact/signals-core/', '/@fontsource/', '^(packages|apps|tools)/'],
+      },
+    },
+    {
+      name: 'hud-gallery-deps',
+      severity: 'error',
+      comment: 'The HUD gallery only imports @faf/hud from the workspace.',
+      from: { path: '^apps/hud-gallery/src/' },
+      to: { path: WS, pathNot: ['^apps/hud-gallery/', pkgTarget(['hud'])] },
+    },
+    // client → hud (TRACK-HUD handoff, DECISIONS HUD-1): the client fills HudSnapshot/UnitCatalog and implements HudCommands.
+    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed', 'hud']),
     {
       name: 'render-npm-deps',
       severity: 'error',
@@ -89,8 +109,8 @@ module.exports = {
     {
       name: 'presentation-never-imports-sim',
       severity: 'error',
-      comment: 'render/client/ai never import sim or sim-host (they only see frames/perception).',
-      from: { path: '^packages/(render|client|ai)/' },
+      comment: 'render/client/ai/hud never import sim or sim-host (they only see frames/perception).',
+      from: { path: '^packages/(render|client|ai|hud)/' },
       to: { path: pkgTarget(['sim', 'sim-host']) },
     },
     {

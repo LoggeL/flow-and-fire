@@ -13,9 +13,13 @@
   },
   "include": [
     "packages/*/test/**/*.ts",
+    "packages/*/test/**/*.tsx",
     "packages/*/bench/**/*.ts",
     "packages/*/scripts/**/*.ts",
     "apps/*/test/**/*.ts",
+    "apps/*/test/**/*.tsx",
+    "apps/*/e2e/**/*.ts",
+    "apps/*/playwright.config.ts",
     "apps/*/scripts/**/*.ts",
     "apps/*/vite.config.ts",
     "packages/*/vite.config.ts",

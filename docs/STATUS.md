@@ -623,3 +623,25 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Vorarbeits-Track HUD (track-hud)
+
+Stand 2026-09-30 · Branch `track-hud` · paralleler Vorarbeits-Track, kein PLAN-Meilenstein · ausführlich:
+[`docs/status/track-hud.md`](status/track-hud.md) (Fragmente p0–p6 dort verlinkt).
+
+- **Ergebnis:** Paket `@faf/hud` (Preact + `@preact/signals`) mit allen HUD- und Menü-Komponenten aus ui.md §5/§6
+  (Ressourcenleiste mit Flow/Stall, Status, Banner, Alerts, Tooltips inkl. Nachbarschaft, Auswahl-Panel, Befehlskette,
+  Fabrik-Queue, Command Card mit Tech-Tabs und Hotbuild-Raster aus roster.json, Befehlsleiste, Filter/Idle, Gruppen,
+  Minimap Canvas2D, Hud-Wurzel mit Skalierung, Hauptmenü, Gefecht einrichten, Ladebildschirm, Esc-Menü, Einstellungen,
+  Auswertung), `HudScheduler` mit festen Raten, i18n DE/EN typisiert (P12-kompatibel), Designtokens 1:1 aus den
+  Mockups. Galerie `apps/hud-gallery` mit 234 Stories (alle Soll-Zustände, Coverage streng), Playwright in Chromium,
+  Firefox und WebKit mit automatischer Layoutprüfung.
+- **Nachweise:** 52 Vitest-Dateien / 702 Tests im Track, E2E 940 bestanden (Pseudo-Pass und Screenshots nur wo
+  vorgesehen), Browser-Benchmark perf-500 mit Chromium-Gate p95 Script ≤ 1,0 ms und Script + Style/Layout ≤ 1,5 ms grün
+  (lokal gemessen, Apple M5 Pro, kein Referenz-Laptop; Werte in `track-hud.md` §7).
+- **Abweichungen:** eigenes Paket statt `packages/client/src/ui` (DECISIONS HUD-1), Locale-Dateien bis P12 im Paket
+  (HUD-2), Plex über `@fontsource` (HUD-3); Pfad `/Users/logge/Documents/Projects/faf-hud` aus dem Plan existiert nicht
+  (Worktree unter `.worktrees/faf-hud`); Root-Konfigurationen nur ergänzt (p0), Lint ignoriert `docs/design/ui-mockups/**`.
+- **Nicht angefasst:** `packages/{sim,nav,render,client,protocol,…}`, `apps/game`, `test/e2e`, `content/**`.
+- **Integration:** MS4 (Leiste, Card T1, i18n, Scheduler), MS6 (Auswahl, Queue, Befehle), MS9 (Alerts, Menüs,
+  Teamfarben), MS11 (Minimap), MS14 (Einstellungen, Auswertung).

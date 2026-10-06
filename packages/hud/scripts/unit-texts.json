@@ -1,0 +1,411 @@
+{
+  "$comment": "Source for unit texts that roster.json does not carry (ui.md §5.6, §5.12; faction.md §2.3/§7). short ≤ 10 characters without roman tier; desc ≤ 2 sentences (1: what it does, 2: guild flavour); adjacency.en translates special.adjacency. Merged into src/data/roster.gen.ts by scripts/gen-data.ts.",
+  "units": {
+    "core:cmd_commander": {
+      "short": { "de": "Vogt", "en": "Reeve" },
+      "desc": {
+        "de": "Baut alle T1-Gebäude, repariert, reclaimt und trägt den Anspruch des Hauses. Fällt er, bricht das Lot, und alles hier wird Schlacke.",
+        "en": "Builds every T1 structure, repairs, reclaims and holds the house's claim. If he falls, the plumb breaks and everything here turns to slag."
+      }
+    },
+    "core:lnd_t1_engineer": {
+      "short": { "de": "Lehrling", "en": "Prentice" },
+      "desc": {
+        "de": "Baut Gebäude, repariert und reclaimt Wracks. Jeder Meister hat einmal Schlacke gekehrt.",
+        "en": "Builds structures, repairs and reclaims wrecks. Every master once swept slag."
+      }
+    },
+    "core:lnd_t2_engineer": {
+      "short": { "de": "Geselle", "en": "Journeyman" },
+      "desc": {
+        "de": "Baut T2-Gebäude, repariert und reclaimt schneller als ein Lehrling. Die Lehre ist vorbei, die Schwielen bleiben.",
+        "en": "Builds T2 structures, repairs and reclaims faster than a prentice. The apprenticeship is over, the calluses stay."
+      }
+    },
+    "core:lnd_t3_engineer": {
+      "short": { "de": "Meister", "en": "Master" },
+      "desc": {
+        "de": "Baut T3-Gebäude und gießt mit drei Armen zugleich. Wo der Meister steht, wird nicht diskutiert.",
+        "en": "Builds T3 structures and pours with three arms at once. Where the master stands, nobody argues."
+      }
+    },
+    "core:lnd_t1_scout": {
+      "short": { "de": "Funke", "en": "Spark" },
+      "desc": {
+        "de": "Schneller Späher mit Radar und leichtem MG. Sieht viel, hält wenig aus.",
+        "en": "Fast scout with radar and a light machine gun. Sees a lot, takes little."
+      }
+    },
+    "core:lnd_t1_bot": {
+      "short": { "de": "Stichel", "en": "Graver" },
+      "desc": {
+        "de": "Leichter, schneller Sturmläufer für frühe Überfälle. Billig gegossen, schnell ersetzt.",
+        "en": "Light, fast assault bot for early raids. Cheap to pour, quick to replace."
+      }
+    },
+    "core:lnd_t1_tank": {
+      "short": { "de": "Punze", "en": "Punch" },
+      "desc": {
+        "de": "Kettenpanzer mit Glocke für die Frontlinie. Hält die Linie, wo Stichel schon rennen.",
+        "en": "Tracked tank with a bell cannon for the front line. Holds the line where Gravers already run."
+      }
+    },
+    "core:lnd_t1_arty": {
+      "short": { "de": "Kelle", "en": "Ladle" },
+      "desc": {
+        "de": "Mobile Artillerie, wirft Schlacke über Deckung auf Gruppen und Gebäude. Langsam nachgeladen, aber jede Kelle sitzt.",
+        "en": "Mobile artillery that lobs slag over cover onto groups and structures. Slow to reload, but every ladle lands."
+      }
+    },
+    "core:lnd_t1_aa": {
+      "short": { "de": "Sieb", "en": "Sieve" },
+      "desc": {
+        "de": "Mobile Flugabwehr, schießt nur auf Luftziele. Was durchs Sieb fällt, fliegt nicht mehr.",
+        "en": "Mobile anti-air that fires at air targets only. What falls through the sieve flies no more."
+      }
+    },
+    "core:lnd_t2_tank": {
+      "short": { "de": "Meißel", "en": "Chisel" },
+      "desc": {
+        "de": "Schwerer Panzer mit zwei Rohren für die Frontlinie. Schlägt Kerben, wo andere nur kratzen.",
+        "en": "Heavy two-barrelled tank for the front line. Cuts notches where others only scratch."
+      }
+    },
+    "core:lnd_t2_mml": {
+      "short": { "de": "Rinne", "en": "Runner" },
+      "desc": {
+        "de": "Raketenwerfer mit großer Reichweite gegen Gebäude und Stellungen. Die Glut läuft die Rinne hinab, nie zurück.",
+        "en": "Long-range missile launcher against structures and emplacements. The glow runs down the runner, never back."
+      }
+    },
+    "core:lnd_t2_aa": {
+      "short": { "de": "Rüttelsieb", "en": "Riddle" },
+      "desc": {
+        "de": "Flak mit Splitterwirkung gegen Luftverbände. Rüttelt, bis oben nichts Grobes mehr ist.",
+        "en": "Flak with splash against air groups. Shakes until nothing coarse is left up there."
+      }
+    },
+    "core:lnd_t2_shield": {
+      "short": { "de": "Schürze", "en": "Apron" },
+      "desc": {
+        "de": "Mobiler Schildgenerator, schützt Einheiten in seinem Umkreis. Kein Gießer geht ohne Schürze an den Ofen.",
+        "en": "Mobile shield generator that protects units around it. No caster goes to the furnace without an apron."
+      }
+    },
+    "core:lnd_t2_bot": {
+      "short": { "de": "Zange", "en": "Tongs" },
+      "desc": {
+        "de": "Sturmläufer mit Glut-Gatling für den Nahkampf. Packt zu und lässt nicht mehr los.",
+        "en": "Assault bot with an ember gatling for close fights. Grips and does not let go."
+      }
+    },
+    "core:lnd_t3_bot": {
+      "short": { "de": "Fallhammer", "en": "Drophammer" },
+      "desc": {
+        "de": "Schwer gepanzerter Belagerungsläufer gegen Stellungen und Panzer. Ein Schlag, dann ist die Form fertig.",
+        "en": "Heavily armoured siege bot against emplacements and tanks. One blow, and the mould is done."
+      }
+    },
+    "core:lnd_t3_arty": {
+      "short": { "de": "Pfanne", "en": "Pour Pan" },
+      "desc": {
+        "de": "Schwere Artillerie mit sehr großer Reichweite. Gießt aus, was die Pfanne hält.",
+        "en": "Heavy artillery with very long range. Pours out whatever the pan holds."
+      }
+    },
+    "core:lnd_t3_sniper": {
+      "short": { "de": "Reißnadel", "en": "Scriber" },
+      "desc": {
+        "de": "Präzisionsläufer, trifft auf große Distanz mit schweren Einzelschüssen. Er zieht eine Linie, und dort wird geschnitten.",
+        "en": "Sniper bot that lands heavy single shots at long range. It scribes a line, and that is where it cuts."
+      }
+    },
+    "core:lnd_t3_aa": {
+      "short": { "de": "Trommel", "en": "Trommel" },
+      "desc": {
+        "de": "Schwere Flugabwehr gegen starke Luftverbände. Die Trommel dreht, bis der Himmel sauber ist.",
+        "en": "Heavy anti-air against strong air groups. The drum turns until the sky is clean."
+      }
+    },
+    "core:air_t1_scout": {
+      "short": { "de": "Lerche", "en": "Lark" },
+      "desc": {
+        "de": "Schneller Aufklärer mit Radar, ohne Waffe. Singt, was sie sieht.",
+        "en": "Fast air scout with radar and no weapon. Sings what it sees."
+      }
+    },
+    "core:air_t1_fighter": {
+      "short": { "de": "Turmfalke", "en": "Kestrel" },
+      "desc": {
+        "de": "Abfangjäger, bekämpft nur Luftziele. Steht über dem Schlot und wartet.",
+        "en": "Interceptor that engages air targets only. Hovers over the stack and waits."
+      }
+    },
+    "core:air_t1_bomber": {
+      "short": { "de": "Dohle", "en": "Jackdaw" },
+      "desc": {
+        "de": "Bomber, wirft eine Reihe Schlackenbomben auf Bodenziele. Kommt, lässt fallen, dreht ab.",
+        "en": "Bomber that drops a row of slag bombs on ground targets. Comes in, drops, turns away."
+      }
+    },
+    "core:air_t2_gunship": {
+      "short": { "de": "Krähe", "en": "Crow" },
+      "desc": {
+        "de": "Kampfschweber, beschießt Bodenziele im Schwebeflug. Kreist, bis nichts mehr aufsteht.",
+        "en": "Gunship that strafes ground targets while hovering. Circles until nothing gets up."
+      }
+    },
+    "core:air_t2_fbomber": {
+      "short": { "de": "Elster", "en": "Magpie" },
+      "desc": {
+        "de": "Jagdbomber mit Luftkanonen und Bomben. Nimmt, was glänzt, in der Luft wie am Boden.",
+        "en": "Fighter-bomber with air cannons and bombs. Takes whatever shines, in the air or on the ground."
+      }
+    },
+    "core:str_t1_mex": {
+      "short": { "de": "Zapfstelle", "en": "Tap" },
+      "desc": {
+        "de": "Fördert Mass aus einem Erzvorkommen und braucht dafür Energy. Jede Ader gehört dem Haus, das zapft.",
+        "en": "Extracts mass from an ore deposit and needs energy to do so. Every vein belongs to the house that taps it."
+      },
+      "adjacency": { "en": "Gives factories −7.5 % mass consumption (8×8); receives +12.5 % per adjacent Ore Silo." }
+    },
+    "core:str_t2_mex": {
+      "short": { "de": "Zapfstelle", "en": "Tap" },
+      "desc": {
+        "de": "Fördert dreimal so viel Mass wie Zapfstelle I. Tiefer gebohrt, fetter gezapft.",
+        "en": "Extracts three times the mass of a Tap I. Drilled deeper, tapped richer."
+      },
+      "adjacency": { "en": "Factories −10 % mass consumption; +12.5 % per Ore Silo." }
+    },
+    "core:str_t3_mex": {
+      "short": { "de": "Zapfstelle", "en": "Tap" },
+      "desc": {
+        "de": "Fördert dreimal so viel Mass wie Zapfstelle II. Wo sie steht, bleibt vom Vorkommen nichts ungenutzt.",
+        "en": "Extracts three times the mass of a Tap II. Where it stands, nothing of the deposit goes to waste."
+      },
+      "adjacency": { "en": "Factories −12.5 % mass consumption; +12.5 % per Ore Silo." }
+    },
+    "core:str_t1_pgen": {
+      "short": { "de": "Glutkessel", "en": "Boiler" },
+      "desc": {
+        "de": "Kessel mit Schlot, erzeugt Energy. Solange er raucht, arbeitet die Halle.",
+        "en": "Boiler with a stack that generates energy. As long as it smokes, the hall works."
+      },
+      "adjacency": { "en": "Factories (8×8) −1.56 % energy consumption, 2×2 consumers −6.25 %; receives +25 % output per adjacent Heat Bank (SIZE4)." }
+    },
+    "core:str_t2_pgen": {
+      "short": { "de": "Glutkessel", "en": "Boiler" },
+      "desc": {
+        "de": "Großer Kessel, erzeugt ein Vielfaches an Energy. Die Hitze spürt man bis ins nächste Werk.",
+        "en": "Large boiler that generates many times the energy. You feel the heat in the next works over."
+      },
+      "adjacency": { "en": "Factories −12.5 % energy consumption; receives +8.3 % output per adjacent Heat Bank (SIZE12)." }
+    },
+    "core:str_t3_pgen": {
+      "short": { "de": "Glutkessel", "en": "Boiler" },
+      "desc": {
+        "de": "Schwerer Kessel mit drei Schloten, versorgt eine ganze Basis. Wenn er birst, hört man es bis in den Orbit.",
+        "en": "Heavy three-stack boiler that powers a whole base. When it bursts, they hear it up in orbit."
+      },
+      "adjacency": { "en": "Factories −15.6 % energy consumption; receives +6.25 % output per adjacent Heat Bank (SIZE16)." }
+    },
+    "core:str_t1_hydro": {
+      "short": { "de": "Dampfqu.", "en": "Vent Cap" },
+      "desc": {
+        "de": "Erzeugt Energy aus einer Dampfquelle im Boden. Die Kruste gibt die Wärme umsonst, man muss sie nur fassen.",
+        "en": "Generates energy from a steam vent in the ground. The crust gives its heat for free; you just have to cap it."
+      },
+      "adjacency": { "en": "Like Ember Boiler II (factories −12.5 % energy); receives +8.3 % per adjacent Heat Bank (SIZE12)." }
+    },
+    "core:str_t1_mstore": {
+      "short": { "de": "Erzsp.", "en": "Ore Silo" },
+      "desc": {
+        "de": "Lagert Mass und steigert angrenzende Zapfstellen. Erz wartet nicht, außer im Speicher.",
+        "en": "Stores mass and boosts adjacent taps. Ore does not wait, except in a silo."
+      },
+      "adjacency": { "en": "+12.5 % output per adjacent Tap (max. 4 sides = +50 %)." }
+    },
+    "core:str_t1_estore": {
+      "short": { "de": "Glutsp.", "en": "Heat Bank" },
+      "desc": {
+        "de": "Lagert Energy und steigert angrenzende Kraftwerke. Hier sammelt sich die Glut für den Abstich.",
+        "en": "Stores energy and boosts adjacent generators. This is where the heat gathers for the tap shot."
+      },
+      "adjacency": { "en": "Boosts all adjacent energy producers: Ember Boiler I +25 % (SIZE4), Ember Boiler II and Vent Cap +8.3 % (SIZE12), Ember Boiler III +6.25 % (SIZE16)." }
+    },
+    "core:str_t1_fac_land": {
+      "short": { "de": "Landwerk", "en": "Land Works" },
+      "desc": {
+        "de": "Gießt Landeinheiten und Engineers. Die Halle, in der jeder Anspruch beginnt.",
+        "en": "Pours land units and engineers. The hall where every claim begins."
+      },
+      "adjacency": { "en": "Receives adjacency from taps (mass) and generators (energy)." }
+    },
+    "core:str_t2_fac_land": {
+      "short": { "de": "Landwerk", "en": "Land Works" },
+      "desc": {
+        "de": "Freigesprochenes Landwerk, gießt T2-Landeinheiten. Erst jetzt erlaubt die Charta den feineren Guss.",
+        "en": "Qualified land works that pours T2 land units. Only now does the charter allow finer casting."
+      },
+      "adjacency": { "en": "Receives adjacency from taps (mass) and generators (energy)." }
+    },
+    "core:str_t3_fac_land": {
+      "short": { "de": "Landwerk", "en": "Land Works" },
+      "desc": {
+        "de": "Gießt die schwersten Landeinheiten des Kompakts. Wer hier arbeitet, trägt den Meistertitel.",
+        "en": "Pours the heaviest land units of the compact. Whoever works here holds a master's title."
+      },
+      "adjacency": { "en": "Receives adjacency from taps (mass) and generators (energy)." }
+    },
+    "core:str_t1_fac_air": {
+      "short": { "de": "Luftwerk", "en": "Air Works" },
+      "desc": {
+        "de": "Gießt Flugzeuge und Aufklärer, aber keine Engineers. Die Vögel kommen aus dem Schlot.",
+        "en": "Pours aircraft and air scouts, but no engineers. The birds come out of the stack."
+      },
+      "adjacency": { "en": "Receives adjacency from taps (mass) and generators (energy)." }
+    },
+    "core:str_t2_fac_air": {
+      "short": { "de": "Luftwerk", "en": "Air Works" },
+      "desc": {
+        "de": "Freigesprochenes Luftwerk, gießt T2-Flugzeuge. Größere Vögel, derselbe Schlot.",
+        "en": "Qualified air works that pours T2 aircraft. Bigger birds, same stack."
+      },
+      "adjacency": { "en": "Receives adjacency from taps (mass) and generators (energy)." }
+    },
+    "core:str_t1_pd": {
+      "short": { "de": "Riegel", "en": "Bolt" },
+      "desc": {
+        "de": "Geschützturm gegen Bodenziele. Schiebt den Riegel vor jede Lücke.",
+        "en": "Turret against ground targets. Slides the bolt across every gap."
+      }
+    },
+    "core:str_t2_pd": {
+      "short": { "de": "Riegel", "en": "Bolt" },
+      "desc": {
+        "de": "Schwerer Geschützturm mit großer Reichweite gegen Bodenziele. Doppelt verriegelt hält besser.",
+        "en": "Heavy long-range turret against ground targets. Double-bolted holds better."
+      }
+    },
+    "core:str_t1_aa": {
+      "short": { "de": "Rost", "en": "Grate" },
+      "desc": {
+        "de": "Flugabwehrturm gegen Luftziele. Über dem Rost wird es heiß.",
+        "en": "Anti-air tower against air targets. It gets hot above the grate."
+      }
+    },
+    "core:str_t2_aa": {
+      "short": { "de": "Rost", "en": "Grate" },
+      "desc": {
+        "de": "Flakturm mit Splitterwirkung gegen Luftverbände. Was darüber fliegt, fällt durch.",
+        "en": "Flak tower with splash against air groups. Whatever flies over falls through."
+      }
+    },
+    "core:str_t3_sam": {
+      "short": { "de": "Hochrost", "en": "High Grate" },
+      "desc": {
+        "de": "Raketenabwehr gegen schwere Luftziele auf große Distanz. Der höchste Rost im ganzen Werk.",
+        "en": "SAM site against heavy aircraft at long range. The highest grate in the whole works."
+      }
+    },
+    "core:str_t1_wall": {
+      "short": { "de": "Mauer", "en": "Wall" },
+      "desc": {
+        "de": "Blockiert Wege und fängt Direktfeuer ab. Billig, stumm, wirksam.",
+        "en": "Blocks paths and soaks up direct fire. Cheap, dumb, effective."
+      }
+    },
+    "core:str_t1_radar": {
+      "short": { "de": "Horcher", "en": "Listener" },
+      "desc": {
+        "de": "Radar, zeigt Einheiten in großem Umkreis als Signal. Hört mehr, als ihm lieb ist.",
+        "en": "Radar that shows units in a wide radius as blips. Hears more than it would like."
+      }
+    },
+    "core:str_t2_radar": {
+      "short": { "de": "Horcher", "en": "Listener" },
+      "desc": {
+        "de": "Radar mit größerer Reichweite. Das Ohr sitzt jetzt tiefer im Boden.",
+        "en": "Radar with a longer range. The ear now sits deeper in the ground."
+      }
+    },
+    "core:str_t3_radar": {
+      "short": { "de": "Horcher", "en": "Listener" },
+      "desc": {
+        "de": "Radar mit sehr großer Reichweite, deckt weite Teile der Karte ab. Kein Schritt bleibt ungehört.",
+        "en": "Radar with very long range that covers wide parts of the map. No step goes unheard."
+      }
+    },
+    "core:str_t2_shield": {
+      "short": { "de": "Schirm", "en": "Canopy" },
+      "desc": {
+        "de": "Schildgenerator, schützt Gebäude unter seiner Kuppel. Hält den Funkenflug vom Dach.",
+        "en": "Shield generator that protects structures under its dome. Keeps the sparks off the roof."
+      }
+    },
+    "core:str_t3_shield": {
+      "short": { "de": "Schirm", "en": "Canopy" },
+      "desc": {
+        "de": "Schwerer Schildgenerator mit großer Kuppel. Der Schirm, unter dem das ganze Werk steht.",
+        "en": "Heavy shield generator with a large dome. The canopy the whole works stands under."
+      }
+    },
+    "core:str_t2_arty": {
+      "short": { "de": "Tiegel", "en": "Crucible" },
+      "desc": {
+        "de": "Artilleriestellung mit großer Reichweite gegen Basen. Was im Tiegel glüht, landet beim Nachbarn.",
+        "en": "Long-range artillery emplacement against bases. What glows in the crucible lands next door."
+      }
+    },
+    "core:str_t3_arty": {
+      "short": { "de": "Hochofen", "en": "Furnace" },
+      "desc": {
+        "de": "Schwere Artilleriestellung, beschießt Ziele auf sehr große Distanz. Wird er angeblasen, zittert das Kompakt.",
+        "en": "Heavy artillery emplacement that shells targets at very long range. When it is fired up, the compact trembles."
+      }
+    },
+    "core:exp_lnd_walker": {
+      "short": { "de": "Stampfe", "en": "Stamper" },
+      "desc": {
+        "de": "Experimenteller Sturmläufer, zertritt kleinere Einheiten und Mauern. Wo er auftritt, wird der Boden neu gegossen.",
+        "en": "Experimental assault walker that crushes smaller units and walls. Where it steps, the ground gets recast."
+      }
+    },
+    "core:exp_lnd_foundry": {
+      "short": { "de": "Kokille", "en": "Mould" },
+      "desc": {
+        "de": "Mobile Gießhalle mit Waffen und Schild, gießt Landeinheiten im Stand. Die Halle kommt zur Front, nicht umgekehrt.",
+        "en": "Mobile foundry with weapons and a shield that pours land units while halted. The hall comes to the front, not the other way round."
+      }
+    },
+    "core:exp_air_gunship": {
+      "short": { "de": "Kolkrabe", "en": "Raven" },
+      "desc": {
+        "de": "Experimenteller Kampfschweber, beschießt Boden- und Luftziele. Wenn er kreist, wird es dunkel über dem Werk.",
+        "en": "Experimental gunship that strafes ground and air targets. When it circles, it grows dark over the works."
+      }
+    },
+    "core:exp_str_arty": {
+      "short": { "de": "Konverter", "en": "Converter" },
+      "desc": {
+        "de": "Strategische Artillerie, trifft jeden Punkt der Karte. Ein Abstich im großen Maßstab.",
+        "en": "Strategic artillery that reaches any point on the map. A tap shot on the grand scale."
+      }
+    },
+    "core:exp_str_eco": {
+      "short": { "de": "Tiefenst.", "en": "Deep Tap" },
+      "desc": {
+        "de": "Tiefenzapfwerk, deckt den Bedarf des Hauses an Mass und Energy. Gebohrt bis dorthin, wo die Kruste aufhört.",
+        "en": "Resource works that covers the house's demand for mass and energy. Drilled down to where the crust ends."
+      }
+    },
+    "core:exp_str_shield": {
+      "short": { "de": "Mantel", "en": "Mantle" },
+      "desc": {
+        "de": "Großschild mit riesiger Kuppel über der Basis. Unter dem Mantel regnet es nicht.",
+        "en": "Bastion shield with a huge dome over the base. Under the mantle, it does not rain."
+      }
+    }
+  }
+}

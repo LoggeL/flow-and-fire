@@ -1,0 +1,168 @@
+/*
+ * Flow & Fire UI design tokens (Varkan: iron / ember / copper).
+ * 1:1 copy of docs/design/ui-mockups/assets/tokens.css (ui.md §3); test/foundation/tokens.test.ts
+ * compares every custom property and value. Components use tokens only, never raw values.
+ * Unit: 1rem = 16 px at UI scale 1.0 (html font-size is driven by --ui-scale, see applyUiSettings).
+ */
+:root {
+  /* ---------- Iron (surfaces, graphite from faction.md §4.1) ---------- */
+  --iron-1000: #090807;
+  --iron-950: #0e0d0c;
+  --iron-900: #151311;
+  --iron-850: #1b1917;
+  --iron-800: #221f1c;
+  --iron-750: #2a2623;
+  --iron-700: #2e2b29;
+  --iron-600: #3b3632;
+  --iron-500: #4e4741;
+  --iron-400: #6b625a;
+  --iron-300: #8f857a;
+  --iron-200: #b5ab9e;
+  --ceramic-100: #cfc6b4;
+  --ceramic-50: #ede6d6;
+
+  /* ---------- Ember (accent: active, attention) ---------- */
+  --ember-900: #4a1d06;
+  --ember-800: #6a2a08;
+  --ember-700: #a4460f;
+  --ember-600: #d4621a;
+  --ember-500: #ff8a2a;
+  --ember-300: #ffb467;
+  --ember-100: #ffd9a0;
+  --whiteheat: #ffe9c0;
+
+  /* ---------- Copper (structure, frames, secondary accents) ---------- */
+  --copper-800: #4a2a17;
+  --copper-700: #7a4424;
+  --copper-500: #b06a3b;
+  --copper-300: #d4955f;
+  --verdigris-500: #4f8c7a;
+  --verdigris-300: #7fb9a5;
+
+  /* ---------- Resources: mass = diamond glyph, energy = flame glyph ---------- */
+  --mass: #7fd1b2;
+  --mass-dim: #2f5c4e;
+  --mass-bg: #12231e;
+  --energy: #ffd24a;
+  --energy-dim: #6e5a1c;
+  --energy-bg: #262009;
+
+  /* ---------- Semantics (always paired with a shape/glyph, never colour alone) ---------- */
+  --ok: #8fd18b;
+  --ok-bg: #16261a;
+  --warn: #ff9f43;
+  --warn-bg: #2d1c0b;
+  --crit: #ff5a45;
+  --crit-bg: #33120d;
+  --info: #8fb8e8;
+  --info-bg: #122030;
+  --neutral-blip: #9a9a9a;
+
+  /* ---------- Team colours (faction.md §4.3) + colour-blind safe palette (ui.md §8.2) ---------- */
+  --team-rot: #c8372d; --team-blau: #2f6fd0; --team-gruen: #3e9a4a; --team-violett: #7a4cc2;
+  --team-cyan: #27a6b5; --team-orange: #e07a1f; --team-pink: #d0569a; --team-oliv: #8a8f2e;
+  --cvd-blau: #0072b2; --cvd-orange: #e69f00; --cvd-himmel: #56b4e9; --cvd-blaugruen: #009e73;
+  --cvd-rotviolett: #cc79a7; --cvd-rot: #d7263d; --cvd-purpur: #aa3377; --cvd-rosa: #ee6677;
+  --team-self: var(--team-blau);
+  --team-enemy: var(--team-rot);
+
+  /* ---------- Text (--text-lo reaches >= 4.5:1 on cells, review R7) ---------- */
+  --text-hi: #f1ebdf;
+  --text: #d9d1c3;
+  --text-mid: #a89e90;
+  --text-lo: #968b7e;
+  --text-off: #574f47;
+  --text-on-ember: #1a0c03;
+
+  /* ---------- Surfaces / lines (--surface-0 = HUD panel, no backdrop-filter) ---------- */
+  --surface-0: rgba(14, 13, 12, 0.92);
+  --surface-1: #1b1917;
+  --surface-2: #221f1c;
+  --surface-3: #2a2623;
+  --surface-hover: #332e2a;
+  --surface-press: #3b1f0e;
+  --surface-select: #3a210f;
+  --line: #3b3632;
+  --line-strong: #4e4741;
+  --line-copper: #7a4424;
+  --line-hi: rgba(255, 255, 255, 0.05);
+
+  /* ---------- Typography (--fs-micro keeps a 10 px floor at scale 0.8, review R6) ---------- */
+  --font-ui: "IBM Plex Sans Condensed", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-display: "IBM Plex Sans Condensed", "Avenir Next Condensed", "DIN Alternate", "Roboto Condensed", sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --fs-micro: max(0.6875rem, 10px);
+  --fs-cap: 0.75rem;
+  --fs-data: 0.8125rem;
+  --fs-body: 0.875rem;
+  --fs-label: 1rem;
+  --fs-num: 1.25rem;
+  --fs-h3: 1.125rem;
+  --fs-h2: 1.75rem;
+  --fs-h1: 2.5rem;
+  --fs-logo: 4.5rem;
+  --fw-reg: 400;
+  --fw-med: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+  --lh-tight: 1.1;
+  --lh: 1.35;
+  --track-caps: 0.08em;
+
+  /* ---------- Spacing (4 px grid) ---------- */
+  --sp-0: 0.125rem;
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+
+  /* ---------- Shapes: 45 degree chamfers instead of rounding ---------- */
+  --chamfer-s: 0.25rem;
+  --chamfer-m: 0.5rem;
+  --chamfer-l: 0.875rem;
+  --radius-pill: 999px;
+  --bw: 1px;
+
+  /* ---------- HUD dimensions at scale 1.0 ---------- */
+  --hud-gutter: 0.5rem;
+  --hud-top-h: 3.75rem;
+  --hud-dock-h: 13.75rem;
+  --hud-minimap: 13.5rem;
+  --hud-card-w: 20.25rem;
+  --cell: 3.625rem;
+  --cell-gap: 0.25rem;
+  --btn-order: 2.5rem;
+
+  /* ---------- Motion ---------- */
+  --t-fast: 90ms;
+  --t-med: 160ms;
+  --t-slow: 260ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --pulse: 1s;
+
+  /* ---------- Layers ---------- */
+  --z-world: 0;
+  --z-world-overlay: 10;
+  --z-hud: 20;
+  --z-alerts: 30;
+  --z-tooltip: 40;
+  --z-modal: 50;
+  --z-console: 60;
+
+  /* ---------- Focus ---------- */
+  --focus-ring: 0 0 0 2px var(--iron-950), 0 0 0 4px var(--ceramic-50);
+}
+
+/* UI scale: html font-size = 16 px x scale (auto from window height by default, ui.md §4.1). */
+html { font-size: calc(16px * var(--ui-scale, 1)); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; --t-med: 0ms; --t-slow: 0ms; --pulse: 0s; }
+}
+
+/* Colour-blind team mode: slot 2 is red, not orange (review R8: CVD orange collides with ember). */
+:root[data-teams="cvd"] { --team-self: var(--cvd-blau); --team-enemy: var(--cvd-rot); }
+:root[data-teams="relation"] { --team-self: #3d8bff; --team-enemy: #e8462f; }

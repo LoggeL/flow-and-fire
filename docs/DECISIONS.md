@@ -211,3 +211,20 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track HUD (track-hud)
+
+Autonom im Vorarbeits-Track TRACK-HUD entschieden (Details und Abnahme: `docs/status/track-hud.md`). Nummern mit
+Präfix „HUD-“, weil parallel weitere Tracks Nachträge anhängen.
+
+HUD-1. **HUD und Menüs als eigenes Paket `@faf/hud` (`packages/hud`) statt `packages/client/src/ui` + `apps/game/src/ui`
+    (ui.md §10).** Komponenten binden nur an `HudModel` (Signals) und `HudCommands`; dependency-cruiser verbietet
+    Workspace-Importe in `packages/hud/src` (`hud-deps`) und jeden sim-Import (`presentation-never-imports-sim`).
+    Empfehlung für MS4: so behalten – der Client füllt `HudSnapshot` aus den Frame-Sektionen und implementiert
+    `HudCommands`; Galerie (`apps/hud-gallery`), Tests und Benchmarks bleiben ohne Spiel lauffähig.
+HUD-2. **Locale-Tabellen bis P12 im Paket** (`packages/hud/src/i18n/locales/<ns>.{de,en}.json`, Schlüssel `ui.<ns>.…`,
+    Einheitentexte über `unitText` mit `unit.core.<id>.<field>`). Der Typvertrag (DE ist Quelle, fehlender EN-Schlüssel
+    = tsc-Fehler) ist der aus PLAN §2; in MS4 ziehen die Dateien nach `content/locales/` um, ohne den Vertrag zu ändern.
+HUD-3. **IBM Plex Sans Condensed + Plex Mono über `@fontsource` (npm), eigene `@font-face` mit `font-display: block`**
+    (UI-E4 „selbst gehostet“). Die @fontsource-CSS wird nicht importiert, weil sie `swap` setzt (ui.md §3.2/§9.2 verlangt
+    feste Metrik ab dem ersten Frame); im Spiel liegen die woff2-Dateien später unter `/b/<hash>/fonts/`.

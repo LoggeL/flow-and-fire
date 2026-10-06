@@ -1,0 +1,15 @@
+{
+  "ui.gamemenu.title": "Game menu",
+  "ui.gamemenu.paused": "The simulation is paused.",
+  "ui.gamemenu.running": "The match keeps running.",
+  "ui.gamemenu.resume": "Resume",
+  "ui.gamemenu.settings": "Settings",
+  "ui.gamemenu.keys": "Key overview",
+  "ui.gamemenu.surrender": "Surrender",
+  "ui.gamemenu.quit": "Main menu",
+  "ui.gamemenu.confirm.title": "Surrender?",
+  "ui.gamemenu.confirm.text": "Your Lot will be broken – the match ends as a defeat.",
+  "ui.gamemenu.confirm.yes": "Surrender",
+  "ui.gamemenu.confirm.no": "Keep playing",
+  "ui.gamemenu.escHint": "closes"
+}

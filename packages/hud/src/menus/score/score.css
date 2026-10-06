@@ -1,0 +1,14 @@
+/* Score screen (ui.md §5.15) – additions to styles/menus.css (.verdict, .stbl, .chart …). */
+.score-left { align-self: start; }
+.score-best__head { border-top: 1px solid var(--line); }
+.score-best { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: var(--sp-2); }
+.score-best__unit { display: grid; justify-items: center; gap: 0.125rem; padding: 0.375rem; background: var(--surface-1); text-align: center; }
+.score-best__unit .ff-si { width: 2rem; height: 2.25rem; }
+.score-best__unit b { font-size: var(--fs-cap); color: var(--text-hi); }
+.score-best__unit span { font-size: var(--fs-micro); }
+.sgrid--units { grid-template-columns: minmax(0, 1fr) 28rem; align-items: start; }
+.score-units .score-units__name { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--text); }
+.score-units .ff-si { width: 1.5rem; height: 1.75rem; }
+.score-units thead tr.stbl__grp th { text-align: right; padding-top: var(--sp-1); }
+.score--minimal .verdict h2 { font-size: 4.5rem; }
+.events li { display: inline; }

@@ -1,0 +1,92 @@
+/*
+ * Command card, order bar and order tooltip (ui.md §5.6, §5.8, §5.12). Ported 1:1 from
+ * docs/design/ui-mockups/assets/hud.css (sections "Command Card", "Befehlsleiste"); cell and order button
+ * base styles live in styles/base.css (port of ff.css). Additions are marked "added" and cover states the
+ * mockup does not draw (countdown cell, toggles/cycle in grid cells, dimmed stripes, order badges,
+ * grid rows for role="grid", fixed panel size outside the dock grid).
+ */
+
+/* ---------- Command Card ---------- */
+.card { display: grid; grid-template-rows: 1.5rem 1fr; grid-template-columns: minmax(0, 1fr); } /* changed: a long head never widens the panel's track */
+.card .ff-ph { padding-right: 0.25rem; }
+.card .ff-tabs { margin-left: auto; flex: none; } /* changed: the tabs are controls and never shrink or get clipped */
+.card .ff-tab { height: 1.25rem; padding: 0 0.375rem; font-size: var(--fs-micro); } /* changed: 0.5 → 0.375rem, the 720p head (font floor 10 px) needs the room */
+.card__grid { display: grid; grid-template-columns: repeat(5, var(--cell)); grid-template-rows: repeat(3, var(--cell)); gap: var(--cell-gap); padding: 0.4375rem 0 0 0.4375rem; }
+.card__grid .ff-cell__icon { width: 1.75rem; height: 1.9rem; }
+.card__grid .ff-cell > .ff-gi { position: absolute; left: 50%; top: 0.625rem; transform: translateX(-50%); width: 1.5rem; height: 1.5rem; }
+
+/* added: fixed size of the panel (324 × 220 at scale 1) so it keeps its geometry outside the dock grid too */
+.card { width: var(--hud-card-w); height: var(--hud-dock-h); contain: layout paint style; }
+/* added: role="row" wrappers for the ARIA grid do not take part in the layout */
+.card__row { display: contents; }
+/* added: title and tabs share the head; the title yields (ellipsis, full text in its title attribute) before the
+   tabs do – in DE/EN it always fits (layout check), only the +30 % pseudo pass may cut it (DECISIONS HUD-6) */
+.card .ff-ph > .card__title { letter-spacing: 0.04em; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* added: the fire state on the orders page is secondary and yields (ellipsis) before the title does */
+.card .ff-ph > .ff-ph__end { display: block; flex: 0 1000 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
+.card .ff-tab .ff-gi { width: 0.6875rem; height: 0.6875rem; margin-left: 0.125rem; }
+.card__fire { color: var(--text); font-weight: var(--fw-semi); }
+
+/* added: cell icon wrapper centres the strategic icon (ff-cell__icon is the sized box) */
+.ff-cell__icon > .ff-si { width: 100%; height: 100%; display: block; }
+/* added: upgrade label in ember (mockup: inline style color:var(--ember-300)) */
+.ff-cell--upgrade .ff-cell__name { color: var(--ember-300); }
+/* added: tier the current builders can also build directly (brighter than a tier only other builders reach;
+   the mockup's plain stripe = a tier of the role the current builders cannot build directly) */
+.ff-cell__tiers i.in { background: var(--iron-300); }
+/* added: toggle states in grid cells (same marks as .ff-order.is-on / .is-mixed) */
+.ff-cell.is-on > .ff-gi { color: var(--ember-300); }
+.ff-cell__mark { position: absolute; right: 0.3125rem; top: 0.3125rem; width: 5px; height: 5px; transform: rotate(45deg); }
+.ff-cell.is-on .ff-cell__mark { background: var(--ember-500); }
+.ff-cell.is-mixed .ff-cell__mark { border: 1px solid var(--ember-500); }
+/* added: fire state cycle dots in grid cells */
+.ff-cell__dots { position: absolute; right: 0.25rem; top: 0.3125rem; display: flex; gap: 2px; }
+.ff-cell__dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--iron-500); }
+.ff-cell__dots i.on { background: var(--ember-300); }
+/* added: disabled order cells (no ff-cell__icon wrapper, the line icon is a direct child) */
+.ff-cell.is-disabled > .ff-gi { opacity: 0.28; }
+/* added: danger cell hover and countdown (ui.md §3.7 „Countdown: Rot, Sekunden statt Taste“) */
+.ff-cell--danger:hover, .ff-cell--danger.is-hover { --b: var(--crit); --bg: var(--crit-bg); }
+.ff-cell--danger .ff-cell__name { color: #ff9a8a; }
+.ff-cell.is-countdown { --b: var(--crit); --bg: var(--crit-bg); }
+.ff-cell.is-countdown .ff-cell__key { color: #ffd2cb; }
+.ff-cell.is-countdown .ff-cell__name { color: #ffd2cb; }
+.ff-cell.is-countdown::after { content: ""; position: absolute; inset: 1px; border: 1px solid var(--crit); opacity: 1; pointer-events: none; animation: ff-card-pulse var(--pulse) steps(2, jump-none) infinite; }
+@keyframes ff-card-pulse { from { opacity: 1; } to { opacity: 0.25; } }
+[data-motion="reduce"] .ff-cell.is-countdown::after { animation: none; border-width: 2px; }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ff-cell.is-countdown::after { animation: none; border-width: 2px; } }
+/* added: tooltip trigger for keyboard users stays visible while the cell is focused */
+.ff-cell:focus-visible .ff-cell__key { color: var(--ceramic-50); }
+
+/* ---------- Befehlsleiste ---------- */
+.orders { display: flex; align-items: flex-end; gap: var(--sp-1); }
+.orders__grp { display: flex; gap: 2px; }
+.orders__hint { align-self: center; display: flex; align-items: center; gap: 0.25rem; font-size: var(--fs-micro); color: var(--text-lo); margin-right: var(--sp-1); white-space: nowrap; }
+.orders .ff-gi { width: 1.25rem; height: 1.25rem; }
+/* added: hidden bar keeps its slot (order buttons have fixed places, ui.md §4.4) */
+.orders.is-hidden { visibility: hidden; }
+/* added: count badge (e.g. capable units for attack ground) and countdown seconds in the key slot */
+.ff-order__badge { position: absolute; left: 0.125rem; top: 0.125rem; min-width: 0.875rem; height: 0.875rem; padding: 0 0.125rem; border-radius: var(--radius-pill); background: var(--ember-500); color: var(--text-on-ember); font: var(--fw-bold) var(--fs-micro)/0.875rem var(--font-mono); text-align: center; z-index: 1; }
+.ff-order.is-countdown .ff-order__key { color: #ffd2cb; }
+.ff-order.is-countdown::after { content: ""; position: absolute; inset: 1px; border: 1px solid var(--crit); pointer-events: none; animation: ff-card-pulse var(--pulse) steps(2, jump-none) infinite; }
+[data-motion="reduce"] .ff-order.is-countdown::after { animation: none; border-width: 2px; }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ff-order.is-countdown::after { animation: none; border-width: 2px; } }
+.ff-order--danger.is-hover { --b: var(--crit); --bg: var(--crit-bg); }
+.ff-order.is-pressed { --bg: var(--surface-press); --b: var(--ember-600); }
+.ff-order.is-disabled .ff-order__badge { background: var(--iron-600); color: var(--text-off); }
+
+/* ---------- Order tooltip (ui.md §5.12 „Befehl“) ---------- */
+.order-tip { width: 20rem; }
+.order-tip__icon { width: 1.75rem; height: 1.75rem; display: grid; place-items: center; color: var(--ember-300); }
+.order-tip__icon .ff-gi { width: 1.5rem; height: 1.5rem; }
+.order-tip.is-danger .order-tip__icon { color: #ff9a8a; }
+.order-tip-host { display: inline-block; }
+.order-tip__rows { display: grid; grid-template-columns: auto 1fr; gap: 0.125rem var(--sp-2); margin: 0 0 var(--sp-2); padding: 0 0 var(--sp-2); border-bottom: 1px solid var(--line); font-size: var(--fs-cap); }
+.order-tip__rows dt { color: var(--text-lo); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.06em; align-self: center; }
+.order-tip__rows dd { margin: 0; color: var(--text); }
+.order-tip__reason { margin: 0 0 var(--sp-2); padding: var(--sp-1) var(--sp-2); border-left: 2px solid var(--warn); background: var(--warn-bg); color: var(--text-hi); font-size: var(--fs-cap); display: flex; gap: var(--sp-1); align-items: center; }
+.order-tip__reason .ff-gi { width: 0.875rem; height: 0.875rem; color: var(--warn); }
+
+/* added (p7): with line-height 1 the name box clipped descenders ("Lehrling"), and the 3-px queue progress
+   track was painted over them. Taller line box at the same glyph position, name above the track. */
+.ff-cell > .ff-cell__name { line-height: 1.3; bottom: calc(0.1875rem - 0.15em); z-index: 1; }

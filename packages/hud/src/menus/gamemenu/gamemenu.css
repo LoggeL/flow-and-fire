@@ -1,0 +1,16 @@
+/* In-game menu (ui.md §5.15, G12; not mocked): modal in the middle of the screen, z 50 (§3.5). */
+.gm-layer { position: absolute; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; background: rgba(9, 8, 7, 0.62); pointer-events: auto; }
+.gm { width: 24rem; max-width: calc(100% - 2 * var(--sp-5)); }
+.gm .ff-ph { height: 2rem; }
+.gm__body { display: grid; gap: var(--sp-2); padding: var(--sp-4); }
+.gm__note { margin: 0 0 var(--sp-2); font-size: var(--fs-cap); color: var(--text-mid); display: flex; align-items: center; gap: var(--sp-2); }
+.gm__note .ff-gi { width: 1rem; height: 1rem; color: var(--copper-300); }
+.gm__body .ff-btn { width: 100%; justify-content: flex-start; height: auto; min-height: 2.75rem; padding-top: var(--sp-1); padding-bottom: var(--sp-1); text-align: left; }
+.gm__sep { height: 1px; margin: var(--sp-1) 0; background: var(--line); }
+.gm__confirm { display: grid; gap: var(--sp-3); }
+.gm__confirm h3 { margin: 0; font-family: var(--font-display); font-size: var(--fs-h3); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-hi); display: flex; align-items: center; gap: var(--sp-2); }
+.gm__confirm h3 .ff-gi { width: 1.25rem; height: 1.25rem; color: var(--crit); }
+.gm__confirm p { margin: 0; font-size: var(--fs-body); color: var(--text-mid); }
+.gm__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.gm__actions .ff-btn { justify-content: center; text-align: center; }
+.gm__foot { display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-4) var(--sp-3); font-size: var(--fs-micro); color: var(--text-lo); }
