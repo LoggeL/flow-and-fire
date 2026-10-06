@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { xxHash32 } from '@faf/fixed';
+import { landCellSlopeRaw } from '@faf/rules';
 import { describe, expect, it } from 'vitest';
 import {
   createRtsMap,
@@ -18,7 +19,10 @@ import {
   MAP_MAX_FIELD_POINTS,
   MAP_MAX_PROP_FIELDS,
   PROPFIELD_ALGO_VERSION,
+  PROPFIELD_ALGO_VERSIONS,
+  propFieldAlgoOf,
   propFieldBounds,
+  propFieldCellSlopeRaw,
   propFieldCellRaw,
   propFieldContains,
   propFieldsSimBytes,
@@ -140,23 +144,19 @@ function expansionBytes(props: readonly ExpandedProp[]): Uint8Array {
 }
 
 /** Independent slope check (same definition as the module header, written out again). */
-function slopePermilleAt(m: RtsMap, x: number, z: number): number {
+/** Slope (Fx raw per WU) of the cell containing (x, z), via the canonical @faf/rules definition. */
+function cellSlopeRawAt(m: RtsMap, x: number, z: number): number {
   const size = m.meta.sizeWu;
-  const dim = size + 1;
-  const sx = Math.min(size, (x + 2048) >> 12);
-  const sz = Math.min(size, (z + 2048) >> 12);
-  const h = (ix: number, iz: number): number => m.heights[iz * dim + ix]! * m.meta.heightScaleRaw;
-  const gx = sx === 0 ? 2 * (h(1, sz) - h(0, sz)) : sx === size ? 2 * (h(sx, sz) - h(sx - 1, sz)) : h(sx + 1, sz) - h(sx - 1, sz);
-  const gz = sz === 0 ? 2 * (h(sx, 1) - h(sx, 0)) : sz === size ? 2 * (h(sx, sz) - h(sx, sz - 1)) : h(sx, sz + 1) - h(sx, sz - 1);
-  return Math.floor((Math.floor(Math.sqrt(gx * gx + gz * gz)) * 1000) / 8192);
+  const hf = { sizeWu: size, dim: size + 1, heights: m.heights, heightScaleRaw: m.meta.heightScaleRaw };
+  return landCellSlopeRaw(hf, Math.min(size - 1, x >> 12), Math.min(size - 1, z >> 12));
 }
 
 describe('PFLD codec', () => {
   it('round-trips circle and polygon fields', () => {
     const bytes = encodePropFieldsChunk([forest, rocks]);
     expect(bytes.length % 4).toBe(0);
-    expect(decodePropFieldsChunk(bytes, 0)).toEqual([forest, rocks]);
-    expect(decodePropFieldsChunk(encodePropFieldsChunk([]), 0)).toEqual([]);
+    expect(decodePropFieldsChunk(bytes, 0)).toEqual({ algo: PROPFIELD_ALGO_VERSION, fields: [forest, rocks] });
+    expect(decodePropFieldsChunk(encodePropFieldsChunk([]), 0)).toEqual({ algo: PROPFIELD_ALGO_VERSION, fields: [] });
   });
 
   it('matches the documented layout (golden hex)', () => {
@@ -175,7 +175,7 @@ describe('PFLD codec', () => {
       reclaimEnergyMilli: 1,
     };
     const expected =
-      '01000000' + // fieldCount
+      '0100' + '0100' + // algoVersion 1, fieldCount 1
       '0200' + '6162' + // nameLen, 'ab' (already aligned)
       '02' + '00' + '0100' + // kind wreck, circle, flags dryOnly
       '04030201' + // seed
@@ -206,8 +206,11 @@ describe('PFLD codec', () => {
     expect(mut((_, dv) => dv.setUint16(q + 2, 2, true))).toBe('bad-reserved'); // flags
     expect(mut((_, dv) => dv.setUint16(q + 26, 1, true))).toBe('bad-value'); // circle with points
     expect(mut((_, dv) => dv.setUint16(q + 24, MAP_MAX_FIELD_ENTRIES + 1, true))).toBe('bad-value');
-    expect(mut((_, dv) => dv.setUint32(0, MAP_MAX_PROP_FIELDS + 1, true))).toBe('bad-value');
-    expect(mut((_, dv) => dv.setUint32(0, 2, true))).toBe('bad-length');
+    expect(mut((_, dv) => dv.setUint16(2, MAP_MAX_PROP_FIELDS + 1, true))).toBe('bad-value');
+    expect(mut((_, dv) => dv.setUint16(2, 2, true))).toBe('bad-length');
+    // Unknown expansion algorithm versions are rejected (0 and the next, not yet defined one).
+    expect(mut((_, dv) => dv.setUint16(0, 0, true))).toBe('bad-value');
+    expect(mut((_, dv) => dv.setUint16(0, Math.max(...PROPFIELD_ALGO_VERSIONS) + 1, true))).toBe('bad-value');
     // entry 0: idLen at q + 28, 'core:tree_01' (12 B) → weight at q + 28 + 16, reserved + 2.
     expect(mut((_, dv) => dv.setUint16(q + 28 + 16 + 2, 1, true))).toBe('bad-reserved');
     expect(mut((b) => (b[q + 28 + 2] = 0xff))).toBe('bad-value'); // invalid UTF-8 id
@@ -292,8 +295,9 @@ describe('PFLD in .rtsmap', () => {
     const emptyBytes = writeRtsMap(empty);
     const chunks = readContainer(emptyBytes, 'RTSM').chunks;
     expect(chunks.map((c) => c.id)).toEqual(['META', 'HGT ', 'PROP', 'PFLD']);
-    expect(hex(chunks[3]!.data)).toBe('00000000');
+    expect(hex(chunks[3]!.data)).toBe('01000000'); // algoVersion 1, 0 fields
     expect(readRtsMap(emptyBytes).propFields).toEqual([]);
+    expect(readRtsMap(emptyBytes).propFieldAlgo).toBe(1);
     // No fields ⇒ identical sim bytes (the tail is only appended for a non-empty list).
     expect(hex(mapSimBytes(empty))).toBe(hex(mapSimBytes(absent)));
   });
@@ -303,11 +307,12 @@ describe('PFLD in .rtsmap', () => {
     const bytes = writeRtsMap(m);
     expect(readContainer(bytes, 'RTSM').chunks.map((c) => c.id)).toEqual(['META', 'HGT ', 'PROP', 'PFLD', 'PREV']);
     const back = readRtsMap(bytes);
-    expect(back).toEqual(m);
+    // The reader always records the stored algorithm version.
+    expect(back).toEqual({ ...m, propFieldAlgo: PROPFIELD_ALGO_VERSION });
     expect(Buffer.from(writeRtsMap(back)).equals(Buffer.from(bytes))).toBe(true);
   });
 
-  it('appends the fields to the sim bytes (tag, algo version, nameless layout)', () => {
+  it('appends the fields to the sim bytes (tag, stored algo version, nameless layout)', () => {
     const plain = testMap();
     const m = testMap([forest]);
     const a = mapSimBytes(plain);
@@ -315,8 +320,29 @@ describe('PFLD in .rtsmap', () => {
     expect(hex(b.subarray(0, a.length))).toBe(hex(a));
     const tail = b.subarray(a.length);
     expect(String.fromCharCode(...tail.subarray(0, 4))).toBe('PFLD');
-    expect(new DataView(tail.buffer, tail.byteOffset).getUint32(4, true)).toBe(PROPFIELD_ALGO_VERSION);
-    expect(hex(tail.subarray(8))).toBe(hex(propFieldsSimBytes([forest])));
+    expect(new DataView(tail.buffer, tail.byteOffset).getUint16(4, true)).toBe(PROPFIELD_ALGO_VERSION);
+    expect(hex(tail.subarray(4))).toBe(hex(propFieldsSimBytes([forest])));
+    // Absent version == the current one; the stored version is what enters the hash.
+    expect(hex(mapSimBytes({ ...m, propFieldAlgo: PROPFIELD_ALGO_VERSION }))).toBe(hex(b));
+  });
+
+  it('stores the expansion algorithm version and rejects unknown ones', () => {
+    const m = testMap([forest]);
+    const next = Math.max(...PROPFIELD_ALGO_VERSIONS) + 1;
+    expect(PROPFIELD_ALGO_VERSIONS).toContain(PROPFIELD_ALGO_VERSION);
+    expect(propFieldAlgoOf({})).toBe(PROPFIELD_ALGO_VERSION);
+    expect(propFieldAlgoOf({ propFieldAlgo: 1 })).toBe(1);
+    expect(codeOf(() => propFieldAlgoOf({ propFieldAlgo: next }))).toBe('bad-value');
+    expect(codeOf(() => writeRtsMap({ ...m, propFieldAlgo: next }))).toBe('bad-value');
+    expect(codeOf(() => expandPropFields({ ...m, propFieldAlgo: next }))).toBe('bad-value');
+    // Without fields the version is meaningless: no PFLD chunk, identical bytes and hash.
+    expect(hex(writeRtsMap({ ...testMap(), propFieldAlgo: next }))).toBe(hex(writeRtsMap(testMap())));
+    // A file with an unknown version is rejected by readRtsMap (not silently expanded with another algorithm).
+    const bytes = writeRtsMap(m);
+    const chunks = readContainer(bytes, 'RTSM').chunks.map((c) => ({ id: c.id, data: c.data.slice() }));
+    const pfld = chunks.find((c) => c.id === 'PFLD')!;
+    new DataView(pfld.data.buffer).setUint16(0, next, true);
+    expect(codeOf(() => readRtsMap(writeContainer('RTSM', 1, chunks)))).toBe('bad-value');
   });
 
   it('mapSimHash ignores the field name but no other parameter', () => {
@@ -540,9 +566,22 @@ describe('prop field expansion', () => {
     const flat = expandPropField(m, 0);
     expect(flat.length).toBeGreaterThan(0);
     expect(flat.length).toBeLessThan(all.length * 0.8);
-    for (const p of flat) expect(slopePermilleAt(m, p.x, p.z)).toBeLessThanOrEqual(500);
+    for (const p of flat) expect(cellSlopeRawAt(m, p.x, p.z) * 1000).toBeLessThanOrEqual(500 * ONE);
     const dropped = all.filter((a) => !flat.some((b) => b.x === a.x && b.z === a.z));
-    for (const p of dropped) expect(slopePermilleAt(m, p.x, p.z)).toBeGreaterThan(500);
+    expect(dropped.length).toBeGreaterThan(0);
+    for (const p of dropped) expect(cellSlopeRawAt(m, p.x, p.z) * 1000).toBeGreaterThan(500 * ONE);
+  });
+
+  it('uses the one land cell slope of @faf/rules (nav, marker editor and prop fields agree)', () => {
+    const m = testMap();
+    const hf = { sizeWu: 256, dim: 257, heights: m.heights, heightScaleRaw: m.meta.heightScaleRaw };
+    for (const [x, z] of [[0, 0], [5, 39], [5, 40], [199, 100], [200, 100], [215, 100], [216, 100], [255, 255]] as const) {
+      expect(propFieldCellSlopeRaw(m, x, z), `cell (${x}, ${z})`).toBe(landCellSlopeRaw(hf, x, z));
+    }
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), (x, z) => propFieldCellSlopeRaw(m, x, z) === landCellSlopeRaw(hf, x, z)),
+      { numRuns: 500 },
+    );
   });
 
   it('is stable: same output on every run, row-major cell order, independent of other fields', () => {
@@ -568,6 +607,7 @@ describe('prop field expansion', () => {
     const chunks = readContainer(writeRtsMap(testMap()), 'RTSM').chunks.map((c) => ({ id: c.id, data: c.data }));
     const withPfld = writeContainer('RTSM', 1, [...chunks, { id: 'PFLD', data: encodePropFieldsChunk([rocks]) }]);
     expect(readRtsMap(withPfld).propFields).toEqual([rocks]);
+    expect(readRtsMap(withPfld).propFieldAlgo).toBe(PROPFIELD_ALGO_VERSION);
     // PFLD before PROP violates the chunk order.
     const misordered = writeContainer('RTSM', 1, [chunks[0]!, chunks[1]!, { id: 'PFLD', data: encodePropFieldsChunk([rocks]) }, chunks[2]!]);
     expect(codeOf(() => readRtsMap(misordered))).toBe('chunk-order');

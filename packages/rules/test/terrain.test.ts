@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   HEIGHT_FRAC_BITS,
   isDeepWaterForLand,
+  isLandCellBlocked,
+  LAND_MAX_CELL_SLOPE_RAW,
   LAND_MAX_WATER_DEPTH_RAW,
+  landCellSlopeRaw,
   sampleHeightRaw,
   waterDepthRaw,
   type Heightfield,
@@ -169,5 +172,33 @@ describe('rules/terrain water', () => {
     expect(isDeepWaterForLand(hf, water, 9 * ONE + (3 * ONE) / 4, 0)).toBe(false); // shallow
     expect(isDeepWaterForLand(hf, water, 20 * ONE, 0)).toBe(false); // dry
     expect(isDeepWaterForLand(hf, null, 0, 0)).toBe(false); // no water on the map
+  });
+});
+
+describe('rules/terrain land cell passability (shared by nav and the marker editor)', () => {
+  it('cell slope is max − min of the 4 corners times heightScaleRaw', () => {
+    const hf = makeField(64, 32, (x, z) => (x === 11 && z === 21 ? 500 : 100 + x));
+    expect(landCellSlopeRaw(hf, 3, 3)).toBe(1 * 32);
+    // Cells touching the raised sample (11, 21): (10..11, 20..21).
+    expect(landCellSlopeRaw(hf, 10, 20)).toBe((500 - 110) * 32);
+    expect(landCellSlopeRaw(hf, 11, 21)).toBe((500 - 111) * 32);
+    expect(landCellSlopeRaw(hf, 12, 21)).toBe(32);
+  });
+
+  it('blocks border cells, cells steeper than 0.75 and deep water at the cell centre', () => {
+    expect(LAND_MAX_CELL_SLOPE_RAW).toBe(3072);
+    // 96 steps per WU · 32 = 3072 (exactly the limit, passable); 97 steps blocked.
+    const ok = makeField(64, 32, (x) => x * 96);
+    const steep = makeField(64, 32, (x) => x * 97);
+    expect(isLandCellBlocked(ok, null, 10, 10)).toBe(false);
+    expect(isLandCellBlocked(steep, null, 10, 10)).toBe(true);
+    for (const [x, z] of [[0, 5], [5, 0], [63, 5], [5, 63]] as const) expect(isLandCellBlocked(ok, null, x, z)).toBe(true);
+    expect(isLandCellBlocked(ok, null, 1, 1)).toBe(false);
+    expect(isLandCellBlocked(ok, null, 62, 62)).toBe(false);
+    // Flat ground at 1 WU (128 steps), water at 1.5 WU: 0.5 WU deep = allowed; 1.5001 WU not.
+    const flat = makeField(64, 32, () => 128);
+    expect(isLandCellBlocked(flat, 128 * 32 + LAND_MAX_WATER_DEPTH_RAW, 20, 20)).toBe(false);
+    expect(isLandCellBlocked(flat, 128 * 32 + LAND_MAX_WATER_DEPTH_RAW + 1, 20, 20)).toBe(true);
+    expect(isLandCellBlocked(flat, 128 * 32 + LAND_MAX_WATER_DEPTH_RAW + 1, 20, 20)).toBe(isDeepWaterForLand(flat, 128 * 32 + LAND_MAX_WATER_DEPTH_RAW + 1, 20 * ONE + 2048, 20 * ONE + 2048));
   });
 });

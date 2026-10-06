@@ -1,7 +1,7 @@
 /** Keyboard shortcuts: keymap table (resolveKey) and their execution by the controller. */
 import { describe, expect, it } from 'vitest';
 import { MAP_FX_ONE as FX } from '@faf/formats';
-import { isEditableTarget, resolveKey, TOOL_ORDER, type KeyInput } from '../../src/app/keymap.ts';
+import { isEditableTarget, letterOf, resolveKey, TOOL_ORDER, type KeyInput } from '../../src/app/keymap.ts';
 import { at, bytesEqual, click, rig } from './support.ts';
 
 function k(code: string, mods: Partial<Omit<KeyInput, 'code'>> = {}): KeyInput {
@@ -24,6 +24,26 @@ describe('resolveKey', () => {
     expect(resolveKey(k('Escape'), false)).toEqual({ type: 'cancel' });
     expect(resolveKey(k('Enter'), false)).toEqual({ type: 'confirm' });
     expect(resolveKey(k('NumpadEnter'), false)).toEqual({ type: 'confirm' });
+  });
+
+  it('letter shortcuts follow the printed character (QWERTZ: key "z" sits on code KeyY)', () => {
+    for (const mod of [{ ctrlKey: true }, { metaKey: true }]) {
+      // German QWERTZ: the key labelled Z reports code 'KeyY', the key labelled Y reports 'KeyZ'.
+      expect(resolveKey(k('KeyY', { ...mod, key: 'z' }), false)).toEqual({ type: 'undo' });
+      expect(resolveKey(k('KeyY', { ...mod, key: 'Z', shiftKey: true }), false)).toEqual({ type: 'redo' });
+      expect(resolveKey(k('KeyZ', { ...mod, key: 'y' }), false)).toEqual({ type: 'redo' });
+      // AZERTY: S and O sit where QWERTY has them, Z on code KeyW.
+      expect(resolveKey(k('KeyW', { ...mod, key: 'z' }), false)).toEqual({ type: 'undo' });
+      expect(resolveKey(k('KeyS', { ...mod, key: 's' }), false)).toEqual({ type: 'save' });
+    }
+    // Non-Latin layout (Russian ЙЦУКЕН): key is Cyrillic, the physical code is the fallback.
+    expect(resolveKey(k('KeyZ', { ctrlKey: true, key: 'я' }), false)).toEqual({ type: 'undo' });
+    expect(resolveKey(k('KeyF', { key: 'а' }), false)).toEqual({ type: 'fitView' });
+    // Dvorak: the key at QWERTY's G position types 'i' - no grid toggle there.
+    expect(resolveKey(k('KeyG', { key: 'i' }), false)).toBeNull();
+    expect(resolveKey(k('KeyU', { key: 'g' }), false)).toEqual({ type: 'toggleGrid' });
+    expect(letterOf(k('Digit1', { key: '&' }))).toBeNull();
+    expect(letterOf(k('KeyQ', { key: 'Q' }))).toBe('q');
   });
 
   it('Digit1..Digit7 select the tools in ToolId order', () => {

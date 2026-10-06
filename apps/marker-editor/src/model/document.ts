@@ -10,7 +10,8 @@
  * fields keep their order, new spots/fields are appended, deleting removes, moving keeps the index.
  * `propFields` is present in the output iff the source file had a PFLD chunk or at least one field
  * exists (a file without PFLD stays without it as long as it has no field; deleting the last field of
- * a file that had PFLD leaves an empty array, so the chunk survives the roundtrip).
+ * a file that had PFLD leaves an empty array, so the chunk survives the roundtrip). The stored
+ * expansion algorithm version (propFieldAlgo) of the source is kept for every edit.
  */
 import {
   MAP_FX_ONE,
@@ -85,8 +86,11 @@ export class EditorDocument {
     if (this.cachedMap !== null) return this.cachedMap;
     const s = this.source;
     const meta = { ...s.meta, starts: this.starts, spots: this.spots };
+    // The stored expansion algorithm version travels with the fields: a map authored with an older
+    // algorithm keeps it (its forests stay where they were); new fields get PROPFIELD_ALGO_VERSION.
+    const algo = s.propFields !== undefined && s.propFieldAlgo !== undefined ? { propFieldAlgo: s.propFieldAlgo } : {};
     const map: RtsMap = this.hasFieldChunk
-      ? { meta, heights: s.heights, splat: s.splat, props: s.props, propFields: this.fields, preview: s.preview, unknownChunks: s.unknownChunks }
+      ? { meta, heights: s.heights, splat: s.splat, props: s.props, propFields: this.fields, ...algo, preview: s.preview, unknownChunks: s.unknownChunks }
       : { meta, heights: s.heights, splat: s.splat, props: s.props, preview: s.preview, unknownChunks: s.unknownChunks };
     this.cachedMap = map;
     return map;
@@ -159,8 +163,4 @@ function pick<T>(list: readonly T[], i: number): T {
   return list[i]!;
 }
 
-/** Structural equality of two marker refs. */
-export function sameRef(a: MarkerRef, b: MarkerRef): boolean {
-  if (a.type !== b.type || a.index !== b.index) return false;
-  return a.type !== 'fieldVertex' || (b.type === 'fieldVertex' && a.vertex === b.vertex);
-}
+export { sameRef } from './types.ts';

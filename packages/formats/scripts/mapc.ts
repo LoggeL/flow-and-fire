@@ -3,13 +3,14 @@
  * until MS8).
  *
  *   pnpm --filter @faf/formats mapc -- --heightmap <file.png|.pgm|.r16> --markers <markers.json>
- *        --out <file.rtsmap> [--splat a.png[,b.png]] [--preview]
+ *        --out <file.rtsmap> [--splat a.png[,b.png]] [--overlay editor.json] [--preview]
  *
  * markers.json uses world units (decimals, human-readable):
  *   { "version": 1, "name": "…", "sizeWu": 512,
  *     "heightScale": <WU per height step> | "heightScaleRaw": <Fx raw per step, 1..32>,
  *     "waterLevel": <WU> | null,
  *     "starts": [{ "army": 0, "x": …, "z": … }], "mass": [{ "x", "z" }], "hydro": [{ "x", "z" }],
+ *     (or instead of mass/hydro: "spots": [{ "kind": "mass"|"hydro", "x", "z" }] in map order),
  *     "props": [{ "id": "core:rock_01", "x", "z", "yawDeg"?, "scale"? }],
  *     "light"?: { "azimuthDeg", "elevationDeg", "sun": [r,g,b], "ambient": [r,g,b] },
  *     "strata"?: [{ "name", "color": [r,g,b] }],
@@ -18,8 +19,11 @@
  *                       "entries": [{ "id": "core:tree_01", "weight": 1..65535 }],
  *                       "density": <props per 1024 WU², integer 1..4096>, "seed": <u32>,
  *                       "scale"?: [min, max] (default [1, 1]), "maxSlope"?: <rise/run, 0 = any>,
- *                       "dryOnly"?: bool, "reclaimMass"?: <mass>, "reclaimEnergy"?: <energy> }] }
- *   Without "propFields" the map has no PFLD chunk (output byte-identical to earlier mapc).
+ *                       "dryOnly"?: bool, "reclaimMass"?: <mass>, "reclaimEnergy"?: <energy> }],
+ *     "propFieldAlgo"?: <expansion algorithm version, default PROPFIELD_ALGO_VERSION> }
+ *   Without "propFields" the map has no PFLD chunk (output byte-identical to earlier mapc). The
+ *   marker editor always writes "propFieldAlgo" next to "propFields", so a later algorithm version
+ *   never silently changes the forests of an existing map.
  *
  * Unit conversion happens exactly once, here: WU → Fx raw = Math.round(v·4096); yawDeg → Ang16 =
  * Math.round(yawDeg·65536/360) mod 65536; scale → scalePermille = Math.round(scale·1000);
@@ -36,6 +40,8 @@ import {
   createRtsMap,
   DEFAULT_MAP_LIGHT,
   FormatError,
+  PROP_ID_RE,
+  PROPFIELD_ALGO_VERSIONS,
   writeRtsMap,
   type MapLight,
   type MapPoint,
@@ -134,7 +140,7 @@ export function compileMap(input: CompileInput): RtsMap {
   if (!isObj(m)) throw new MapcError([`${source}: markers must be a JSON object`]);
   checkKeys(
     m,
-    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'props', 'light', 'strata', 'propFields'],
+    ['version', 'name', 'sizeWu', 'heightScale', 'heightScaleRaw', 'waterLevel', 'starts', 'mass', 'hydro', 'spots', 'props', 'light', 'strata', 'propFields', 'propFieldAlgo'],
     'markers',
     pr,
   );
@@ -227,12 +233,28 @@ export function compileMap(input: CompileInput): RtsMap {
   starts.sort((a, b) => a.army - b.army);
 
   const spots: MapSpot[] = [];
-  for (const kind of ['mass', 'hydro'] as const) {
-    list(kind).forEach((s, i) => {
-      if (isObj(s)) checkKeys(s, ['x', 'z'], `${kind}[${i}]`, pr);
-      const p = point(s, `${kind}[${i}]`, true);
+  if (m['spots'] !== undefined) {
+    // Ordered alternative to mass/hydro (keeps an interleaved order, e.g. from the marker editor).
+    if (m['mass'] !== undefined || m['hydro'] !== undefined) pr.add("give either 'spots' or 'mass'/'hydro', not both");
+    list('spots').forEach((s, i) => {
+      const where = `spots[${i}]`;
+      if (isObj(s)) checkKeys(s, ['kind', 'x', 'z'], where, pr);
+      const kind = isObj(s) ? s['kind'] : undefined;
+      if (kind !== 'mass' && kind !== 'hydro') {
+        pr.add(`${where}.kind must be 'mass' or 'hydro'`);
+        return;
+      }
+      const p = point(s, where, true);
       if (p !== null) spots.push({ kind, x: p.x, z: p.z });
     });
+  } else {
+    for (const kind of ['mass', 'hydro'] as const) {
+      list(kind).forEach((s, i) => {
+        if (isObj(s)) checkKeys(s, ['x', 'z'], `${kind}[${i}]`, pr);
+        const p = point(s, `${kind}[${i}]`, true);
+        if (p !== null) spots.push({ kind, x: p.x, z: p.z });
+      });
+    }
   }
 
   const props: MapProp[] = [];
@@ -244,7 +266,7 @@ export function compileMap(input: CompileInput): RtsMap {
     }
     checkKeys(s, ['id', 'x', 'z', 'yawDeg', 'scale'], where, pr);
     const id = s['id'];
-    if (typeof id !== 'string' || !/^[a-z0-9_]+:[a-z0-9_./-]+$/.test(id)) {
+    if (typeof id !== 'string' || !PROP_ID_RE.test(id)) {
       pr.add(`${where}.id must be a namespace id like 'core:rock_01'`);
       return;
     }
@@ -283,6 +305,14 @@ export function compileMap(input: CompileInput): RtsMap {
   });
 
   const propFields = m['propFields'] === undefined ? undefined : parsePropFields(list('propFields'), maxRaw, pr);
+  const algoIn = m['propFieldAlgo'];
+  let propFieldAlgo: number | undefined;
+  if (algoIn !== undefined) {
+    if (propFields === undefined) pr.add('markers.propFieldAlgo requires markers.propFields');
+    else if (typeof algoIn !== 'number' || !PROPFIELD_ALGO_VERSIONS.includes(algoIn)) {
+      pr.add(`markers.propFieldAlgo must be one of ${PROPFIELD_ALGO_VERSIONS.join(', ')}, got ${JSON.stringify(algoIn)}`);
+    } else propFieldAlgo = algoIn;
+  }
 
   let splat: MapSplatRaw | null = null;
   const splatPngs = input.splatPngs ?? [];
@@ -317,6 +347,7 @@ export function compileMap(input: CompileInput): RtsMap {
       strata,
       splat,
       ...(propFields === undefined ? {} : { propFields }),
+      ...(propFieldAlgo === undefined ? {} : { propFieldAlgo }),
     });
     return input.preview === true ? { ...base, preview: renderPreview(base, PREVIEW_SIZE) } : base;
   } catch (e) {
@@ -402,7 +433,7 @@ function parsePropFields(list: readonly unknown[], maxRaw: number, pr: Problems)
         checkKeys(e, ['id', 'weight'], ew, pr);
         const id = e['id'];
         const weight = e['weight'] ?? 1;
-        if (typeof id !== 'string' || !/^[a-z0-9_]+:[a-z0-9_./-]+$/.test(id)) pr.add(`${ew}.id must be a namespace id like 'core:tree_01'`);
+        if (typeof id !== 'string' || !PROP_ID_RE.test(id)) pr.add(`${ew}.id must be a namespace id like 'core:tree_01'`);
         else if (!Number.isInteger(weight) || (weight as number) < 1 || (weight as number) > 65535) pr.add(`${ew}.weight must be an integer 1..65535`);
         else entries.push({ id, weight: weight as number });
       });
@@ -533,20 +564,65 @@ export function renderPreview(map: RtsMap, size: number): MapPreview {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Map source directories (content/maps/src/<name>/): heightmap.{png,pgm,r16}, markers.json and
-// optional splat-0.png / splat-1.png. Output: content/maps/<name>.rtsmap with a preview.
+// Map source directories (content/maps/src/<name>/): heightmap.{png,pgm,r16}, markers.json,
+// optional splat-0.png / splat-1.png and an optional editor.json. Output:
+// content/maps/<name>.rtsmap with a preview.
+//
+// Ownership of the markers (TRACK-EDITOR, DECISIONS): markers.json belongs to its producer (the
+// procedural generators in mapgen*.ts rewrite it on every `pnpm maps`); editor.json belongs to the
+// marker editor ("editor.json" export) and is never written by a script. If editor.json exists,
+// its starts, spots and prop fields replace those of markers.json before the map is compiled, so
+// edits made in the editor survive regeneration. Everything else (name, terrain, water, light,
+// strata, props, splat) keeps coming from the generator.
+
+/** File name of the marker editor's overlay in a map source directory. */
+export const EDITOR_OVERLAY_FILE = 'editor.json';
+
+/** Keys of markers.json that an editor overlay owns (all of them are replaced, absent ⇒ removed). */
+const OVERLAY_OWNED_KEYS = ['starts', 'mass', 'hydro', 'spots', 'propFields', 'propFieldAlgo'] as const;
+
+/**
+ * editor.json (written by the marker editor, format version 1):
+ *   { "version": 1, "editorOverlay": 1, "name": <map name>, "sizeWu": <int>,
+ *     "starts": [{ "army", "x", "z" }], "spots": [{ "kind", "x", "z" }],
+ *     "propFields"?: [ as in markers.json ], "propFieldAlgo"?: <int> }
+ * "name" and "sizeWu" must match markers.json (guards against an overlay of another map). Returns
+ * the markers object with the owned keys replaced. Throws MapcError.
+ */
+export function applyEditorOverlay(markers: unknown, overlay: unknown, source = EDITOR_OVERLAY_FILE): unknown {
+  const pr = new Problems(source);
+  if (!isObj(overlay)) throw new MapcError([`${source}: must be a JSON object`]);
+  if (!isObj(markers)) throw new MapcError([`${source}: markers.json must be a JSON object`]);
+  checkKeys(overlay, ['version', 'editorOverlay', 'name', 'sizeWu', 'starts', 'spots', 'propFields', 'propFieldAlgo'], 'editor overlay', pr);
+  if (overlay['version'] !== 1 || overlay['editorOverlay'] !== 1) pr.add('version and editorOverlay must be 1');
+  if (overlay['name'] !== markers['name']) pr.add(`name ${JSON.stringify(overlay['name'])} does not match markers.json (${JSON.stringify(markers['name'])})`);
+  if (overlay['sizeWu'] !== markers['sizeWu']) pr.add(`sizeWu ${JSON.stringify(overlay['sizeWu'])} does not match markers.json (${JSON.stringify(markers['sizeWu'])})`);
+  if (!Array.isArray(overlay['starts'])) pr.add('starts must be an array');
+  if (!Array.isArray(overlay['spots'])) pr.add('spots must be an array');
+  pr.throwIfAny();
+  const out: Obj = {};
+  for (const [k, v] of Object.entries(markers)) if (!(OVERLAY_OWNED_KEYS as readonly string[]).includes(k)) out[k] = v;
+  out['starts'] = overlay['starts'];
+  out['spots'] = overlay['spots'];
+  if (overlay['propFields'] !== undefined) out['propFields'] = overlay['propFields'];
+  if (overlay['propFieldAlgo'] !== undefined) out['propFieldAlgo'] = overlay['propFieldAlgo'];
+  return out;
+}
 
 export interface MapSourceFiles {
   readonly heightmap: string;
   readonly markers: string;
   readonly splat: readonly string[];
+  /** editor.json if present. */
+  readonly overlay: string | null;
 }
 
 export function mapSourceFiles(dir: string): MapSourceFiles {
   const hms = ['heightmap.png', 'heightmap.pgm', 'heightmap.r16'].filter((f) => existsSync(join(dir, f)));
   if (hms.length !== 1) throw new MapcError([`${dir}: expected exactly one heightmap.{png,pgm,r16}, found ${hms.length}`]);
   const splat = ['splat-0.png', 'splat-1.png'].filter((f) => existsSync(join(dir, f))).map((f) => join(dir, f));
-  return { heightmap: join(dir, hms[0]!), markers: join(dir, 'markers.json'), splat };
+  const overlay = join(dir, EDITOR_OVERLAY_FILE);
+  return { heightmap: join(dir, hms[0]!), markers: join(dir, 'markers.json'), splat, overlay: existsSync(overlay) ? overlay : null };
 }
 
 export interface MapcOptions {
@@ -554,16 +630,22 @@ export interface MapcOptions {
   readonly markers: string;
   readonly splat?: readonly string[];
   readonly preview?: boolean;
+  /** Marker editor overlay (editor.json) applied on top of the markers. */
+  readonly overlay?: string | null;
+}
+
+function readJson(path: string): unknown {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch (e) {
+    throw new MapcError([`${path}: not valid JSON (${(e as Error).message})`]);
+  }
 }
 
 /** Reads the input files and compiles them to .rtsmap bytes. */
 export function mapcFiles(o: MapcOptions): { map: RtsMap; bytes: Uint8Array } {
-  let markers: unknown;
-  try {
-    markers = JSON.parse(readFileSync(o.markers, 'utf8'));
-  } catch (e) {
-    throw new MapcError([`${o.markers}: not valid JSON (${(e as Error).message})`]);
-  }
+  let markers = readJson(o.markers);
+  if (o.overlay != null) markers = applyEditorOverlay(markers, readJson(o.overlay), o.overlay);
   const map = compileMap({
     heightmap: readHeightmap(o.heightmap),
     markers,
@@ -577,7 +659,7 @@ export function mapcFiles(o: MapcOptions): { map: RtsMap; bytes: Uint8Array } {
 /** Compiles content/maps/src/<name> (convention above, always with preview). */
 export function compileMapSource(dir: string): { map: RtsMap; bytes: Uint8Array } {
   const f = mapSourceFiles(dir);
-  return mapcFiles({ heightmap: f.heightmap, markers: f.markers, splat: f.splat, preview: true });
+  return mapcFiles({ heightmap: f.heightmap, markers: f.markers, splat: f.splat, preview: true, overlay: f.overlay });
 }
 
 /** Names of all map source directories under content/maps/src. */
@@ -605,7 +687,7 @@ export function compileAllMapSources(log: (msg: string) => void = () => {}): str
 // ---------------------------------------------------------------------------------------------
 // CLI
 
-function parseArgs(argv: readonly string[]): { heightmap: string; markers: string; out: string; splat: string[]; preview: boolean } {
+function parseArgs(argv: readonly string[]): { heightmap: string; markers: string; out: string; splat: string[]; preview: boolean; overlay: string | null } {
   const base = process.env['INIT_CWD'] ?? process.cwd();
   const abs = (p: string): string => (isAbsolute(p) ? p : resolve(base, p));
   let heightmap = '';
@@ -613,6 +695,7 @@ function parseArgs(argv: readonly string[]): { heightmap: string; markers: strin
   let out = '';
   let splat: string[] = [];
   let preview = false;
+  let overlay: string | null = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = (): string => {
@@ -626,13 +709,14 @@ function parseArgs(argv: readonly string[]): { heightmap: string; markers: strin
     else if (a === '--out') out = abs(next());
     else if (a === '--splat') splat = next().split(',').filter((s) => s.length > 0).map(abs);
     else if (a === '--preview') preview = true;
+    else if (a === '--overlay') overlay = abs(next());
     else throw new MapcError([`unknown argument '${a}'`]);
   }
   const missing = [heightmap === '' && '--heightmap', markers === '' && '--markers', out === '' && '--out'].filter((x) => x !== false);
   if (missing.length > 0) {
-    throw new MapcError([`missing ${missing.join(', ')}; usage: mapc --heightmap <file> --markers <markers.json> --out <file.rtsmap> [--splat a.png,b.png] [--preview]`]);
+    throw new MapcError([`missing ${missing.join(', ')}; usage: mapc --heightmap <file> --markers <markers.json> --out <file.rtsmap> [--splat a.png,b.png] [--overlay editor.json] [--preview]`]);
   }
-  return { heightmap, markers, out, splat, preview };
+  return { heightmap, markers, out, splat, preview, overlay };
 }
 
 function main(): void {

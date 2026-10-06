@@ -15,6 +15,8 @@ export interface PanelIo {
   save(): void;
   /** Downloads markers.json of the current document. */
   exportMarkersJson(): void;
+  /** Downloads editor.json (marker overlay of a map source directory). */
+  exportEditorOverlay(): void;
   /** Centres the camera on a map point (Fx raw). */
   focus(xRaw: number, zRaw: number): void;
   /** Whole-map camera view. */

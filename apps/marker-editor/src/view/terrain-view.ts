@@ -17,6 +17,14 @@ export interface TerrainViewOptions {
   readonly maxVertsPerSide?: number;
 }
 
+/** Canvas margins in CSS px that UI panels cover (see TerrainView.setViewInsets). */
+export interface ViewInsets {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
 export interface TerrainViewStats {
   /** Frames rendered since construction. */
   readonly frames: number;
@@ -67,6 +75,7 @@ export class TerrainView {
   private drawCalls = 0;
   private disposed = false;
   private readonly resizeObserver: ResizeObserver | null;
+  private insets: ViewInsets = { left: 0, right: 0, top: 0, bottom: 0 };
 
   constructor(opts: TerrainViewOptions) {
     this.canvas = opts.canvas;
@@ -191,13 +200,53 @@ export class TerrainView {
   /** Overview of the whole map (north = z 0 at the top). */
   fitCamera(): void {
     const size = this.currentMap?.meta.sizeWu ?? 512;
-    const aspect = Math.max(0.2, this.camera.aspect);
     const halfFov = (this.camera.fov * Math.PI) / 360;
     const pitch = (62 * Math.PI) / 180;
-    // Fit the map's half-diagonal-ish extent vertically; narrow viewports need more distance.
-    const fit = (size * 0.7) / Math.tan(halfFov);
-    const distance = aspect >= 1 ? fit : fit / aspect;
+    // Fit the map's half-diagonal-ish extent into the free area (canvas minus panel insets) —
+    // vertically and horizontally; the smaller free side decides the distance.
+    const fit = (size * 0.56) / Math.tan(halfFov);
+    const free = this.freeArea();
+    const distance = (fit * free.h) / Math.max(1, Math.min(free.freeW, free.freeH));
     this.rig.setPose({ targetX: size / 2, targetZ: size / 2, distance, yaw: 0, pitch });
+  }
+
+  /**
+   * Canvas margins (CSS px) covered by UI panels. The projection centre moves to the middle of the
+   * free area (camera view offset, same scale), so fitCamera/focus centre the map there and picking
+   * stays exact (it uses the camera matrices).
+   */
+  setViewInsets(insets: ViewInsets): void {
+    const same =
+      insets.left === this.insets.left && insets.right === this.insets.right && insets.top === this.insets.top && insets.bottom === this.insets.bottom;
+    if (same) return;
+    this.insets = { left: Math.max(0, insets.left), right: Math.max(0, insets.right), top: Math.max(0, insets.top), bottom: Math.max(0, insets.bottom) };
+    this.applyViewOffset();
+    this.requestRender();
+  }
+
+  get viewInsets(): ViewInsets {
+    return this.insets;
+  }
+
+  /** Canvas size and the free area inside the insets (each side keeps at least 30 %). */
+  private freeArea(): { w: number; h: number; freeW: number; freeH: number; dx: number; dy: number } {
+    const w = Math.max(1, this.canvas.clientWidth);
+    const h = Math.max(1, this.canvas.clientHeight);
+    const i = this.insets;
+    const sx = i.left + i.right > w * 0.7 ? (w * 0.7) / (i.left + i.right) : 1;
+    const sy = i.top + i.bottom > h * 0.7 ? (h * 0.7) / (i.top + i.bottom) : 1;
+    const l = i.left * sx;
+    const r = i.right * sx;
+    const t = i.top * sy;
+    const b = i.bottom * sy;
+    return { w, h, freeW: w - l - r, freeH: h - t - b, dx: (l - r) / 2, dy: (t - b) / 2 };
+  }
+
+  private applyViewOffset(): void {
+    const f = this.freeArea();
+    if (f.dx === 0 && f.dy === 0) this.camera.clearViewOffset();
+    else this.camera.setViewOffset(f.w, f.h, -f.dx, -f.dy, f.w, f.h);
+    this.camera.updateProjectionMatrix();
   }
 
   /** Centres the view on (xWu, zWu) and zooms in to a working distance. */
@@ -214,7 +263,7 @@ export class TerrainView {
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.applyViewOffset();
     this.requestRender();
   }
 

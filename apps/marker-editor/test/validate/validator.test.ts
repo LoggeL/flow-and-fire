@@ -38,13 +38,13 @@ describe('createValidator', () => {
     expect(validate.analysis()!.sizeWu).toBe(128);
   });
 
-  it('passes options through (rule thresholds and passability slope)', () => {
+  it('passes options through (rule thresholds and nav size class)', () => {
     const map = withMarkers(testMap(), { spots: [{ kind: 'mass', x: wu(100), z: wu(100) }, { kind: 'mass', x: wu(106), z: wu(100) }] });
     expect(withCode(createValidator()(map), 'spot-close')).toEqual([]);
     expect(withCode(createValidator({ spotCloseRaw: wu(8) })(map), 'spot-close')).toHaveLength(1);
-    const v = createValidator({ maxSlopePermille: 300 });
+    const v = createValidator({ navClass: 2 });
     v(map);
-    expect(v.analysis()!.maxSlopePermille).toBe(300);
+    expect(v.analysis()!.navClass).toBe(2);
   });
 
   it('expands every prop field once per field object and terrain', () => {

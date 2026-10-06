@@ -4,9 +4,9 @@
  * - window.__editorView (P1's terrain-view hook, kept working for test/e2e/view.spec.ts).
  * Both load maps through the same EditorSession as the UI.
  */
+import { xxHash32 } from '@faf/fixed';
 import { mapSimHash, MAP_FX_ONE } from '@faf/formats';
 import type { EditorViewHook } from '../env.d.ts';
-import { sha256Hex } from '../io/sha256.ts';
 import type { EditorSession } from '../io/session.ts';
 import { worldToClient, type TerrainPicker } from '../pick/index.ts';
 import type { TerrainView } from '../view/terrain-view.ts';
@@ -42,8 +42,8 @@ export interface EditorHooks {
   loadBytes(bytes: Uint8Array | number[], name: string): Promise<void>;
   /** Current map bytes (writeRtsMap), exactly what "Speichern" downloads. */
   exportBytes(): Uint8Array;
-  /** SHA-256 (hex) of exportBytes(). */
-  exportSha256(): Promise<string>;
+  /** xxHash32 (seed 0, unsigned) of exportBytes(): cheap identity check for the E2E specs. */
+  exportHash(): number;
   counts(): EditorCounts;
   issues(): readonly { readonly severity: string; readonly code: string }[];
   /** Client pixel of a terrain point given in WU (null if not visible). */
@@ -89,7 +89,10 @@ export function createEditorHooks(d: HookDeps): EditorHooks {
     load: (name) => session.loadBundled(name),
     loadBytes: (bytes, name) => session.loadBytes(bytes instanceof Uint8Array ? bytes : Uint8Array.from(bytes), name),
     exportBytes: () => store.exportBytes(),
-    exportSha256: () => sha256Hex(store.exportBytes()),
+    exportHash: () => {
+      const b = store.exportBytes();
+      return xxHash32(b, 0, b.length, 0) >>> 0;
+    },
     counts(): EditorCounts {
       const doc = store.doc.peek();
       if (doc === null) return NO_COUNTS;

@@ -110,6 +110,19 @@ export function TopBar(props: { readonly store: EditorStore; readonly io: PanelI
         >
           {S.exportMarkers}
         </button>
+        <button
+          type="button"
+          class="me-btn"
+          data-testid="btn-export-overlay"
+          title={S.exportOverlayTitle}
+          disabled={!hasDoc}
+          onClick={(e) => {
+            releaseFocusAfterClick(e);
+            io.exportEditorOverlay();
+          }}
+        >
+          {S.exportOverlay}
+        </button>
       </div>
       <div class="me-group">
         <button

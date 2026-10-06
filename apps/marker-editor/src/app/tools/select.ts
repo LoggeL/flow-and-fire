@@ -10,7 +10,7 @@
  * - Escape during a drag reverts it.
  */
 import type { MapPoint } from '@faf/formats';
-import type { MarkerRef } from '../../model/types.ts';
+import { refIn, sameRef, type MarkerRef } from '../../model/types.ts';
 import { STRINGS } from '../strings.ts';
 import { distPx, PanDrag, pointSegment, Press } from './common.ts';
 import { EDGE_PICK_PX, type PointerInput, type Tool, type ToolContext } from './types.ts';
@@ -34,14 +34,6 @@ interface SelectPress {
   readonly pan: PanDrag;
 }
 
-function sameRef(a: MarkerRef, b: MarkerRef): boolean {
-  if (a.type !== b.type || a.index !== b.index) return false;
-  return a.type !== 'fieldVertex' || (b.type === 'fieldVertex' && a.vertex === b.vertex);
-}
-
-function contains(list: readonly MarkerRef[], r: MarkerRef): boolean {
-  return list.some((o) => sameRef(o, r));
-}
 
 /** Edge of a polygon field near a client pixel: insertion data for store.insertVertex. */
 export interface EdgeHit {
@@ -130,7 +122,7 @@ export class SelectTool implements Tool {
       if (h !== null && downPick !== null) offset = { x: h.x - downPick.x, z: h.z - downPick.z };
     } else {
       mode = 'move';
-      const selected = contains(sel, hit);
+      const selected = refIn(sel, hit);
       if (p.shift) {
         if (selected) onClick = () => store.select(store.selection.peek().filter((r) => !sameRef(r, hit)));
         else store.select([hit], true);

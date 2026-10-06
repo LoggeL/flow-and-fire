@@ -74,3 +74,44 @@ export function isDeepWaterForLand(hf: Heightfield, waterLevelRaw: number | null
   if (waterLevelRaw === null) return false;
   return waterLevelRaw - sampleHeightRaw(hf, xRaw, zRaw) > LAND_MAX_WATER_DEPTH_RAW;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Static land passability of a cell (PLAN §3.8: 1 cell = 1 WU). Canonical definition shared by the
+// navigation (MS3 packages/nav static.ts, identical rule and threshold) and the marker editor's
+// reachability check (TRACK-EDITOR). Any change here changes nav (SIM_BUILD bump) AND the editor.
+
+/**
+ * Steepest cell a land unit may enter: max − min of the cell's 4 corner heights in Fx raw per WU.
+ * 3072 = 0.75 WU per WU (≈ 37°): ramps stay passable, plateau and mesa cliffs are blocked.
+ * Equal to NAV_LAND_MAX_SLOPE_RAW of MS3's nav.
+ */
+export const LAND_MAX_CELL_SLOPE_RAW = 3072;
+
+/**
+ * Slope of cell (x, z) (0 <= x, z < sizeWu), covering [x, x+1) × [z, z+1) WU: max − min of its
+ * corner samples (x, z), (x+1, z), (x, z+1), (x+1, z+1), in Fx raw per WU. Allocation-free.
+ */
+export function landCellSlopeRaw(hf: Heightfield, x: number, z: number): number {
+  const dim = hf.dim;
+  const h = hf.heights;
+  const i = z * dim + x;
+  const a = h[i]!;
+  const b = h[i + 1]!;
+  const c = h[i + dim]!;
+  const d = h[i + dim + 1]!;
+  const mx = Math.max(Math.max(a, b), Math.max(c, d));
+  const mn = Math.min(Math.min(a, b), Math.min(c, d));
+  return (mx - mn) * hf.heightScaleRaw;
+}
+
+/**
+ * True if land units can never enter cell (x, z): it lies on the map border (x or z is 0 or
+ * sizeWu − 1), its slope exceeds LAND_MAX_CELL_SLOPE_RAW, or the water at the cell centre is deeper
+ * than LAND_MAX_WATER_DEPTH_RAW (isDeepWaterForLand at (x + ½, z + ½)).
+ */
+export function isLandCellBlocked(hf: Heightfield, waterLevelRaw: number | null, x: number, z: number): boolean {
+  const last = hf.sizeWu - 1;
+  if (x <= 0 || z <= 0 || x >= last || z >= last) return true;
+  if (landCellSlopeRaw(hf, x, z) > LAND_MAX_CELL_SLOPE_RAW) return true;
+  return waterLevelRaw !== null && isDeepWaterForLand(hf, waterLevelRaw, x * 4096 + 2048, z * 4096 + 2048);
+}

@@ -43,6 +43,7 @@ function fakeIo(): FakeIo {
     },
     save: () => calls.push('save'),
     exportMarkersJson: () => calls.push('exportMarkersJson'),
+    exportEditorOverlay: () => calls.push('exportEditorOverlay'),
     focus: (x: number, z: number) => {
       focused.push({ x, z });
     },
@@ -184,8 +185,9 @@ describe('panels', () => {
     await click('btn-open');
     await click('btn-save');
     await click('btn-export-markers');
+    await click('btn-export-overlay');
     await click('btn-fit');
-    expect(io.calls).toEqual(['openBundled:setons', 'openFile', 'save', 'exportMarkersJson', 'fitView']);
+    expect(io.calls).toEqual(['openBundled:setons', 'openFile', 'save', 'exportMarkersJson', 'exportEditorOverlay', 'fitView']);
   });
 
   it('switches tools and highlights the active one', async () => {
@@ -454,6 +456,18 @@ describe('panels', () => {
     expect(has('help-overlay')).toBe(true);
     await click('btn-help-close');
     expect(has('help-overlay')).toBe(false);
+  });
+
+  it('ignores ? typed into a text field but not on a checkbox', async () => {
+    await run(() => store.select([{ type: 'start', index: 0 }]));
+    await act(() => {
+      q('marker-x').dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    });
+    expect(has('help-overlay')).toBe(false);
+    await act(() => {
+      q('chk-grid').dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    });
+    expect(has('help-overlay')).toBe(true);
   });
 
   it('unmounts cleanly', async () => {

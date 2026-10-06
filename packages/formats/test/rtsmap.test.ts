@@ -304,7 +304,7 @@ describe('PFLD chunk (prop fields, additive)', () => {
     const m: RtsMap = { ...smallMap(), propFields: [field], unknownChunks: [] };
     const bytes = writeRtsMap(m);
     expect(readContainer(bytes, 'RTSM').chunks.map((c) => c.id)).toEqual(['META', 'HGT ', 'SPLT', 'PROP', 'PFLD', 'PREV']);
-    expect(readRtsMap(bytes)).toEqual(m);
+    expect(readRtsMap(bytes)).toEqual({ ...m, propFieldAlgo: 1 });
   });
 
   it('keeps unknown chunks around PFLD in place (anchor semantics unchanged)', () => {

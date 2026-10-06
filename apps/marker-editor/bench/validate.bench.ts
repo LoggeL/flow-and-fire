@@ -106,10 +106,10 @@ for (const name of MAP_NAMES) {
   for (const i of issues) counts[i.severity === 'error' ? 'errors' : i.severity === 'warning' ? 'warnings' : 'infos']++;
   results[name] = {
     sizeWu: map.meta.sizeWu,
-    samples: analysis.dim * analysis.dim,
+    cells: analysis.sizeWu * analysis.sizeWu,
     markers,
     components: analysis.componentCount,
-    passableSamples: analysis.passableCount,
+    passableCells: analysis.passableCount,
     issues: counts,
     createTerrainAnalysis: analysisStat,
     validateCached: validateStat,

@@ -37,10 +37,11 @@ export function SymmetryPanel(props: { readonly store: EditorStore; readonly io:
 
   return (
     <Panel title={S.symmetry} testId="panel-symmetry" class="me-symmetry">
-      <Row label={S.symmetryMode}>
+      <Row label={S.symmetryMode} wide>
         <select
           class="me-select"
           data-testid="select-symmetry"
+          title={SYMMETRY_LABELS[mode]}
           value={mode}
           onChange={(e) => {
             const v = e.currentTarget.value;
@@ -55,10 +56,11 @@ export function SymmetryPanel(props: { readonly store: EditorStore; readonly io:
           ))}
         </select>
       </Row>
-      <Row label={S.keepHalf}>
+      <Row label={S.keepHalf} wide>
         <select
           class="me-select"
           data-testid="select-keep-half"
+          title={keep === 'a' ? halves.a : halves.b}
           value={keep}
           disabled={mode === 'none'}
           onChange={(e) => {

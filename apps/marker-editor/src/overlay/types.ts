@@ -1,7 +1,6 @@
 /**
- * Types of the marker overlay and the picker (TRACK-EDITOR P4). MarkerRef, SymmetryMode,
- * EditorIssue and Validator are structurally identical to the editor model (P2) and the
- * validation (P3); the overlay does not import those modules, so the types live here.
+ * Types of the marker overlay and the picker (TRACK-EDITOR P4). The contract types (MarkerRef,
+ * SymmetryMode, EditorIssue, Validator, sameRef) come from the editor model (src/model/types.ts).
  *
  * All coordinates are Fx raw (Q20.12, 1 WU = 4096, integers); conversion to WU happens only at
  * the three.js boundary (overlay geometry, picking).
@@ -9,26 +8,10 @@
 import type { ExpandedProp, MapPoint, MapProp, MapPropField, MapSpot, MapStart, RtsMap } from '@faf/formats';
 import type * as THREE from 'three';
 
-export type MarkerRef =
-  | { readonly type: 'start'; readonly index: number }
-  | { readonly type: 'spot'; readonly index: number }
-  | { readonly type: 'field'; readonly index: number }
-  | { readonly type: 'fieldVertex'; readonly index: number; readonly vertex: number }
-  | { readonly type: 'fieldRadius'; readonly index: number };
+import type { EditorIssue, MarkerRef, SymmetryMode } from '../model/types.ts';
 
-export type SymmetryMode = 'none' | 'point' | 'mirrorX' | 'mirrorZ' | 'diagonal' | 'antiDiagonal';
-
-export interface EditorIssue {
-  readonly severity: 'error' | 'warning' | 'info';
-  readonly code: string;
-  readonly message: string;
-  /** Fx raw, null = no position (the overlay then uses the first positioned ref). */
-  readonly x: number | null;
-  readonly z: number | null;
-  readonly refs: readonly MarkerRef[];
-}
-
-export type Validator = (map: RtsMap) => readonly EditorIssue[];
+export type { EditorIssue, MarkerRef, SymmetryMode, Validator } from '../model/types.ts';
+export { refIn, sameRef } from '../model/types.ts';
 
 /** A field being drawn (not yet part of the map). */
 export interface DraftField {
@@ -80,17 +63,6 @@ export interface OverlayView {
   heightWuAt(xWu: number, zWu: number): number;
   requestRender(): void;
   onBeforeRender(cb: () => void): () => void;
-}
-
-export function sameRef(a: MarkerRef | null, b: MarkerRef | null): boolean {
-  if (a === null || b === null) return a === b;
-  if (a.type !== b.type || a.index !== b.index) return false;
-  return a.type !== 'fieldVertex' || (b.type === 'fieldVertex' && a.vertex === b.vertex);
-}
-
-export function refIn(list: readonly MarkerRef[], ref: MarkerRef): boolean {
-  for (const r of list) if (sameRef(r, ref)) return true;
-  return false;
 }
 
 /** True if field `index` is selected (as a whole or through one of its handles). */

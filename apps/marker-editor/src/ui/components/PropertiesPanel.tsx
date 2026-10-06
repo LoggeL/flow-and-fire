@@ -248,6 +248,7 @@ function FieldEditor(props: { readonly store: EditorStore; readonly doc: EditorD
       <ValueInput
         testId="field-max-slope"
         label={S.maxSlope}
+        title={S.maxSlopeTitle}
         value={String(f.maxSlopePermille)}
         parse={(t) => parseIntRange(t.replace(/\s*‰\s*$/, ''), 0, U16_MAX)}
         suffix="‰"

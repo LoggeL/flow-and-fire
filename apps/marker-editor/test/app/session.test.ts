@@ -1,5 +1,4 @@
 /** EditorSession (file IO without DOM): bundled maps, bytes/files, errors, save, markers.json. */
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,7 +6,6 @@ import { MAP_FX_ONE as FX } from '@faf/formats';
 import { EditorStore } from '../../src/app/store.ts';
 import { HttpError } from '../../src/io/errors.ts';
 import { baseName, EditorSession, LoadCancelled, rtsmapFileName } from '../../src/io/session.ts';
-import { sha256Hex, sha256HexSync } from '../../src/io/sha256.ts';
 import { bytesEqual, mapBytes, MAPS_DIR, type MapName } from './support.ts';
 
 const NAMES: readonly MapName[] = ['hollow-ridge', 'tessera', 'braidwater', 'setons'];
@@ -103,8 +101,18 @@ describe('EditorSession', () => {
     const m = h.downloads.at(-1)!;
     expect(m.name).toBe('markers.json');
     expect(m.type).toBe('application/json');
-    expect(JSON.parse(m.data as string)).toMatchObject({ mass: expect.any(Array), hydro: expect.any(Array) });
+    const json = JSON.parse(m.data as string) as { mass: { x: number; z: number }[]; starts: unknown[] };
+    expect(json.starts).toHaveLength(2);
+    expect(json.mass).toContainEqual({ x: 250, z: 200 });
     expect(h.store.status.value).toBe('markers.json exportiert');
+    expect(h.session.exportEditorOverlay()).toBe(true);
+    const o = h.downloads.at(-1)!;
+    expect(o.name).toBe('editor.json');
+    expect(o.type).toBe('application/json');
+    const overlay = JSON.parse(o.data as string) as { editorOverlay: number; spots: { kind: string; x: number; z: number }[] };
+    expect(overlay.editorOverlay).toBe(1);
+    expect(overlay.spots.at(-1)).toEqual({ kind: 'mass', x: 250, z: 200 });
+    expect(h.store.status.value).toMatch(/^editor\.json exportiert/);
   });
 
   it('a broken file keeps the previous map and reports a German message', async () => {
@@ -181,6 +189,7 @@ describe('EditorSession', () => {
     const h = harness();
     expect(h.session.save()).toBe(false);
     expect(h.session.exportMarkersJson()).toBe(false);
+    expect(h.session.exportEditorOverlay()).toBe(false);
     expect(h.store.status.value).toBe('Keine Karte geladen');
     expect(h.downloads).toEqual([]);
   });
@@ -193,19 +202,5 @@ describe('EditorSession', () => {
     expect(rtsmapFileName('x')).toBe('x.rtsmap');
     expect(rtsmapFileName(null)).toBe('map.rtsmap');
     expect(rtsmapFileName('.rtsmap')).toBe('map.rtsmap');
-  });
-});
-
-describe('sha256', () => {
-  it('matches node:crypto for padding edge cases and a real map', async () => {
-    const ref = (b: Uint8Array): string => createHash('sha256').update(b).digest('hex');
-    for (const n of [0, 1, 3, 55, 56, 57, 63, 64, 65, 119, 120, 128, 1000]) {
-      const b = new Uint8Array(n);
-      for (let i = 0; i < n; i++) b[i] = (i * 31 + 7) & 0xff;
-      expect(sha256HexSync(b)).toBe(ref(b));
-    }
-    const map = mapBytes('hollow-ridge');
-    expect(sha256HexSync(map)).toBe(ref(map));
-    expect(await sha256Hex(map)).toBe(ref(map));
   });
 });

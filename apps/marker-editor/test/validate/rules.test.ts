@@ -5,11 +5,12 @@ import {
   DEFAULT_VALIDATION_OPTIONS,
   detectSymmetry,
   ISSUE_CODES,
-  mirrorPoint,
   validateMap,
   type EditorIssue,
   type ValidationOptions,
 } from '../../src/validate/index.ts';
+import { mirrorPoint } from '../../src/model/symmetry.ts';
+import { MIRROR_MODES } from '../../src/model/types.ts';
 import { circleField, errors, GROUND, STEPS_PER_WU, testMap, withCode, withMarkers, wu } from './helpers.ts';
 
 const run = (map: RtsMap, options?: Partial<ValidationOptions>): EditorIssue[] => validateMap(map, createTerrainAnalysis(map), options);
@@ -210,8 +211,8 @@ describe('reachability', () => {
   });
 
   it('a spot on a small bump snaps to the passable ground around it', () => {
-    // 2×2-sample block of 3 WU height under the spot: all four samples are impassable.
-    const bump = testMap({ heights: (x, z) => ((x === 100 || x === 101) && (z === 100 || z === 101) ? GROUND + 3 * STEPS_PER_WU : GROUND) });
+    // One sample 3 WU high under the spot: the 4 cells around it are too steep.
+    const bump = testMap({ heights: (x, z) => (x === 100 && z === 100 ? GROUND + 3 * STEPS_PER_WU : GROUND) });
     const map = withMarkers(bump, { spots: [mass(100, 100)] });
     expect(createTerrainAnalysis(map).isPassableAt(wu(100), wu(100))).toBe(false);
     expect(withCode(run(map), 'spot-unreachable')).toEqual([]);
@@ -265,14 +266,15 @@ describe('prop fields', () => {
 });
 
 describe('asymmetric (symmetry detection)', () => {
-  const S = 256 * 4096;
-  it('mirrorPoint follows the model convention', () => {
-    expect(mirrorPoint('point', S, 1, 2)).toEqual([S - 1, S - 2]);
-    expect(mirrorPoint('mirrorX', S, 1, 2)).toEqual([S - 1, 2]);
-    expect(mirrorPoint('mirrorZ', S, 1, 2)).toEqual([1, S - 2]);
-    expect(mirrorPoint('diagonal', S, 1, 2)).toEqual([2, 1]);
-    expect(mirrorPoint('antiDiagonal', S, 1, 2)).toEqual([S - 2, S - 1]);
-    expect(mirrorPoint('none', S, 1, 2)).toEqual([1, 2]);
+  it('detects every MIRROR_MODE of the model with the model mirrorPoint (one definition)', () => {
+    for (const mode of MIRROR_MODES) {
+      const a = start(0, 60, 90);
+      const b = mirrorPoint(mode, 256, a.x, a.z);
+      const s = mass(70, 40);
+      const t = mirrorPoint(mode, 256, s.x, s.z);
+      const map = withMarkers(testMap(), { starts: [a, { army: 1, x: b.x, z: b.z }], spots: [s, { kind: 'mass', x: t.x, z: t.z }] });
+      expect(detectSymmetry(map), mode).toContain(mode);
+    }
   });
 
   it.each([

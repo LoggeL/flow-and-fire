@@ -20,18 +20,17 @@ export {
   fieldExpansionStats,
   fieldPoints,
   fmtWu,
-  mirrorPoint,
   resolveValidationOptions,
-  SYMMETRY_MODES,
   validateMap,
   type FieldPoints,
   type ValidationOptions,
 } from './rules.ts';
 export {
   createTerrainAnalysis,
-  DEFAULT_MAX_SLOPE_PERMILLE,
+  DEFAULT_NAV_CLASS,
   heightfieldOf,
-  MAX_SLOPE_PERMILLE_LIMIT,
+  LAND_MAX_SLOPE_PERMILLE,
+  NAV_CLASS_MAX,
   NO_COMPONENT,
   type TerrainAnalysis,
   type TerrainAnalysisOptions,
@@ -39,8 +38,8 @@ export {
 export { ISSUE_CODES, type EditorIssue, type IssueCode, type MarkerRef, type SymmetryMode, type Validator } from './types.ts';
 
 export interface ValidatorOptions extends Partial<ValidationOptions> {
-  /** Land passability threshold in 1/1000 (default 600, PLAN §3.9). */
-  readonly maxSlopePermille?: number;
+  /** Nav size class of the reachability check (1..3, default 1; passability itself is @faf/rules'). */
+  readonly navClass?: number;
 }
 
 /** A Validator with its cache state (for tests, benchmarks and the UI status line). */
@@ -57,9 +56,9 @@ export interface CachingValidator extends Validator {
  * rebuilds it (the editor never mutates heights in place).
  */
 export function createValidator(options: ValidatorOptions = {}): CachingValidator {
-  const { maxSlopePermille, ...rest } = options;
+  const { navClass, ...rest } = options;
   const ruleOptions = resolveValidationOptions(rest);
-  const analysisOptions = maxSlopePermille === undefined ? {} : { maxSlopePermille };
+  const analysisOptions = navClass === undefined ? {} : { navClass };
   let cached: TerrainAnalysis | null = null;
   let builds = 0;
   const validate = (map: RtsMap): readonly EditorIssue[] => {

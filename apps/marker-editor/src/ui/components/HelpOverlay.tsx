@@ -47,12 +47,12 @@ export function HelpOverlay(props: { readonly open: Signal<boolean> }): JSX.Elem
           <section>
             <h3>{S.helpKeys}</h3>
             <Table rows={HELP_KEYS} />
-            <h3>{S.helpMouse}</h3>
-            <Table rows={HELP_MOUSE} />
           </section>
           <section>
             <h3>{S.helpTools}</h3>
             <Table rows={tools} />
+            <h3>{S.helpMouse}</h3>
+            <Table rows={HELP_MOUSE} />
           </section>
         </div>
         <p class="me-hint">{S.helpFooter}</p>
@@ -61,12 +61,19 @@ export function HelpOverlay(props: { readonly open: Signal<boolean> }): JSX.Elem
   );
 }
 
-/** True if a keyboard event targets a text field (shortcuts are ignored there). */
+/** Input types without text entry ("?" keeps working while one of them has the focus). */
+const NON_TEXT_INPUTS: readonly string[] = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'];
+
+/**
+ * True if a keyboard event targets a text/form field (shortcuts are ignored there). Same rule as
+ * the controller's keymap (src/app/keymap.ts): checkboxes and buttons do not count.
+ */
 export function isEditableTarget(t: EventTarget | null): boolean {
   if (!(t instanceof HTMLElement)) return false;
   if (t.isContentEditable) return true;
   const tag = t.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  if (tag === 'INPUT') return !NON_TEXT_INPUTS.includes((t as HTMLInputElement).type.toLowerCase());
+  return tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
 /**
