@@ -69,15 +69,40 @@ module.exports = {
     ]),
     onlyWorkspaceDeps('ai-deps', 'ai', ['fixed', 'protocol', 'rules', 'nav', 'blueprints']),
     onlyWorkspaceDeps('render-deps', 'render', ['protocol', 'fixed']),
+    // FX layer on top of the render RHI (TRACK-RENDERFX): particles, beams, shields, decals, light & post.
+    onlyWorkspaceDeps('render-fx-deps', 'render-fx', ['render', 'fixed', 'protocol']),
     // Kitbash DSL: pure TypeScript, independent of render/sim (only @gltf-transform/core from npm).
     onlyWorkspaceDeps('modelkit-is-leaf', 'modelkit', []),
-    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
+    // render-fx allowed ahead of the integration (TRACK-RENDERFX, integration guide §8: FX objects live
+    // in packages/client/src/fx.ts from MS5/MS7 on).
+    onlyWorkspaceDeps('client-deps', 'client', ['render', 'render-fx', 'protocol', 'rules', 'formats', 'blueprints', 'fixed']),
     {
       name: 'render-npm-deps',
       severity: 'error',
       comment: 'render only depends on gl-matrix from npm (own WebGL2 pipeline, PLAN §2).',
       from: { path: '^packages/render/src/' },
       to: { dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-no-pkg', 'npm-unknown'], pathNot: ['/gl-matrix/', '^(packages|apps|tools)/'] },
+    },
+    {
+      name: 'render-fx-npm-deps',
+      severity: 'error',
+      comment: 'render-fx only depends on gl-matrix from npm (same WebGL2 pipeline as render).',
+      from: { path: '^packages/render-fx/src/' },
+      to: { dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-no-pkg', 'npm-unknown'], pathNot: ['/gl-matrix/', '^(packages|apps|tools)/'] },
+    },
+    {
+      name: 'render-never-imports-render-fx',
+      severity: 'error',
+      comment: 'render stays below render-fx: the FX layer builds on the RHI, never the other way round.',
+      from: { path: '^packages/render/' },
+      to: { path: pkgTarget(['render-fx']) },
+    },
+    {
+      name: 'fx-lab-deps',
+      severity: 'error',
+      comment: 'apps/fx-lab/src may only import render, render-fx, fixed and protocol from the workspace.',
+      from: { path: '^apps/fx-lab/src/' },
+      to: { path: WS, pathNot: [pkgTarget(['render', 'render-fx', 'fixed', 'protocol']), '^apps/fx-lab/'] },
     },
     {
       name: 'nobody-imports-client',
@@ -89,8 +114,8 @@ module.exports = {
     {
       name: 'presentation-never-imports-sim',
       severity: 'error',
-      comment: 'render/client/ai never import sim or sim-host (they only see frames/perception).',
-      from: { path: '^packages/(render|client|ai)/' },
+      comment: 'render/render-fx/client/ai and the fx-lab never import sim or sim-host (they only see frames/perception).',
+      from: { path: '^(packages/(render|render-fx|client|ai)|apps/fx-lab)/' },
       to: { path: pkgTarget(['sim', 'sim-host']) },
     },
     {

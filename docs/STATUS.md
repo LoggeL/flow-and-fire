@@ -623,3 +623,13 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Track RENDERFX (Vorarbeit, Branch `track-renderfx`, 2026-09-30)
+
+Paralleler Vorarbeits-Track ohne Meilenstein: neues Paket `@faf/render-fx` (GPU-Partikel mit 64k-Spawn-Ring und
+Varkan-Effektbibliothek, Beams/Projektil-Trails, Schild-Kugeln mit Fresnel und 4 Ripples, Scorch-/Krater-Decals,
+CSM mit statischem Cache, HDR + Dual-Kawase-Bloom + ACES + FXAA mit LDR-Fallback) und die Demo `apps/fx-lab`
+(Szenen battle, shields, big, gallery, lighting) mit Benchmark `pnpm bench:fx` und Screenshot-E2E
+`FAF_E2E_PORT=4683 pnpm test:e2e:fx`. `packages/render` und `tools/render-bench` sind unverändert; integriert wird in
+MS5, MS7, MS13 und MS14. Architektur, API, Messwerte, Abnahme und Integrationsanleitung:
+`docs/status/track-renderfx.md`, Entscheidungen: DECISIONS 30–38.

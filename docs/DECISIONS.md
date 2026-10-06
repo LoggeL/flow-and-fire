@@ -211,3 +211,49 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-30 – TRACK-RENDERFX (Vorarbeit, Branch `track-renderfx`)
+
+Paralleler Vorarbeits-Track ohne Meilenstein: GPU-Partikel, Beams/Trails, Schilde, Scorch-Decals, CSM und Post
+entstehen vor MS5/MS7/MS13/MS14 als eigenes Paket und werden dort integriert. Details, API, Messwerte und
+Integrationsanleitung: `docs/status/track-renderfx.md`.
+
+30. **Eigenes Paket `@faf/render-fx` statt Änderungen an `packages/render`.** MS3 ändert render parallel (Icons,
+    Strategic Zoom, Decals G19). render-fx baut nur auf der öffentlichen render-API auf (RHI `GpuDevice`,
+    `RtsCamera`, `FRAME_BLOCK_GLSL`, `RENDER_PRESETS`). Die Abhängigkeitsrichtung ist per dependency-cruiser
+    festgelegt: render importiert render-fx nie, render-fx hängt nur von render/fixed/protocol und gl-matrix ab.
+    Die Demo `apps/fx-lab` ersetzt bis zur Integration den Renderer. Die Integration baut die Passes in
+    `packages/render/src/renderer.ts` ein; das fx-lab selbst wird nicht integriert.
+31. **Verbindliche Slot-Tabelle** (`packages/render-fx/src/core/slots.ts`): render belegt UBO 0–3 und Textur-Units
+    0–7; UBO 4/5 und Units 8/9 bleiben für render/MS3 frei. FX: UBO 6 `FxView`, 7 `FxShadowRecv`, 8 `FxScorch`;
+    Units 10/11 CSM statisch/dynamisch, 12 Kurven-LUT, 13/14 Scorch-Daten/-Zellen, 15 Partikel-Layer-Tabelle
+    (Erweiterung aus rfx-p3). Post-Passes sind eigene Fullscreen-Passes und nutzen ihre eigenen Units 0/1.
+32. **Partikel: ein premultiplied Draw, keine Sortierung, keine Soft-Particles.** Additiv (Alpha 0) und
+    Alpha-Partikel teilen sich einen Draw mit `blend: 'premultiplied'`, depthTest an und depthWrite aus
+    (2 Draws, wenn das Live-Fenster über das Ringende läuft). Additive Anteile sind reihenfolgeunabhängig, und
+    bei RTS-Kameradistanz stört Rauch in Spawn-Reihenfolge nicht. Soft-Particles bräuchten eine Tiefenkopie pro
+    Frame und sind bei Bedarf in MS14 zusammen mit der PostChain nachrüstbar.
+33. **FX-Zeit im Shader = Sekunden mod 4096.** Alter = `mod(now − t0 + 4096, 4096)`. Damit reicht f32-Präzision
+    über beliebig lange Spiele. Lebensdauern sind vertraglich ≤ 60 s (Effektdaten: Lebensdauer ≤ 30 s,
+    Delay ≤ 10 s). Die FX-Uhr ist dieselbe Client-Zeit, die das Frame-UBO bekommt, nie die Sim-Zeit direkt.
+34. **Prioritäten- und Cap-Politik.** Cap = `RENDER_PRESETS[preset].caps.particles` (Low 8.192, Medium 16.384,
+    High 32.768, Ultra 65.536), Ring immer 65.536. Priorität 0 (Kern der Kommandanten-Explosion) wird nie
+    verworfen; `alive` darf den Cap um die lebenden Prio-0-Partikel überschreiten (je Kommandant ≤ 112).
+    Priorität 1 spawnt bis `alive < Cap`, Priorität 2 bis `alive < 0,75 · Cap`. Sicht-Culling und Ausdünnung
+    (Bildschirmradius < 1,5 px bzw. < 8 px) treffen nur Priorität 2. Verworfene Partikel zählen je Priorität.
+35. **MSAA entfällt, FXAA auf allen Stufen.** Das RHI kennt keine Multisample-Renderbuffer und keinen Resolve, und
+    render darf im Track nicht geändert werden. Wenn MS14 MSAA will, braucht das RHI `RenderbufferDesc.samples`
+    plus einen Resolve-Pass; dann FXAA auf High/Ultra abschalten.
+36. **Scorch-Binning bleibt bis zur Zusammenführung eigenständig.** `ScorchDecals` bint in 32-WU-Chunks (= render's
+    `TERRAIN_PATCH_WU`) und nutzt eigene Texturen (Units 13/14) und einen eigenen UBO (Slot 8). Die Zusammenlegung
+    mit render's `DecalBinner` (G19/MS3) ist eine Integrationsaufgabe in MS7: gleiche Binning-Logik, verschiedene
+    Formen (SDF-Ringe gegen prozeduralen Ruß).
+37. **Eigener Port für das fx-lab.** Die Playwright-E2E (`pnpm test:e2e:fx`) laufen gegen `vite preview` auf
+    `FAF_E2E_PORT ?? 4683`, der Dev-Server auf 4685 (oder dem nächsten freien Port). Das kollidiert nicht mit den
+    Spiel-E2E (4183/4184) und lässt Port 5199 frei. Benchmark und Screenshot-Werkzeug öffnen keinen Port: Sie
+    liefern `dist` per `page.route` unter einer virtuellen, cross-origin-isolierten Origin aus.
+38. **Messung ≠ Gate gilt auch für `bench:fx`** (wie Punkt 16). Exit-Code 1 nur bei Fehlern (GL-/Shader-/Seitenfehler,
+    `__fxlab.error`, nicht registrierte Szene) und beim Überschreiten des Draw-Budgets: FX-Draws
+    (Schilde + Partikel + Beams/Trails) ≤ 6 und Gesamt ≤ 40 je Frame. Draws sind hardwareunabhängig, ms-Werte nicht.
+    ms-Werte sind lokal gemessen (Apple M5 Pro, Playwright headless, kein Iris Xe, Punkt 5) und stehen als
+    Wertebereiche in `docs/status/track-renderfx.md`.
