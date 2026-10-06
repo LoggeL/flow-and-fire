@@ -101,7 +101,7 @@ export function makeEngineRig(opts: RigOptions = {}): Rig {
     visibilityDocument: doc,
     clock: () => ctx.nowMs,
     random: seeded(3),
-    fetch: rejectingFetch as unknown as typeof fetch,
+    fetch: rejectingFetch,
     onJumpTo: (x, z) => jumps.push({ x, z }),
     ...opts.engine,
   });
@@ -126,7 +126,7 @@ export async function unlockByGesture(rig: Rig): Promise<void> {
   await Promise.resolve();
 }
 
-const rejectingFetch: FetchLike = (url) => Promise.reject(new Error(`unexpected fetch ${url}`));
+const rejectingFetch: typeof fetch = (url) => Promise.reject(new Error(`unexpected fetch ${url}`));
 
 /**
  * Fake file server: every .webm URL returns 8 bytes (samples u32, channels u32) of the variant
