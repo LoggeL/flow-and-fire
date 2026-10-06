@@ -2,14 +2,19 @@
 export {
   ParticleSystem,
   particleCapForPreset,
-  UNIT_FX_PARTICLE_LAYERS,
   PARTICLE_RING_CAPACITY,
   MAX_PARTICLE_EMITTERS,
   EXPIRY_BUCKET_S,
+  WINDOW_FACTOR,
+  MIN_WINDOW,
+  MAX_COMPACT_PER_UPDATE,
+  EVICT_SCAN_MAX,
   PRIO2_CAP_FRACTION,
   CULL_RADIUS_PX,
   THIN_RADIUS_PX,
   MAX_EMIT_DT_S,
+  hashLo16,
+  hashHi24,
 } from './system.ts';
 export type { ParticleSystemOptions, ParticleSpawnOptions, ParticleStats } from './system.ts';
 export {
@@ -27,6 +32,7 @@ export {
   recordViews,
   writeRecord,
   encodeVecHalf,
+  halfBitsAt,
 } from './record.ts';
 export type { ParticleRecord, RecordViews } from './record.ts';
 export { PARTICLE_VS, PARTICLE_FS, PARTICLE_HASH_GLSL, GROUND_LIFT_WU, STREAK_SECONDS } from './shaders.ts';

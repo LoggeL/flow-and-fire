@@ -72,8 +72,9 @@ describe('ScorchDecals pool', () => {
     d.update(12.5);
     expect(d.dirty).toBe(true); // ember of decal 0 finished
     d.pack();
-    expect(d.data[6]).toBe(0);
-    expect(d.data[8 + 6]).toBe(3000);
+    // Packing order is newest first: decal 1 at index 0, decal 0 at index 1.
+    expect(d.data[6]).toBe(3000);
+    expect(d.data[8 + 6]).toBe(0);
     d.update(15);
     expect(d.count).toBe(1);
     expect(d.stats.expired).toBe(1);
@@ -117,7 +118,8 @@ describe('ScorchDecals pool', () => {
     d.pack();
     expect(d.stats.decals).toBe(130);
     for (let i = 0; i < 130; i++) {
-      const inp = inputs[i]!;
+      // Newest first: packed index i holds the (129 − i)-th added decal.
+      const inp = inputs[129 - i]!;
       const o = (Math.floor(i / SCORCH_DECALS_PER_ROW) * SCORCH_DATA_WIDTH + (i % SCORCH_DECALS_PER_ROW) * 2) * 4;
       const t = d.data;
       expect(t[o]).toBe(Math.round(inp.xWu * 4096));
@@ -126,7 +128,7 @@ describe('ScorchDecals pool', () => {
       expect(t[o + 3]).toBeGreaterThanOrEqual(0);
       const pk = t[o + 3]!;
       expect(pk & 4095).toBe(scorchRot12(inp.rotation!));
-      expect((pk >>> 12) & 3).toBe(i % 3);
+      expect((pk >>> 12) & 3).toBe((129 - i) % 3);
       expect(pk >>> 14).toBe((inp.seed >>> 0) & 0x1ffff);
       expect(t[o + 4]).toBe(Math.round(inp.tS * 1000) % (FX_TIME_WRAP_S * 1000));
       expect(t[o + 5]).toBe(Math.round(inp.lifetimeS! * 1000));
@@ -136,7 +138,7 @@ describe('ScorchDecals pool', () => {
   });
 
   function bruteForceCheck(d: ScorchDecals, inputs: readonly ScorchDecalInput[]): { overflow: number; exact: number } {
-    // Packing order == insertion order here (no removals), so packed index i == inputs[i].
+    // Packing order is newest first (no removals here), so packed index i == inputs[n − 1 − i].
     const n = d.stats.decals;
     let overflow = 0;
     let exact = 0;
@@ -147,7 +149,7 @@ describe('ScorchDecals pool', () => {
         const must: number[] = [];
         const may = new Set<number>();
         for (let i = 0; i < n; i++) {
-          const inp = inputs[i]!;
+          const inp = inputs[n - 1 - i]!;
           const x = Math.round(inp.xWu * 4096) / 4096;
           const z = Math.round(inp.zWu * 4096) / 4096;
           const r = Math.round(inp.radiusWu * 4096) / 4096;
@@ -167,7 +169,7 @@ describe('ScorchDecals pool', () => {
         for (let k = 0; k < cnt; k++) listed.push(d.cells[first + k]!);
         expect(cnt).toBeLessThanOrEqual(MAX_SCORCH_PER_CHUNK);
         for (const i of listed) expect(may.has(i)).toBe(true);
-        // Lists keep packing order and take the first 32 candidates.
+        // Lists keep packing order and take the first 32 candidates = the 32 newest decals.
         const expected = [...may].sort((a, b) => a - b).slice(0, MAX_SCORCH_PER_CHUNK);
         expect(listed).toEqual(expected);
         overflow += Math.max(0, may.size - MAX_SCORCH_PER_CHUNK);
@@ -208,6 +210,27 @@ describe('ScorchDecals pool', () => {
     let entries = 0;
     for (let k = 0; k < d.chunks * d.chunks; k++) entries += d.cells[k]! & 63;
     expect(d.stats.listEntries).toBe(entries);
+  });
+
+  it('an overflowing chunk keeps its newest decals (fresh embers stay visible)', () => {
+    const d = new ScorchDecals({ cap: 128, mapSizeWu: 256 });
+    // 40 decals in chunk (1, 1), the last one is fresh and glowing.
+    for (let i = 0; i < 40; i++) d.add({ xWu: 48, zWu: 48, radiusWu: 1, kind: 'scorch', seed: i, tS: i * 0.1, lifetimeS: 0, emberS: i === 39 ? 5 : 0 });
+    d.pack();
+    expect(d.stats.chunkOverflow).toBe(40 - MAX_SCORCH_PER_CHUNK);
+    const cell = d.cells[1 * d.chunks + 1]!;
+    expect(cell & 63).toBe(MAX_SCORCH_PER_CHUNK);
+    const listed = Array.from({ length: MAX_SCORCH_PER_CHUNK }, (_, k) => d.cells[(cell >>> 6) + k]!);
+    // Packed indices 0..31 = the 32 newest decals (seeds 39..8).
+    expect(listed).toEqual(Array.from({ length: MAX_SCORCH_PER_CHUNK }, (_, k) => k));
+    const seeds = listed.map((p) => {
+      const o = (Math.floor(p / SCORCH_DECALS_PER_ROW) * SCORCH_DATA_WIDTH + (p % SCORCH_DECALS_PER_ROW) * 2) * 4;
+      return d.data[o + 3]! >>> 14;
+    });
+    expect(Math.min(...seeds)).toBe(8);
+    expect(seeds).toContain(39);
+    // The glowing newest decal shows up in shadeAt.
+    expect(d.shadeAt(48, 48, 3.95).ember).toBeGreaterThan(0);
   });
 
   it('shadeAt mirrors the single-decal reference through packing and binning', () => {

@@ -96,7 +96,7 @@ module.exports = {
       from: { path: '^apps/hud-gallery/src/' },
       to: { path: WS, pathNot: ['^apps/hud-gallery/', pkgTarget(['hud'])] },
     },
-    onlyWorkspaceDeps('client-deps', 'client', ['render', 'protocol', 'rules', 'formats', 'blueprints', 'fixed', 'audio']),
+    onlyWorkspaceDeps('client-deps', 'client', ['render', 'render-fx', 'protocol', 'rules', 'formats', 'blueprints', 'fixed', 'audio']),
     {
       name: 'audio-npm-deps',
       severity: 'error',
@@ -160,8 +160,8 @@ module.exports = {
     {
       name: 'presentation-never-imports-sim',
       severity: 'error',
-      comment: 'Presentation packages never import sim or sim-host (they only see frames/perception).',
-      from: { path: '^packages/(render|render-fx|client|ai|audio|hud)/' },
+      comment: 'Presentation packages and the fx-lab never import sim or sim-host (they only see frames/perception).',
+      from: { path: '^(packages/(render|render-fx|client|ai|audio|hud)|apps/fx-lab)/' },
       to: { path: pkgTarget(['sim', 'sim-host']) },
     },
     {

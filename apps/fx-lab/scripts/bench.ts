@@ -1,122 +1,353 @@
-/** Three-engine, real-frame FX benchmark. No preview server or reserved ports. */
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
-import { cpus, platform, arch, totalmem, loadavg } from 'node:os';
-import { execFileSync } from 'node:child_process';
+/**
+ * FX benchmark of the fx-lab (`pnpm bench:fx` → `pnpm --filter @faf/fx-lab run fxbench`; always through
+ * the memory gate: `tools/heavy pnpm bench:fx [-- --quick] [--update-docs]`).
+ *
+ * 1. Vite build of apps/fx-lab → apps/fx-lab/dist (programmatic, no dev server).
+ * 2. Chromium → Firefox → WebKit ONE AFTER ANOTHER (memory budget), launch flags as in the root
+ *    playwright.config.ts; the page is served through `page.route` under a virtual cross-origin-isolated
+ *    origin (COOP/COEP/CORP, fine timers) – no port is opened. Viewport 1920×1080, DPR 1.
+ * 3. Per scenario a fresh page (`bench=1`: HUD off; `flight=1` where the camera should move): wait for
+ *    `__fxlab.ready`, warm-up, `resetSamples()`, measure; an in-page poll (~10 Hz) records the maximum
+ *    draws per segment and FX state; afterwards `__fxlab.samples()` + `stats()` → p50/p95/p99 of frame,
+ *    Main-JS, FX-JS, Lab-JS, GPU total/segments (timer query where available, else "n/v"), draws,
+ *    particle counts. Screenshot test-results/fx-bench/<browser>-<scenario>.png.
+ * 4. Report apps/fx-lab/results/fx-<date>[-quick].json (git-ignored); `--update-docs` rewrites the block
+ *    between `<!-- fx:results:begin -->` and `<!-- fx:results:end -->` in docs/status/track-renderfx.md.
+ *
+ * Exit code 1 ONLY on errors (GL/shader/page errors, `__fxlab.error`, scene not registered, draw budget
+ * exceeded: FX draws > 6 or total > 40), never because of ms values (DECISIONS 16). Browsers are always
+ * closed.
+ *
+ * Flags: --quick (Chromium only, 1 s warm-up + 3 s, battle/shields/big)  --update-docs
+ *        --browsers=chromium,firefox,webkit  --scenarios=battle,shields,…  --seconds=8  --warmup=2
+ *        --seed=1  --no-build  --headed  --wait=240 (s to wait for foreign GPU load, 0 = off)  --attempts=3
+ *        --docs-only (no measurement: rewrite the doc block from results/, detail = newest full run over the most browsers)
+ */
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { arch, cpus, loadavg, platform, totalmem } from 'node:os';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Browser, Page } from '@playwright/test';
 import { build } from 'vite';
-import { APP, REPO, ORIGIN, GL_ERROR, launchConfig, ready, serve } from './browser.ts';
-import type { FxLabSample } from '../src/app/hooks.ts';
-import type { Browser } from '@playwright/test';
-const args = process.argv.slice(2);
-const flag = (name: string) => args.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
-const quick = args.includes('--quick');
-const engines = (flag('browsers') ?? (quick ? 'chromium' : 'chromium,firefox,webkit')).split(',');
-const seconds = Number(flag('seconds') ?? (quick ? 3 : 8));
-const warmup = Number(flag('warmup') ?? (quick ? 1 : 2));
-const repeats = Number(flag('runs') ?? (quick ? 1 : 2));
-if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(warmup) || warmup < 0 || !Number.isInteger(repeats) || repeats < 1) throw new Error('seconds > 0, warmup >= 0 and integer runs >= 1 are required');
-const scenarios: Record<string, string> = {
-  battle: 'scene=battle&preset=medium', battlelow: 'scene=battle&preset=low',
-  shields: 'scene=shields&preset=medium', big: 'scene=big&preset=medium',
-  lightingcsm: 'scene=lighting&csm=1', lightingnocsm: 'scene=lighting&csm=0',
-  battleldr: 'scene=battle&hdr=0',
-};
-const selected = (flag('scenarios') ?? (quick ? 'battle,shields,big' : Object.keys(scenarios).join(','))).split(',');
-const shots = resolve(REPO, 'test-results/fx-bench'), results = resolve(APP, 'results');
-mkdirSync(shots, { recursive: true }); mkdirSync(results, { recursive: true });
-function foreignLoad(): string[] {
-  const lines = execFileSync('ps', ['-axo', 'pid=,pcpu=,command='], { encoding: 'utf8' }).split('\n');
-  return lines.filter(line => {
-    const m = /^\s*(\d+)\s+([\d.]+)\s+(.*)$/.exec(line);
-    if (!m || m[1] === String(process.pid) || Number(m[2]) < 1) return false;
-    const executable = m[3]!.split(/\s+/, 1)[0]!.split('/').at(-1)!;
-    // A curl URL or a shell reading an MLX source file is not a running MLX workload.
-    return /^(?:node|pnpm|bun|python[\d.]*|mlx[\w.-]*|vitest|playwright|tsc)$/.test(executable)
-      && /playwright test|vitest|mlx|tsc -b|vite build|scripts\/bench|scripts\/spk4|scripts\/smoke/.test(m[3]!);
-  }).map(s => s.trim());
+import type { FxLabStats } from '../src/app/hooks.ts';
+import { BENCH_ORIGIN, BROWSER_NAMES, PageErrorLog, isBrowserName, launchConfig, serveDist } from './bench/browsers.ts';
+import type { BrowserName } from './bench/browsers.ts';
+import { concurrentLoad, gpuContention, idleContention, waitQuiet } from './bench/load.ts';
+import { docBlock, evaluateRun, markdownTables, replaceDocBlock } from './bench/report.ts';
+import type { BrowserReport, FxBenchReport, PagePoll, ScenarioResult } from './bench/report.ts';
+import { BENCH_VIEWPORT, FX_SCENARIOS, FX_SCENARIO_NAMES, QUICK_SCENARIOS, parseFxScenario, scenarioQuery, scenarioScene } from './bench/scenarios.ts';
+import type { FxScenario, FxScenarioName } from './bench/scenarios.ts';
+import { fmt, fmtInt } from './bench/stats.ts';
+
+const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_DIR = resolve(APP_DIR, '../..');
+const DIST_DIR = resolve(APP_DIR, 'dist');
+const RESULTS_DIR = resolve(APP_DIR, 'results');
+const SHOTS_DIR = resolve(REPO_DIR, 'test-results/fx-bench');
+const STATUS_DOC = resolve(REPO_DIR, 'docs/status/track-renderfx.md');
+
+// pnpm may forward a literal `--` before the flags.
+const argv = process.argv.slice(2).filter((a) => a !== '--');
+const KNOWN = new Set(['quick', 'update-docs', 'docs-only', 'browsers', 'scenarios', 'seconds', 'warmup', 'seed', 'no-build', 'headed', 'wait', 'attempts']);
+for (const a of argv) {
+  const m = /^--([a-z-]+)/.exec(a);
+  if (m === null || !KNOWN.has(m[1]!)) throw new Error(`bench:fx: unknown argument '${a}' (known: ${[...KNOWN].map((k) => `--${k}`).join(' ')})`);
 }
-const wait = Number(flag('wait') ?? 0), waitStart = Date.now();
-while (foreignLoad().length && Date.now() - waitStart < wait * 1000) await new Promise(r => setTimeout(r, 1000));
-if (!args.includes('--no-build')) await build({ configFile: resolve(APP, 'vite.config.ts') });
-const pct = (values: number[]) => {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const p = (q: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * q) - 1)]!;
-  return { mean: values.reduce((sum, value) => sum + value, 0) / values.length, p50: p(0.5), p95: p(0.95), p99: p(0.99), max: sorted[sorted.length - 1] };
+const flag = (name: string): string | undefined =>
+  argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? (argv.includes(`--${name}`) ? '' : undefined);
+const num = (name: string, def: number): number => {
+  const raw = flag(name);
+  if (raw === undefined) return def;
+  const n = Number(raw);
+  if (raw === '' || !Number.isFinite(n) || n < 0) throw new Error(`bench:fx: --${name} needs a non-negative number, got '${raw}'`);
+  return n;
 };
-const report = { date: new Date().toISOString(), quick, warmup, seconds, repeats, machine: { platform: platform(), arch: arch(), cpu: cpus()[0]?.model, memory: totalmem(), load: loadavg() }, foreignLoad: foreignLoad(), browsers: [] as { engine: string; version: string; scenarios: Record<string, unknown>[]; errors: string[] }[] };
-const digest = createHash('sha256');
-function hashTree(dir: string): void { for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a,b) => a.name.localeCompare(b.name))) { const path = resolve(dir, entry.name); if (entry.isDirectory()) hashTree(path); else { digest.update(path); digest.update(readFileSync(path)); } } }
-hashTree(resolve(APP, 'dist')); for (const file of ['scripts/bench.ts', 'scripts/browser.ts', 'vite.config.ts']) digest.update(readFileSync(resolve(APP, file))); digest.update(`${process.platform}/${process.arch}/${process.version}`); digest.update(JSON.stringify({ engines, selected, seconds, warmup, repeats, quick, cpu: report.machine.cpu }));
-const fingerprint = digest.digest('hex'), checkpoint = resolve(results, `fx-incomplete${quick ? '-quick' : ''}.json`);
-if (existsSync(checkpoint)) { const saved = JSON.parse(readFileSync(checkpoint, 'utf8')) as { fingerprint?: string; report?: typeof report }; if (saved.fingerprint === fingerprint && Array.isArray(saved.report?.browsers)) { report.browsers.push(...saved.report.browsers); report.date = saved.report.date; report.foreignLoad = saved.report.foreignLoad; } }
-function persist(): void { writeFileSync(checkpoint + '.tmp', JSON.stringify({ fingerprint, report }, null, 2)); renameSync(checkpoint + '.tmp', checkpoint); }
-let failed = false;
-for (const engine of engines) {
-  let browser: Browser | null = null;
-  const br = report.browsers.find(b => b.engine === engine) ?? { engine, version: '', scenarios: [] as Record<string, unknown>[], errors: [] as string[] }; if (!report.browsers.includes(br)) report.browsers.push(br);
-  try {
-    const cfg = launchConfig(engine); browser = await cfg.type.launch(cfg.options); const version = browser.version(); if (br.version !== version) { br.scenarios.length = 0; br.errors.length = 0; } br.version = version; br.errors.length = 0;
-    for (const name of selected) for (let run = 1; run <= repeats; run++) {
-      if (!scenarios[name]) throw new Error(`Unknown scenario ${name}`);
-      const previous = br.scenarios.find(s => s['scenario'] === name && s['run'] === run);
-      if (previous && Array.isArray(previous['errors']) && previous['errors'].length === 0 && Number(previous['frames']) > 0) { console.log(`Resumed ${engine}/${name}/${run}`); continue; }
-      if (previous) br.scenarios.splice(br.scenarios.indexOf(previous), 1);
-      const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-      const errors: string[] = [], loadBefore = foreignLoad();
-      page.on('pageerror', e => errors.push(e.message));
-      page.on('console', m => { if (m.type() === 'error' || GL_ERROR.test(m.text())) errors.push(m.text()); });
-      try {
-        await serve(page); await page.goto(`${ORIGIN}/?${scenarios[name]}&bench=1&seed=77&flight=1`); await ready(page);
-        await page.waitForTimeout(warmup * 1000); await page.evaluate(() => window.__fxlab!.resetSamples());
-        await page.waitForTimeout(seconds * 1000);
-        const measured = await page.evaluate(() => ({ stats: window.__fxlab!.stats(), samples: window.__fxlab!.samples(), error: window.__fxlab!.error }));
-        const s = measured.samples as FxLabSample[];
-        if (measured.error) errors.push(measured.error);
-        const fxDraws = measured.stats.drawsBySeg.shields + measured.stats.drawsBySeg.particles + measured.stats.drawsBySeg.beams;
-        if (fxDraws > 6 || s.some(v => v.draws > 40 || v.fxDraws > 6)) errors.push(`Draw budget: FX ${fxDraws}, total ${measured.stats.draws}`);
-        if (!s.length) errors.push('No frame samples');
-        const summary = {
-          scenario: name, run, frames: s.length, stats: measured.stats,
-          frameMs: pct(s.map(v => v.frameMs)), fps: pct(s.map(v => 1000 / v.frameMs)),
-          mainJsMs: pct(s.map(v => v.mainJsMs)), fxJsMs: pct(s.map(v => v.fxJsMs)), labJsMs: pct(s.map(v => v.labJsMs)),
-          draws: pct(s.map(v => v.draws)), fxDraws: pct(s.map(v => v.fxDraws)), particlesAlive: pct(s.map(v => v.particlesAlive)),
-          gpuMs: pct(s.flatMap(v => v.gpuMs === null ? [] : [v.gpuMs])),
-          gpuSegments: Object.fromEntries(['shadow', 'opaque', 'shields', 'particles', 'beams', 'post'].map(seg => [seg, pct(s.flatMap(v => { const n = v.gpuSeg[seg as keyof FxLabSample['gpuSeg']]; return n === null ? [] : [n]; }))])),
-          loadBefore, loadAfter: foreignLoad(), errors,
-        };
-        br.scenarios.push(summary); failed ||= errors.length > 0; persist();
-        await page.locator('canvas').screenshot({ path: resolve(shots, `${name}-${engine}-${run}.png`) });
-        console.log(`${engine}/${name}/${run}: ${s.length} frames, main p95 ${summary.mainJsMs?.p95.toFixed(2)}ms, FX p95 ${summary.fxJsMs?.p95.toFixed(2)}ms, particles median ${summary.particlesAlive?.p50}, errors ${errors.length}`);
-      } catch (e) { failed = true; br.scenarios.push({ scenario: name, run, errors: [...errors, String(e)] }); console.error(`${engine}/${name}: ${String(e)}`); }
-      finally { await page.close(); }
+
+const quick = flag('quick') !== undefined;
+const updateDocs = flag('update-docs') !== undefined;
+const headed = flag('headed') !== undefined;
+const noBuild = flag('no-build') !== undefined;
+const browserNames: BrowserName[] = (flag('browsers') ?? (quick ? 'chromium' : BROWSER_NAMES.join(',')))
+  .split(',')
+  .filter((s) => s.length > 0)
+  .map((s) => {
+    if (!isBrowserName(s)) throw new Error(`bench:fx: unknown browser '${s}' (have: ${BROWSER_NAMES.join(', ')})`);
+    return s;
+  });
+const scenarioNames: FxScenarioName[] = (flag('scenarios') ?? (quick ? QUICK_SCENARIOS : FX_SCENARIO_NAMES).join(','))
+  .split(',')
+  .filter((s) => s.length > 0)
+  .map((s) => {
+    const n = parseFxScenario(s);
+    if (n === undefined) throw new Error(`bench:fx: unknown scenario '${s}' (have: ${FX_SCENARIO_NAMES.join(', ')})`);
+    return n;
+  });
+const measureS = num('seconds', quick ? 3 : 8);
+const warmupS = num('warmup', quick ? 1 : 2);
+const seed = Math.floor(num('seed', 1));
+/** Full runs wait for foreign GPU load (other agents' Playwright runs, MLX jobs) and repeat contended scenarios. */
+const waitMaxS = num('wait', quick ? 0 : 240);
+const maxAttempts = quick ? 1 : Math.max(1, Math.floor(num('attempts', 3)));
+if (measureS <= 0) throw new Error('bench:fx: --seconds must be > 0');
+
+const log = (s: string): void => {
+  process.stdout.write(s + '\n');
+};
+
+/** In-page stats poll (runs inside the browser): maximum draws per segment and FX state every ~100 ms. */
+function installPoll(page: Page): Promise<void> {
+  return page.evaluate(() => {
+    const segs = ['shadow', 'opaque', 'shields', 'particles', 'beams', 'post'] as const;
+    const acc: PagePoll = {
+      polls: 0,
+      segMax: { shadow: 0, opaque: 0, shields: 0, particles: 0, beams: 0, post: 0 },
+      fxDrawsMax: 0,
+      aliveMax: 0,
+      windowMax: 0,
+      decalOverflowMax: 0,
+      beamsMax: 0,
+      trailsMax: 0,
+      shieldsMax: 0,
+      ripplesMax: 0,
+      shakePolls: 0,
+    };
+    const w = window as unknown as { __fxbenchPoll?: PagePoll; __fxbenchTimer?: number };
+    w.__fxbenchPoll = acc;
+    w.__fxbenchTimer = window.setInterval(() => {
+      const h = window.__fxlab;
+      if (h === undefined || h.error !== null) return;
+      const s = h.stats();
+      acc.polls++;
+      for (const k of segs) acc.segMax[k] = Math.max(acc.segMax[k], s.drawsBySeg[k]);
+      acc.fxDrawsMax = Math.max(acc.fxDrawsMax, s.drawsBySeg.shields + s.drawsBySeg.particles + s.drawsBySeg.beams);
+      acc.aliveMax = Math.max(acc.aliveMax, s.fx.particles?.alive ?? 0);
+      acc.windowMax = Math.max(acc.windowMax, s.fx.particles?.window ?? 0);
+      acc.decalOverflowMax = Math.max(acc.decalOverflowMax, s.decals.chunkOverflow);
+      acc.beamsMax = Math.max(acc.beamsMax, s.fx.beams);
+      acc.trailsMax = Math.max(acc.trailsMax, s.fx.trails);
+      acc.shieldsMax = Math.max(acc.shieldsMax, s.fx.shields?.count ?? 0);
+      acc.ripplesMax = Math.max(acc.ripplesMax, s.fx.shields?.ripplesActive ?? 0);
+      if (s.shakeActive) acc.shakePolls++;
+    }, 100);
+  });
+}
+
+/** Unmasked GPU renderer string of the browser (separate throw-away context). */
+function gpuRenderer(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (gl === null) return 'kein WebGL2';
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const r = dbg !== null ? (gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) as string) : (gl.getParameter(gl.RENDERER) as string);
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return r;
+  });
+}
+
+async function sleepWithTriggers(page: Page, seconds: number, s: FxScenario, clock: { lastTrigger: number }): Promise<void> {
+  const end = Date.now() + seconds * 1000;
+  while (Date.now() < end) {
+    const now = Date.now();
+    if (s.triggerEveryS > 0 && now - clock.lastTrigger >= s.triggerEveryS * 1000) {
+      clock.lastTrigger = now;
+      await page.evaluate(() => window.__fxlab!.triggerBigExplosion());
     }
-  } catch (e) { failed = true; br.errors.push(String(e)); console.error(`${engine}: ${String(e)}`); }
-  finally { if (browser) await browser.close(); }
+    const next = s.triggerEveryS > 0 ? Math.min(end, clock.lastTrigger + s.triggerEveryS * 1000) : end;
+    await page.waitForTimeout(Math.max(10, Math.min(1000, next - Date.now())));
+  }
 }
-failed ||= report.browsers.some(b => b.errors.length > 0 || selected.some(name => Array.from({length: repeats}, (_,i) => i + 1).some(run => !b.scenarios.some(s => s['scenario'] === name && s['run'] === run && Number(s['frames']) > 0 && Array.isArray(s['errors']) && s['errors'].length === 0))));
-const file = resolve(results, `fx-${new Date().toISOString().slice(0, 10)}${quick ? '-quick' : ''}.json`);
-writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
-if (args.includes('--update-docs')) {
-  const path = resolve(REPO, 'docs/status/track-renderfx.md');
-  const triple = (p: ReturnType<typeof pct>) => p ? `${p.p50.toFixed(2)} / ${p.p95.toFixed(2)} / ${p.p99.toFixed(2)}` : 'n/v';
-  const rows = report.browsers.flatMap(b => b.scenarios.map(s => `| ${b.engine} | ${s['scenario']} | ${s['run']} | ${['frameMs', 'mainJsMs', 'fxJsMs', 'labJsMs', 'gpuMs'].map(k => triple(s[k] as ReturnType<typeof pct>)).join(' | ')} |`));
-  const gpuRows = report.browsers.flatMap(b => b.scenarios.map(s => {
-    const g = s['gpuSegments'] as Record<string, ReturnType<typeof pct>> | undefined;
-    return `| ${b.engine} | ${s['scenario']} | ${s['run']} | ${['shadow', 'opaque', 'shields', 'particles', 'beams', 'post'].map(k => g?.[k]?.p95.toFixed(3) ?? 'n/v').join(' | ')} |`;
-  }));
-  const budgetRows = report.browsers.flatMap(b => b.scenarios.map(s => {
-    const p = (s['stats'] as { fx: { particles: { cap: number; dropped: number[] } | null } } | undefined)?.fx.particles;
-    const draws = s['draws'] as ReturnType<typeof pct>, fx = s['fxDraws'] as ReturnType<typeof pct>, alive = s['particlesAlive'] as ReturnType<typeof pct>;
-    return `| ${b.engine} | ${s['scenario']} | ${s['run']} | ${draws ? `${draws.p50} / ${draws.max}` : 'n/v'} | ${fx ? `${fx.p50} / ${fx.max}` : 'n/v'} | ${alive ? `${alive.mean.toFixed(1)} / ${alive.p50}` : 'n/v'} | ${p?.cap ?? 'n/v'} | ${p?.dropped.join(' / ') ?? 'n/v'} |`;
-  }));
-  const contention = report.foreignLoad.length > 0 || report.browsers.some(b => b.scenarios.some(s => (s['loadBefore'] as string[] | undefined)?.length || (s['loadAfter'] as string[] | undefined)?.length));
-  const table = `<!-- fx:results:begin -->\nLokal gemessen, ${report.machine.cpu ?? 'CPU unbekannt'}, kein Iris Xe. ${report.date}, ${repeats} Durchläufe, ${warmup}s Aufwärmen und ${seconds}s Erfassung, 1920×1080 CSS-Pixel (Preset-Skalierung im JSON). ${contention ? 'Fremdlast erkannt, Messung unter Last wiederholen.' : 'Keine erkannte Fremdlast an den Messgrenzen.'}\n\nZeiten: p50 / p95 / p99 in ms. Fehlende GPU-Timer: n/v.\n\n| Engine | Szene | Lauf | Frame | Main-JS | FX-JS | Lab-JS | GPU gesamt |\n| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |\n${rows.join('\n')}\n\nGPU-Segmente, p95 in ms.\n\n| Engine | Szene | Lauf | Shadow | Opaque | Shields | Particles | Beams | Post |\n| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |\n${gpuRows.join('\n')}\n\n| Engine | Szene | Lauf | Draws p50/max | FX-Draws p50/max | Partikel Mittel/p50 | Cap | Dropped Prio 0/1/2 |\n| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |\n${budgetRows.join('\n')}\n<!-- fx:results:end -->`;
-  const doc = readFileSync(path, 'utf8');
-  if (!/<!-- fx:results:begin -->[\s\S]*?<!-- fx:results:end -->/.test(doc)) throw new Error('FX result markers missing from status doc');
-  writeFileSync(path, doc.replace(/<!-- fx:results:begin -->[\s\S]*?<!-- fx:results:end -->/, table));
+
+interface Attempt {
+  result: ScenarioResult;
 }
-if (existsSync(checkpoint)) unlinkSync(checkpoint);
-console.log(`Report: ${file}`);
-if (failed) process.exitCode = 1;
+
+async function runScenario(browser: Browser, browserName: BrowserName, name: FxScenarioName): Promise<Attempt> {
+  const s = FX_SCENARIOS[name];
+  // Before the page exists the benchmark renders nothing: a busy GPU now is foreign load.
+  const before = await idleContention();
+  const context = await browser.newContext({ viewport: { width: BENCH_VIEWPORT.width, height: BENCH_VIEWPORT.height }, deviceScaleFactor: BENCH_VIEWPORT.dpr });
+  const seen = new Set<string>(before);
+  const probe = setInterval(() => {
+    for (const c of gpuContention()) seen.add(c);
+  }, 1000);
+  try {
+    const page = await context.newPage();
+    const errs = new PageErrorLog().attach(page);
+    await serveDist(page, DIST_DIR, BENCH_ORIGIN);
+    // Fresh pages start at about:blank: read the renderer there with a throw-away context.
+    const renderer = await gpuRenderer(page).catch(() => 'unbekannt');
+    await page.goto(`${BENCH_ORIGIN}/index.html?${scenarioQuery(s, seed)}`);
+    await page.waitForFunction(() => window.__fxlab !== undefined && (window.__fxlab.ready || window.__fxlab.error !== null), undefined, { timeout: 120_000 });
+    const head = await page.evaluate(() => ({ scene: window.__fxlab!.scene as string, error: window.__fxlab!.error, coi: window.crossOriginIsolated }));
+    process.stdout.write(`  ${browserName} ${name}: ${fmt(warmupS, 0)} s warm-up + ${fmt(measureS, 0)} s … `);
+    const trig = { lastTrigger: 0 };
+    if (head.error === null) {
+      await sleepWithTriggers(page, warmupS, s, trig);
+      await page.evaluate(() => window.__fxlab!.resetSamples());
+    }
+    const statsStart = await page.evaluate(() => window.__fxlab!.stats());
+    await installPoll(page);
+    if (head.error === null) await sleepWithTriggers(page, measureS, s, trig);
+    const end = await page.evaluate(() => {
+      const w = window as unknown as { __fxbenchPoll?: PagePoll; __fxbenchTimer?: number };
+      window.clearInterval(w.__fxbenchTimer);
+      const h = window.__fxlab!;
+      return { samples: h.samples(), stats: h.stats() as FxLabStats, poll: w.__fxbenchPoll!, error: h.error, scene: h.scene as string };
+    });
+    mkdirSync(SHOTS_DIR, { recursive: true });
+    await page.screenshot({ path: resolve(SHOTS_DIR, `${browserName}-${name}.png`) });
+    const result = evaluateRun({
+      scenario: name,
+      requestedScene: scenarioScene(s),
+      scene: end.scene,
+      hookError: end.error,
+      samples: end.samples,
+      statsStart,
+      statsEnd: end.stats,
+      poll: end.poll,
+      pageErrors: errs.errors,
+      warnings: errs.warnings,
+      contention: [...seen],
+      gpuRenderer: renderer,
+      crossOriginIsolated: head.coi,
+    });
+    const p = result.particles;
+    process.stdout.write(
+      `${result.ok ? 'ok' : 'ERROR'} | ${result.frames} frames ${fmt(result.fps, 1)} fps | draws max ${result.totalDrawsMax} (fx ${result.fxDrawsMax}) | ` +
+        `main p95 ${fmt(result.mainJsMs.p95)} ms | fx p95 ${fmt(result.fxJsMs.p95)} ms | gpu p50 ${result.gpuMs === null ? 'n/v' : fmt(result.gpuMs.p50) + ' ms'} | ` +
+        `particles ${p === null ? '–' : `${fmtInt(p.aliveP50)}/${fmtInt(p.cap)} dropped ${p.droppedRun.join('/')}`}${result.contention.length > 0 ? ' | CONTENDED' : ''}\n`,
+    );
+    for (const e of result.errors) log(`    ! ${e}`);
+    return { result };
+  } finally {
+    clearInterval(probe);
+    await context.close();
+  }
+}
+
+async function runBrowser(name: BrowserName): Promise<BrowserReport> {
+  const { type, options } = launchConfig(name, REPO_DIR, { headed, measure: true });
+  const results: ScenarioResult[] = [];
+  const errors: string[] = [];
+  let browser: Browser | null = null;
+  let version = '';
+  try {
+    browser = await type.launch(options);
+    version = browser.version();
+    log(`bench:fx: ${name} ${version}`);
+    for (const scenario of scenarioNames) {
+      try {
+        let attempt: Attempt | null = null;
+        for (let k = 0; k < maxAttempts; k++) {
+          if (waitMaxS > 0) {
+            const still = await waitQuiet(waitMaxS, log);
+            if (still.length > 0) log(`    (still loaded after ${waitMaxS} s: ${still[0]} – measuring anyway, marked as contended)`);
+          }
+          attempt = await runScenario(browser, name, scenario);
+          if (attempt.result.contention.length === 0 || !attempt.result.ok) break;
+          if (k + 1 < maxAttempts) log('    (foreign GPU load during the run – repeating)');
+        }
+        results.push(attempt!.result);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.split('\n')[0]! : String(e);
+        errors.push(`${scenario}: ${msg}`);
+        log(`\n  ${name} ${scenario}: FAILED ${msg}`);
+      }
+    }
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message.split('\n')[0]! : String(e));
+    log(`  ${name}: FAILED ${errors[errors.length - 1]}`);
+  } finally {
+    if (browser !== null) await browser.close();
+  }
+  return { browser: name, version, results, errors };
+}
+
+function loadReports(): FxBenchReport[] {
+  if (!existsSync(RESULTS_DIR)) return [];
+  const out: FxBenchReport[] = [];
+  for (const f of readdirSync(RESULTS_DIR).filter((n) => /^fx-.*\.json$/.test(n)).sort()) {
+    try {
+      out.push(JSON.parse(readFileSync(resolve(RESULTS_DIR, f), 'utf8')) as FxBenchReport);
+    } catch {
+      log(`bench:fx: skipping unreadable report ${f}`);
+    }
+  }
+  return out;
+}
+
+/** Local date + time for the report name (several runs per day are kept for the value ranges). */
+function stamp(d = new Date()): string {
+  const p = (n: number): string => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+/** `--docs-only`: rewrites the doc block from the reports in results/ (newest full run in detail). */
+function docsOnly(): number {
+  const all = loadReports();
+  const full = all.filter((r) => r.mode === 'full');
+  // Detail table: the newest full run over the most browsers (partial runs only feed the ranges).
+  const widest = Math.max(0, ...full.map((r) => r.browsers.length));
+  const last = full.filter((r) => r.browsers.length === widest).pop() ?? all[all.length - 1];
+  if (last === undefined) throw new Error('bench:fx --docs-only: no report in apps/fx-lab/results');
+  const text = existsSync(STATUS_DOC) ? readFileSync(STATUS_DOC, 'utf8') : '# TRACK-RENDERFX\n';
+  writeFileSync(STATUS_DOC, replaceDocBlock(text, docBlock(last, all)));
+  log(`bench:fx: docs rewritten from ${all.length} report(s): ${STATUS_DOC}`);
+  return 0;
+}
+
+async function main(): Promise<number> {
+  if (flag('docs-only') !== undefined) return docsOnly();
+  if (!noBuild) {
+    log('bench:fx: vite build → apps/fx-lab/dist');
+    await build({ configFile: resolve(APP_DIR, 'vite.config.ts'), logLevel: 'warn' });
+  }
+  if (!existsSync(resolve(DIST_DIR, 'index.html'))) throw new Error('apps/fx-lab/dist/index.html missing (build failed?)');
+  log(`bench:fx: ${quick ? 'quick' : 'full'} | browsers ${browserNames.join(', ')} | scenarios ${scenarioNames.join(', ')} | ${warmupS} s + ${measureS} s`);
+  const before = loadavg();
+  const concurrent = concurrentLoad();
+  if (concurrent.length > 0) log(`bench:fx: concurrent load detected:\n  ${concurrent.join('\n  ')}`);
+  const browsers: BrowserReport[] = [];
+  for (const name of browserNames) {
+    browsers.push(await runBrowser(name));
+    for (const c of concurrentLoad()) if (!concurrent.includes(c)) concurrent.push(c);
+  }
+  const failed = browsers.some((b) => b.errors.length > 0 || b.results.some((r) => !r.ok));
+  const exitCode = failed ? 1 : 0;
+  const c0 = cpus()[0];
+  const report: FxBenchReport = {
+    date: new Date().toISOString(),
+    mode: quick ? 'quick' : 'full',
+    machine: {
+      platform: `${platform()} ${arch()}`,
+      arch: arch(),
+      cpus: `${cpus().length}× ${c0?.model ?? '?'}`,
+      memGB: Math.round(totalmem() / 2 ** 30),
+      note: 'lokal gemessen (Apple M5 Pro, Playwright headless), kein Iris Xe/echtes Safari',
+    },
+    options: { warmupS, measureS, viewport: `${BENCH_VIEWPORT.width}×${BENCH_VIEWPORT.height} @${BENCH_VIEWPORT.dpr}x`, seed },
+    load: { before, after: loadavg(), concurrent },
+    browsers,
+    exitCode,
+  };
+  mkdirSync(RESULTS_DIR, { recursive: true });
+  const file = resolve(RESULTS_DIR, `fx-${stamp()}${quick ? '-quick' : ''}.json`);
+  writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
+  log(`bench:fx: report ${file}`);
+  log(markdownTables(report));
+  if (updateDocs) {
+    const text = existsSync(STATUS_DOC) ? readFileSync(STATUS_DOC, 'utf8') : '# TRACK-RENDERFX\n';
+    writeFileSync(STATUS_DOC, replaceDocBlock(text, docBlock(report, loadReports())));
+    log(`bench:fx: docs updated: ${STATUS_DOC}`);
+  }
+  if (failed) console.error('bench:fx: FAILED (errors above)');
+  return exitCode;
+}
+
+main().then(
+  (code) => process.exit(code),
+  (e: unknown) => {
+    console.error(e);
+    process.exit(1);
+  },
+);

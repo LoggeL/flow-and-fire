@@ -165,7 +165,7 @@ export class LabHud {
     lines.push(
       p === null
         ? 'Partikel –'
-        : `Partikel ${p.alive}/${p.cap} (Ring ${p.capacity})  dropped ${p.dropped.join('/')}  culled ${p.culled}`,
+        : `Partikel ${p.alive}/${p.cap} (Ring ${p.capacity}, Fenster ${p.window}/${p.windowLimit})  dropped ${p.dropped.join('/')}  overwritten ${p.overwritten.join('/')}  culled ${p.culled}`,
     );
     if (s.fx.shields !== null) lines.push(`Schilde ${s.fx.shields.count}  Ripples ${s.fx.shields.ripplesActive}`);
     lines.push(`Beams ${s.fx.beams}  Trails ${s.fx.trails}  Units ${s.units}  Decals ${s.decals.count}/${s.decals.cap}`);

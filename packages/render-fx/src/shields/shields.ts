@@ -98,22 +98,23 @@ export function shieldRadiusScale(upFrac: number): number {
 }
 
 const RIPPLE_GLSL = /* glsl */ `
-// acos approximation (|error| < 7e-5 rad), much cheaper than the builtin on some GPUs.
-float fastAcos(float x) {
-  float a = abs(x);
-  float r = sqrt(max(1.0 - a, 0.0)) * (1.5707288 + a * (-0.2121144 + a * (0.0742610 - 0.0187293 * a)));
-  return x < 0.0 ? 3.14159265 - r : r;
+// acos approximation (|error| < 7e-5 rad) on 4 lanes, much cheaper than the builtin on some GPUs.
+vec4 fastAcos4(vec4 x) {
+  vec4 a = abs(x);
+  vec4 r = sqrt(max(1.0 - a, 0.0)) * (1.5707288 + a * (-0.2121144 + a * (0.0742610 - 0.0187293 * a)));
+  return mix(r, 3.14159265 - r, lessThan(x, vec4(0.0)));
 }
 const float RIPPLE_LIFE = ${glslFloat(SHIELD_RIPPLE_LIFE_S)};
 const float RIPPLE_SPEED = ${glslFloat(SHIELD_RIPPLE_SPEED)};
 const float RIPPLE_W0 = ${glslFloat(SHIELD_RIPPLE_WIDTH)};
 const float RIPPLE_W1 = ${glslFloat(SHIELD_RIPPLE_WIDTH_GROWTH)};
-// Ring intensity of one ripple at angular distance th (rad) from its impact point.
-float rippleRing(float th, float age, float str) {
-  if (str <= 0.0 || age >= RIPPLE_LIFE) return 0.0;
-  float k = (th - RIPPLE_SPEED * age) / (RIPPLE_W0 + RIPPLE_W1 * age);
-  float f = 1.0 - age / RIPPLE_LIFE;
-  return str * f * f * exp(-k * k);
+const float FLASH_SHARPNESS = 45.0;
+const float FLASH_DECAY = 7.0;
+// Ring intensity of the 4 ripples at angular distances th (rad) from their impact points, given the
+// per-shield ring radii, inverse widths and amplitudes (see rippleParams).
+float rippleRings(vec4 th, vec4 radius, vec4 invW, vec4 amp) {
+  vec4 k = (th - radius) * invW;
+  return dot(amp, exp(-k * k));
 }
 `;
 
@@ -124,6 +125,7 @@ ${FRAME_BLOCK_GLSL}
 ${FX_VIEW_BLOCK_GLSL}
 ${FX_COMMON_GLSL}
 ${FX_HALF_GLSL}
+${FX_NOISE_GLSL}
 ${RIPPLE_GLSL}
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in ivec3 a_center;
@@ -139,40 +141,51 @@ layout(location = 10) in vec4 a_dir3;
 out vec3 v_n;
 out vec3 v_rel;
 flat out vec4 v_color;  // rgb, hpFrac
-flat out vec4 v_par;    // upFrac, phase, radius (WU), opacity
-flat out vec4 v_age;
-flat out vec4 v_str;
-flat out vec3 v_d0;
-flat out vec3 v_d1;
-flat out vec3 v_d2;
-flat out vec3 v_d3;
-vec3 safeDir(vec4 d) {
+flat out vec4 v_par;    // upFrac, phase, flicker, opacity
+// Per-ripple constants (computed once per vertex instead of per fragment):
+flat out vec4 v_rRadius; // ring radius θ(t) = speed·age (rad)
+flat out vec4 v_rInvW;   // 1 / ring width
+flat out vec4 v_rAmp;    // ring amplitude str·(1 − age/life)² (0 = slot idle/expired)
+flat out vec4 v_fAmp;    // impact flash amplitude str·exp(−7·age)
+flat out mat4 v_dirs;    // columns: impact directions (unit), w unused
+vec4 safeDir(vec4 d) {
   float l = length(d.xyz);
-  return l > 1e-4 ? d.xyz / l : vec3(0.0, 1.0, 0.0);
+  return vec4(l > 1e-4 ? d.xyz / l : vec3(0.0, 1.0, 0.0), 0.0);
 }
 void main() {
   vec4 par = fxHalf4(a_params);
   float up = clamp(par.x, 0.0, 1.0);
   float down = 1.0 - up;
   float rs = a_radius * (0.35 + 0.65 * (1.0 - down * down * down));
-  vec4 str = fxHalf4(a_rstr);
+  vec4 str = max(fxHalf4(a_rstr), 0.0);
   vec4 age = vec4(fxAge(a_rt0.x), fxAge(a_rt0.y), fxAge(a_rt0.z), fxAge(a_rt0.w));
-  v_d0 = safeDir(a_dir0);
-  v_d1 = safeDir(a_dir1);
-  v_d2 = safeDir(a_dir2);
-  v_d3 = safeDir(a_dir3);
+  vec4 alive = vec4(lessThan(age, vec4(RIPPLE_LIFE))) * step(vec4(1e-4), str);
+  vec4 f = max(1.0 - age / RIPPLE_LIFE, 0.0);
+  v_rRadius = RIPPLE_SPEED * age;
+  v_rInvW = 1.0 / (RIPPLE_W0 + RIPPLE_W1 * age);
+  v_rAmp = alive * str * f * f;
+  v_fAmp = alive * str * exp(-FLASH_DECAY * age);
+  v_dirs = mat4(safeDir(a_dir0), safeDir(a_dir1), safeDir(a_dir2), safeDir(a_dir3));
   // Slight outward bulge travelling with the ripple ring.
-  float bump = rippleRing(fastAcos(clamp(dot(a_pos, v_d0), -1.0, 1.0)), age.x, str.x)
-             + rippleRing(fastAcos(clamp(dot(a_pos, v_d1), -1.0, 1.0)), age.y, str.y)
-             + rippleRing(fastAcos(clamp(dot(a_pos, v_d2), -1.0, 1.0)), age.z, str.z)
-             + rippleRing(fastAcos(clamp(dot(a_pos, v_d3), -1.0, 1.0)), age.w, str.w);
+  float bump = 0.0;
+  if (v_rAmp != vec4(0.0)) {
+    vec4 th = fastAcos4(clamp(vec4(a_pos, 0.0) * v_dirs, -1.0, 1.0));
+    bump = rippleRings(th, v_rRadius, v_rInvW, v_rAmp);
+  }
   vec3 rel = fxRelPos(a_center) + a_pos * (rs * (1.0 + 0.02 * min(bump, 2.0)));
   v_n = a_pos;
   v_rel = rel;
   v_color = fxHalf4(a_color);
-  v_par = vec4(up, par.y, a_radius, smoothstep(0.0, 0.5, up));
-  v_age = age;
-  v_str = str;
+  // Low-health flicker (per shield and frame, so it is computed here once).
+  float hp = clamp(v_color.a, 0.0, 1.0);
+  float flick = 1.0;
+  if (hp < 0.3) {
+    uint tick = uint(int(floor(u_fxTime.x * 22.0))) + uint(int(par.y * 4096.0));
+    float h = fxHash01(tick);
+    float depth = (0.3 - hp) / 0.3;
+    flick = 1.0 - depth * 0.75 * step(0.55, h) - depth * 0.2 * h;
+  }
+  v_par = vec4(up, par.y, flick, smoothstep(0.0, 0.5, up) * flick);
   gl_Position = u_viewProj * vec4(rel, 1.0);
 }
 `;
@@ -180,79 +193,66 @@ void main() {
 const SHIELD_FS = /* glsl */ `#version 300 es
 precision highp float;
 precision highp int;
-${FX_VIEW_BLOCK_GLSL}
-${FX_NOISE_GLSL}
 ${RIPPLE_GLSL}
 in vec3 v_n;
 in vec3 v_rel;
 flat in vec4 v_color;
 flat in vec4 v_par;
-flat in vec4 v_age;
-flat in vec4 v_str;
-flat in vec3 v_d0;
-flat in vec3 v_d1;
-flat in vec3 v_d2;
-flat in vec3 v_d3;
+flat in vec4 v_rRadius;
+flat in vec4 v_rInvW;
+flat in vec4 v_rAmp;
+flat in vec4 v_fAmp;
+flat in mat4 v_dirs;
 out vec4 o_color;
 const float HEX_CELLS = 6.5;
-// 1 on the honeycomb edges, 0 inside the cells (anti-aliased with the screen-space derivative).
-float hexLines(vec2 p) {
+// 1 on the honeycomb edges, 0 inside the cells; fw = screen-space footprint of p (anti-aliasing).
+float hexLines(vec2 p, float fw) {
   const vec2 s = vec2(1.0, 1.7320508);
   vec2 a = mod(p, s) - s * 0.5;
   vec2 b = mod(p - s * 0.5, s) - s * 0.5;
   vec2 g = dot(a, a) < dot(b, b) ? a : b;
   vec2 ag = abs(g);
   float d = 0.5 - max(dot(ag, vec2(0.5, 0.8660254)), ag.x);
-  float fw = length(fwidth(p)) * 0.7;
   return 1.0 - smoothstep(0.015, 0.03 + fw, d);
-}
-float impact(vec3 n, vec3 d, float age, float str, inout float flash) {
-  if (str <= 0.0 || age >= RIPPLE_LIFE) return 0.0;
-  float th = fastAcos(clamp(dot(n, d), -1.0, 1.0));
-  flash += str * exp(-th * th * 45.0) * exp(-age * 7.0);
-  return rippleRing(th, age, str);
 }
 void main() {
   vec3 n = normalize(v_n);
   vec3 view = normalize(-v_rel);
   float ndv = abs(dot(n, view));
-  float fres = pow(1.0 - ndv, 3.0);
+  float rim = 1.0 - ndv;
+  float fres = rim * rim * rim;
+  float ring = 0.0;
   float flash = 0.0;
-  float ring = impact(n, v_d0, v_age.x, v_str.x, flash)
-             + impact(n, v_d1, v_age.y, v_str.y, flash)
-             + impact(n, v_d2, v_age.z, v_str.z, flash)
-             + impact(n, v_d3, v_age.w, v_str.w, flash);
-  ring = min(ring, 2.5);
+  // Idle shields (no live ripple) skip the ripple math entirely (flat → coherent branch).
+  if (v_rAmp + v_fAmp != vec4(0.0)) {
+    vec4 th = fastAcos4(clamp(vec4(n, 0.0) * v_dirs, -1.0, 1.0));
+    ring = min(rippleRings(th, v_rRadius, v_rInvW, v_rAmp), 2.5);
+    flash = dot(v_fAmp, exp(-FLASH_SHARPNESS * th * th));
+  }
   // Triplanar honeycomb on the unit sphere (projections with negligible weight are skipped).
   vec3 an = abs(n);
-  vec3 w3 = an * an * an * an;
+  vec3 w3 = an * an;
+  w3 *= w3;
   w3 /= w3.x + w3.y + w3.z;
   vec3 q = n * HEX_CELLS;
+  float fw = length(fwidth(q)) * 0.7;
   float hex = 0.0;
-  if (w3.x > 0.02) hex += w3.x * hexLines(q.yz);
-  if (w3.y > 0.02) hex += w3.y * hexLines(q.zx);
-  if (w3.z > 0.02) hex += w3.z * hexLines(q.xy);
+  if (w3.x > 0.02) hex += w3.x * hexLines(q.yz, fw);
+  if (w3.y > 0.02) hex += w3.y * hexLines(q.zx, fw);
+  if (w3.z > 0.02) hex += w3.z * hexLines(q.xy, fw);
   float up = v_par.x;
-  float phase = v_par.y;
   float hp = clamp(v_color.a, 0.0, 1.0);
-  // Low health: shift towards red and flicker.
+  // Low health: shift towards red (the flicker is folded into v_par.w by the vertex shader).
   float danger = clamp((0.5 - hp) / 0.4, 0.0, 1.0);
   vec3 base = v_color.rgb;
   float baseLum = max(dot(base, vec3(0.3, 0.5, 0.2)), 0.5);
   vec3 col = mix(base, vec3(1.0, 0.12, 0.05) * baseLum * 1.8, danger);
-  float flick = 1.0;
-  if (hp < 0.3) {
-    uint tick = uint(int(floor(u_fxTime.x * 22.0))) + uint(int(phase * 4096.0));
-    float f = fxHash01(tick);
-    float depth = (0.3 - hp) / 0.3;
-    flick = 1.0 - depth * 0.75 * step(0.55, f) - depth * 0.2 * f;
-  }
   float forming = (1.0 - up) * step(0.001, up);
   float intensity = 0.05 + 0.95 * fres
     + hex * (0.04 + 0.35 * fres + 1.2 * ring + 1.2 * forming)
     + 0.8 * ring;
   float face = gl_FrontFacing ? 1.0 : 0.4;
-  float opacity = v_par.w * flick;
+  float opacity = v_par.w;
   vec3 rgb = col * (intensity * face * opacity) + vec3(1.0, 0.94, 0.85) * (flash * 1.8 * opacity);
   // A little coverage on the front face only: the bubble reads as a surface without darkening much.
   float alpha = gl_FrontFacing ? clamp(0.025 + 0.2 * fres + 0.08 * ring, 0.0, 0.3) * opacity : 0.0;

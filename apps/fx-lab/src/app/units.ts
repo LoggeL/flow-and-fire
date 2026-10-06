@@ -13,19 +13,7 @@
  */
 import type { GpuDevice } from '@faf/render';
 import { DynamicInstanceBuffer, fxHash32 } from '@faf/render-fx';
-export type LabUnitKind = 'tank' | 'bot' | 'arty' | 'engineer' | 'acu' | 'shieldgen' | 'structure' | 'wreck';
-
-export interface LabUnitInit {
-  kind: LabUnitKind;
-  army: number;
-  xWu: number;
-  zWu: number;
-  yaw: number;
-  hp?: number;
-  glow?: number;
-}
-
-
+import type { LabUnitInit, LabUnitKind } from './unit-types.ts';
 
 export const LAB_UNIT_CAPACITY = 1024;
 export const LAB_UNIT_STRIDE = 36;

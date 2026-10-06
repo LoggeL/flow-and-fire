@@ -23,12 +23,13 @@ import {
   fxSharedBufferBindings,
   hideTimerQueryFromDevice,
   postOptionsForPreset,
+  ScorchTextures,
 } from '@faf/render-fx';
 import type { ShadowCasterFn } from '@faf/render-fx';
 import { LabCameraRig } from './camera-rig.ts';
-import { LAB_WORLD_WU } from './context.ts';
+import { LAB_WORLD_WU, applyCameraOverride } from './context.ts';
 import type { LabParams, LabScene, SceneName } from './context.ts';
-import { GroundPass, ScorchTextures, labGroundHeight } from './ground.ts';
+import { GroundPass, labGroundHeight } from './ground.ts';
 import { LAB_CLEAR, LAB_LIGHT, LAB_SUN } from './glsl.ts';
 import { LAB_SEGMENTS, SampleRing } from './hooks.ts';
 import type { FxLabHooks, FxLabStats, SegmentRecord } from './hooks.ts';
@@ -167,7 +168,7 @@ export class LabApp {
       o.createFx,
     );
     this.scorchTex = new ScorchTextures(dev, this.sim.ctx.scorch);
-    this.rig = new LabCameraRig(this.sim.scene.camera);
+    this.rig = new LabCameraRig(applyCameraOverride(this.sim.scene.camera, o.params.cam));
 
     this.unsubscribe.push(
       dev.onLost(() => {
@@ -216,6 +217,37 @@ export class LabApp {
     h.loseContext = () => (this.dev.isLost() ? false : this.dev.debugLoseContext());
     h.restoreContext = () => (this.dev.isLost() ? this.dev.debugRestoreContext() : false);
     h.triggerBigExplosion = () => this.triggerBig();
+    h.markers = () => this.projectMarkers();
+  }
+
+  /** Scene markers → canvas-relative discs (camera of the last frame). */
+  private projectMarkers(): { id: string; x: number; y: number; rx: number; ry: number }[] {
+    const list = this.sim.scene.markers?.() ?? [];
+    const cam = this.camera;
+    const p = new Float64Array(4);
+    const W = cam.viewportWidth;
+    const H = cam.viewportHeight;
+    const out: { id: string; x: number; y: number; rx: number; ry: number }[] = [];
+    for (const m of list) {
+      if (!cam.project(m.xWu * 4096, m.yWu * 4096, m.zWu * 4096, p)) continue;
+      const cx = p[0]!;
+      const cy = p[1]!;
+      // Screen radius: largest offset of the four horizontal disc points.
+      let rx = 0;
+      let ry = 0;
+      for (const [dx, dz] of [
+        [m.radiusWu, 0],
+        [-m.radiusWu, 0],
+        [0, m.radiusWu],
+        [0, -m.radiusWu],
+      ] as const) {
+        cam.project((m.xWu + dx) * 4096, m.yWu * 4096, (m.zWu + dz) * 4096, p);
+        rx = Math.max(rx, Math.abs(p[0]! - cx));
+        ry = Math.max(ry, Math.abs(p[1]! - cy));
+      }
+      out.push({ id: m.id, x: cx / W, y: cy / H, rx: rx / W, ry: ry / H });
+    }
+    return out;
   }
 
   stats(): FxLabStats {
@@ -229,11 +261,12 @@ export class LabApp {
       fx: ctx.fx.stats(),
       scene: { ...scene },
       units: this.units.count,
-      decals: { count: ctx.scorch.count, cap: ctx.scorch.cap },
+      decals: { count: ctx.scorch.count, cap: ctx.scorch.cap, chunkOverflow: ctx.scorch.stats.chunkOverflow },
       csm: { enabled: this.params.csm, staticRefreshes: cs.staticRefreshes, staticDraws: cs.staticDraws, dynamicDraws: cs.dynamicDraws },
       post: { hdr: this.post.hdrActive, bloom: ps.bloomLevels > 0, levels: ps.bloomLevels, fxaa: ps.fxaa },
       shakeActive: this.shakeActive,
       gpuTimer: this.timer.available,
+      gpuSeg: this.params.gpuSeg,
       canvas: [this.bw, this.bh],
     };
   }
@@ -251,7 +284,7 @@ export class LabApp {
     if (factory === undefined) return;
     this.sim.switchScene(factory);
     this.scorchTex.setScorch(this.sim.ctx.scorch);
-    this.rig.setPreset(this.sim.scene.camera);
+    this.rig.setPreset(applyCameraOverride(this.sim.scene.camera, this.params.cam));
     this.params.scene = name;
     this.hooks.scene = name;
     this.hooks.ready = false;
@@ -461,17 +494,20 @@ export class LabApp {
     // 5. Transparent FX in PLAN §3.7 order.
     f0 = performance.now();
     const fx = ctx.fx;
-    timer.begin(SEG_SHIELDS);
+    // gpuseg=pass: no timer boundary inside the scene pass (opaque + FX are one segment); on tiling
+    // GPUs a query boundary inside a pass can split it and add a store/load of the targets.
+    const fine = params.gpuSeg === 'fine';
+    if (fine) timer.begin(SEG_SHIELDS);
     mark = counters.drawCalls;
-    if (params.fx) fx.encodeShields(enc);
+    if (params.fxParts.shields) fx.encodeShields(enc);
     seg.shields = counters.drawCalls - mark;
-    timer.begin(SEG_PARTICLES);
+    if (fine) timer.begin(SEG_PARTICLES);
     mark = counters.drawCalls;
-    if (params.fx) fx.encodeParticles(enc);
+    if (params.fxParts.particles) fx.encodeParticles(enc);
     seg.particles = counters.drawCalls - mark;
-    timer.begin(SEG_BEAMS);
+    if (fine) timer.begin(SEG_BEAMS);
     mark = counters.drawCalls;
-    if (params.fx) fx.encodeBeams(enc);
+    if (params.fxParts.beams) fx.encodeBeams(enc);
     seg.beams = counters.drawCalls - mark;
     enc.end();
 

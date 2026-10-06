@@ -8,6 +8,9 @@ export {
   UNIT_FX_CURVE_LUT,
   UNIT_FX_SCORCH_DATA,
   UNIT_FX_SCORCH_CELLS,
+  UNIT_FX_PARTICLE_LAYERS,
+  FX_RECEIVER_UNITS,
+  FX_PROGRAM_UNITS,
   FX_TIME_WRAP_S,
 } from './slots.ts';
 export { FX_VIEW_BLOCK_GLSL, FX_VIEW_LAYOUT, FX_COMMON_GLSL, fxSharedBufferBindings } from './view.ts';

@@ -29,6 +29,7 @@ const hooks: FxLabHooks = {
   loseContext: () => false,
   restoreContext: () => false,
   triggerBigExplosion: () => false,
+  markers: () => [],
 };
 window.__fxlab = hooks;
 

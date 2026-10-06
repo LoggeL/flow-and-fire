@@ -24,7 +24,35 @@ export interface LabParams {
   freeze: number | null;
   bench: boolean;
   flight: boolean;
+  /** Any transparent FX part drawn (`fxParts` has at least one part on). */
   fx: boolean;
+  /** Which transparent FX parts are drawn (`fx=0|1|shields,particles,beams`); logic always runs. */
+  fxParts: LabFxParts;
+  /**
+   * GPU timer granularity: 'fine' = six segments (shadow, opaque, shields, particles, beams, post;
+   * the FX boundaries lie inside the open scene pass), 'pass' = boundaries only between passes
+   * (shadow | scene = opaque + all FX | post) – no timer query starts or ends inside a pass.
+   */
+  gpuSeg: LabGpuSegMode;
+  /** Optional camera override (`cam=dist,pitch,heading[,x,z]`, additive to the rfx-p5 contract). */
+  cam?: LabCameraOverride;
+}
+
+/** Transparent FX parts that are drawn. */
+export interface LabFxParts {
+  readonly shields: boolean;
+  readonly particles: boolean;
+  readonly beams: boolean;
+}
+
+export type LabGpuSegMode = 'fine' | 'pass';
+
+/** Camera override from the URL: replaces the scene preset's distance/angles (and target when given). */
+export interface LabCameraOverride {
+  distanceWu: number;
+  pitchDeg: number;
+  headingDeg: number;
+  targetWu: readonly [number, number] | null;
 }
 
 export interface LabCameraPreset {
@@ -34,7 +62,8 @@ export interface LabCameraPreset {
   headingDeg: number;
 }
 
-export type { LabUnitKind, LabUnitInit } from './units.ts';
+// Unit types live in unit-types.ts (shared with units.ts without an import cycle); re-exported here.
+export type { LabUnitInit, LabUnitKind } from './unit-types.ts';
 
 export interface LabFxStats {
   particles: {
@@ -45,6 +74,14 @@ export interface LabFxStats {
     dropped: readonly [number, number, number];
     culled: number;
     uploadBytes: number;
+    /** Records in the drawn ring window = particle VS instances per frame. */
+    window: number;
+    /** Current bound of the window (WINDOW_FACTOR · max(alive, cap)). */
+    windowLimit: number;
+    /** Live particles overwritten because the ring was full, per priority (cumulative). */
+    overwritten: readonly [number, number, number];
+    /** Live records relocated to keep the window bounded (cumulative). */
+    relocated: number;
   } | null;
   shields: { count: number; ripplesActive: number } | null;
   beams: number;
@@ -80,8 +117,19 @@ export interface LabScene {
   init(ctx: LabContext): void;
   update(ctx: LabContext, t: number, dt: number): void;
   labels?(): readonly { text: string; xWu: number; yWu: number; zWu: number }[];
+  /** World regions the E2E checks individually (gallery: one per effect tile). Additive, optional. */
+  markers?(): readonly LabMarker[];
   stats?(): Readonly<Record<string, number>>;
   dispose(ctx: LabContext): void;
+}
+
+/** A named world-space disc (centre + radius, WU) of a scene, e.g. a gallery tile. */
+export interface LabMarker {
+  readonly id: string;
+  readonly xWu: number;
+  readonly yWu: number;
+  readonly zWu: number;
+  readonly radiusWu: number;
 }
 
 /**
@@ -90,6 +138,12 @@ export interface LabScene {
  */
 export interface LabTriggerableScene extends LabScene {
   trigger(ctx: LabContext, t: number): void;
+}
+
+/** Scene camera preset with the URL override applied. */
+export function applyCameraOverride(p: LabCameraPreset, o: LabCameraOverride | undefined): LabCameraPreset {
+  if (o === undefined) return p;
+  return { targetWu: o.targetWu ?? p.targetWu, distanceWu: o.distanceWu, pitchDeg: o.pitchDeg, headingDeg: o.headingDeg };
 }
 
 export function isTriggerableScene(s: LabScene): s is LabTriggerableScene {

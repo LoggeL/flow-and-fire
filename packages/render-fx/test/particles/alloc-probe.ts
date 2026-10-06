@@ -1,7 +1,8 @@
 // Allocation probe for ParticleSystem.update()/encode()/spawn(), run by alloc.test.ts in a plain Node
-// process (`node --expose-gc --import tsx`): inside the vitest worker the harness itself allocates
-// in hot loops. Uses a no-op GpuDevice (the recording fake GL allocates per call). Prints the best
-// heap growth in bytes over warm rounds as JSON.
+// process (`node --expose-gc --import tsx alloc-probe.ts <frame|spawn>`): inside the vitest worker the
+// harness itself allocates in hot loops. Uses a no-op GpuDevice (the recording fake GL allocates per
+// call). Mode 'frame' runs update()+encode() with 80 continuous emitters, 'spawn' adds two bursts per
+// frame. Prints the best heap growth in bytes over 3 warm rounds of ROUND frames as JSON.
 import { RtsCamera } from '@faf/render';
 import type { GpuDevice, PassEncoder } from '@faf/render';
 import { compileEffectLibrary } from '../../src/effects/compile.ts';
@@ -57,25 +58,29 @@ for (let i = 0; i < 40; i++) {
 
 // Boxed frame times (see the shake probe: the caller must not box doubles per call).
 const boxed: unknown[] = ['generic'];
-for (let i = 0; i < 20000; i++) boxed.push(10 + i / 60);
+for (let i = 0; i < 32000; i++) boxed.push(10 + i / 60); // monotonic over warm-up + 3 rounds
 boxed.shift();
 const times = boxed as number[];
+const SPAWN = process.argv[2] === 'spawn';
+const ROUND = 3000;
 let f = 0;
 function run(frames: number): void {
   for (let i = 0; i < frames; i++) {
-    const t = times[f++ % 20000]!;
-    ps.spawn(small, pos, opts);
-    ps.spawn(muzzle, pos, opts);
+    const t = times[f++]!;
+    if (SPAWN) {
+      ps.spawn(small, pos, opts);
+      ps.spawn(muzzle, pos, opts);
+    }
     ps.update(t, cam);
     ps.encode(encoder);
   }
 }
-run(3000);
+run(20000);
 let best = Infinity;
 for (let round = 0; round < 3; round++) {
   gc();
   const h0 = process.memoryUsage().heapUsed;
-  run(3000);
+  run(ROUND);
   best = Math.min(best, process.memoryUsage().heapUsed - h0);
 }
-process.stdout.write(JSON.stringify({ growth: best, alive: ps.stats.alive, spawned: ps.stats.requested }));
+process.stdout.write(JSON.stringify({ growth: best, frames: ROUND, alive: ps.stats.alive, requested: ps.stats.requested, emitters: ps.stats.emitters }));

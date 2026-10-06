@@ -4,6 +4,8 @@ import { FxRng } from '../../src/effects/random.ts';
 import {
   EXPIRY_BUCKET_S,
   MAX_PARTICLE_EMITTERS,
+  MIN_WINDOW,
+  WINDOW_FACTOR,
   PARTICLE_RECORD_STRIDE,
   PRIO2_CAP_FRACTION,
   ParticleSystem,
@@ -11,7 +13,24 @@ import {
   readRecord,
 } from '../../src/particles/index.ts';
 import { wrapFxTime } from '../../src/core/frame.ts';
-import { FX, RAW, draws, frame, ringWrites, setup } from './support.ts';
+import { COPY_WRITE_BUFFER, FX, RAW, draws, frame, ringWrites, setup } from './support.ts';
+
+/** Applies the ring uploads recorded since the last resetCalls() to a GPU-side shadow copy. */
+function applyRingWrites(env: ReturnType<typeof setup>, shadow: Uint8Array): void {
+  for (const c of env.gl.named('bufferSubData')) {
+    if (c.args[0] !== COPY_WRITE_BUFFER) continue;
+    const src = c.args[2] as Uint8Array;
+    const off = c.args[3] as number;
+    const len = c.args[4] as number;
+    shadow.set(src.subarray(off, off + len), c.args[1] as number);
+  }
+  env.gl.resetCalls();
+}
+
+/** Layer index stored in ring slot `slot`. */
+function layerOf(env: ReturnType<typeof setup>, slot: number): number {
+  return env.ps.records.u16[slot * 16 + 12]!;
+}
 
 const ORIGIN = [0, 0, 0];
 const S = PARTICLE_RECORD_STRIDE;
@@ -93,7 +112,7 @@ describe('ParticleSystem – ring and uploads', () => {
     env.ps.spawn(FX.p0, ORIGIN);
     frame(env, 0);
     expect(ringWrites(env.gl)).toEqual([[0, 150 * S]]);
-    expect(env.ps.stats.overwritten).toBe(50);
+    expect(env.ps.stats.overwritten).toEqual([50, 0, 0]);
     expect(env.ps.stats.alive).toBe(150);
     expect(env.ps.windowRange).toEqual({ tail: 50, head: 200 });
   });
@@ -176,6 +195,109 @@ describe('ParticleSystem – window, alive count', () => {
   });
 });
 
+describe('ParticleSystem – bounded window and full-ring eviction', () => {
+  it('a long-lived particle at the tail does not hold the window open (window ≤ limit, P0 kept)', () => {
+    const capacity = 65536;
+    const cap = 1000;
+    const env = setup({ capacity, cap });
+    const shadow = new Uint8Array(capacity * S);
+    env.gl.resetCalls();
+    env.ps.spawn(FX.long0, ORIGIN, { seed: 77 }); // slot 0: priority 0, 30 s
+    frame(env, 0);
+    applyRingWrites(env, shadow);
+    const longLayer = env.lib.effects[FX.long0]!.firstLayer;
+    const orig = readRecord(env.ps.records, 0);
+    let maxWindow = 0;
+    for (let f = 1; f <= 1200; f++) {
+      const t = f / 60;
+      env.ps.spawn(FX.short1, ORIGIN); // 50 × 0.2 s, priority 1: ~600 alive
+      frame(env, t);
+      applyRingWrites(env, shadow);
+      const st = env.ps.stats;
+      expect(st.window).toBeLessThanOrEqual(st.windowLimit);
+      expect(st.windowLimit).toBe(Math.max(MIN_WINDOW, Math.floor(WINDOW_FACTOR * Math.max(st.alive, cap))));
+      maxWindow = Math.max(maxWindow, st.window);
+    }
+    const st = env.ps.stats;
+    expect(maxWindow).toBeLessThanOrEqual(Math.floor(WINDOW_FACTOR * cap));
+    expect(st.overwritten).toEqual([0, 0, 0]);
+    expect(st.relocated).toBeGreaterThan(0);
+    expect(st.dropped).toEqual([0, 0, 0]);
+    // 20 s × 60 × 50 spawns would have grown an unbounded window to ≈ 60 000 records.
+    expect(st.requested[1]).toBe(1200 * 50);
+    // The long-lived particle is still in the window, byte-identical (same t0, seed, layer) and
+    // the GPU copy of every window slot matches the CPU mirror.
+    const { tail, head } = env.ps.windowRange;
+    let found = 0;
+    for (let c = tail; c < head; c++) {
+      const slot = c % capacity;
+      expect(shadow.subarray(slot * S, slot * S + S)).toEqual(env.ps.records.u8.subarray(slot * S, slot * S + S));
+      if (layerOf(env, slot) === longLayer) {
+        found++;
+        expect(readRecord(env.ps.records, slot)).toEqual(orig);
+        expect(env.ps.expiryOf(slot)).toBe(30);
+      }
+    }
+    expect(found).toBe(1);
+  });
+
+  it('draws exactly the bounded window', () => {
+    const env = setup({ capacity: 65536, cap: 500 });
+    env.ps.spawn(FX.long0, ORIGIN);
+    frame(env, 0);
+    for (let f = 1; f <= 300; f++) {
+      env.ps.spawn(FX.short1, ORIGIN);
+      env.gl.resetCalls();
+      frame(env, f / 60);
+      expect(draws(env.gl).reduce((a, b) => a + b, 0)).toBe(env.ps.stats.window);
+    }
+    expect(env.ps.stats.window).toBeLessThanOrEqual(Math.max(MIN_WINDOW, Math.floor(WINDOW_FACTOR * 500)));
+  });
+
+  it('full ring: new priority-0 particles take priority-1 slots, never live priority-0 ones', () => {
+    const capacity = 256;
+    const env = setup({ capacity, cap: capacity });
+    const shadow = new Uint8Array(capacity * S);
+    env.gl.resetCalls();
+    env.ps.spawn(FX.long0, ORIGIN, { seed: 1 }); // position 0: priority 0
+    env.ps.spawn(FX.long1, ORIGIN, { seed: 2 }); // 1..100: priority 1
+    env.ps.spawn(FX.long1, ORIGIN, { seed: 3 }); // 101..200
+    frame(env, 0);
+    applyRingWrites(env, shadow);
+    // Fill the rest with priority 1 up to cap (255 alive), then overflow with priority 0 only.
+    expect(env.ps.spawn(FX.long1, ORIGIN, { seed: 4 })).toBe(55);
+    frame(env, 0.1);
+    applyRingWrites(env, shadow);
+    expect(env.ps.stats.alive).toBe(256);
+    const p0Layer = env.lib.effects[FX.long0]!.firstLayer;
+    let k = 0;
+    for (let f = 0; f < 150; f++) {
+      env.ps.spawn(FX.long0, ORIGIN, { seed: 100 + f });
+      k++;
+      frame(env, 0.2 + f / 60);
+      applyRingWrites(env, shadow);
+      expect(env.ps.stats.overwritten).toEqual([0, k, 0]);
+    }
+    const { tail, head } = env.ps.windowRange;
+    expect(head - tail).toBe(capacity);
+    let p0 = 0;
+    for (let c = tail; c < head; c++) {
+      const slot = c % capacity;
+      if (layerOf(env, slot) === p0Layer) p0++;
+      expect(shadow.subarray(slot * S, slot * S + S)).toEqual(env.ps.records.u8.subarray(slot * S, slot * S + S));
+    }
+    expect(p0).toBe(1 + k);
+    expect(env.ps.stats.alive).toBe(256);
+    // Once only priority 0 is left, the oldest priority-0 particle goes.
+    for (let f = 0; f < 120; f++) {
+      env.ps.spawn(FX.long0, ORIGIN, { seed: 1000 + f });
+      frame(env, 3 + f / 60);
+    }
+    expect(env.ps.stats.overwritten[1]).toBe(255);
+    expect(env.ps.stats.overwritten[0]).toBe(1 + k + 120 - 256);
+  });
+});
+
 describe('ParticleSystem – caps and priorities', () => {
   it('drops priority 2 first (at 0.75·cap), then priority 1 (at cap), never priority 0', () => {
     const cap = 1000;
@@ -205,14 +327,14 @@ describe('ParticleSystem – caps and priorities', () => {
     const cap = 2000;
     const env = setup({ capacity: 4096, cap });
     let t = 0;
-    const prio0Burst = 40;
+    const prio0PerFrame = 4 * 10; // 4 bursts × 10 priority-0 particles
     for (let f = 0; f < 300; f++) {
       for (let i = 0; i < 4; i++) env.ps.spawn(FX.mixed, ORIGIN);
       frame(env, t);
       const s = env.ps.stats;
       expect(s.dropped[0]).toBe(0);
       // Priority-0 excess is bounded by one second of priority-0 spawns (lifetime 1 s).
-      expect(s.alive).toBeLessThanOrEqual(cap + prio0Burst * 61);
+      expect(s.alive).toBeLessThanOrEqual(cap + prio0PerFrame * 61);
       t += 1 / 60;
     }
     const s = env.ps.stats;
@@ -316,6 +438,11 @@ describe('ParticleSystem – emitters', () => {
     const r = readRecord(env.ps.records, head);
     expect(r.originRaw).toEqual([RAW, 2 * RAW, 3 * RAW]);
     expect(r.vec.slice(0, 3)).toEqual([0, 0, 10]);
+    // Moving without a target keeps the absolute target (1, 2, 13): the delta follows the origin.
+    env.ps.moveEmitter(h, [5 * RAW, 2 * RAW, 3 * RAW]);
+    const head2 = env.ps.windowRange.head;
+    frame(env, 0.3);
+    expect(readRecord(env.ps.records, head2).vec.slice(0, 3)).toEqual([-4, 0, 10]);
   });
 
   it('handles, freelist, stale handles and the 1024 limit', () => {
@@ -376,6 +503,12 @@ describe('ParticleSystem – frame protocol, shake, restore', () => {
     frame(env, 1);
     expect(env.ps.stats.alive).toBe(0);
     expect(frame(env, 1.1)).toBe(0);
+    // Counting restarts at the new clock: a fresh burst is alive, then expires after its 1 s life.
+    env.ps.spawn(FX.p1, ORIGIN);
+    frame(env, 1.2);
+    expect(env.ps.stats.alive).toBe(100);
+    frame(env, 2.3);
+    expect(env.ps.stats.alive).toBe(0);
   });
 
   it('restore re-uploads the whole ring mirror, the LUT and the layer table', () => {

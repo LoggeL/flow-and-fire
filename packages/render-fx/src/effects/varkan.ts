@@ -49,16 +49,16 @@ function flashColor(peak: number): ColorCurve {
 function fireballColor(peak: number): ColorCurve {
   return [
     k(0, WHITE_HOT, peak, 1),
-    k(0.18, CORE, peak * 0.75, 1),
-    k(0.5, FALLOFF, peak * 0.45, 0.85),
-    k(0.8, DEEP_RED, peak * 0.15, 0.45),
+    k(0.1, CORE, peak * 0.7, 1),
+    k(0.3, FALLOFF, peak * 0.5, 0.9),
+    k(0.65, DEEP_RED, peak * 0.2, 0.6),
     k(1, DEEP_RED, 0.05, 0),
   ];
 }
 
 /** Dark iron smoke lit by the fire at birth (alpha blended). */
 function fireSmokeColor(alpha: number): ColorCurve {
-  return [k(0, FALLOFF, 1.4, 0), k(0.08, '#5A3A28', 1, alpha), k(0.4, IRON_SMOKE, 1, alpha * 0.85), k(1, SOOT, 1, 0)];
+  return [k(0, FALLOFF, 1.4, 0), k(0.08, '#4A3226', 1, alpha), k(0.4, '#342E2A', 1, alpha * 0.75), k(1, IRON_SMOKE, 1, 0)];
 }
 
 function sparkColor(peak: number): ColorCurve {
@@ -225,13 +225,13 @@ const impactGroundLarge = defineEffect({
     {
       name: 'column', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [6, 8],
       lifetime: [2, 3], speed: [2, 4], spread: 25, gravity: 0.8, drag: 1.2, sizeJitter: 0.3,
-      size: [[0, 1.2], [1, 4]], color: [k(0, DUST, 1.1, 0.6), k(0.5, DUST, 0.9, 0.45), k(1, IRON_SMOKE, 1, 0)],
+      size: [[0, 1.2], [1, 4]], color: [k(0, DUST, 0.9, 0.6), k(0.5, DUST, 0.75, 0.45), k(1, IRON_SMOKE, 1, 0)],
       blend: 1, spin: [-0.5, 0.5], priority: 2,
     },
     {
       name: 'ground_ring', shape: 'ring', orient: 'ground', motion: 'ballistic', count: 1,
       lifetime: [0.35, 0.4], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 0.8], [1, 6]], color: [k(0, DUST, 1.2, 0.55), k(1, DUST, 1, 0)], blend: 1, priority: 2,
+      size: [[0, 0.8], [1, 6]], color: [k(0, DUST, 0.95, 0.55), k(1, DUST, 0.8, 0)], blend: 1, priority: 2,
     },
     {
       name: 'sparks', shape: 'spark', orient: 'velocity', motion: 'ballistic', count: [8, 12],
@@ -316,18 +316,18 @@ const explosionSmall = defineEffect({
     {
       name: 'flash', shape: 'flash', orient: 'billboard', motion: 'ballistic', count: 1,
       lifetime: [0.1, 0.12], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 3], [1, 1.6]], color: flashColor(6), blend: 0, priority: 1,
+      size: [[0, 3], [1, 1.6]], color: flashColor(4.5), blend: 0, priority: 1,
     },
     {
       name: 'fireball', shape: 'glow', orient: 'billboard', motion: 'ballistic', count: [6, 8],
       lifetime: [0.35, 0.6], speed: [1, 2.5], spread: 180, gravity: 1, drag: 3, sizeJitter: 0.3,
-      size: [[0, 0.6], [0.3, 1.4], [1, 1.8]], color: fireballColor(5), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
+      size: [[0, 0.6], [0.3, 1.4], [1, 1.8]], color: fireballColor(3.5), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
       spin: [-2, 2], priority: 1,
     },
     {
       name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [5, 7],
       lifetime: [1.6, 2.4], delay: [0.05, 0.15], speed: [0.8, 1.6], spread: 70, gravity: 0.9, drag: 1.2,
-      sizeJitter: 0.3, size: [[0, 0.8], [1, 2.6]], color: fireSmokeColor(0.7), blend: FIRE_SMOKE_BLEND,
+      sizeJitter: 0.3, size: [[0, 1], [1, 3.4]], color: fireSmokeColor(0.55), blend: FIRE_SMOKE_BLEND,
       spin: [-0.7, 0.7], priority: 2,
     },
     {
@@ -351,12 +351,12 @@ const explosionMedium = defineEffect({
     {
       name: 'flash', shape: 'flash', orient: 'billboard', motion: 'ballistic', count: 1,
       lifetime: [0.12, 0.15], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 5], [1, 2.6]], color: flashColor(6), blend: 0, priority: 1,
+      size: [[0, 5], [1, 2.6]], color: flashColor(4.5), blend: 0, priority: 1,
     },
     {
       name: 'fireball', shape: 'glow', orient: 'billboard', motion: 'ballistic', count: [12, 16],
       lifetime: [0.5, 0.9], speed: [1.5, 3.5], spread: 180, gravity: 1.2, drag: 2.6, sizeJitter: 0.3,
-      size: [[0, 1], [0.3, 2.2], [1, 2.8]], color: fireballColor(5), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
+      size: [[0, 1], [0.3, 2.2], [1, 2.8]], color: fireballColor(3.5), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
       spin: [-2, 2], priority: 1,
     },
     {
@@ -367,7 +367,7 @@ const explosionMedium = defineEffect({
     {
       name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [10, 13],
       lifetime: [2.2, 3.4], delay: [0.05, 0.2], speed: [1, 2.2], spread: 70, gravity: 1, drag: 1, sizeJitter: 0.3,
-      size: [[0, 1.2], [1, 4]], color: fireSmokeColor(0.75), blend: FIRE_SMOKE_BLEND, spin: [-0.6, 0.6], priority: 2,
+      size: [[0, 1.5], [1, 5]], color: fireSmokeColor(0.6), blend: FIRE_SMOKE_BLEND, spin: [-0.6, 0.6], priority: 2,
     },
     {
       name: 'sparks', shape: 'spark', orient: 'velocity', motion: 'ballistic', count: [22, 28],
@@ -383,7 +383,7 @@ const explosionMedium = defineEffect({
     {
       name: 'ground_ring', shape: 'ring', orient: 'ground', motion: 'ballistic', count: 1,
       lifetime: [0.4, 0.45], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 1], [1, 8]], color: [k(0, DUST, 1.2, 0.5), k(1, DUST, 1, 0)], blend: 1, priority: 2,
+      size: [[0, 1], [1, 8]], color: [k(0, DUST, 0.95, 0.5), k(1, DUST, 0.8, 0)], blend: 1, priority: 2,
     },
   ],
 });
@@ -400,7 +400,7 @@ const explosionLarge = defineEffect({
     {
       name: 'fireball', shape: 'glow', orient: 'billboard', motion: 'ballistic', count: [18, 22],
       lifetime: [0.7, 1.2], speed: [2, 5], spread: 180, gravity: 1.5, drag: 2.2, sizeJitter: 0.3,
-      size: [[0, 1.6], [0.3, 3.6], [1, 4.4]], color: fireballColor(5.5), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
+      size: [[0, 1.6], [0.3, 3.6], [1, 4.4]], color: fireballColor(4), blend: [[0, 0], [0.6, 0.2], [1, 0.5]],
       spin: [-1.5, 1.5], priority: 1,
     },
     {
@@ -411,7 +411,7 @@ const explosionLarge = defineEffect({
     {
       name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [22, 26],
       lifetime: [3, 4.5], delay: [0.1, 0.4], speed: [1.5, 3.5], spread: 70, gravity: 1.2, drag: 0.9, sizeJitter: 0.35,
-      size: [[0, 2], [1, 6.5]], color: fireSmokeColor(0.8), blend: FIRE_SMOKE_BLEND, spin: [-0.5, 0.5], priority: 2,
+      size: [[0, 2.5], [1, 8]], color: fireSmokeColor(0.65), blend: FIRE_SMOKE_BLEND, spin: [-0.5, 0.5], priority: 2,
     },
     {
       name: 'sparks', shape: 'spark', orient: 'velocity', motion: 'ballistic', count: [45, 55],
@@ -433,7 +433,7 @@ const explosionLarge = defineEffect({
     {
       name: 'ground_ring', shape: 'ring', orient: 'ground', motion: 'ballistic', count: 1,
       lifetime: [0.5, 0.55], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 2], [1, 16]], color: [k(0, DUST, 1.3, 0.55), k(1, DUST, 1, 0)], blend: 1, priority: 2,
+      size: [[0, 2], [1, 16]], color: [k(0, DUST, 1, 0.55), k(1, DUST, 0.8, 0)], blend: 1, priority: 2,
     },
   ],
 });
@@ -447,20 +447,21 @@ const acuExplosion = defineEffect({
     {
       name: 'flash', shape: 'flash', orient: 'billboard', motion: 'ballistic', count: 1,
       lifetime: [0.3, 0.3], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
-      size: [[0, 12], [0.2, 34], [1, 20]],
-      color: [k(0, '#FFFFFF', 14, 1), k(0.25, WHITE_HOT, 10, 0.9), k(1, CORE, 3, 0)], blend: 0, priority: 0,
+      size: [[0, 10], [0.2, 26], [1, 16]],
+      color: [k(0, '#FFFFFF', 6, 1), k(0.25, WHITE_HOT, 4.5, 0.85), k(1, CORE, 1.5, 0)], blend: 0, priority: 0,
     },
     {
       name: 'fireball', shape: 'glow', orient: 'billboard', motion: 'ballistic', count: [90, 110],
       lifetime: [0.9, 1.7], speed: [6, 16], spread: 180, emitRadius: 2.5, gravity: 2.5, drag: 2, sizeJitter: 0.35,
-      size: [[0, 4], [0.3, 9], [1, 11]], color: fireballColor(6), blend: [[0, 0], [0.6, 0.2], [1, 0.55]],
+      size: [[0, 4], [0.3, 9], [1, 11]], color: fireballColor(2.6), blend: [[0, 0.1], [0.15, 0.55], [0.5, 0.85], [1, 1]],
       spin: [-1, 1], priority: 0,
     },
     {
       name: 'shockwave', shape: 'ring', orient: 'ground', motion: 'ballistic', count: 1,
       lifetime: [1.1, 1.1], speed: [0, 0], spread: 0, gravity: 0, drag: 0,
       size: [[0, 2], [0.4, 70], [1, 100]],
-      color: [k(0, WHITE_HOT, 7, 1), k(0.3, CORE, 3.5, 0.8), k(1, FALLOFF, 1, 0)], blend: 0, priority: 0,
+      color: [k(0, WHITE_HOT, 2.4, 0.9), k(0.15, CORE, 1.4, 0.75), k(0.45, DUST, 1.3, 0.55), k(1, DUST, 1, 0)],
+      blend: [[0, 0], [0.2, 0.6], [0.5, 1]], priority: 0,
     },
     {
       name: 'stem', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [70, 90],
@@ -476,9 +477,9 @@ const acuExplosion = defineEffect({
       blend: [[0, 0.3], [0.1, 1]], spin: [-0.25, 0.25], priority: 1,
     },
     {
-      name: 'sparks', shape: 'spark', orient: 'velocity', motion: 'ballistic', count: [260, 300],
+      name: 'sparks', shape: 'spark', orient: 'velocity', motion: 'ballistic', count: [200, 240],
       lifetime: [1.2, 2.4], speed: [12, 32], spread: 80, gravity: -9.8, drag: 0.6,
-      size: 0.28, stretch: 3, color: sparkColor(6), blend: 0, priority: 2,
+      size: 0.28, stretch: 3, color: sparkColor(2.4), blend: 0, priority: 2,
     },
     {
       name: 'debris', shape: 'debris', orient: 'billboard', motion: 'ballistic', count: [60, 80],
@@ -489,7 +490,7 @@ const acuExplosion = defineEffect({
     {
       name: 'embers', shape: 'glow', orient: 'billboard', motion: 'ballistic', count: [180, 220],
       lifetime: [3, 6], delay: [0.3, 1.5], speed: [1, 5], spread: 180, emitRadius: 8, gravity: 0.8, drag: 1,
-      size: [[0, 0.5], [1, 0.2]], color: [k(0, CORE, 5, 1), k(0.4, FALLOFF, 3, 0.9), k(1, DEEP_RED, 0.5, 0)],
+      size: [[0, 0.5], [1, 0.2]], color: [k(0, CORE, 3.5, 1), k(0.4, FALLOFF, 2.5, 0.9), k(1, DEEP_RED, 0.5, 0)],
       blend: 0, priority: 2,
     },
   ],
@@ -504,14 +505,14 @@ const acuAftermath = defineEffect({
       name: 'dust_ring', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [60, 72],
       lifetime: [3, 5], delay: [0.05, 0.25], speed: [18, 30], spread: 88, spreadInner: 78, emitRadius: 3,
       gravity: 0.3, drag: 1.4, sizeJitter: 0.4, size: [[0, 3], [1, 11]],
-      color: [k(0, DUST, 1.6, 0.7), k(0.4, DUST, 1, 0.55), k(1, IRON_SMOKE, 1, 0)], blend: 1,
+      color: [k(0, DUST, 0.8, 0.7), k(0.4, DUST, 0.65, 0.55), k(1, IRON_SMOKE, 1, 0)], blend: 1,
       spin: [-0.4, 0.4], priority: 1,
     },
     {
       name: 'ground_fire', shape: 'glow', orient: 'ground', motion: 'ballistic', count: [16, 20],
       lifetime: [3, 5], delay: [0.1, 0.4], speed: [0, 0], spread: 0, emitRadius: 12, gravity: 0, drag: 0,
       sizeJitter: 0.4, size: [[0, 4], [1, 7]],
-      color: [k(0, CORE, 4, 0.9), k(0.3, FALLOFF, 2.5, 0.7), k(1, DEEP_RED, 0.4, 0)], blend: 0, priority: 1,
+      color: [k(0, FALLOFF, 1.8, 0.55), k(0.3, DEEP_RED, 1.1, 0.45), k(1, DEEP_RED, 0.3, 0)], blend: 0, priority: 1,
     },
     {
       name: 'ground_smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: [50, 60],
@@ -528,9 +529,9 @@ const smokeDamage = defineEffect({
   continuous: true,
   layers: [
     {
-      name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: 0, rate: 9,
-      lifetime: [1.6, 2.6], speed: [0.8, 1.4], spread: 15, gravity: 1.2, drag: 0.8, sizeJitter: 0.3,
-      size: [[0, 0.4], [1, 1.8]], color: [k(0, IRON_SMOKE, 1, 0), k(0.1, IRON_SMOKE, 1, 0.6), k(1, SOOT, 1, 0)],
+      name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: 0, rate: 12,
+      lifetime: [2.2, 3.4], speed: [0.8, 1.4], spread: 15, gravity: 1.2, drag: 0.8, sizeJitter: 0.3,
+      size: [[0, 0.5], [1, 2.6]], color: [k(0, '#2C2724', 1, 0), k(0.1, '#2C2724', 1, 0.65), k(1, SOOT, 1, 0)],
       blend: 1, spin: [-0.8, 0.8], priority: 2,
     },
     {
@@ -577,9 +578,9 @@ const wreckSmolder = defineEffect({
   continuous: true,
   layers: [
     {
-      name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: 0, rate: 4,
-      lifetime: [3, 5], speed: [0.4, 0.9], spread: 12, emitRadius: 0.4, gravity: 0.8, drag: 0.8, sizeJitter: 0.35,
-      size: [[0, 0.5], [1, 2.4]], color: [k(0, SOOT, 1, 0), k(0.12, SOOT, 1, 0.45), k(1, IRON_SMOKE, 1, 0)],
+      name: 'smoke', shape: 'smoke', orient: 'billboard', motion: 'ballistic', count: 0, rate: 7,
+      lifetime: [3.5, 5.5], speed: [0.4, 0.9], spread: 12, emitRadius: 0.4, gravity: 0.8, drag: 0.8, sizeJitter: 0.35,
+      size: [[0, 0.7], [1, 3.2]], color: [k(0, SOOT, 1, 0), k(0.12, IRON_SMOKE, 1, 0.38), k(0.6, ASH, 1, 0.22), k(1, ASH, 1, 0)],
       blend: 1, spin: [-0.4, 0.4], priority: 2,
     },
     {
@@ -620,13 +621,13 @@ const buildStream = defineEffect({
       lifetime: [0.5, 0.6], speed: [0, 0], spread: 0, emitRadius: 0.15, gravity: -2.5, drag: 0,
       streamWave: 0.1, streamWaves: 1.5, sizeJitter: 0.2,
       size: [[0, 0.18], [0.4, 0.3], [1, 0.24]], stretch: 2,
-      color: [k(0, CORE, 4.5, 0.9), k(0.6, CORE, 4, 0.9), k(1, FALLOFF, 3, 0.7)], blend: 0, tint: 'spawn', priority: 1,
+      color: [k(0, CORE, 3, 0.9), k(0.6, CORE, 2.6, 0.9), k(1, FALLOFF, 2.2, 0.7)], blend: 0, tint: 'spawn', priority: 1,
     },
     {
       name: 'droplets', shape: 'glow', orient: 'billboard', motion: 'stream', count: 0, rate: 36,
       lifetime: [0.45, 0.65], speed: [0, 0], spread: 0, emitRadius: 0.35, gravity: -2.5, drag: 0,
       streamWave: 0.35, streamWaves: 2.5, sizeJitter: 0.4, size: 0.1,
-      color: [k(0, CORE, 5, 1), k(1, FALLOFF, 3, 0.4)], blend: 0, tint: 'spawn', priority: 2,
+      color: [k(0, CORE, 3.5, 1), k(1, FALLOFF, 2.2, 0.4)], blend: 0, tint: 'spawn', priority: 2,
     },
   ],
 });

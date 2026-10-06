@@ -33,7 +33,7 @@ function layer(name: string, over: Partial<EffectLayerDef>): EffectLayerDef {
 }
 
 /** Effect indices of {@link testLibrary}. */
-export const FX = { p0: 0, p1: 1, p2: 2, emit: 3, varied: 4, stream: 5, shake: 6, mixed: 7 } as const;
+export const FX = { p0: 0, p1: 1, p2: 2, emit: 3, varied: 4, stream: 5, shake: 6, mixed: 7, long0: 8, long1: 9, short1: 10 } as const;
 
 export function testLibrary() {
   return compileEffectLibrary([
@@ -71,6 +71,9 @@ export function testLibrary() {
       boundsWu: 4,
       layers: [layer('crit', { count: 10, priority: 0 }), layer('norm', { count: 10, priority: 1 }), layer('cosm', { count: 10, priority: 2 })],
     },
+    { id: 'test:long0', boundsWu: 4, layers: [layer('a', { count: 1, lifetime: [30, 30], priority: 0 })] },
+    { id: 'test:long1', boundsWu: 4, layers: [layer('a', { count: 100, lifetime: [30, 30], priority: 1 })] },
+    { id: 'test:short1', boundsWu: 4, layers: [layer('a', { count: 50, lifetime: [0.2, 0.2], priority: 1 })] },
   ]);
 }
 
