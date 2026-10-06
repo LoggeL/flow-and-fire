@@ -211,3 +211,53 @@ Generator-/Prüfskripte: `tools/roster/`. Offene Punkte aus dem Roster-Review, a
 6. **Bomber/Flak gegen Gruppen:** in MS12 nachrechnen.
 7. **Namens-/Markenrecherche** („Varkan“, „Kessa“, Einheitennamen): vor einer Veröffentlichung, nicht MVP-blockierend.
 8. **Blueprint-Schema-Erweiterungen** (Schild-Regenerationsverzögerung, Maßstab, Tech-Maske der Modelle): in den Meilensteinen, die die Felder brauchen.
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track TRACK-AI (Skirmish-KI vor MS6/MS9)
+
+Paralleler Vorarbeits-Track auf Branch `track-ai` (kein PLAN-Meilenstein). Details, Messwerte und Adapter-Grenze:
+`docs/status/track-ai.md`, Paket-Fragmente `docs/status/track-ai-tai-p*.md`, Plan `docs/plans/TRACK-AI.json`.
+
+1. **Zwei neue Pakete statt Arbeit in sim/headless:** `@faf/ai` (`packages/ai`, nur fixed/protocol/rules, ohne DOM
+   und Node) und das Werkzeugpaket `@faf/ai-arena` (`tools/ai-arena`) mit eigener Headless-Test-Sim („Arena“). Die
+   Turniere liegen in `tools/ai-arena` statt in `tools/headless/ai-tournament`, weil dep-cruiser `ai → formats`
+   verbietet (die Arena lädt Karten über formats) und parallele Tracks `tools/headless` ändern. Ab MS9 laufen die
+   Turniere gegen die echte Sim in `tools/headless`.
+2. **Perception-Snapshot als Byte-Grenze:** Die KI liest einen Snapshot im Layout v1 (`PerceptionWriter`, Magic
+   `AIPS`, little-endian), `SnapshotPerception` implementiert `PerceptionView`. In MS9 schreibt das FrameWriter-Profil
+   der eigenen Army dieselben Bytes; die Perception-Byte-Tests (AI-PERC-01…03) werden übernommen.
+3. **`AiStatic` um `starts`/`armyStart`/`activeArmies` ergänzt** (ai.md §11 Punkt 8); `sectors` ist bis zum
+   nav-Sektorgraph `null`, `passLowRes` kommt bis dahin aus `computePassLowRes` (exakte Portierung von ecosim).
+4. **Provisorische Command-Payloads** (`AI_PAYLOAD_VERSION = 1`) nur für vorhandene Ops von `@faf/protocol`;
+   protocol bleibt unverändert, in MS9 wandern die Payload-Codecs nach protocol (Ops unverändert).
+5. **Platzierung „nur bekannte Belegung“:** `freeMassSpots()`/`canPlace` kennen Gelände, eigene und bekannte feindliche
+   Objekte (`canPlaceKnown`, provisorisch bis `rules.canPlace`). Die Arena prüft zweistufig: Wissen der Army beim
+   Command, Wahrheit erst beim Baubeginn (sonst verrät `commandRejected` verdeckte Strukturen). Vorschlag für
+   rules/MS9.
+6. **Operationsbudget:** Perception-Ingest zählt gegen eine eigene Pauschale außerhalb der Tabelle ai.md §2.3 und wird
+   nie abgeschnitten; Manager-Budgets sind streng, Reste fallen an die Reserve desselben Thinks (Opening, Emitter),
+   kein Übertrag zwischen Thinks.
+7. **APM:** Eimer (Burst) plus harte Obergrenze von `cap` Records in jedem gleitenden 60-s-Fenster, auch für P0 —
+   ein reiner Eimer erlaubt Burst + Cap je Minute.
+8. **Reaktionsverzögerung auch für neue Feindkontakte** (neue ID), nicht nur für Ereignisse.
+9. **Commit-Semantik der Manager:** `ctx.step(work)` übernimmt Commands und Zustand eines Arbeitsschritts nur, wenn
+   der Think währenddessen nicht abgebrochen wurde; nach einem Notabbruch läuft kein weiterer Manager (AI-DET-04).
+10. **Worker-Protokoll `faf-ai-worker/1`** (`init/ready/perceive/result/error/shutdown`, Perception-Bytes und Batch
+    per Transfer), `AsyncAiSource` (`'pending'`) im Sim-Worker, `SyncAiSource` als Fallback bei ≤ 2 Kernen und
+    headless.
+11. **Spiegel-Turniere tauschen die Startmarker, nicht die Teilnehmer;** Stichprobe ist die Army mit der Parität des
+    Seeds (ai.md §7.1); Crash oder fehlendes Ereignis zählt in den Raten-Gates als Misserfolg.
+12. **Tessera ist die dritte 512-WU-Karte der MS9-Turniere** (ai.md §7.3/§11 Punkt 5), neben Setons und Hollow Ridge.
+13. **Turnier-Zeitlimit 30 min** (TRACK-AI-Vorgabe „bis zu 30 min“); ai.md §7.1 nennt 45 min (MS14), einstellbar per
+    `--minutes 45`.
+14. **Notabbruch-Uhr in Arena-Turnieren = Thread-CPU-Zeit** (`process.threadCpuUsage`, `--clock wall` bleibt
+    möglich). Auf der Entwicklungsmaschine friert der ganze Prozess periodisch ein (gemessen: alle ≈ 15 s für
+    ≈ 3,0 s, alle Threads gleichzeitig, 0,2 ms CPU); mit Wall-Clock entstanden daraus aiTimeout-Marken bei normalen
+    ops-Zahlen. Die Grenze (200 ms) und das Gate (0 aiTimeout) bleiben; Browser und echte Sim nutzen weiter die
+    Wall-Clock (ai.md §2.3). Die Host-Tests AI-DET-01/03 schalten den Notabbruch ab (60 s), AI-DET-04 prüft ihn mit
+    der echten Grenze.
+15. **Energie-Stall im MS9-Vorab-Gate nur Bericht, gepoolt** (ai.md §7.1 R-G4, MS10-Ziel ≤ 5 %).
+16. **Eröffnungs-Timings:** `ai-openings.json → expect` bleibt unverändert; die Arena-Abweichung eco_standard/Hollow
+    Ridge mex8 (−10,7 s, kürzere A*-Wege mit String Pulling) ist im Test mit 12 s Toleranz begründet.
+17. **Stichel-Threat 37 statt 40** (aus roster.json, der einzigen Zahlenquelle; ai.md §5.6 hat einen älteren Stand).
+18. **`AiBrain.think(view, {budgetScale, shouldAbort})` liefert `ThinkResult`** (Commands, `aborted`, ops je Manager,
+    Drops) statt nur `EncodedCommand[]` wie in PLAN §3.10 — Host und Turniere brauchen die Telemetrie.

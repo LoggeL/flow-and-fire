@@ -12,6 +12,7 @@
     { "path": "packages/render" },
     { "path": "packages/client" },
     { "path": "packages/modelkit" },
+    { "path": "packages/ai" },
     { "path": "apps/game" },
     { "path": "apps/model-viewer" },
     { "path": "tools/headless" },
@@ -19,6 +20,7 @@
     { "path": "tools/headless/tsconfig.harness-worker.json" },
     { "path": "tools/assets-pipeline" },
     { "path": "tools/render-bench" },
-    { "path": "tools/sfx" }
+    { "path": "tools/sfx" },
+    { "path": "tools/ai-arena" }
   ]
 }

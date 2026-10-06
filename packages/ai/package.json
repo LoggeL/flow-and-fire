@@ -1,0 +1,22 @@
+{
+  "name": "@faf/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts",
+    "./host": "./src/host/index.ts"
+  },
+  "dependencies": {
+    "@faf/fixed": "workspace:*",
+    "@faf/protocol": "workspace:*",
+    "@faf/rules": "workspace:*"
+  },
+  "devDependencies": {
+    "@faf/formats": "workspace:*",
+    "@types/node": "^24.19.0",
+    "fast-check": "^4.10.2",
+    "tsx": "^4.23.15"
+  }
+}

@@ -623,3 +623,17 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Vorarbeits-Track TRACK-AI (Skirmish-KI, 2026-09-30)
+
+- Paralleler Vorarbeits-Track auf Branch `track-ai`, kein PLAN-Meilenstein. Neue Pakete `@faf/ai` (`packages/ai`:
+  Verträge, Perception-Snapshot, Budget, Profile, 8 Manager, Host/Worker-Protokoll) und `@faf/ai-arena`
+  (`tools/ai-arena`: Headless-Test-Sim, Szenarien, Turniere, Benchmarks). Keine echte Sim, fremde Pakete unverändert.
+- Arena-Vorab-Gates grün:
+  - Turnier `ms9`, 210 Spiele auf Setons/Hollow Ridge/Tessera: T2 ≤ 12 min 98,6 % (Wilson-Untergrenze 95,9 %),
+    erste Welle ≤ 8 min 100 % (98,2 %), Idle max 8,4 %, 0 Crashes, 0 aiTimeout, APM-p99 und ops-p99 im Rahmen.
+  - Benchmarks: Think-p95 Normal 0,133 ms (M5 Pro), Big Battle ops-p99 6.017/40.000, SPK7-Analogon 0,00 % Wartetakte.
+- Tests: 370 KI-Tests (46 Dateien), `pnpm test` 1.315/1.315. `pnpm lint` grün, nachdem der Ignore-Eintrag
+  für `docs/design/ui-mockups/**` wortgleich aus `main` in `eslint.config.js` übernommen wurde.
+- Hauptdokument mit Architektur, Adapter-Grenze zu MS6/MS9/MS10, Abnahme und Messwerten:
+  [`docs/status/track-ai.md`](status/track-ai.md). Entscheidungen: DECISIONS.md, Nachtrag TRACK-AI.

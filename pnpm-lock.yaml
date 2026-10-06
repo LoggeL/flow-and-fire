@@ -122,6 +122,31 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1(@types/node@24.19.0)(esbuild@0.28.2)(tsx@4.23.15)
 
+  packages/ai:
+    dependencies:
+      '@faf/fixed':
+        specifier: workspace:*
+        version: link:../fixed
+      '@faf/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@faf/rules':
+        specifier: workspace:*
+        version: link:../rules
+    devDependencies:
+      '@faf/formats':
+        specifier: workspace:*
+        version: link:../formats
+      '@types/node':
+        specifier: ^24.19.0
+        version: 24.19.0
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
   packages/blueprints:
     dependencies:
       '@faf/fixed':
@@ -290,6 +315,34 @@ importers:
         specifier: workspace:*
         version: link:../sim
     devDependencies:
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
+  tools/ai-arena:
+    dependencies:
+      '@faf/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@faf/fixed':
+        specifier: workspace:*
+        version: link:../../packages/fixed
+      '@faf/formats':
+        specifier: workspace:*
+        version: link:../../packages/formats
+      '@faf/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@faf/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+    devDependencies:
+      '@types/node':
+        specifier: ^24.19.0
+        version: 24.19.0
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
