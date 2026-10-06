@@ -23,6 +23,10 @@ bench-results/
 tools/headless/results/*.json
 packages/*/bench/results/*.json
 tools/render-bench/results/*.json
+# MS3: nav SPK3 bench, headless SPK2/SPK3/MS3 benches
+packages/nav/bench/results/
+tools/headless/results/
+tools/headless/spk2/out/
 *.bench.tmp.*
 *.cpuprofile
 *.heapsnapshot

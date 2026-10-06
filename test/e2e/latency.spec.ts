@@ -120,7 +120,7 @@ for (const server of SERVERS) {
   test(`latency (SPK6): Marker, seq-Bestätigung, erster bewegter Pixel – ${server.label}`, async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'spawn=cubes', 1000);
     await waitTick(page, 30); // spawn settled, separation asleep
 
     // Disjoint groups of resting cubes around a 11 × 10 grid over the start army (own map start).
@@ -249,6 +249,86 @@ for (const server of SERVERS) {
     if (MEASURE_GATE) expect(final.msFailures, `attempt ${final.attempt}: ${final.msFailures.join('; ')}`).toEqual([]);
     expect(load.units).toBe(1024);
     expect(load.mainJsMs.p95).toBeLessThanOrEqual(GATES.mainJsP95Ms);
+    expectNoErrors(errors);
+  });
+}
+
+// SPK6 re-measurement with the MS3 motion (SPK2 start profile on Fx: start kick, turn in place above
+// 70°, group orders with one path request) on the default tank scene: the literal SPK6 criterion
+// "click → first moved pixel ≤ 150 ms (p95)" in the tank start view (45 WU) plus the ack latency.
+// Every click commands a resting group of 5 tanks (a group order). Reported always; the ms gates
+// only with FAF_LATENCY_GATE=1 (same rules as above); invariants (marker ≤ 1 rAF, every click
+// measured, cmd applied in the next tick) always.
+const TANK_GROUP = 5;
+const TANK_PHASES = [
+  { name: 'start-panzer', distance: 45, clicks: 40 },
+  { name: 'nah-panzer', distance: 8, clicks: 30 },
+] as const;
+
+for (const server of SERVERS) {
+  test(`latency (SPK6, MS3-Panzer mit SPK2-Anfahrprofil): erster bewegter Pixel in der Startansicht, seq-Bestätigung – ${server.label}`, async ({ page }, testInfo) => {
+    test.setTimeout(240_000);
+    const errors = captureErrors(page);
+    await openGame(page, server.url, '', 300);
+    await waitTick(page, 40);
+    const groups = await page.evaluate((size) => {
+      const h = window.__faf!;
+      const units = h.ownHandles().map((handle) => ({ handle, p: h.unitPos(handle)! }));
+      // Sweep order (rows of 6 WU): spatially compact, disjoint groups.
+      units.sort((a, b) => Math.floor(a.p.z / 6) - Math.floor(b.p.z / 6) || a.p.x - b.p.x);
+      const out: number[][] = [];
+      for (let i = 0; i + size <= units.length; i += size) out.push(units.slice(i, i + size).map((u) => u.handle));
+      return out;
+    }, TANK_GROUP);
+    expect(groups.length).toBeGreaterThanOrEqual(25);
+
+    let next = 0;
+    const results: Record<string, PhaseResult[]> = {};
+    for (const phase of TANK_PHASES) {
+      const attempts: PhaseResult[] = [];
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        const snap = await clickPhase(page, groups, next, phase.clicks, phase.distance);
+        next += phase.clicks;
+        const inv = invariantFailures(snap, phase.clicks);
+        const ms = msFailures(snap);
+        const stalled = snap.rafIntervalMs.max >= STALL_MS;
+        attempts.push({ attempt, snap, invariantFailures: inv, msFailures: ms, stalled });
+        if (!MEASURE_GATE || (inv.length === 0 && ms.length === 0) || !stalled) break;
+      }
+      results[phase.name] = attempts;
+    }
+    const startView = results['start-panzer']!;
+    const final = startView[startView.length - 1]!;
+    const hostStats = (await page.evaluate(() => window.__faf!.stats())) as { cmdApplyTicksMax: number; cmdBatchesApplied: number } | null;
+    const report = {
+      browser: testInfo.project.name,
+      transport: server.transport,
+      crossOriginIsolated: server.coi,
+      measuredLocally: 'lokal gemessen (Apple M5 Pro, Playwright headless), kein GPU-Runner',
+      scene: 'MS3-Standardszene (150 Platzhalter-Panzer je Armee), Gruppen à 5 (Gruppenbefehl)',
+      measurementGate: MEASURE_GATE,
+      criteria: {
+        firstMovedPixelP95MsStartView: final.snap.clickToMoveMs.p95,
+        firstMovedPixelStartViewLe150: final.snap.clickToMoveMs.p95 <= 150,
+        ackP95Ms: final.snap.clickToAckMs.p95,
+        ackP95Le100: final.snap.clickToAckMs.p95 <= 100,
+        cmdApplyTicksMax: hostStats?.cmdApplyTicksMax ?? null,
+      },
+      phases: TANK_PHASES.map((p) => ({
+        name: p.name,
+        distanceWU: p.distance,
+        attempts: results[p.name]!.map((a) => ({ attempt: a.attempt, stalled: a.stalled, invariantFailures: a.invariantFailures, msFailures: a.msFailures, ...summary(a.snap) })),
+      })),
+    };
+    const dir = resolve(import.meta.dirname, '../../test-results');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, `latency-tanks-${testInfo.project.name}-${server.transport}.json`), JSON.stringify(report, null, 2));
+    await testInfo.attach('latency-tanks', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+
+    for (const p of TANK_PHASES) for (const a of results[p.name]!) expect(a.invariantFailures, `${p.name}, attempt ${a.attempt}`).toEqual([]);
+    expect(hostStats, 'host stats').not.toBeNull();
+    expect(hostStats!.cmdApplyTicksMax, 'cmd → applied in the next tick').toBe(GATES.cmdApplyTicks);
+    if (MEASURE_GATE) expect(final.msFailures, `attempt ${final.attempt}: ${final.msFailures.join('; ')}`).toEqual([]);
     expectNoErrors(errors);
   });
 }

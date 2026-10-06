@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist/tsc",
+    "tsBuildInfoFile": "dist/tsc/.tsbuildinfo",
+    "lib": [
+      "ES2022"
+    ],
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts",
+    "bench/testmap.ts",
+    "bench/corridor-check.ts"
+  ],
+  "references": [
+    {
+      "path": "../fixed"
+    },
+    {
+      "path": "../heap"
+    },
+    {
+      "path": "../rules"
+    }
+  ]
+}

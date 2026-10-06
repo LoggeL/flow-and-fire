@@ -99,10 +99,11 @@ for (const server of SERVERS) {
     const page = ctx.pages()[0] ?? (await ctx.newPage());
     const errors = captureErrors(page);
 
+    // MS3 default scene: 150 placeholder tanks per army.
     const cold = await loadOnce(page, server.url);
-    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 300, null, { timeout: 20_000 });
     const cached = await loadOnce(page, server.url);
-    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 300, null, { timeout: 20_000 });
 
     const report = {
       browser: testInfo.project.name,
@@ -127,6 +128,9 @@ for (const server of SERVERS) {
     expect(cold.timings.fromNetwork).toBeGreaterThanOrEqual(4);
     expect(cold.timings.bytesNetwork).toBeGreaterThan(590_000);
     expect(cold.timings.sources['maps/hollow-ridge']).toBe('network');
+    // MS3: the strategic-zoom icon atlas and its metrics are session assets too.
+    expect(cold.timings.sources['icons/atlas']).toBe('network');
+    expect(cold.timings.sources['icons/atlas-metrics']).toBe('network');
     expect(cold.timings.cacheApi, 'Cache API available').toBe(true);
     // Cached: every asset is a Cache API hit, no network bytes for assets.
     expect(cached.timings.fromCache).toBeGreaterThan(0);

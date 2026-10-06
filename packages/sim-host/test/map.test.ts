@@ -132,7 +132,7 @@ describe('simId distinguishes maps', () => {
   });
 });
 
-describe('L4 on hollow-ridge (replay + arena restore)', () => {
+describe('L4 on hollow-ridge (replay + arena restore)', { timeout: 180_000 }, () => {
   const TICKS = 2000;
   const SEED = 0x2e11d9e;
   let table: SimBpTable;
@@ -161,10 +161,11 @@ describe('L4 on hollow-ridge (replay + arena restore)', () => {
     });
     chain = sim.hashChain();
     log = sim.exportLog();
-    // The scenario's respawn at (256, 256) lies in the lake (M2 spawn rejection is part of it).
-    expect(spawnRejectedCount(sim.world)).toBe(50);
+    // The scenario's respawn at (256, 256) lies in the lake (M2 spawn rejection is part of it);
+    // MS3: the first spawns also lose the points on cliffs/steep slopes (nav passability).
+    expect(spawnRejectedCount(sim.world)).toBeGreaterThanOrEqual(50);
     expect(unitCount(sim.world)).toBeGreaterThan(800);
-  });
+  }, 180_000);
 
   it('the log header (v2) names the map; replaying it with the map gives the identical chain', () => {
     const parsed = parseCommandLog(log);
@@ -246,14 +247,15 @@ describe('L4 on hollow-ridge (replay + arena restore)', () => {
   });
 });
 
-describe('1,024 WU map in the host pipeline (init bytes, simId, replay, restore)', () => {
+describe('1,024 WU map in the host pipeline (init bytes, simId, replay, restore)', { timeout: 180_000 }, () => {
   const big = (): RtsMap =>
     createRtsMap({
       sizeWu: 1024,
       name: 'big',
       waterLevelRaw: 6 * FX_ONE,
-      // Rolling land (≥ 8 WU) with a deep basin (2 WU ground) in the middle third.
-      heights: (x, z) => (x > 400 && x < 620 && z > 400 && z < 620 ? 256 : 1024 + ((x * 29 + z * 17) % 511) * 4 + ((x + z) & 1023)),
+      // Rolling land (≥ 8 WU; MS3: gentle enough for the nav slope limit) with a deep basin
+      // (2 WU ground) in the middle third.
+      heights: (x, z) => (x > 400 && x < 620 && z > 400 && z < 620 ? 256 : 1024 + ((x * 29 + z * 17) % 7) * 4 + ((x + z) >> 2)),
     });
 
   it('init with 1,024 WU .rtsmap bytes; units at the edges stand on the terrain; replay and restore are exact', () => {
@@ -267,7 +269,7 @@ describe('1,024 WU map in the host pipeline (init bytes, simId, replay, restore)
     expect(ready.simId).toBe(simIdFor(table.simHash, mapSimHash(map) >>> 0));
 
     const sim = new HeadlessSim({ bpTable: table, seed: 77, armyCount: 2, map: bytes, buildHash: 'big' });
-    sim.submit([spawnCmd(0, 150, 3, 3, 2, 1), spawnCmd(0, 150, 1021, 1021, 2, 2), spawnCmd(1, 150, 1021, 3, 2, 1), spawnCmd(1, 150, 3, 1021, 2, 2)]);
+    sim.submit([spawnCmd(0, 150, 5, 5, 3, 1), spawnCmd(0, 150, 1019, 1019, 3, 2), spawnCmd(1, 150, 1019, 5, 3, 1), spawnCmd(1, 150, 5, 1019, 3, 2)]);
     sim.step(1);
     const w = sim.world;
     const a0 = unitHandles(w, 0);

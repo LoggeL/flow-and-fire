@@ -5,7 +5,7 @@ import { DEFAULT_MAP_LIGHT, FormatError, createRtsMap, createTestPlaneMap, write
 import { RAW_PER_WU, computeChunkBounds, sampleTerrainHeightRaw, sunDirection } from '@faf/render';
 import { sampleHeightRaw } from '@faf/rules';
 import { describe, expect, it } from 'vitest';
-import { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL } from '../src/map.ts';
+import { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL, NAV_LAND_MAX_SLOPE_RAW_REPLICA, landCellBlocked } from '../src/map.ts';
 import { REPO_ROOT, hollowRidge, prng } from './support/map.ts';
 
 describe('ClientMap', () => {
@@ -157,5 +157,34 @@ describe('ClientMap', () => {
     const bytes = new Uint8Array(readFileSync(join(REPO_ROOT, 'content/maps/hollow-ridge.rtsmap')));
     bytes[100] = bytes[100]! ^ 0xff;
     expect(() => ClientMap.fromBytes(bytes)).toThrow(FormatError);
+  });
+
+  it('nav passability replica (MS3 hooks): same slope limit as @faf/nav; hollow-ridge starts free, lake/border/cliffs blocked', () => {
+    // The client may not import sim packages: pin the replica against the nav source text.
+    const src = readFileSync(join(REPO_ROOT, 'packages/nav/src/constants.ts'), 'utf8');
+    const m = /export const NAV_LAND_MAX_SLOPE_RAW = (\d+);/.exec(src);
+    expect(m).not.toBeNull();
+    expect(NAV_LAND_MAX_SLOPE_RAW_REPLICA).toBe(Number(m![1]));
+    const map = hollowRidge();
+    const hf = map.heightfield;
+    const w = map.waterLevelRaw;
+    for (const s of map.starts) expect(landCellBlocked(hf, w, Math.floor(s.x / RAW_PER_WU), Math.floor(s.z / RAW_PER_WU))).toBe(false);
+    expect(landCellBlocked(hf, w, 256, 256)).toBe(true); // lake centre
+    expect(landCellBlocked(hf, w, 0, 100)).toBe(true); // border
+    expect(landCellBlocked(hf, w, 511, 100)).toBe(true);
+    expect(landCellBlocked(hf, w, -1, 5)).toBe(true);
+    let blocked = 0;
+    let steep = 0;
+    for (let z = 1; z < 511; z++) {
+      for (let x = 1; x < 511; x++) {
+        if (!landCellBlocked(hf, w, x, z)) continue;
+        blocked++;
+        if (!map.isDeepWaterForLand(x * 4096 + 2048, z * 4096 + 2048)) steep++;
+      }
+    }
+    // Cliffs exist (blocked by slope, not water) and most of the map is passable.
+    expect(steep).toBeGreaterThan(100);
+    expect(blocked).toBeLessThan(510 * 510 * 0.5);
+    expect(map.landBlockedAtRaw(96 * RAW_PER_WU, 96 * RAW_PER_WU)).toBe(false);
   });
 });

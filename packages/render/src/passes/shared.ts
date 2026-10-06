@@ -25,6 +25,10 @@ layout(std140) uniform Frame {
   vec4 u_groundColor; // hemisphere ground bounce
   vec4 u_fog;         // rgb: fog color; w: fog start distance (WU)
   vec4 u_viewport;    // w, h, 1/w, 1/h (device pixels)
+  vec4 u_strategic;   // x: projection scale (CSS px of 1 WU at 1 WU distance), y: zoom icon force 0..1,
+                      // z: device px per CSS px, w: zoom level (0..2)
+  vec4 u_iconParams;  // x: icon size (CSS px), y: first icon-only instance of the unit ring,
+                      // z: HP bar mode bits, w: 0
 };
 `;
 
@@ -39,6 +43,8 @@ export const FRAME_LAYOUT = std140Layout([
   { name: 'groundColor', type: 'vec4' },
   { name: 'fog', type: 'vec4' },
   { name: 'viewport', type: 'vec4' },
+  { name: 'strategic', type: 'vec4' },
+  { name: 'iconParams', type: 'vec4' },
 ]);
 
 export const PALETTE_BLOCK_GLSL = /* glsl */ `

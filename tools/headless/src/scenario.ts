@@ -15,7 +15,7 @@
 import { asArmyId, asTick, fx, MAX_ARMIES, type Handle } from '@faf/fixed';
 import type { SimBpTable } from '@faf/blueprints/simbin';
 import { createTestPlaneMap, mapSimData, mapSimHash, readRtsMap, type RtsMap } from '@faf/formats';
-import { CmdFlags, CommandBatchEncoder, encodeCheatKill, encodeCheatSpawn, encodeMove, Op } from '@faf/protocol';
+import { CmdFlags, CommandBatchEncoder, encodeCheatFootprint, encodeCheatKill, encodeCheatSpawn, encodeMove, Op } from '@faf/protocol';
 import {
   armyUnitCount,
   createWorld,
@@ -55,9 +55,11 @@ export interface SpawnSpec {
 /** One command of a scenario. Coordinates are WU (converted with `fx`). */
 export type ScenarioCommand =
   | { readonly kind: 'move'; readonly army: number; readonly units: readonly Handle[]; readonly x: number; readonly z: number; readonly queue?: boolean }
-  | { readonly kind: 'stop'; readonly army: number; readonly units: readonly Handle[] }
+  | { readonly kind: 'stop'; readonly army: number; readonly units: readonly Handle[]; readonly queue?: boolean }
   | { readonly kind: 'kill'; readonly army: number; readonly units: readonly Handle[] }
-  | ({ readonly kind: 'spawn' } & SpawnSpec);
+  | ({ readonly kind: 'spawn' } & SpawnSpec)
+  /** MS3 cheat: footprint rectangle in nav cells (delta +1 adds, −1 removes). */
+  | { readonly kind: 'footprint'; readonly army: number; readonly x: number; readonly z: number; readonly w: number; readonly h: number; readonly delta?: 1 | -1 };
 
 /** Read access for command and assert callbacks. */
 export interface ScenarioContext {
@@ -334,7 +336,10 @@ export function runScenario(sc: Scenario, opts: RunOptions): ScenarioResult {
         enc.add({ tick: t, army, seq, op: Op.Move, flags: c.queue === true ? CmdFlags.Queue : 0, units: c.units, payload: encodeMove({ x: fx(c.x), y: fx(0), z: fx(c.z) }) });
         return;
       case 'stop':
-        enc.add({ tick: t, army, seq, op: Op.Stop, flags: 0, units: c.units, payload: new Uint8Array(0) });
+        enc.add({ tick: t, army, seq, op: Op.Stop, flags: c.queue === true ? CmdFlags.Queue : 0, units: c.units, payload: new Uint8Array(0) });
+        return;
+      case 'footprint':
+        enc.add({ tick: t, army, seq, op: Op.Cheat, flags: 0, units: [], payload: encodeCheatFootprint({ cellX: c.x, cellZ: c.z, w: c.w, h: c.h, delta: c.delta ?? 1 }) });
         return;
       case 'kill':
         enc.add({ tick: t, army, seq, op: Op.Cheat, flags: 0, units: c.units, payload: encodeCheatKill() });

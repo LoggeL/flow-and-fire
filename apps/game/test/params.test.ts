@@ -1,19 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { chooseTransport, DEFAULT_CUBES, DEFAULT_ENEMY_CUBES, DEFAULT_SEED, parseParams } from '../src/params.ts';
+import { chooseTransport, DEFAULT_CUBES, DEFAULT_ENEMY_CUBES, DEFAULT_SEED, DEFAULT_TANKS, parseParams } from '../src/params.ts';
 
 describe('URL parameters', () => {
-  it('defaults', () => {
+  it('defaults (MS3: placeholder tanks, no cubes)', () => {
     expect(parseParams('')).toEqual({
       transport: 'auto',
       seed: DEFAULT_SEED,
-      cubes: DEFAULT_CUBES,
-      enemyCubes: DEFAULT_ENEMY_CUBES,
+      cubes: 0,
+      enemyCubes: 0,
       autostart: true,
       map: 'hollow-ridge',
       preset: 'medium',
       units: 0,
+      spawn: 'tanks',
+      tanks: DEFAULT_TANKS,
+      paths: false,
     });
+    expect(DEFAULT_TANKS).toBe(150);
     expect(DEFAULT_CUBES).toBe(1000);
+  });
+
+  it('?spawn=tanks|cubes|none, ?tanks=, ?paths= (MS3); ?cubes=/?units= keep the MS2 cube scene', () => {
+    const cubes = parseParams('?spawn=cubes');
+    expect([cubes.spawn, cubes.cubes, cubes.enemyCubes, cubes.tanks]).toEqual(['cubes', DEFAULT_CUBES, DEFAULT_ENEMY_CUBES, 0]);
+    const none = parseParams('?spawn=none');
+    expect([none.spawn, none.cubes, none.enemyCubes, none.tanks]).toEqual(['none', 0, 0, 0]);
+    expect(parseParams('?tanks=40').tanks).toBe(40);
+    expect(parseParams('?tanks=99999').tanks).toBe(4096);
+    expect(parseParams('?spawn=TANKS&tanks=7').tanks).toBe(7);
+    expect(parseParams('?spawn=pigeons').spawn).toBe('tanks');
+    // Legacy: an explicit cube or flight-test count means the cube scene.
+    expect(parseParams('?cubes=1000').spawn).toBe('cubes');
+    expect(parseParams('?cubes=1000').cubes).toBe(1000);
+    expect(parseParams('?units=2000').spawn).toBe('cubes');
+    expect(parseParams('?cubes=10&spawn=tanks').spawn).toBe('tanks');
+    expect(parseParams('?cubes=10&spawn=tanks').cubes).toBe(0);
+    expect(parseParams('?paths=1').paths).toBe(true);
+    expect(parseParams('?paths=0').paths).toBe(false);
   });
 
   it('parses transport, seed, cubes, enemy, autostart', () => {
@@ -26,6 +49,9 @@ describe('URL parameters', () => {
       map: 'hollow-ridge',
       preset: 'medium',
       units: 0,
+      spawn: 'cubes',
+      tanks: 0,
+      paths: false,
     });
     expect(parseParams('transport=transfer').transport).toBe('transfer');
     expect(parseParams('autostart=false').autostart).toBe(false);
@@ -33,7 +59,7 @@ describe('URL parameters', () => {
   });
 
   it('invalid values fall back, out-of-range values are clamped', () => {
-    const p = parseParams('?transport=pigeon&seed=-3&cubes=abc&enemy=99999');
+    const p = parseParams('?transport=pigeon&seed=-3&cubes=abc&enemy=99999&spawn=cubes');
     expect(p.transport).toBe('auto');
     expect(p.seed).toBe(DEFAULT_SEED);
     expect(p.cubes).toBe(DEFAULT_CUBES);

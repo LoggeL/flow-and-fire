@@ -13,6 +13,7 @@ import { AssetManager } from '@faf/client';
 import { signal } from '@preact/signals';
 import { render } from 'preact';
 import { Game } from './game.ts';
+import { BLUEPRINT_HMR_EVENT, type BlueprintHmrPayload } from './hmr.ts';
 import { installTestHooks } from './hooks.ts';
 import { INITIAL_LOAD_STATE, SIM_START_PROGRESS, loadSessionAssets, type LoadState, type LoadTimings } from './loading.ts';
 import { parseParams } from './params.ts';
@@ -77,7 +78,13 @@ async function boot(): Promise<void> {
     canvas,
     params,
     buildHash: __FAF_BUILD_HASH__,
-    assets: { simBin: assets.simBin, viewJson: assets.viewJson, models: assets.loaded.models, mapBytes: assets.mapBytes },
+    assets: {
+      simBin: assets.simBin,
+      viewJson: assets.viewJson,
+      models: assets.loaded.models,
+      mapBytes: assets.mapBytes,
+      iconAtlas: assets.iconAtlas,
+    },
     createWorker: () => new SimWorker({ name: 'faf-sim' }),
     root: gameRoot,
   });
@@ -85,8 +92,13 @@ async function boot(): Promise<void> {
   root.dataset['transport'] = game.transport;
   gameSig.value = game;
   installTestHooks(game, () => timings);
+  if (assets.iconAtlasNote !== null) console.warn(`[faf] strategic icons: procedural fallback (${assets.iconAtlasNote})`);
   if (import.meta.hot) {
+    // Blueprint HMR (dev server plugin, scripts/blueprint-hmr.ts).
+    const onBlueprints = (p: BlueprintHmrPayload): void => game.applyBlueprintUpdate(p);
+    import.meta.hot.on(BLUEPRINT_HMR_EVENT, onBlueprints);
     import.meta.hot.dispose(() => {
+      import.meta.hot?.off(BLUEPRINT_HMR_EVENT, onBlueprints);
       game.dispose();
       mgr.dispose();
     });

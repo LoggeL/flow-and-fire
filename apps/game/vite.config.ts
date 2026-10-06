@@ -5,11 +5,14 @@ import { dirname, extname, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, type Plugin } from 'vite';
+import { blueprintHmrPlugin } from './scripts/blueprint-hmr.ts';
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(appDir, 'dist');
 /** Output of tools/assets-pipeline (manifest + content-hashed map/sim.bin/view.json/models). */
 const assetsSrc = resolve(appDir, '../../content/generated/assets');
+/** Repository root (content sources for the blueprint HMR). */
+const repoRoot = resolve(appDir, '../..');
 /** URL path of the assets below the base (dev: `/assets/`, build: `/b/<hash>/assets/`). */
 const ASSETS_DIR = 'assets';
 
@@ -19,6 +22,7 @@ const ASSET_MIME: Record<string, string> = {
   '.bin': 'application/octet-stream',
   '.rtsmap': 'application/octet-stream',
   '.glb': 'model/gltf-binary',
+  '.rgba': 'application/octet-stream',
 };
 
 /** COOP/COEP make the page cross-origin isolated (SharedArrayBuffer transport). */
@@ -157,7 +161,9 @@ export default defineConfig(({ command }) => {
   return {
     root: appDir,
     base: command === 'build' ? `/b/${buildHash}/` : '/',
-    plugins: [preact(), pipelineAssetsPlugin(outDir), buildManifestPlugin(buildHash)],
+    // Blueprint HMR (MS3) only in the dev server: content/blueprints + content/locales → sim.bin/view.json
+    // → custom HMR event → ctl.devReload (FAF_BLUEPRINT_DIR / FAF_LOCALES_DIR override the directories).
+    plugins: [preact(), pipelineAssetsPlugin(outDir), buildManifestPlugin(buildHash), ...(command === 'serve' ? [blueprintHmrPlugin({ repoRoot })] : [])],
     define: {
       __FAF_BUILD_HASH__: JSON.stringify(buildHash),
     },

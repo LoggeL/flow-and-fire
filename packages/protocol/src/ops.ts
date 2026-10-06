@@ -29,6 +29,11 @@ export const Op = {
   Cheat: 250,
 } as const;
 
+/**
+ * `GroupMove` (23) stays reserved: MS3 treats every Move with ≥ 2 own units as a group order
+ * (one path request, offset preservation), so no separate opcode is needed.
+ */
+
 /** Opcode value (u8). */
 export type Op = (typeof Op)[keyof typeof Op];
 
@@ -39,6 +44,8 @@ export type OpName = keyof typeof Op;
 export const CheatSub = {
   Spawn: 1,
   Kill: 2,
+  /** MS3: add/remove a footprint rectangle in the nav grid (obstacle; basis of MS4 buildings). */
+  Footprint: 3,
 } as const;
 export type CheatSub = (typeof CheatSub)[keyof typeof CheatSub];
 

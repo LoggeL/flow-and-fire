@@ -129,8 +129,11 @@ void main() {
   // Dashes crawl towards the segment end (0.8 WU period).
   float dash = fract((v_along - u_camMod.w * 1.6) / 0.8);
   float on = 0.45 + 0.55 * step(dash, 0.6);
+  // Coverage with a one-pixel ramp at the edges (fwidth(v_side) = side units per pixel): thin
+  // lines (≈ 2–3 px, the route width of the client) keep a fully opaque core instead of fading
+  // out completely under a wider smoothstep.
   float fw = max(fwidth(v_side), 1e-4);
-  float edge = 1.0 - smoothstep(1.0 - fw * 1.5, 1.0, abs(v_side));
+  float edge = clamp((1.0 - abs(v_side)) / fw, 0.0, 1.0);
   o_color = vec4(v_color.rgb, v_color.a * on * edge * 0.9);
 }
 `;

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { decodeSimBin } from '@faf/blueprints/simbin';
-import { ClientMap, RAW_PER_WU, type MeshData } from '@faf/client';
+import { ClientMap, RAW_PER_WU, landCellBlocked, type MeshData } from '@faf/client';
 import { describe, expect, it } from 'vitest';
 import {
   FLIGHT_CLUSTER_UNITS,
@@ -9,6 +9,8 @@ import {
   flightClusters,
   spawnSpreadWU,
   startLayout,
+  TANK_MIX,
+  tankSpawnPlan,
   visualsFromViewJson,
 } from '../src/content.ts';
 
@@ -52,6 +54,14 @@ describe('start layout', () => {
     expect([l.enemy.x / RAW_PER_WU, l.enemy.z / RAW_PER_WU]).toEqual([416, 416]);
   });
 
+  it('land discs avoid nav-blocked cells (MS3 slope rule) when the source has the replica', () => {
+    const flat = { sizeWu: 64, waterDepthRaw: () => -1 };
+    expect(discIsLand(flat, 32, 32, 4)).toBe(true);
+    const wall = { ...flat, landBlockedAtRaw: (x: number) => Math.floor(x / RAW_PER_WU) === 37 };
+    expect(discIsLand(wall, 32, 32, 4)).toBe(false);
+    expect(discIsLand(wall, 20, 32, 4)).toBe(true);
+  });
+
   it('test plane keeps the MS1 layout; a missing enemy start is the point mirror', () => {
     // The generated test plane map carries the MS1 start layout (256, 256) / (312, 214) as its starts.
     const t = startLayout(ClientMap.testPlane(), 0, 1);
@@ -81,6 +91,16 @@ describe('flight-test clusters (?units=)', () => {
     expect(perArmy[1]).toBeGreaterThan(900);
     // Every disc is land (no cheat spawn gets rejected in deep water).
     for (const c of cl) expect(discIsLand(ridge, c.x / RAW_PER_WU, c.z / RAW_PER_WU, c.spread / RAW_PER_WU)).toBe(true);
+    // MS3: no cell of a disc is blocked by the nav rule (slope/cliff) – the sim would reject the spawn.
+    for (const c of cl) {
+      const r = c.spread / RAW_PER_WU;
+      for (let dz = -Math.ceil(r); dz <= Math.ceil(r); dz++) {
+        for (let dx = -Math.ceil(r); dx <= Math.ceil(r); dx++) {
+          if (dx * dx + dz * dz > r * r) continue;
+          expect(ridge.landBlockedAtRaw(c.x + dx * RAW_PER_WU, c.z + dz * RAW_PER_WU)).toBe(false);
+        }
+      }
+    }
     // Spread over the whole map: every quadrant has clusters.
     const quads = new Set(cl.map((c) => (c.x < 256 * RAW_PER_WU ? 0 : 1) + (c.z < 256 * RAW_PER_WU ? 0 : 2)));
     expect(quads.size).toBe(4);
@@ -97,5 +117,48 @@ describe('flight-test clusters (?units=)', () => {
     expect(one[0]!.count).toBe(5);
     const flooded = { sizeWu: 64, waterDepthRaw: () => 1 << 20 };
     expect(() => flightClusters(flooded, 10, [0])).toThrow(/no land/);
+  });
+});
+
+describe('MS3 default scene: placeholder tanks (?spawn=tanks)', () => {
+  const bp = decodeSimBin(new Uint8Array(readFileSync(resolve(generated, 'sim.bin'))));
+
+  it('150 tanks per army: every core:lnd_* type, largest-remainder split, one disc per army', () => {
+    const l = startLayout(ridge, 0, 1);
+    const plan = tankSpawnPlan(bp, 150, 0, l.own.x, l.own.z);
+    expect(plan.reduce((n, t) => n + t.count, 0)).toBe(150);
+    expect(plan.map((t) => bp.ids[t.bp])).toEqual(TANK_MIX.map(([id]) => id));
+    expect(plan.map((t) => t.count)).toEqual([63, 25, 25, 25, 12]);
+    for (const t of plan) {
+      expect([t.army, t.x, t.z, t.spread]).toEqual([0, l.own.x, l.own.z, plan[0]!.spread]);
+    }
+    const spreadWU = plan[0]!.spread / RAW_PER_WU;
+    expect(spreadWU).toBeGreaterThan(8);
+    expect(spreadWU).toBeLessThan(30);
+    // Both start discs lie on land that is passable for land units (nav rule replica) in ≥ 95 % of the cells.
+    for (const c of [l.own, l.enemy]) {
+      let cells = 0;
+      let free = 0;
+      const cx = c.x / RAW_PER_WU;
+      const cz = c.z / RAW_PER_WU;
+      for (let z = Math.floor(cz - spreadWU); z <= cz + spreadWU; z++) {
+        for (let x = Math.floor(cx - spreadWU); x <= cx + spreadWU; x++) {
+          if ((x + 0.5 - cx) ** 2 + (z + 0.5 - cz) ** 2 > spreadWU * spreadWU) continue;
+          cells++;
+          if (!landCellBlocked(ridge.heightfield, ridge.waterLevelRaw, x, z)) free++;
+        }
+      }
+      expect(free / cells).toBeGreaterThanOrEqual(0.95);
+    }
+  });
+
+  it('small counts, missing blueprints, zero', () => {
+    expect(tankSpawnPlan(bp, 0, 0, 0, 0)).toEqual([]);
+    const one = tankSpawnPlan(bp, 1, 1, 5, 6);
+    expect(one).toHaveLength(1);
+    expect(bp.ids[one[0]!.bp]).toBe('core:lnd_t1_tank');
+    const onlyTank = { indexOf: (id: string) => (id === 'core:lnd_t1_tank' ? 4 : -1), radius: () => 0.45 * RAW_PER_WU };
+    expect(tankSpawnPlan(onlyTank, 10, 0, 0, 0)).toEqual([{ bp: 4, army: 0, count: 10, x: 0, z: 0, spread: expect.any(Number) }]);
+    expect(tankSpawnPlan({ indexOf: () => -1, radius: () => 0 }, 10, 0, 0, 0)).toEqual([]);
   });
 });

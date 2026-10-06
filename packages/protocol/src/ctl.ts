@@ -58,7 +58,18 @@ export interface DebugMsg {
 }
 export interface DevReloadMsg {
   readonly t: 'devReload';
+  /**
+   * Optional new blueprint table (`sim.bin` bytes, transferred; Vite HMR, MS3). The host decodes
+   * it, checks compatibility (existing ids unchanged and in order, new ones only appended) and
+   * swaps the blueprint table; without it only the MARK is recorded. Either way the command log
+   * becomes tainted.
+   */
+  readonly simBin?: ArrayBuffer;
 }
+
+/** Size bounds of `DevReloadMsg.simBin` (at least a sim.bin header, at most 64 MiB). */
+export const DEV_RELOAD_SIM_BIN_MIN_BYTES = 32;
+export const DEV_RELOAD_SIM_BIN_MAX_BYTES = 64 * 1024 * 1024;
 export interface ExportLogMsg {
   readonly t: 'exportLog';
 }
@@ -177,9 +188,14 @@ export function parseCtlMessage(x: unknown): CtlMessage | null {
   switch (x.t) {
     case 'pause':
     case 'resume':
-    case 'devReload':
     case 'exportLog':
       return x as unknown as CtlMessage;
+    case 'devReload': {
+      const b = x.simBin;
+      if (b === undefined) return x as unknown as DevReloadMsg;
+      if (!(b instanceof ArrayBuffer) || b.byteLength < DEV_RELOAD_SIM_BIN_MIN_BYTES || b.byteLength > DEV_RELOAD_SIM_BIN_MAX_BYTES) return null;
+      return x as unknown as DevReloadMsg;
+    }
     case 'speed':
       return typeof x.speed === 'number' && Number.isFinite(x.speed) ? (x as unknown as SpeedMsg) : null;
     case 'step':

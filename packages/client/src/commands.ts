@@ -10,10 +10,12 @@
  * - Each command goes out as its own batch (tick 0; the host stamps the application tick).
  */
 import {
+  CHEAT_FOOTPRINT_PAYLOAD_BYTES,
   CHEAT_SPAWN_PAYLOAD_BYTES,
   CommandBatchEncoder,
   CmdFlags,
   Op,
+  writeCheatFootprint,
   writeCheatSpawn,
   writeMove,
   MOVE_PAYLOAD_BYTES,
@@ -48,6 +50,8 @@ export class CommandBuilder {
   private readonly spawnPayload = new Uint8Array(CHEAT_SPAWN_PAYLOAD_BYTES);
   private readonly spawnDv = new DataView(this.spawnPayload.buffer);
   private readonly killPayload = Uint8Array.of(CheatSub.Kill);
+  private readonly footprintPayload = new Uint8Array(CHEAT_FOOTPRINT_PAYLOAD_BYTES);
+  private readonly footprintDv = new DataView(this.footprintPayload.buffer);
   private readonly emptyPayload = new Uint8Array(0);
   private next = 1;
 
@@ -123,6 +127,20 @@ export class CommandBuilder {
   kill(units: ArrayLike<number>, nowMs = 0): number {
     if (units.length === 0) return -1;
     return this.send(Op.Cheat, 0, units, this.killPayload, nowMs);
+  }
+
+  /**
+   * Cheat footprint (dev console `obstacle`, MS3): stamps (`delta` +1) or removes (−1) a
+   * `w × h` cell rectangle at cell (`cellX`, `cellZ`) in the sim's footprint grid (1 cell = 1 WU).
+   */
+  footprint(cellX: number, cellZ: number, w: number, h: number, delta: 1 | -1, nowMs = 0): number {
+    checkInt('cellX', cellX, -0x80000000, 0x7fffffff);
+    checkInt('cellZ', cellZ, -0x80000000, 0x7fffffff);
+    checkInt('w', w, 1, 64);
+    checkInt('h', h, 1, 64);
+    if (delta !== 1 && delta !== -1) throw new RangeError(`delta must be 1 or -1, got ${String(delta)}`);
+    writeCheatFootprint(this.footprintDv, 0, cellX, cellZ, w, h, delta);
+    return this.send(Op.Cheat, 0, EMPTY_UNITS, this.footprintPayload, nowMs);
   }
 
   /**

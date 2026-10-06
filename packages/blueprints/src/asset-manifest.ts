@@ -9,7 +9,8 @@
  * ```
  *
  * - Logical ids follow {@link ASSET_ID_PATTERN}: models use their blueprint `view.mesh` id
- *   (`units/cube_bot`), maps `maps/<name>`, compiled content `content/sim.bin`, `content/view.json`.
+ *   (`units/cube_bot`), maps `maps/<name>`, compiled content `content/sim.bin`, `content/view.json`,
+ *   the icon atlas `icons/atlas` + `icons/atlas-metrics`.
  * - `url` is relative to the manifest and carries the content hash (`<name>.<hash8>.<ext>`), so a
  *   URL never changes its bytes (immutable caching, Cache API key).
  * - `hash` is a Subresource-Integrity style digest (`sha256-` + standard base64 of SHA-256).
@@ -27,8 +28,12 @@ export const ASSET_MANIFEST_VERSION = 1;
 /** File name of the manifest inside the asset directory. */
 export const ASSET_MANIFEST_FILE = 'manifest.json';
 
-export type AssetKind = 'map' | 'simbin' | 'viewjson' | 'model';
-export const ASSET_KINDS: readonly AssetKind[] = ['map', 'simbin', 'viewjson', 'model'];
+/**
+ * `iconatlas` / `iconmetrics` (MS3, C2): the strategic icon MSDF atlas as raw RGBA8 and its metrics JSON
+ * (`icons/atlas`, `icons/atlas-metrics`), written by tools/assets-pipeline.
+ */
+export type AssetKind = 'map' | 'simbin' | 'viewjson' | 'model' | 'iconatlas' | 'iconmetrics';
+export const ASSET_KINDS: readonly AssetKind[] = ['map', 'simbin', 'viewjson', 'model', 'iconatlas', 'iconmetrics'];
 
 /** One hashed file. */
 export interface AssetFileRef {

@@ -26,6 +26,33 @@ export const MASS_SPOT_DECAL = { radiusWU: 1.6, widthWU: 0.35, color: 0x40ff50, 
 /** Hydrocarbon spot decal (M4): cyan ring, larger (hydro plants are 3×3). */
 export const HYDRO_SPOT_DECAL = { radiusWU: 2.6, widthWU: 0.45, color: 0x20e0ff, alpha: 0.95 } as const;
 
+/**
+ * Replica of the nav's land slope limit (`@faf/nav` NAV_LAND_MAX_SLOPE_RAW, Fx raw per WU; the
+ * client may not import sim packages). A test pins it against the nav constant.
+ */
+export const NAV_LAND_MAX_SLOPE_RAW_REPLICA = 3072;
+
+/**
+ * Static land passability of cell (x, z) (1 cell = 1 WU) like the nav's M5 rule (`@faf/nav`
+ * `terrainCell` = 0): map border, slope of the 4 corner samples above the limit, or deep water at
+ * the cell centre. Footprints and size-class clearance are not part of it.
+ */
+export function landCellBlocked(hf: Heightfield, waterLevelRaw: number | null, x: number, z: number): boolean {
+  const size = hf.sizeWu;
+  if (!(x >= 0 && z >= 0 && x < size && z < size)) return true;
+  if (x === 0 || z === 0 || x === size - 1 || z === size - 1) return true;
+  const dim = hf.dim;
+  const h = hf.heights;
+  const i = z * dim + x;
+  const a = h[i]!;
+  const b = h[i + 1]!;
+  const c = h[i + dim]!;
+  const d = h[i + dim + 1]!;
+  const slope = (Math.max(Math.max(a, b), Math.max(c, d)) - Math.min(Math.min(a, b), Math.min(c, d))) * hf.heightScaleRaw;
+  if (slope > NAV_LAND_MAX_SLOPE_RAW_REPLICA) return true;
+  return waterLevelRaw !== null && isDeepWaterForLand(hf, waterLevelRaw, x * 4096 + 2048, z * 4096 + 2048);
+}
+
 /** Anything that answers terrain heights (ClientMap, or a fake in tests). */
 export interface TerrainHeightSource {
   /** Map edge length in WU (square map from 0 to sizeWu). */
@@ -118,6 +145,11 @@ export class ClientMap implements TerrainHeightSource {
   /** True if land units may not enter (deep water, M2). */
   isDeepWaterForLand(xRaw: number, zRaw: number): boolean {
     return isDeepWaterForLand(this.heightfield, this.waterLevelRaw, xRaw, zRaw);
+  }
+
+  /** Static land passability (nav rule replica, {@link landCellBlocked}) of the cell containing (x, z) raw. */
+  landBlockedAtRaw(xRaw: number, zRaw: number): boolean {
+    return landCellBlocked(this.heightfield, this.waterLevelRaw, Math.floor(xRaw / RAW_PER_WU), Math.floor(zRaw / RAW_PER_WU));
   }
 
   /**

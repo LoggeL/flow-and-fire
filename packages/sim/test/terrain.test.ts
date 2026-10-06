@@ -24,6 +24,7 @@ import {
   ruleHash,
   snapshot,
   SpotKind,
+  spawnRejectedCount,
   step,
   terrainHeight,
   unitHandles,
@@ -152,12 +153,14 @@ describe('map in the static arena area', () => {
       const g = sampleHeightRaw(hf, x, z);
       expect(terrainHeight(w, x, z)).toBe(g);
       expect(waterDepth(w, x, z)).toBe(40_960 - g);
-      expect(isBlockedFor(w, 0, x, z)).toBe(isDeepWaterForLand(hf, hf.waterLevelRaw, x, z));
+      // MS3: blocked = deep water at the point (M2) or a nav cell not passable for class 1 (M5).
+      const cell = w.navClear[((Math.min(z, 511 * FX_ONE) >> 12) << w.navShift) | (Math.min(x, 511 * FX_ONE) >> 12)]!;
+      expect(isBlockedFor(w, 0, x, z)).toBe(isDeepWaterForLand(hf, hf.waterLevelRaw, x, z) || cell < 1);
     }
     // Deep water sample points of the map contract (3.5 WU deep).
     expect(waterDepth(w, 256 * FX_ONE, 256 * FX_ONE)).toBe(3.5 * FX_ONE);
     expect(isBlockedFor(w, 0, 300 * FX_ONE, 212 * FX_ONE)).toBe(true);
-    // Only land units are blocked (air, hover … are not in MS2).
+    // Only land units are blocked (air, hover … are not in MS3).
     expect(isBlockedFor(w, 5, 256 * FX_ONE, 256 * FX_ONE)).toBe(false);
   });
 
@@ -222,19 +225,23 @@ describe('units stand on the terrain (M1/Sim)', () => {
 });
 
 describe('1,024 WU map (PLAN §3.1: tested up to 1,024 WU; next standard size)', () => {
-  /** 1,024 WU terrain with slopes and ridges up to ≈ 500 WU high near the far edge (integer heights). */
+  /**
+   * 1,024 WU terrain rising to ≈ 320 WU towards the far corner with small ripples (integer
+   * heights; every inner cell stays below the nav slope limit, MS3), plus a raised last sample
+   * row/column (border cells are not passable anyway).
+   */
   function bigMap() {
     return mapSimData(
       createRtsMap({
         sizeWu: 1024,
         name: 'big',
         waterLevelRaw: null,
-        heights: (x, z) => Math.min(0xffff, ((x * 37 + z * 11) & 1023) * 8 + ((x + z) >> 1) * 40 + (x === 1024 || z === 1024 ? 3000 : 0)),
+        heights: (x, z) => Math.min(0xffff, ((x * 37 + z * 11) & 7) * 8 + ((x + z) >> 1) * 40 + (x === 1024 || z === 1024 ? 3000 : 0)),
       }),
     );
   }
 
-  it('units at all four edges and corners: y == sampleHeightRaw, positions clamped to [0, 1,024 WU]; snapshot/restore', () => {
+  it('units at all four edges and corners: y == sampleHeightRaw, positions clamped into the map; snapshot/restore', () => {
     const map = bigMap();
     const w = createWorld({ bpTable: gameTable(), seed: 11, armyCount: 2, map });
     expect(w.mapSizeWu).toBe(1024);
@@ -245,12 +252,19 @@ describe('1,024 WU map (PLAN §3.1: tested up to 1,024 WU; next standard size)',
     const r = w.arena.regions.find((x) => x.name === 'map.heights')!;
     expect(r.byteLength).toBeGreaterThanOrEqual(1025 * 1025 * 2);
     const small = createWorld({ bpTable: gameTable(), seed: 11, armyCount: 2 });
-    expect(w.snapshotByteLength).toBeGreaterThan(small.snapshotByteLength); // grids grow with the map …
-    expect(w.snapshotByteLength).toBeLessThan(small.snapshotByteLength + 1025 * 1025 * 2); // … the heightmap does not
-    step(w, [spawnCmd(0, 200, 4, 4, 3), spawnCmd(0, 200, 1020, 1020, 3), spawnCmd(1, 200, 1020, 4, 3), spawnCmd(1, 200, 4, 1020, 3)]);
+    expect(w.snapshotByteLength).toBeGreaterThan(small.snapshotByteLength); // grids and nav grow with the map …
+    // … the heightmap and the static nav terrain do not: they lie behind the snapshot range.
+    for (const name of ['map.heights', 'nav.terrain']) {
+      const reg = w.arena.regions.find((x) => x.name === name)!;
+      expect(reg.area, name).toBe('static');
+      expect(reg.byteOffset, name).toBeGreaterThanOrEqual(w.arena.staticStart);
+    }
+    expect(w.snapshotByteLength).toBe(w.arena.dynamicEnd - w.arena.dynamicStart);
+    step(w, [spawnCmd(0, 200, 5, 5, 3), spawnCmd(0, 200, 1019, 1019, 3), spawnCmd(1, 200, 1019, 5, 3), spawnCmd(1, 200, 5, 1019, 3)]);
     const a0 = unitHandles(w, 0);
     const a1 = unitHandles(w, 1);
     expect(a0.length + a1.length).toBe(800);
+    expect(spawnRejectedCount(w)).toBe(0);
     // Everyone drives beyond the opposite/own edge (targets are clamped into the map).
     step(w, [moveCmd(0, a0.slice(0, 200), 1100, 1100), moveCmd(0, a0.slice(200), -50, 2000), moveCmd(1, a1.slice(0, 200), 2000, -50), moveCmd(1, a1.slice(200), 1024, 1024)]);
     const U = w.units.col;
@@ -273,9 +287,10 @@ describe('1,024 WU map (PLAN §3.1: tested up to 1,024 WU; next standard size)',
     const full = fullHash(w);
     for (let t = 0; t < 300; t++) step(w);
     check();
-    // Some units reached the far corner (1,024, 1,024) — the edge sample row/column is used.
+    // Some units reached the far edges: the last passable cells (1,022) next to the blocked
+    // border cells (MS3: the clamped targets on the map edge were retargeted).
     let atEdge = 0;
-    for (let i = 0; i < w.units.highWater; i++) if (w.units.alive[i] === 1 && (U.x[i] === w.mapMax || U.z[i] === w.mapMax)) atEdge++;
+    for (let i = 0; i < w.units.highWater; i++) if (w.units.alive[i] === 1 && (U.x[i]! >= 1022 * FX_ONE || U.z[i]! >= 1022 * FX_ONE)) atEdge++;
     expect(atEdge).toBeGreaterThan(0);
     const later = fullHash(w);
     restore(w, snap);

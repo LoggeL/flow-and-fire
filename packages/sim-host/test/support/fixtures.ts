@@ -31,7 +31,7 @@ export function gameSimBinBuffer(): ArrayBuffer {
   return out;
 }
 
-export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, seq: number, byArmy = army): CommandEnvelope {
+export function spawnCmd(army: number, count: number, xWu: number, zWu: number, spreadWu: number, seq: number, byArmy = army, bp = 0): CommandEnvelope {
   return {
     tick: asTick(0),
     army: asArmyId(byArmy),
@@ -39,7 +39,7 @@ export function spawnCmd(army: number, count: number, xWu: number, zWu: number, 
     op: Op.Cheat,
     flags: 0,
     units: [],
-    payload: encodeCheatSpawn({ bp: 0, army, count, x: fx(xWu), z: fx(zWu), spread: fx(spreadWu) }),
+    payload: encodeCheatSpawn({ bp, army, count, x: fx(xWu), z: fx(zWu), spread: fx(spreadWu) }),
   };
 }
 

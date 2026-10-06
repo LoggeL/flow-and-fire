@@ -11,13 +11,17 @@
     "build:wasm": "wat2wasm src/spk5/xxh32.wat -o src/spk5/xxh32.wasm",
     "build:harness": "vite build -c vite.harness.config.ts",
     "test:xengine": "node --import tsx scripts/xengine.ts",
-    "bench": "node --import tsx scripts/bench.ts"
+    "bench": "node --import tsx scripts/bench.ts",
+    "spk2": "node --import tsx scripts/spk2.ts",
+    "spk3": "node --expose-gc --import tsx scripts/spk3.ts",
+    "ms3": "node --expose-gc --import tsx scripts/ms3.ts"
   },
   "dependencies": {
     "@faf/blueprints": "workspace:*",
     "@faf/fixed": "workspace:*",
     "@faf/formats": "workspace:*",
     "@faf/heap": "workspace:*",
+    "@faf/nav": "workspace:*",
     "@faf/protocol": "workspace:*",
     "@faf/rules": "workspace:*",
     "@faf/sim": "workspace:*"

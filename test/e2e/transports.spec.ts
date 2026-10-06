@@ -12,7 +12,7 @@ const TICKS = 200;
 const MOVE_AT = 50;
 
 async function runHashes(page: Page, base: string, transport: 'sab' | 'transfer'): Promise<number[]> {
-  await openGame(page, base, `autostart=0&transport=${transport}&seed=7`, 0);
+  await openGame(page, base, `spawn=cubes&autostart=0&transport=${transport}&seed=7`, 0);
   const info = await page.evaluate(() => ({ t: window.__faf!.transport, tick: window.__faf!.tick, paused: window.__faf!.paused }));
   expect(info.t).toBe(transport);
   expect(info.tick).toBe(0);

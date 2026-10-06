@@ -6,6 +6,8 @@
  * Move          (12 B): i32 x | i32 y | i32 z                      (Fx raw, world position)
  * CheatSpawn    (18 B): u8 sub=1 | u16 bp | u8 army | u16 count | i32 x | i32 z | i32 spread
  * CheatKill     ( 1 B): u8 sub=2                                   (targets = envelope units)
+ * CheatFootprint(14 B): u8 sub=3 | i32 cellX | i32 cellZ | u16 w | u16 h | i8 delta
+ *                       (nav cells = WU; delta +1 adds, −1 removes the rectangle; MS3 obstacles)
  */
 
 import { asFx, type Fx } from '@faf/fixed';
@@ -14,6 +16,7 @@ import { CheatSub } from './ops.ts';
 export const MOVE_PAYLOAD_BYTES = 12;
 export const CHEAT_SPAWN_PAYLOAD_BYTES = 18;
 export const CHEAT_KILL_PAYLOAD_BYTES = 1;
+export const CHEAT_FOOTPRINT_PAYLOAD_BYTES = 14;
 
 export interface MovePayload {
   x: Fx;
@@ -172,9 +175,79 @@ export function isCheatKill(bytes: Uint8Array): boolean {
   return bytes.length === CHEAT_KILL_PAYLOAD_BYTES && bytes[0] === CheatSub.Kill;
 }
 
+// ---- CheatFootprint ----------------------------------------------------------------------------
+
+export interface CheatFootprintPayload {
+  /** Lower-left cell (WU, may lie partly outside the map; the sim clips). */
+  cellX: number;
+  cellZ: number;
+  /** Size in cells (u16; the sim accepts 1..64). */
+  w: number;
+  h: number;
+  /** +1 adds the footprint, −1 removes it. */
+  delta: 1 | -1;
+}
+
+/** Writes a CheatFootprint payload at `off`. */
+export function writeCheatFootprint(dv: DataView, off: number, cellX: number, cellZ: number, w: number, h: number, delta: number): void {
+  dv.setUint8(off, CheatSub.Footprint);
+  dv.setInt32(off + 1, cellX, true);
+  dv.setInt32(off + 5, cellZ, true);
+  dv.setUint16(off + 9, w, true);
+  dv.setUint16(off + 11, h, true);
+  dv.setInt8(off + 13, delta);
+}
+
+export function encodeCheatFootprint(p: CheatFootprintPayload): Uint8Array {
+  checkRange('cellX', p.cellX, I32_MIN, I32_MAX);
+  checkRange('cellZ', p.cellZ, I32_MIN, I32_MAX);
+  checkRange('w', p.w, 0, 0xffff);
+  checkRange('h', p.h, 0, 0xffff);
+  if (p.delta !== 1 && p.delta !== -1) throw new RangeError(`delta must be 1 or -1: ${String(p.delta)}`);
+  const out = new Uint8Array(CHEAT_FOOTPRINT_PAYLOAD_BYTES);
+  writeCheatFootprint(new DataView(out.buffer), 0, p.cellX, p.cellZ, p.w, p.h, p.delta);
+  return out;
+}
+
+export function decodeCheatFootprint(bytes: Uint8Array): CheatFootprintPayload {
+  const dv = need(bytes, CHEAT_FOOTPRINT_PAYLOAD_BYTES, 'CheatFootprint');
+  if (readCheatSub(dv, 0) !== CheatSub.Footprint) throw new RangeError('not a CheatFootprint payload');
+  const d = readCheatFootprintDelta(dv, 0);
+  if (d !== 1 && d !== -1) throw new RangeError(`CheatFootprint delta must be 1 or -1, got ${d}`);
+  return readCheatFootprintInto(dv, 0, { cellX: 0, cellZ: 0, w: 0, h: 0, delta: 1 });
+}
+
+export function readCheatFootprintX(dv: DataView, off: number): number {
+  return dv.getInt32(off + 1, true);
+}
+export function readCheatFootprintZ(dv: DataView, off: number): number {
+  return dv.getInt32(off + 5, true);
+}
+export function readCheatFootprintW(dv: DataView, off: number): number {
+  return dv.getUint16(off + 9, true);
+}
+export function readCheatFootprintH(dv: DataView, off: number): number {
+  return dv.getUint16(off + 11, true);
+}
+/** Raw delta byte (i8); valid payloads carry +1 or −1. */
+export function readCheatFootprintDelta(dv: DataView, off: number): number {
+  return dv.getInt8(off + 13);
+}
+
+/** Reads a CheatFootprint payload into `out` (no allocation; delta other than ±1 reads as −1 if negative, else +1). */
+export function readCheatFootprintInto(dv: DataView, off: number, out: CheatFootprintPayload): CheatFootprintPayload {
+  out.cellX = readCheatFootprintX(dv, off);
+  out.cellZ = readCheatFootprintZ(dv, off);
+  out.w = readCheatFootprintW(dv, off);
+  out.h = readCheatFootprintH(dv, off);
+  out.delta = readCheatFootprintDelta(dv, off) < 0 ? -1 : 1;
+  return out;
+}
+
 /** Expected payload length of a Cheat sub-command, or −1 if unknown. */
 export function cheatPayloadBytes(sub: number): number {
   if (sub === CheatSub.Spawn) return CHEAT_SPAWN_PAYLOAD_BYTES;
   if (sub === CheatSub.Kill) return CHEAT_KILL_PAYLOAD_BYTES;
+  if (sub === CheatSub.Footprint) return CHEAT_FOOTPRINT_PAYLOAD_BYTES;
   return -1;
 }

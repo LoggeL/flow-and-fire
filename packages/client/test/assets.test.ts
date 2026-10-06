@@ -15,7 +15,7 @@ import { AssetManager, rawAssetsRequested, type AssetProgress, type AssetWorkerL
 import { transferablesOf, type AssetLoadRequest, type AssetProgressMsg, type AssetWorkerMessage } from '../src/assets/messages.ts';
 import { sha256 } from '../src/assets/sha256.ts';
 import { handleAssetRequest } from '../src/assets/worker.ts';
-import { commanderVisuals, visualTableFromView } from '../src/visuals.ts';
+import { VisualGeometry, commanderVisuals, visualTableFromView } from '../src/visuals.ts';
 import { REPO_ROOT } from './support/map.ts';
 
 const ASSET_DIR = join(REPO_ROOT, 'content/generated/assets');
@@ -179,13 +179,13 @@ describe('asset loader (fakes)', () => {
     const w = new FakeWorld();
     const msgs = await run(w);
     const m = msgs.find((x) => x.t === 'manifest')!;
-    expect(m.t === 'manifest' && m.assets).toBe(4);
+    expect(m.t === 'manifest' && m.assets).toBe(6); // + icon atlas and metrics (MS3, ms3-p3)
     const done = msgs.find((x) => x.t === 'done')!;
     if (done.t !== 'done') throw new Error();
-    expect(done.stats).toMatchObject({ assets: 4, fromNetwork: 4, fromCache: 0, bytesCache: 0, cache: true });
+    expect(done.stats).toMatchObject({ assets: 6, fromNetwork: 6, fromCache: 0, bytesCache: 0, cache: true });
     const expectedBytes = Object.values(manifest.assets).reduce((n, e) => n + e.bytes, 0);
     expect(done.stats.bytesNetwork).toBe(expectedBytes);
-    expect(w.cacheStore.size).toBe(4);
+    expect(w.cacheStore.size).toBe(6);
     const prog = msgs.filter((x): x is AssetProgressMsg => x.t === 'progress');
     expect(prog.length).toBeGreaterThanOrEqual(8);
     let last = 0;
@@ -201,7 +201,7 @@ describe('asset loader (fakes)', () => {
     const map = msgs.find((x) => x.t === 'asset' && x.kind === 'map')!;
     expect(map.t === 'asset' && map.bytes.byteLength).toBe(manifest.assets['maps/hollow-ridge']!.bytes);
     // Order: content, maps, models.
-    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'units/cube_bot']);
+    expect(defaultLoadOrder(manifest)).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge', 'units/cube_bot', 'icons/atlas', 'icons/atlas-metrics']);
   });
 
   it('warm: a cache hit needs no network (no asset bytes), only the manifest', async () => {
@@ -212,7 +212,7 @@ describe('asset loader (fakes)', () => {
     const msgs = await run(w);
     const done = msgs.find((x) => x.t === 'done')!;
     if (done.t !== 'done') throw new Error();
-    expect(done.stats).toMatchObject({ fromCache: 4, fromNetwork: 0, bytesNetwork: 0 });
+    expect(done.stats).toMatchObject({ fromCache: 6, fromNetwork: 0, bytesNetwork: 0 });
     expect(w.networkRequests).toEqual([]);
     expect(msgs.filter((x) => x.t === 'progress').every((x) => x.t === 'progress' && x.source === 'cache')).toBe(true);
   });
@@ -240,7 +240,7 @@ describe('asset loader (fakes)', () => {
     await run(w);
     const msgs = await run(w);
     const done = msgs.find((x) => x.t === 'done')!;
-    expect(done.t === 'done' && done.stats).toMatchObject({ cache: false, fromNetwork: 4, fromCache: 0 });
+    expect(done.t === 'done' && done.stats).toMatchObject({ cache: false, fromNetwork: 6, fromCache: 0 });
     expect(w.cacheStore.size).toBe(0);
   });
 
@@ -305,11 +305,14 @@ describe('AssetManager', () => {
     const res = await mgr.load();
     expect(mgr.mode).toBe('worker');
     expect(res.mode).toBe('worker');
-    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'maps/hollow-ridge']);
-    expect(decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids).toEqual(['core:cube']);
+    expect([...res.files.keys()].sort()).toEqual(['content/sim.bin', 'content/view.json', 'icons/atlas', 'icons/atlas-metrics', 'maps/hollow-ridge']);
+    // MS3 content: core:cube stays sim id 0, plus the factory and five placeholder tanks.
+    const ids = decodeSimBin(res.files.get('content/sim.bin')!.bytes).ids;
+    expect(ids[0]).toBe('core:cube');
+    expect(ids).toHaveLength(7);
     expect(res.models.get('units/cube_bot')!.variant).toBe('meshopt');
-    expect(progress.at(-1)!.assetsDone).toBe(4);
-    expect(progress.at(-1)!.assetsTotal).toBe(4);
+    expect(progress.at(-1)!.assetsDone).toBe(6);
+    expect(progress.at(-1)!.assetsTotal).toBe(6);
     // Second load: from the cache.
     const again = await mgr.load(['maps/hollow-ridge']);
     expect(again.files.get('maps/hollow-ridge')!.source).toBe('cache');
@@ -440,6 +443,30 @@ describe('visual table from view.json + models', () => {
     const t3 = visualTableFromView(view, (id) => (id === 'units/cube_bot' ? bot.lods.slice(0, 1) : undefined));
     expect(t3[0]!.meshes).toHaveLength(1);
     const bp = decodeSimBin(new Uint8Array(readFileSync(join(REPO_ROOT, 'content/generated/sim.bin'))));
-    expect([...commanderVisuals(bp)]).toEqual([0]); // no ACU before MS5
+    expect(bp.ids[0]).toBe('core:cube');
+    expect(bp.count).toBe(7);
+    expect([...commanderVisuals(bp)]).toEqual(new Array(bp.count).fill(0)); // no COMMAND category before MS5
+  });
+
+  it('view.json v2: icon, tech, icon threshold, selection radius and turret reach the visual table (MS3)', () => {
+    const view = parseViewJson(readFileSync(join(REPO_ROOT, 'content/generated/view.json'), 'utf8'));
+    const t = visualTableFromView(view);
+    expect(t).toHaveLength(view.visuals.length);
+    const tank = view.visuals.findIndex((v) => v.id === 'core:lnd_t1_tank');
+    expect(tank).toBeGreaterThan(0);
+    const e = t[tank]!;
+    const v = view.visuals[tank]!;
+    expect(e.icon).toBe('land_direct');
+    expect(e.tech).toBe(1);
+    expect(e.iconThreshold).toBe(v.iconThreshold);
+    expect(e.selectionRadius).toBe(v.selectionRadius);
+    expect(e.spec.turret).toEqual({ hull: 'cyl', size: [0.36, 0.18, 0.36], offset: [-0.08, 0.34, 0] });
+    // Hit-test geometry uses the same numbers.
+    const g = new VisualGeometry(t);
+    expect(g.radius(tank)).toBe(v.selectionRadius);
+    expect(g.threshold(tank)).toBe(v.iconThreshold);
+    // Tech levels 1–3 of the tank line, cube without tech.
+    const tech = (id: string): number => t[view.visuals.findIndex((x) => x.id === id)]!.tech ?? -1;
+    expect([tech('core:lnd_t1_tank'), tech('core:lnd_t2_tank'), tech('core:lnd_t3_heavy')]).toEqual([1, 2, 3]);
   });
 });

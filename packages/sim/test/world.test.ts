@@ -26,18 +26,30 @@ describe('world layout (PLAN §3.5)', () => {
     expect(w.units.cap).toBe(CAP_UNITS);
     expect(w.arena.regions.map((r) => r.name)).toEqual([
       'world', 'armies', 'alliance', 'units', 'movers',
+      // MS3: order queue (G7), group records, path owners, navigation (M5/M6)
+      'orders', 'formations', 'paths.owner',
+      'nav.terrain', 'nav.foot', 'nav.paths', 'nav.blocks', 'nav.fifo', 'nav.ctr',
+      'nav.clear', 'nav.comp', 'nav.compmeta', 'nav.secinfo', 'nav.nodes', 'nav.edges', 'nav.back',
       'grid.fine.start', 'grid.fine.cursor', 'grid.fine.items', 'grid.fine.cellOf',
       'grid.coarse.start', 'grid.coarse.cursor', 'grid.coarse.items', 'grid.coarse.cellOf',
       'hashlog',
       'map.terrain', 'map.heights', 'map.starts', 'map.spots',
     ]);
-    // The map lives in the static area: after the dynamic range, outside rule and full hash.
-    expect(w.arena.regions.filter((r) => r.area === 'static').map((r) => r.name)).toEqual(['map.terrain', 'map.heights', 'map.starts', 'map.spots']);
+    // The map and the static nav terrain live in the static area: after the dynamic range, outside
+    // rule and full hash (identity via mapSimHash).
+    expect(w.arena.regions.filter((r) => r.area === 'static').map((r) => r.name)).toEqual(['nav.terrain', 'map.terrain', 'map.heights', 'map.starts', 'map.spots']);
     expect(w.arena.staticStart).toBe(w.arena.dynamicEnd);
     for (const r of w.arena.fullRegions) expect(r.area, r.name).toBe('dynamic');
-    expect(w.arena.regions.filter((r) => r.derived).map((r) => r.name.split('.')[1] ?? r.name)).toEqual([
-      'fine', 'fine', 'fine', 'fine', 'coarse', 'coarse', 'coarse', 'coarse', 'hashlog',
+    // Derived (full hash + snapshot, not rule hash): nav caches, spatial grids, last hash.
+    expect(w.arena.regions.filter((r) => r.derived).map((r) => r.name)).toEqual([
+      'nav.clear', 'nav.comp', 'nav.compmeta', 'nav.secinfo', 'nav.nodes', 'nav.edges', 'nav.back',
+      'grid.fine.start', 'grid.fine.cursor', 'grid.fine.items', 'grid.fine.cellOf',
+      'grid.coarse.start', 'grid.coarse.cursor', 'grid.coarse.items', 'grid.coarse.cellOf',
+      'hashlog',
     ]);
+    // Rule state of MS3: orders, groups, path owners and the nav rule regions are hashed.
+    const rule = w.arena.ruleRegions.map((r) => r.name);
+    for (const n of ['orders', 'formations', 'paths.owner', 'nav.foot', 'nav.paths', 'nav.blocks', 'nav.fifo', 'nav.ctr']) expect(rule, n).toContain(n);
   });
 
   it('pins the layout hash of the default 512 WU world (layout change ⇒ format change)', () => {
@@ -46,8 +58,9 @@ describe('world layout (PLAN §3.5)', () => {
     expect(other.layoutHash).toBe(w.layoutHash);
     expect(w.layoutHash >>> 0).toBe(LAYOUT_HASH_512);
     expect(createWorld({ bpTable: gameTable(), seed: 1, armyCount: 2, mapSizeWu: 1024 }).layoutHash).not.toBe(w.layoutHash);
-    // Arena size stays moderate (no swap on the dev machine; PLAN ≈ 17 MB at 10 km incl. everything).
-    expect(w.arena.byteLength).toBeLessThan(4 * 1024 * 1024);
+    // Arena size stays moderate (no swap on the dev machine; PLAN ≈ 17 MB at 10 km incl. everything;
+    // MS3: + 4 MiB nav at 512 WU, see docs/status/ms3-p0-nav.md).
+    expect(w.arena.byteLength).toBeLessThan(9 * 1024 * 1024);
   });
 
   it('sets unused columns of a spawned unit to 0 / −1', () => {
@@ -97,4 +110,5 @@ describe('phases (PLAN §3.4)', () => {
 });
 
 /** Pinned layout hash (update deliberately when the arena schema changes). */
-const LAYOUT_HASH_512 = 0x9c64c907;
+// MS3 (faf-sim/ms3.0): + orders, formations, paths.owner, nav.*; Movers extended.
+const LAYOUT_HASH_512 = 0xc37d216e;

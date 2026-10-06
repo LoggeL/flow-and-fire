@@ -1,7 +1,7 @@
 /**
  * `step(world, commands, probe?)`: advances the world by exactly one tick (PLAN §3.1: the state
- * only changes through step). Phases run in the binding order of PLAN §3.4; MS1 runs
- * 1 CommandApply, 2 Orders, 7 Movement, 8 SpatialRebuild, 15 Cleanup, 16 Output.
+ * only changes through step). Phases run in the binding order of PLAN §3.4; MS3 runs
+ * 1 CommandApply, 2 Orders, 3 PathService, 7 Movement, 8 SpatialRebuild, 15 Cleanup, 16 Output.
  *
  * Commands are applied in this step regardless of the envelope's tick field (inputDelay = 0;
  * the host stamps the application tick for recording).
@@ -10,7 +10,9 @@ import { fullHash as arenaFullHash, ruleHash as arenaRuleHash } from '@faf/heap'
 import { CommandBatchView, type CommandEnvelope } from '@faf/protocol';
 import { commandApplyPhase } from './commands.ts';
 import { HASH_INTERVAL_TICKS } from './constants.ts';
-import { movementPhase, ordersPhase } from './movement.ts';
+import { movementPhase } from './movement.ts';
+import { ordersPhase } from './orders.ts';
+import { pathServicePhase } from './pathservice.ts';
 import { PhaseId, type PhaseProbe } from './phases.ts';
 import { HL_LAST_HASH, HL_LAST_HASH_TICK, WH_TICK } from './schema.ts';
 import { spatialRebuildPhase } from './spatial.ts';
@@ -61,6 +63,10 @@ export function step(w: World, cmds?: StepCommands, probe: PhaseProbe = NO_PROBE
   ordersPhase(w);
   probe.end(PhaseId.Orders);
 
+  probe.begin(PhaseId.PathService);
+  pathServicePhase(w);
+  probe.end(PhaseId.PathService);
+
   probe.begin(PhaseId.Movement);
   movementPhase(w);
   probe.end(PhaseId.Movement);
@@ -100,7 +106,7 @@ export function ruleHash(w: World): number {
   return arenaRuleHash(w.arena, w.hasher);
 }
 
-/** Full hash including derived state (spatial grids; desync-diff and restore tests). */
+/** Full hash including derived state (spatial grids, nav caches; desync-diff and restore tests). */
 export function fullHash(w: World): number {
   return arenaFullHash(w.arena, w.hasher);
 }

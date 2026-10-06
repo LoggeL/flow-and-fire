@@ -21,7 +21,12 @@ export type KeyAction =
   | 'toggleConsole'
   | 'jumpToCommander'
   | 'resetCamera'
-  | 'toggleFullscreen';
+  | 'toggleFullscreen'
+  | 'deselect'
+  | 'groupStore'
+  | 'groupAdd'
+  | 'groupRecall'
+  | 'groupRecallAdd';
 
 export const KEY_ACTIONS: readonly KeyAction[] = [
   'panForward',
@@ -36,7 +41,25 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   'jumpToCommander',
   'resetCamera',
   'toggleFullscreen',
+  'deselect',
+  'groupStore',
+  'groupAdd',
+  'groupRecall',
+  'groupRecallAdd',
 ];
+
+/** Control-group actions: the group number comes from the key (`Digit3` → 3), see control-groups.ts. */
+export const CONTROL_GROUP_ACTIONS: readonly KeyAction[] = ['groupStore', 'groupAdd', 'groupRecall', 'groupRecallAdd'];
+
+/** Physical digit keys of the control groups: `Digit0`–`Digit9` and `Numpad0`–`Numpad9`. */
+export const DIGIT_CODES: readonly string[] = [
+  ...Array.from({ length: 10 }, (_, d) => `Digit${d}`),
+  ...Array.from({ length: 10 }, (_, d) => `Numpad${d}`),
+];
+
+function digitBindings(mods: Omit<KeyBinding, 'code'>): KeyBinding[] {
+  return DIGIT_CODES.map((code) => ({ code, ...mods }));
+}
 
 /** Held camera-pan actions (queried per frame, not fired). */
 export const PAN_ACTIONS: readonly KeyAction[] = ['panForward', 'panBack', 'panLeft', 'panRight'];
@@ -88,6 +111,13 @@ export const DEFAULT_ACTION_MAP: ActionTable = {
   jumpToCommander: [{ code: 'KeyH' }],
   resetCamera: [{ code: 'Home' }],
   toggleFullscreen: [{ code: 'Enter', alt: true }],
+  deselect: [{ code: 'Escape' }],
+  // Store: Ctrl+digit (preventDefault; some browsers still take it for tab switching) and the
+  // browser-safe Alt+digit. Never ⌘ (macOS/Safari reserve ⌘+digit).
+  groupStore: [...digitBindings({ ctrl: true }), ...digitBindings({ alt: true })],
+  groupAdd: [...digitBindings({ ctrl: true, shift: true }), ...digitBindings({ alt: true, shift: true })],
+  groupRecall: digitBindings({}),
+  groupRecallAdd: digitBindings({ shift: true }),
 };
 
 /** The fields of a KeyboardEvent the mapping looks at (no `key`). */

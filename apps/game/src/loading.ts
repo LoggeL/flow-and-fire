@@ -7,13 +7,39 @@
  * `ready` (map set, start armies requested). `<html data-loading-progress>` mirrors it.
  */
 import { assetIdsOfKind, parseAssetManifest, type AssetManifest } from '@faf/blueprints/asset-manifest';
-import type { AssetManager, AssetProgress, AssetSource, LoadedAssets } from '@faf/client';
+import type { AssetManager, AssetProgress, AssetSource, IconAtlasMetrics, LoadedAssets } from '@faf/client';
 import { createTestPlaneMap, writeRtsMap } from '@faf/formats';
 import { TEST_PLANE_MAP } from './params.ts';
 
 /** Logical ids of the compiled content (see tools/assets-pipeline). */
 export const SIM_BIN_ASSET = 'content/sim.bin';
 export const VIEW_JSON_ASSET = 'content/view.json';
+/** Strategic icon MSDF atlas (raw RGBA8) and its metrics (tools/assets-pipeline, MS3). */
+export const ICON_ATLAS_ASSET = 'icons/atlas';
+export const ICON_METRICS_ASSET = 'icons/atlas-metrics';
+
+/** The icon atlas as the renderer takes it (`renderer.setIconAtlas`). */
+export interface IconAtlasData {
+  readonly pixels: Uint8Array;
+  readonly width: number;
+  readonly height: number;
+  readonly metrics: IconAtlasMetrics;
+}
+
+/**
+ * Parses the atlas metrics JSON (pipeline format `faf-icon-atlas` v1) and checks it against the
+ * RGBA8 bytes; throws with the reason otherwise.
+ */
+export function parseIconAtlas(pixels: Uint8Array, metricsText: string): IconAtlasData {
+  const m = JSON.parse(metricsText) as Partial<IconAtlasMetrics> & { format?: unknown; encoding?: unknown };
+  if (m.format !== 'faf-icon-atlas') throw new Error(`icon atlas metrics: unexpected format ${String(m.format)}`);
+  if (m.encoding !== undefined && m.encoding !== 'rgba8') throw new Error(`icon atlas metrics: unsupported encoding ${String(m.encoding)}`);
+  const width = m.width;
+  const height = m.height;
+  if (typeof width !== 'number' || typeof height !== 'number' || !Array.isArray(m.glyphs)) throw new Error('icon atlas metrics: width/height/glyphs missing');
+  if (pixels.length !== width * height * 4) throw new Error(`icon atlas: ${pixels.length} bytes for ${width}×${height} RGBA8`);
+  return { pixels, width, height, metrics: m as IconAtlasMetrics };
+}
 
 /** Asset id of a map name (`maps/<name>`). */
 export function mapAssetId(name: string): string {
@@ -34,6 +60,10 @@ export function sessionAssetIds(manifest: AssetManifest, mapName: string): strin
       throw new Error(`Karte '${mapName}' ist nicht im Asset-Manifest (verfügbar: ${[...maps, TEST_PLANE_MAP].join(', ')})`);
     }
     ids.push(id);
+  }
+  // MS3 strategic icons (optional: without them the renderer draws its procedural fallback form).
+  if (manifest.assets[ICON_ATLAS_ASSET] !== undefined && manifest.assets[ICON_METRICS_ASSET] !== undefined) {
+    ids.push(ICON_ATLAS_ASSET, ICON_METRICS_ASSET);
   }
   ids.push(...assetIdsOfKind(manifest, 'model'));
   return ids;
@@ -135,6 +165,10 @@ export interface SessionAssets {
    * createTestPlaneMap) serialized like a file, so it takes exactly the path of every other map.
    */
   readonly mapBytes: Uint8Array;
+  /** Strategic icon atlas (null: not in the manifest or invalid – procedural fallback). */
+  readonly iconAtlas: IconAtlasData | null;
+  /** Why the atlas is missing (null when loaded). */
+  readonly iconAtlasNote: string | null;
   readonly timings: LoadTimings;
 }
 
@@ -185,6 +219,19 @@ export async function loadSessionAssets(
     sources[id] = m.source;
     models[id] = { variant: m.variant, fallbackReason: m.fallbackReason };
   }
+  let iconAtlas: IconAtlasData | null = null;
+  let iconAtlasNote: string | null = null;
+  const atlasFile = loaded.files.get(ICON_ATLAS_ASSET);
+  const metricsFile = loaded.files.get(ICON_METRICS_ASSET);
+  if (atlasFile !== undefined && metricsFile !== undefined) {
+    try {
+      iconAtlas = parseIconAtlas(atlasFile.bytes, new TextDecoder().decode(metricsFile.bytes));
+    } catch (e) {
+      iconAtlasNote = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    iconAtlasNote = 'icon atlas not in the asset manifest';
+  }
   const st = loaded.stats;
   state = { ...state, progress: ASSET_PROGRESS_SHARE, assetsDone: ids.length, bytesLoaded: state.bytesTotal };
   onState(state);
@@ -193,6 +240,8 @@ export async function loadSessionAssets(
     simBin: ownedCopy(simBin.bytes),
     viewJson: new TextDecoder().decode(view.bytes),
     mapBytes,
+    iconAtlas,
+    iconAtlasNote,
     timings: {
       navigationToReadyMs: null,
       assetsMs: now() - t0,

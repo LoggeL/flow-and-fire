@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SPK2 Trace Viewer</title>
+    <!--
+      SPK2 trace viewer (tools/headless/spk2/viewer.html): open via file://, pick a trace written by
+      `pnpm bench:spk2 -- --trace <scenario>` (tools/headless/spk2/out/<scenario>-seed<n>.json).
+      No build, no server, no dependencies.
+    -->
+    <style>
+      :root {
+        --bg: #14171b;
+        --panel: #1d2127;
+        --fg: #d8dde3;
+        --muted: #8a939d;
+        --wall: #4a4f57;
+        --ground: #23282f;
+        --moving: #58a6ff;
+        --arrived: #7ee787;
+        --idle: #c9d1d9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 system-ui, sans-serif;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 16px;
+        background: var(--panel);
+      }
+      header label {
+        color: var(--muted);
+      }
+      #info {
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      #scrub {
+        flex: 1 1 240px;
+      }
+      main {
+        padding: 12px 16px;
+      }
+      canvas {
+        display: block;
+        max-width: 100%;
+        background: var(--ground);
+        image-rendering: pixelated;
+      }
+      .legend span {
+        margin-right: 12px;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 4px;
+        vertical-align: -1px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <input id="file" type="file" accept=".json,application/json" />
+      <button id="play" disabled>▶ Abspielen</button>
+      <label>Tempo <select id="speed"><option>0.5</option><option selected>1</option><option>2</option><option>4</option><option>8</option></select>×</label>
+      <input id="scrub" type="range" min="0" max="0" value="0" disabled />
+      <span id="info">Keine Spur geladen.</span>
+    </header>
+    <main>
+      <p class="legend">
+        <span><i class="dot" style="background: var(--moving)"></i>fährt</span>
+        <span><i class="dot" style="background: var(--arrived)"></i>angekommen</span>
+        <span><i class="dot" style="background: var(--idle)"></i>idle</span>
+        <span>Strich = Blickrichtung (yaw)</span>
+      </p>
+      <canvas id="view" width="512" height="512"></canvas>
+    </main>
+    <script>
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      const canvas = $('view');
+      const ctx = canvas.getContext('2d');
+      const css = getComputedStyle(document.documentElement);
+      const color = (n) => css.getPropertyValue(n).trim();
+      let trace = null;
+      let frame = 0;
+      let playing = false;
+      let last = 0;
+      let acc = 0;
+      let ground = null;
+
+      function scale() {
+        const maxW = Math.min(window.innerWidth - 32, 1400);
+        return Math.max(1, Math.floor(maxW / trace.width));
+      }
+
+      function buildGround(s) {
+        const c = document.createElement('canvas');
+        c.width = trace.width * s;
+        c.height = trace.height * s;
+        const g = c.getContext('2d');
+        g.fillStyle = color('--ground');
+        g.fillRect(0, 0, c.width, c.height);
+        g.fillStyle = color('--wall');
+        trace.blocked.forEach((row, z) => {
+          for (let x = 0; x < row.length; x++) if (row[x] === '1') g.fillRect(x * s, z * s, s, s);
+        });
+        return c;
+      }
+
+      function draw() {
+        if (!trace) return;
+        const s = scale();
+        if (!ground || ground.width !== trace.width * s) {
+          ground = buildGround(s);
+          canvas.width = ground.width;
+          canvas.height = ground.height;
+        }
+        ctx.drawImage(ground, 0, 0);
+        const f = trace.frames[frame];
+        const u = f.units;
+        const cols = [color('--idle'), color('--moving'), color('--arrived')];
+        for (let i = 0; i < u.length; i += 5) {
+          const x = u[i] * s;
+          const z = u[i + 1] * s;
+          const yaw = u[i + 2];
+          const r = trace.types[u[i + 4]].radius * s;
+          ctx.fillStyle = cols[u[i + 3]] || cols[0];
+          ctx.beginPath();
+          ctx.arc(x, z, Math.max(1, r), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = Math.max(1, s / 8);
+          ctx.beginPath();
+          ctx.moveTo(x, z);
+          ctx.lineTo(x + Math.cos(yaw) * r, z + Math.sin(yaw) * r);
+          ctx.stroke();
+        }
+        const moving = u.filter((_, i) => i % 5 === 3 && _ === 1).length;
+        $('info').textContent = `${trace.scenario} · Tick ${f.tick} (${(f.tick / trace.params.tickHz).toFixed(1)} s) · ${u.length / 5} Units, ${moving} fahrend · Frame ${frame + 1}/${trace.frames.length}`;
+        $('scrub').value = String(frame);
+      }
+
+      function loop(t) {
+        if (!playing) return;
+        const dtTicks = ((t - last) / 1000) * trace.params.tickHz * Number($('speed').value);
+        last = t;
+        acc += dtTicks;
+        const step = trace.frames.length > 1 ? trace.frames[1].tick - trace.frames[0].tick : 1;
+        while (acc >= step && frame < trace.frames.length - 1) {
+          frame++;
+          acc -= step;
+        }
+        draw();
+        if (frame >= trace.frames.length - 1) {
+          playing = false;
+          $('play').textContent = '▶ Abspielen';
+          return;
+        }
+        requestAnimationFrame(loop);
+      }
+
+      $('file').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const t = JSON.parse(await file.text());
+          if (t.format !== 'faf-spk2-trace') throw new Error('keine SPK2-Spur (format ≠ faf-spk2-trace)');
+          trace = t;
+          frame = 0;
+          ground = null;
+          $('scrub').max = String(t.frames.length - 1);
+          $('scrub').disabled = false;
+          $('play').disabled = false;
+          draw();
+        } catch (err) {
+          $('info').textContent = `Fehler: ${err.message}`;
+        }
+      });
+      $('play').addEventListener('click', () => {
+        if (!trace) return;
+        playing = !playing;
+        $('play').textContent = playing ? '❚❚ Pause' : '▶ Abspielen';
+        if (playing) {
+          if (frame >= trace.frames.length - 1) frame = 0;
+          last = performance.now();
+          acc = 0;
+          requestAnimationFrame(loop);
+        }
+      });
+      $('scrub').addEventListener('input', (e) => {
+        frame = Number(e.target.value);
+        draw();
+      });
+      window.addEventListener('resize', () => {
+        ground = null;
+        draw();
+      });
+    </script>
+  </body>
+</html>

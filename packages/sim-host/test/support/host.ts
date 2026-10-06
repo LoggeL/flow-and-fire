@@ -37,6 +37,8 @@ export interface TestHostOptions {
   readonly autoStart?: boolean;
   /** `.rtsmap` bytes for InitMessage.map (default: test plane). */
   readonly map?: ArrayBuffer;
+  /** sim.bin bytes for InitMessage.simBin (default: the checked-in game bundle). */
+  readonly simBin?: ArrayBuffer;
   /** Record host messages in `msgs` (default true; false: post is a no-op, e.g. allocation tests). */
   readonly keepMessages?: boolean;
   readonly host?: Partial<Omit<SimHostOptions, 'post' | 'port' | 'wakeup'>>;
@@ -78,7 +80,7 @@ export function makeTestHost(o: TestHostOptions = {}): TestHost {
   }
   const init: HostInitMessage = {
     t: 'init',
-    simBin: gameSimBinBuffer(),
+    simBin: o.simBin ?? gameSimBinBuffer(),
     seed: o.seed ?? 77,
     armyCount: 2,
     playerArmy: 0,

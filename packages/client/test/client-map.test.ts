@@ -74,6 +74,7 @@ describe('GameClient with a map', () => {
   it('right click targets the terrain pick; marker and line sit on the terrain height', () => {
     const { client, canvas, link, renderer, frame, frames, map } = setup();
     frames(12);
+    client.selectAll();
     client.jumpTo(120 * RAW_PER_WU, 120 * RAW_PER_WU, 70);
     frame();
     const p = client.pickAt(700, 400)!;
@@ -87,8 +88,11 @@ describe('GameClient with a map', () => {
     frame();
     const marker = renderer.last!.overlays!.markers[0]!;
     expect([marker.x, marker.y, marker.z]).toEqual([p.x, p.y, p.z]);
-    const line = renderer.last!.overlays!.lines[0]!;
+    // The optimistic route follows the terrain: every piece ends on the terrain, the last at the target.
+    const lines = renderer.last!.overlays!.lines;
+    const line = lines[lines.length - 1]!;
     expect([line.bx, line.by, line.bz]).toEqual([p.x, p.y, p.z]);
+    for (const l of lines) expect(l.by).toBe(map.heightAtRaw(Math.round(l.bx), Math.round(l.bz)));
     expect(Math.abs(p.y - map.heightAtRaw(p.x, p.z))).toBe(0);
   });
 

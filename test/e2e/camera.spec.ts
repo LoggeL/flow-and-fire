@@ -43,7 +43,7 @@ for (const server of SERVERS) {
   test(`camera: Tastatur (WASD, H, Home), Hotkeys über code (DE/US), in Pause – ${server.label}`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     await waitTick(page, 3);
     await page.locator('#game-canvas').focus();
 
@@ -58,7 +58,9 @@ for (const server of SERVERS) {
     for (const k of ['KeyW', 'KeyD', 'KeyS', 'KeyA', 'ArrowUp', 'ArrowRight']) {
       const a = await cam(page);
       await page.keyboard.down(k);
-      await page.waitForTimeout(350);
+      // MS3: S is tap (Stop) vs. hold (pan from 180 ms on) – hold it longer so the pan phase is not
+      // just a few frames (a single stalled rAF under load would otherwise hide it).
+      await page.waitForTimeout(k === 'KeyS' ? 700 : 350);
       await page.keyboard.up(k);
       await page.waitForTimeout(50);
       const b = await cam(page);
@@ -129,7 +131,7 @@ for (const server of SERVERS) {
   test(`camera: Mittelklick-Grab, Zoom zum Cursor, Edge-Pan, Rotation, Kontextmenü – ${server.label}`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     await waitTick(page, 3);
     await page.bringToFront();
     await page.evaluate(() => {
@@ -245,7 +247,7 @@ for (const server of SERVERS) {
 
   test(`camera: Vollbild (Alt+Enter) – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     const before = await page.evaluate(() => window.__faf!.fullscreen());
     test.skip(!before.supported, `Fullscreen API im headless ${testInfo.project.name} nicht vorhanden`);
     await page.locator('#game-canvas').focus();
@@ -268,7 +270,7 @@ for (const server of SERVERS) {
 
   test(`camera: Pointer-Confinement im Vollbild (Pointer Lock + virtueller Cursor) – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     const before = await page.evaluate(() => window.__faf!.fullscreen());
     test.skip(!before.supported || !before.pointerLockSupported, `Fullscreen/Pointer-Lock-API im headless ${testInfo.project.name} nicht vorhanden`);
     await page.locator('#game-canvas').focus();

@@ -19,6 +19,8 @@ const MIME = {
   '.wasm': 'application/wasm',
   '.bin': 'application/octet-stream',
   '.rtsmap': 'application/octet-stream',
+  // MS3: raw RGBA8 icon atlas of the strategic zoom (content-hashed pipeline asset).
+  '.rgba': 'application/octet-stream',
   '.faflog': 'application/octet-stream',
   '.txt': 'text/plain; charset=utf-8',
   '.svg': 'image/svg+xml',

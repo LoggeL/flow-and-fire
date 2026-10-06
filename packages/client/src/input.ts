@@ -2,14 +2,17 @@
  * Input → actions (PLAN §3.2 client "Input/Action-Mapping"; MS1 + MS2: G16, C1, C11).
  *
  * Mouse (on the canvas), routed through the CursorFsm:
- *   left drag → boxSelect, left click (no drag) → clickSelect, right button → moveCommand,
+ *   left drag → boxSelect, left click (no drag) → clickSelect (a second click within
+ *   `doubleClickMs` and `doubleClickPx` has `double: true`), right button → moveCommand,
  *   middle drag → grabStart / pan (the camera grabs the terrain) / grabEnd,
  *   Ctrl + middle drag → rotate, wheel → zoom (towards the cursor).
  *   The canvas context menu and middle-click autoscroll are suppressed; a press focuses the canvas.
  * Keyboard (on the window), via ActionMap (`KeyboardEvent.code` only, never `key`):
  *   WASD / arrows → continuous pan (queried per frame via `panAxisX/Y`), Ctrl/⌘+A → selectAll,
  *   S tapped → stop, P / Pause → togglePause, N → stepOnce, ^ / ` / F1 → toggleConsole,
- *   H → jumpToCommander, Home → resetCamera, Alt+Enter → toggleFullscreen.
+ *   H → jumpToCommander, Home → resetCamera, Alt+Enter → toggleFullscreen, Esc → deselect,
+ *   digits → controlGroup (store Ctrl/Alt+digit, add Shift+Ctrl/Alt+digit, recall digit,
+ *   recall-add Shift+digit; the group number comes from the key code).
  *   A key bound to a pan direction and to another action (S) is "tap vs. hold": released within
  *   `holdMs` ⇒ the action, held longer ⇒ pan (from `holdMs` on).
  * Edge pan (per frame via `updateEdge`): pointer within `edgeMarginPx` of the canvas edge, only
@@ -21,7 +24,8 @@
  * is produced and held keys are released. Only toggleConsole passes, so the console key closes the
  * console even while its input line is focused.
  */
-import { ActionMap, PAN_ACTIONS, type KeyAction } from './actions.ts';
+import { ActionMap, CONTROL_GROUP_ACTIONS, PAN_ACTIONS, type KeyAction } from './actions.ts';
+import { controlGroupOfCode, type ControlGroupOp } from './control-groups.ts';
 import { CursorFsm, cursorCss, type CursorEvent } from './cursor-fsm.ts';
 import type { PointerConfinement } from './fullscreen.ts';
 
@@ -57,7 +61,15 @@ export type Action =
       readonly y1: number;
       readonly additive: boolean;
     }
-  | { readonly type: 'clickSelect'; readonly x: number; readonly y: number; readonly additive: boolean }
+  | {
+      readonly type: 'clickSelect';
+      readonly x: number;
+      readonly y: number;
+      /** Shift held: toggle (single click) / add (double click). */
+      readonly additive: boolean;
+      /** Second click of a double click (same button, close in time and space). */
+      readonly double: boolean;
+    }
   | { readonly type: 'selectAll' }
   | { readonly type: 'moveCommand'; readonly x: number; readonly y: number; readonly queue: boolean; readonly timeStamp: number }
   | { readonly type: 'stop'; readonly timeStamp: number }
@@ -66,7 +78,9 @@ export type Action =
   | { readonly type: 'stepOnce' }
   | { readonly type: 'jumpToCommander' }
   | { readonly type: 'resetCamera' }
-  | { readonly type: 'toggleFullscreen' };
+  | { readonly type: 'toggleFullscreen' }
+  | { readonly type: 'deselect' }
+  | { readonly type: 'controlGroup'; readonly op: ControlGroupOp; readonly group: number; readonly timeStamp: number };
 
 export type ActionType = Action['type'];
 
@@ -99,6 +113,10 @@ export interface InputOptions {
   readonly edgePan?: boolean;
   /** Initial window focus (default `document.hasFocus()`, else true). */
   readonly hasFocus?: () => boolean;
+  /** Max time between the two clicks of a double click in ms (default 400). */
+  readonly doubleClickMs?: number;
+  /** Max pointer travel between the two clicks of a double click in CSS px (default 6). */
+  readonly doubleClickPx?: number;
 }
 
 const BTN_LEFT = 0;
@@ -140,6 +158,14 @@ const INSTANT: Partial<Record<KeyAction, Action>> = {
   jumpToCommander: { type: 'jumpToCommander' },
   resetCamera: { type: 'resetCamera' },
   toggleFullscreen: { type: 'toggleFullscreen' },
+  deselect: { type: 'deselect' },
+};
+
+const GROUP_OPS: Partial<Record<KeyAction, ControlGroupOp>> = {
+  groupStore: 'store',
+  groupAdd: 'add',
+  groupRecall: 'recall',
+  groupRecallAdd: 'recallAdd',
 };
 
 export class InputController {
@@ -182,6 +208,11 @@ export class InputController {
   private lastY = 0;
   private lastCss = '';
   private disposed = false;
+  private readonly doubleClickMs: number;
+  private readonly doubleClickPx: number;
+  private lastClickMs = Number.NEGATIVE_INFINITY;
+  private lastClickX = 0;
+  private lastClickY = 0;
 
   private readonly listeners: [InputEventTarget, string, (ev: Event) => void, AddEventListenerOptions | undefined][] = [];
 
@@ -198,6 +229,8 @@ export class InputController {
     this.edgeMarginPx = opts.edgeMarginPx ?? 8;
     this.edgePanEnabled = opts.edgePan ?? true;
     this.windowFocused = (opts.hasFocus ?? defaultHasFocus)();
+    this.doubleClickMs = opts.doubleClickMs ?? 400;
+    this.doubleClickPx = opts.doubleClickPx ?? 6;
 
     this.listen(surface, 'pointerdown', (ev) => this.onPointerDown(ev as PointerEvent));
     this.listen(surface, 'pointermove', (ev) => this.onPointerMove(ev as PointerEvent));
@@ -448,7 +481,15 @@ export class InputController {
       });
     } else if (e === 'click') {
       if (this.typingFocused()) return;
-      this.emit({ type: 'clickSelect', x: this.startX, y: this.startY, additive });
+      const t = ev.timeStamp;
+      const dx = this.startX - this.lastClickX;
+      const dy = this.startY - this.lastClickY;
+      const double = t - this.lastClickMs <= this.doubleClickMs && t >= this.lastClickMs && dx * dx + dy * dy <= this.doubleClickPx * this.doubleClickPx;
+      // A double click consumes both clicks (a third click starts a new pair).
+      this.lastClickMs = double ? Number.NEGATIVE_INFINITY : t;
+      this.lastClickX = this.startX;
+      this.lastClickY = this.startY;
+      this.emit({ type: 'clickSelect', x: this.startX, y: this.startY, additive, double });
     }
   }
 
@@ -494,6 +535,11 @@ export class InputController {
         const act = INSTANT[a];
         if (act !== undefined) this.emit(act);
         else if (a === 'stop') this.emit({ type: 'stop', timeStamp: ev.timeStamp });
+        else if (CONTROL_GROUP_ACTIONS.includes(a)) {
+          const group = controlGroupOfCode(ev.code);
+          const op = GROUP_OPS[a];
+          if (group >= 0 && op !== undefined) this.emit({ type: 'controlGroup', op, group, timeStamp: ev.timeStamp });
+        }
       }
       return;
     }

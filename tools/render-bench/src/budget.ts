@@ -8,7 +8,8 @@
  * - CSM, per cascade: units with reduced LOD (LOD 1/2) ⇒ ≤ visuals × 2 every frame; the static
  *   layer (terrain 1 + props meshes × 1 LOD) only in frames that refresh the cache
  * - blob shadows: 1; post: bloom down (levels) + up (levels − 1) + composite 1 + FXAA 1
- * - facade (ms2): terrain + water + 2 overlay draws (`FIXED_PASS_DRAWS` = 4) + units
+ * - facade (ms2): terrain + water + icons + 3 overlay draws (lines, markers, HP bars;
+ *   `FIXED_PASS_DRAWS` = 6 since MS3) + units; the icon draw is booked on the overlay column
  */
 import { FIXED_PASS_DRAWS } from '@faf/render';
 import { PROP_LODS, PROP_MESHES, UNIT_LODS, UNIT_VISUALS } from './meshes.ts';

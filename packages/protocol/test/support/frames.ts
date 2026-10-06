@@ -2,6 +2,8 @@ import { FrameWriter, type FrameCaps } from '../../src/index.ts';
 
 /** Small caps for tests (keeps buffers tiny). */
 export const TEST_CAPS: FrameCaps = { units: 64, parts: 128, projectiles: 32, beams: 8, events: 16, debugBytes: 64 };
+/** TEST_CAPS plus a small watch section (v2). */
+export const TEST_CAPS_WATCH: FrameCaps = { ...TEST_CAPS, watch: 4 };
 
 /**
  * Writes a deterministic pseudo-random frame number `n` into `target`; returns its byte length.
@@ -33,6 +35,15 @@ export function writeTestFrame(w: FrameWriter, target: Uint8Array, n: number): n
   for (let i = 0; i < events; i++) {
     w.writeEvent(rnd(65536), rnd(65536), n, rnd(256), rnd(256), -rnd(1e6), rnd(1e6), rnd(1e6), rnd(0x100000000), rnd(0x100000000));
   }
+  const watch = rnd((w.caps.watch ?? 0) + 1);
+  for (let i = 0; i < watch; i++) {
+    w.beginWatch(rnd(0x100000000), rnd(40), rnd(16));
+    const nt = rnd(20);
+    for (let k = 0; k < nt; k++) w.addWatchTarget(1 + rnd(2), rnd(1 << 24), -rnd(1 << 24));
+    const np = rnd(20);
+    for (let k = 0; k < np; k++) w.addWatchPoint(rnd(1 << 24), rnd(1 << 24));
+  }
+  if (rnd(3) === 1) w.setPathStats(rnd(100), rnd(1e6), rnd(1e4), rnd(1e5), rnd(100));
   if (rnd(2) === 1) {
     const dbg = new Uint8Array(rnd(w.caps.debugBytes + 1));
     for (let i = 0; i < dbg.length; i++) dbg[i] = rnd(256);

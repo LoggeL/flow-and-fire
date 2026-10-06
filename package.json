@@ -15,10 +15,14 @@
     "test:e2e": "pnpm build && playwright test",
     "test:xengine": "pnpm -r --workspace-concurrency=1 --if-present run test:xengine",
     "bench": "pnpm -r --workspace-concurrency=1 --if-present run bench",
-    "ci:local": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:xengine && pnpm test:e2e && pnpm bench && pnpm --filter @faf/assets-pipeline run check && pnpm bench:spk4 -- --quick",
+    "ci:local": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:xengine && pnpm test:e2e && pnpm bench && pnpm bench:nav -- --quick && pnpm bench:spk2 -- --quick && pnpm bench:spk3 -- --quick && pnpm bench:ms3 -- --quick && pnpm --filter @faf/assets-pipeline run check && pnpm bench:spk4 -- --quick",
     "maps": "pnpm --filter @faf/formats run maps",
     "assets": "pnpm --filter @faf/assets-pipeline run build",
-    "bench:spk4": "pnpm --filter @faf/render-bench run spk4"
+    "bench:spk4": "pnpm --filter @faf/render-bench run spk4",
+    "bench:nav": "pnpm --filter @faf/nav run bench",
+    "bench:spk2": "pnpm --filter @faf/headless run spk2",
+    "bench:spk3": "pnpm --filter @faf/headless run spk3",
+    "bench:ms3": "pnpm --filter @faf/headless run ms3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

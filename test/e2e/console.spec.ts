@@ -18,7 +18,7 @@ function consoleText(page: Page): Promise<string> {
 for (const server of SERVERS) {
   test(`console: spawn, kill, pause, step, speed, hash, budget, export – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'spawn=cubes', 1000);
     await waitTick(page, 3);
     await page.locator('#game-canvas').focus();
 

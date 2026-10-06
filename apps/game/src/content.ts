@@ -55,6 +55,11 @@ export interface LandSource {
   readonly sizeWu: number;
   /** Water depth (raw) at a point; ≤ 0 = dry. */
   waterDepthRaw(xRaw: number, zRaw: number): number;
+  /**
+   * Nav rule replica (MS3, M5: border, slope, deep water) of the 1-WU cell containing the point;
+   * when present, land discs also avoid cells the sim would refuse a land spawn on.
+   */
+  landBlockedAtRaw?(xRaw: number, zRaw: number): boolean;
 }
 
 /** One cheat-spawn command of the flight test. */
@@ -76,7 +81,9 @@ const LAND_SPAWN_MAX_DEPTH_RAW = 2048 - 64;
 /**
  * True if every height sample within `radiusWU + 1` of (x, z) WU is at most shallow water, so a
  * land unit spawned anywhere in the disc lies on passable ground (the bilinear height between
- * samples never leaves the range of the cell corners).
+ * samples never leaves the range of the cell corners). With a nav replica (`landBlockedAtRaw`,
+ * MS3) no cell touching that disc may be blocked either (slopes/cliffs: the sim rejects such
+ * spawn points since MS3).
  */
 export function discIsLand(src: LandSource, xWU: number, zWU: number, radiusWU: number): boolean {
   const r = radiusWU + 1;
@@ -91,6 +98,18 @@ export function discIsLand(src: LandSource, xWU: number, zWU: number, radiusWU: 
       const dz = z - zWU;
       if (dx * dx + dz * dz > r * r) continue;
       if (src.waterDepthRaw(x * RAW_PER_WU, z * RAW_PER_WU) > LAND_SPAWN_MAX_DEPTH_RAW) return false;
+    }
+  }
+  const blocked = src.landBlockedAtRaw;
+  if (blocked !== undefined) {
+    for (let z = Math.max(0, z0 - 1); z < Math.min(size, z1 + 1); z++) {
+      for (let x = Math.max(0, x0 - 1); x < Math.min(size, x1 + 1); x++) {
+        // Nearest point of cell [x, x+1) × [z, z+1) to the centre.
+        const dx = Math.max(x - xWU, 0, xWU - (x + 1));
+        const dz = Math.max(z - zWU, 0, zWU - (z + 1));
+        if (dx * dx + dz * dz > r * r) continue;
+        if (blocked.call(src, (x + 0.5) * RAW_PER_WU, (z + 0.5) * RAW_PER_WU)) return false;
+      }
     }
   }
   return true;
@@ -142,5 +161,58 @@ export function flightClusters(src: LandSource, units: number, armies: readonly 
       spread: Math.round(spreadWU * RAW_PER_WU),
     });
   }
+  return out;
+}
+
+/**
+ * Placeholder-tank mix of the MS3 default scene (blueprint id, weight): mostly light tanks, some
+ * artillery, scouts, medium and heavy tanks — all size classes 1–3 of the core land units.
+ */
+export const TANK_MIX: readonly (readonly [string, number])[] = [
+  ['core:lnd_t1_tank', 5],
+  ['core:lnd_t1_arty', 2],
+  ['core:lnd_t1_scout', 2],
+  ['core:lnd_t2_tank', 2],
+  ['core:lnd_t3_heavy', 1],
+];
+
+/** What the tank plan needs from the blueprint table (SimBpTable fits). */
+export interface TankBlueprints {
+  indexOf(id: string): number;
+  /** Collision radius (raw Fx). */
+  radius(bp: number): number;
+}
+
+/** One cheat-spawn command of the tank scene. */
+export interface TankSpawn extends SpawnCluster {
+  readonly bp: number;
+}
+
+/**
+ * Splits `total` tanks of `army` over {@link TANK_MIX} (largest remainder; blueprints missing from
+ * the table are skipped) around (x, z) raw. All types share one spawn disc whose radius gives every
+ * unit ≈ 2.2 × its footprint disc of room (the sim's collision pushes overlapping spawns apart and
+ * rejects points that are blocked for the unit's size class). Empty if no mix blueprint exists.
+ */
+export function tankSpawnPlan(bp: TankBlueprints, total: number, army: number, x: number, z: number): TankSpawn[] {
+  const mix = TANK_MIX.map(([id, w]) => ({ bp: bp.indexOf(id), w })).filter((m) => m.bp >= 0);
+  if (total <= 0 || mix.length === 0) return [];
+  const wsum = mix.reduce((a, m) => a + m.w, 0);
+  const counts = mix.map((m) => Math.floor((total * m.w) / wsum));
+  let left = total - counts.reduce((a, c) => a + c, 0);
+  const order = mix
+    .map((m, i) => ({ i, frac: (total * m.w) / wsum - counts[i]! }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) counts[order[k]!.i]!++;
+  let area = 0;
+  mix.forEach((m, i) => {
+    const r = bp.radius(m.bp) / RAW_PER_WU + 0.3;
+    area += counts[i]! * Math.PI * r * r * 2.2;
+  });
+  const spread = Math.max(4, Math.sqrt(area / Math.PI));
+  const out: TankSpawn[] = [];
+  mix.forEach((m, i) => {
+    if (counts[i]! > 0) out.push({ bp: m.bp, army, count: counts[i]!, x, z, spread: Math.round(spread * RAW_PER_WU) });
+  });
   return out;
 }

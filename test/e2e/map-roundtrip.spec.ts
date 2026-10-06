@@ -54,7 +54,7 @@ for (const server of SERVERS) {
     expect(cli!.sha, 'mapc output == checked-in file').toBe(fileSha);
     const expectedSimId = simIdFor(BP_SIM_HASH, nodeHash);
 
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     const game = await page.evaluate(async () => {
       const h = window.__faf!;
       return { exp: await h.exportMap(), simId: h.simId, mapSimHash: h.mapSimHash, mapName: h.mapName };
@@ -63,10 +63,10 @@ for (const server of SERVERS) {
     await expect(page.locator('[data-testid="hud-map"]')).toHaveText(HOLLOW_RIDGE.name);
 
     // Reload: identities unchanged.
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     const reload = await page.evaluate(() => ({ simId: window.__faf!.simId, mapSimHash: window.__faf!.mapSimHash }));
     // Test plane: a generated map (formats createTestPlaneMap) on the same path, with its own identity.
-    await openGame(page, server.url, 'map=testplane', 1024);
+    await openGame(page, server.url, 'spawn=cubes&map=testplane', 1024);
     const plane = await page.evaluate(() => ({ simId: window.__faf!.simId, mapSimHash: window.__faf!.mapSimHash, exp: null as unknown }));
     plane.exp = await page.evaluate(() => window.__faf!.exportMap());
 

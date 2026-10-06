@@ -15,7 +15,7 @@ for (const server of SERVERS) {
   test(`terrain: CPU == GPU (10.000), Einheiten auf dem Terrain, Wasser und Spots sichtbar – ${server.label}`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     await waitTick(page, 10);
 
     // CPU == GPU in 10,000 pseudo-random samples (seed per browser/server).
@@ -36,12 +36,22 @@ for (const server of SERVERS) {
       return h.tick;
     });
     const driving: { tick: number; mismatches: number; prevMismatches: number; units: number }[] = [];
-    for (let k = 1; k <= 8; k++) {
+    // MS3: the group drives down over the south ramp (pathing), not straight down the cliff; check
+    // every 10 ticks until ≥ 20 cubes are below the plateau (at most 25 s).
+    const lowerCount = (): Promise<number> =>
+      page.evaluate(() => {
+        const h = window.__faf!;
+        let lower = 0;
+        for (const handle of h.ownHandles()) if ((h.unitPos(handle)?.y ?? 99) < 23) lower++;
+        return lower;
+      });
+    for (let k = 1; k <= 25; k++) {
       await waitTick(page, t0 + 10 * k);
       const r = await page.evaluate(() => window.__faf!.unitHeights());
       driving.push({ tick: r.tick, mismatches: r.mismatches, prevMismatches: r.prevMismatches, units: r.units });
       expect(r.mismatches, JSON.stringify(r.first)).toBe(0);
       expect(r.prevMismatches).toBe(0);
+      if (k >= 8 && (await lowerCount()) >= 20) break;
     }
     const heightsMoved = await page.evaluate(() => {
       const h = window.__faf!;
@@ -84,7 +94,7 @@ for (const server of SERVERS) {
 
 test('terrain: ?map=testplane lädt die flache MS1-Ebene als generierte Karte (Terrain-Pfad, kein Wasser)', async ({ page }) => {
   const errors = captureErrors(page);
-  await openGame(page, COI_URL, 'map=testplane', 1024);
+  await openGame(page, COI_URL, 'spawn=cubes&map=testplane', 1024);
   const info = await page.evaluate(() => ({
     map: window.__faf!.mapName,
     heights: window.__faf!.unitHeights(),

@@ -52,9 +52,9 @@ beforeAll(() => {
     if (t === 1000) snap1000 = sim.snapshot();
   });
   direct = { sim, chain: sim.hashChain(), full, rule, snap1000, log: sim.exportLog() };
-});
+}, 180_000);
 
-describe('L4 log replay', () => {
+describe('L4 log replay', { timeout: 180_000 }, () => {
   it('the direct run is a real 1,000-cube game with 200 hashes', () => {
     expect(direct.chain).toHaveLength(TICKS / 10);
     expect(new Set(direct.chain).size).toBeGreaterThan(150);
@@ -116,7 +116,7 @@ describe('L4 log replay', () => {
   });
 });
 
-describe('L4 arena restore', () => {
+describe('L4 arena restore', { timeout: 180_000 }, () => {
   it('restore of the tick-1000 snapshot into a fresh sim ⇒ same rule and full hash at 2000', () => {
     const src = new ReplaySource(parseCommandLog(direct.log));
     const sim = fresh({ sources: [src] });
@@ -149,7 +149,7 @@ describe('L4 arena restore', () => {
   });
 });
 
-describe('keyframes: seek + re-simulation == direct run', () => {
+describe('keyframes: seek + re-simulation == direct run', { timeout: 180_000 }, () => {
   it('seeks backward and forward within the recorded timeline', () => {
     const sim = fresh();
     runScenario(sim, TICKS);

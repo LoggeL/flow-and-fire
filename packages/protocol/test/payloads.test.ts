@@ -2,20 +2,30 @@ import fc from 'fast-check';
 import { asFx, type Fx } from '@faf/fixed';
 import { describe, expect, it } from 'vitest';
 import {
+  CHEAT_FOOTPRINT_PAYLOAD_BYTES,
   CHEAT_KILL_PAYLOAD_BYTES,
   CHEAT_SPAWN_PAYLOAD_BYTES,
   CheatSub,
   MOVE_PAYLOAD_BYTES,
   cheatPayloadBytes,
+  decodeCheatFootprint,
   decodeCheatSpawn,
   decodeMove,
+  encodeCheatFootprint,
   encodeCheatKill,
   encodeCheatSpawn,
   encodeMove,
   isCheatKill,
+  readCheatFootprintDelta,
+  readCheatFootprintH,
+  readCheatFootprintInto,
+  readCheatFootprintW,
+  readCheatFootprintX,
+  readCheatFootprintZ,
   readCheatSpawnInto,
   readCheatSub,
   readMoveInto,
+  type CheatFootprintPayload,
   type CheatSpawnPayload,
   type MovePayload,
 } from '../src/index.ts';
@@ -64,6 +74,46 @@ describe('payload codecs', () => {
     );
     const fixed = encodeCheatSpawn({ bp: 0x0102, army: 3, count: 0x0405, x: asFx(1), z: asFx(-1), spread: asFx(4096) });
     expect(Array.from(fixed)).toEqual([1, 2, 1, 3, 5, 4, 1, 0, 0, 0, 255, 255, 255, 255, 0, 16, 0, 0]);
+  });
+
+  it('CheatFootprint roundtrips with the documented layout (allocation-free readers agree)', () => {
+    const out: CheatFootprintPayload = { cellX: 0, cellZ: 0, w: 0, h: 0, delta: 1 };
+    fc.assert(
+      fc.property(
+        fc.record({
+          cellX: fc.integer({ min: -0x80000000, max: 0x7fffffff }),
+          cellZ: fc.integer({ min: -0x80000000, max: 0x7fffffff }),
+          w: fc.integer({ min: 0, max: 0xffff }),
+          h: fc.integer({ min: 0, max: 0xffff }),
+          delta: fc.constantFrom(1 as const, -1 as const),
+        }),
+        (p) => {
+          const b = encodeCheatFootprint(p);
+          expect(b.length).toBe(CHEAT_FOOTPRINT_PAYLOAD_BYTES);
+          expect(b[0]).toBe(CheatSub.Footprint);
+          expect(decodeCheatFootprint(b)).toEqual(p);
+          const padded = new Uint8Array(b.length + 3);
+          padded.set(b, 3);
+          const dv = new DataView(padded.buffer);
+          expect(readCheatSub(dv, 3)).toBe(CheatSub.Footprint);
+          expect(readCheatFootprintInto(dv, 3, out)).toEqual(p);
+          expect([readCheatFootprintX(dv, 3), readCheatFootprintZ(dv, 3), readCheatFootprintW(dv, 3), readCheatFootprintH(dv, 3), readCheatFootprintDelta(dv, 3)]).toEqual([
+            p.cellX, p.cellZ, p.w, p.h, p.delta,
+          ]);
+        },
+      ),
+      { numRuns: 500 },
+    );
+    const fixed = encodeCheatFootprint({ cellX: 0x0102, cellZ: -2, w: 0x0304, h: 5, delta: -1 });
+    expect(Array.from(fixed)).toEqual([3, 2, 1, 0, 0, 254, 255, 255, 255, 4, 3, 5, 0, 255]);
+    expect(cheatPayloadBytes(CheatSub.Footprint)).toBe(CHEAT_FOOTPRINT_PAYLOAD_BYTES);
+    expect(() => encodeCheatFootprint({ cellX: 0, cellZ: 0, w: 1, h: 1, delta: 0 as 1 })).toThrow(RangeError);
+    expect(() => encodeCheatFootprint({ cellX: 0, cellZ: 0, w: 0x10000, h: 1, delta: 1 })).toThrow(RangeError);
+    expect(() => decodeCheatFootprint(new Uint8Array(13))).toThrow(RangeError);
+    const zeroDelta = fixed.slice();
+    zeroDelta[13] = 0;
+    expect(() => decodeCheatFootprint(zeroDelta)).toThrow(RangeError);
+    expect(() => decodeCheatFootprint(encodeCheatKill())).toThrow(RangeError);
   });
 
   it('CheatKill and sub-command sizes', () => {

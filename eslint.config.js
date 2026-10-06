@@ -19,6 +19,8 @@ export const SIM_SOURCES = [
   'packages/rules/src/**/*.ts',
   'packages/sim/src/**/*.ts',
   'packages/nav/src/**/*.ts',
+  // Test map generator of @faf/nav (`@faf/nav/testmap`): its output feeds L2 goldens (MS3).
+  'packages/nav/bench/testmap.ts',
   'packages/protocol/src/**/*.ts',
   'packages/formats/src/**/*.ts',
   'packages/blueprints/src/simbin.ts',

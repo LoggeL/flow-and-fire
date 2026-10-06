@@ -6,9 +6,12 @@
  *   readRtsMap; missing = test plane), frame transport (SAB triple buffer or transfer ping-pong),
  *   command-log recorder (OPFS when available), keyframes, scheduler; replies `ready`.
  * - `cmd` ⇒ LocalSource: applied in the next tick that runs (also while paused).
- * - `ctl` ⇒ pause/resume/speed/step/viewer/watch/debug/devReload/exportLog.
- * - per slice one frame (viewer from ctl.viewer, paused bit, optional debug section with phase
- *   times); `stats` every 10 ticks, `status` on state changes.
+ * - `ctl` ⇒ pause/resume/speed/step/viewer/watch/debug/devReload/exportLog. MS3: `watch` handles
+ *   go into the frame's Watch section; `devReload` may carry a new sim.bin (compatible blueprint
+ *   table swapped in, log tainted, new simId) and is answered with `status` (or `error`).
+ * - per slice one frame (viewer from ctl.viewer, paused bit, Watch section, path statistics,
+ *   optional debug section with phase times); `stats` every 10 ticks (incl. path counters),
+ *   `status` on state changes.
  */
 
 import {
@@ -32,7 +35,7 @@ import {
   type StatusMsg,
   type TransportKind,
 } from '@faf/protocol';
-import { ACTIVE_PHASES, PhaseId, writeFrame, type FrameMeta } from '@faf/sim';
+import { ACTIVE_PHASES, PhaseId, WH_STUCK_GIVEUPS, WorldInitStage, writeFrame, type FrameMeta, type WorldInitProbe } from '@faf/sim';
 import { performanceClock, type Clock, type Wakeup } from './clock.ts';
 import { SimCore } from './core.ts';
 import { SIM_BUILD } from './identity.ts';
@@ -76,6 +79,16 @@ export interface HostStatusMsg extends StatusMsg {
   /** Frames the transport dropped (overwritten / no free buffer). */
   readonly framesDropped: number;
   readonly logBytes: number;
+  /** simHash of the blueprint table in use (changes with a dev reload). */
+  readonly simHash: number;
+  /** Session identity (changes with a dev reload). */
+  readonly simId: number;
+  /** Dev reloads applied so far. */
+  readonly devReloads: number;
+  /** Host time of the last applied dev reload, from the ctl message to the status (ms; 0 = none). */
+  readonly devReloadMs: number;
+  /** Nav precompute when the world was created (static passability + derived regions), ms. */
+  readonly navPrecomputeMs: number;
 }
 
 /** `ready` with identity details. */
@@ -90,6 +103,18 @@ export interface HostReadyMsg extends ReadyMsg {
   readonly mapSizeWu: number;
   readonly seed: number;
   readonly tick: number;
+  /** Nav precompute at load: static passability / derived regions (ms, host clock). */
+  readonly navStaticMs: number;
+  readonly navDerivedMs: number;
+}
+
+/** Sim-wide pathfinding counters (also in every frame header, v2). */
+export interface HostPathStats {
+  pending: number;
+  requestsIssued: number;
+  repathsTriggered: number;
+  expansionsLastTick: number;
+  stuckGiveUps: number;
 }
 
 /** `stats` with a few extra percentiles and the command pipeline counters. */
@@ -106,6 +131,8 @@ export interface HostStatsMsg extends StatsMsg {
    * (pipeline invariant: 1 — applied in the next tick that runs, inputDelay 0; SPK6).
    */
   readonly cmdApplyTicksMax: number;
+  /** Pathfinding counters at the stats tick (MS3). */
+  readonly path: HostPathStats;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -186,6 +213,7 @@ export class SimHost implements SchedulerTarget {
     samples: 0,
     cmdBatchesApplied: 0,
     cmdApplyTicksMax: 0,
+    path: { pending: 0, requestsIssued: 0, repathsTriggered: 0, expansionsLastTick: 0, stuckGiveUps: 0 },
     phases: [...ACTIVE_PHASES, PhaseId.HashTick, Metric.Frame, Metric.Host].map((id) => ({ id, name: METRIC_NAMES[id]!, p50Us: 0, p95Us: 0 })),
   };
   /** Tick at which the oldest not yet applied `cmd` batch arrived (−1 = none queued). */
@@ -193,6 +221,10 @@ export class SimHost implements SchedulerTarget {
   private cmdBatchesApplied = 0;
   private cmdQueued = 0;
   private cmdApplyTicksMax = 0;
+  private navStaticMs = 0;
+  private navDerivedMs = 0;
+  private devReloads = 0;
+  private devReloadMs = 0;
 
   constructor(options: SimHostOptions) {
     this.options = options;
@@ -280,6 +312,18 @@ export class SimHost implements SchedulerTarget {
     if (msg.transport === 'transfer' && this.options.port === undefined) throw new Error("transport 'transfer' needs a port");
     // A broken map (CRC, truncation, bad values) throws FormatError here and becomes an `error`
     // message with the reader's reason; the host stays uninitialized.
+    // Nav precompute timing (static passability, derived regions) for the status (MS3).
+    const clock = this.clock;
+    const t0 = [0, 0, 0];
+    const dur = [0, 0, 0];
+    const initProbe: WorldInitProbe = {
+      begin: (stage) => {
+        t0[stage] = clock.now();
+      },
+      end: (stage) => {
+        dur[stage] = clock.now() - t0[stage]!;
+      },
+    };
     const core = new SimCore({
       simBin: new Uint8Array(msg.simBin),
       ...(msg.map !== undefined ? { map: new Uint8Array(msg.map) } : {}),
@@ -288,8 +332,11 @@ export class SimHost implements SchedulerTarget {
       playerArmy: msg.playerArmy,
       buildHash: msg.buildHash,
       keyframes: this.options.keyframes ?? {},
+      initProbe,
       ...(this.options.logCapacity !== undefined ? { recorder: { initialCapacity: this.options.logCapacity } } : {}),
     });
+    this.navStaticMs = dur[WorldInitStage.NavStatic]!;
+    this.navDerivedMs = dur[WorldInitStage.NavDerived]!;
     const producer = createFrameProducer({
       kind: msg.transport,
       capacity: msg.frameCapacity,
@@ -326,6 +373,8 @@ export class SimHost implements SchedulerTarget {
       mapSizeWu: core.world.mapSizeWu,
       seed: core.world.seed >>> 0,
       tick: core.tick,
+      navStaticMs: this.navStaticMs,
+      navDerivedMs: this.navDerivedMs,
     };
     this.post(ready, []);
     this.openPersistence(core);
@@ -426,10 +475,20 @@ export class SimHost implements SchedulerTarget {
         this.debugFlags = msg.flags >>> 0;
         if (s.paused) this.publishFrame();
         break;
-      case 'devReload':
-        rec?.mark(tick, MarkKind.DevReload);
+      case 'devReload': {
+        const c0 = this.clock.now();
+        if (msg.simBin !== undefined) {
+          // Throws (⇒ `error` message, nothing changed) if the table is not compatible.
+          core.devReload(new Uint8Array(msg.simBin));
+        } else {
+          rec?.mark(tick, MarkKind.DevReload);
+        }
+        this.devReloads++;
+        this.devReloadMs = this.clock.now() - c0;
         this.postStatus(true);
+        if (s.paused) this.publishFrame();
         break;
+      }
       case 'exportLog': {
         const r = core.recorder;
         if (r === null) throw new Error('no command log recorded');
@@ -510,7 +569,7 @@ export class SimHost implements SchedulerTarget {
     meta.speedPermille = s.speedPermille;
     meta.flags = s.paused ? FrameFlags.Paused : 0;
     const target = producer.begin();
-    let len = writeFrame(core.world, this.viewerArmy, this.writer, target, meta);
+    let len = writeFrame(core.world, this.viewerArmy, this.writer, target, meta, this.watchHandles, this.watchCount);
     if ((this.debugFlags & DebugFlags.PhaseTimes) !== 0) len = this.appendPhaseTimes(target, len);
     const dropped = producer.dropped;
     producer.commit(len);
@@ -570,6 +629,14 @@ export class SimHost implements SchedulerTarget {
     msg.frameP95Us = Math.round(st.percentile(Metric.Frame, 0.95));
     msg.cmdBatchesApplied = this.cmdBatchesApplied;
     msg.cmdApplyTicksMax = this.cmdApplyTicksMax;
+    const w = this.coreRef!.world;
+    const nav = w.nav;
+    const ps = msg.path;
+    ps.pending = nav.pendingCount;
+    ps.requestsIssued = nav.requestsIssued;
+    ps.repathsTriggered = nav.repathsTriggered;
+    ps.expansionsLastTick = nav.expansionsLastTick;
+    ps.stuckGiveUps = w.header.i32[WH_STUCK_GIVEUPS]!;
     this.post(msg, NO_TRANSFER);
   }
 
@@ -591,6 +658,11 @@ export class SimHost implements SchedulerTarget {
       waiting: s.waitingForSource,
       framesDropped: this.producerRef?.dropped ?? 0,
       logBytes: rec?.byteLength ?? 0,
+      simHash: core.world.bp.simHash >>> 0,
+      simId: core.simId >>> 0,
+      devReloads: this.devReloads,
+      devReloadMs: this.devReloadMs,
+      navPrecomputeMs: this.navStaticMs + this.navDerivedMs,
     };
   }
 
@@ -598,7 +670,7 @@ export class SimHost implements SchedulerTarget {
   private postStatus(force: boolean): void {
     if (this.coreRef === null || this.disposed) return;
     const st = this.status();
-    const key = `${st.paused}|${st.speed}|${st.ticksBehind}|${st.recorder}|${st.recorderNote}|${st.tainted}|${st.waiting}|${this.scheduler.queuedSteps}|${st.tick}`;
+    const key = `${st.paused}|${st.speed}|${st.ticksBehind}|${st.recorder}|${st.recorderNote}|${st.tainted}|${st.waiting}|${this.scheduler.queuedSteps}|${st.tick}|${st.simId}|${st.devReloads}`;
     if (!force && key === this.lastStatusKey) return;
     this.lastStatusKey = key;
     this.post(st, []);

@@ -20,7 +20,7 @@ for (const server of SERVERS) {
   test(`picking: ≥ 200 Bildschirmpunkte ≤ 1/16 WU, Rechtsklick-Ziel == Pickpunkt – ${server.label}`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     await waitTick(page, 5);
     const vp = page.viewportSize()!;
 

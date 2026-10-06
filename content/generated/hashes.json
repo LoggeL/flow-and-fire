@@ -1,8 +1,15 @@
 {
-  "categories": 4,
+  "aiProfiles": 1,
+  "categories": 12,
+  "effects": 6,
+  "exprs": 6,
+  "factions": 1,
   "format": "faf-hashes",
-  "simBinBytes": 132,
-  "simHash": "0xD4135AF1",
-  "units": 1,
-  "viewHash": "0xF34D65D7"
+  "projectiles": 5,
+  "props": 3,
+  "simBinBytes": 2292,
+  "simHash": "0x49678DEF",
+  "units": 7,
+  "viewHash": "0x2B85A48C",
+  "weapons": 6
 }

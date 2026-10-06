@@ -3,6 +3,7 @@
  */
 import { HANDLE_NONE } from '@faf/heap';
 import { MoverState, NO_BEST_DIST, NO_REF, UnitBits, UnitState } from './constants.ts';
+import { clearOrders } from './orders.ts';
 import { surfaceY, terrainHeight } from './terrain.ts';
 import type { World } from './world.ts';
 
@@ -52,24 +53,44 @@ export function spawnUnit(w: World, bp: number, army: number, x: number, z: numb
   U.shield[idx] = NO_REF;
   U.intel[idx] = NO_REF;
   U.eco[idx] = NO_REF;
+  // add() zeroed the row; set every non-zero default explicitly (and the rest for clarity).
   const M = w.movers.col;
   M.tx[row] = x;
   M.tz[row] = z;
+  M.ax[row] = x;
+  M.az[row] = z;
+  M.wx[row] = x;
+  M.wz[row] = z;
   M.speed[row] = 0;
   M.state[row] = MoverState.Idle;
   M.flags[row] = 0;
   M.best[row] = NO_BEST_DIST;
   M.stuck[row] = 0;
+  M.streak[row] = 0;
+  M.sbest[row] = NO_BEST_DIST;
+  M.path[row] = NO_REF;
+  M.wp[row] = 0;
+  M.pgen[row] = 0;
+  M.launch[row] = 0;
+  M.nudge[row] = 0;
+  M.ndx[row] = 0;
+  M.ndz[row] = 0;
+  M.pushTick[row] = 0;
+  M.orders[row] = 0;
   A.unitCount[army] = A.unitCount[army]! + 1;
   return idx;
 }
 
-/** Marks a live unit as dead; it stops acting immediately and is released in Cleanup. */
+/**
+ * Marks a live unit as dead; it stops acting immediately (orders, paths and group references are
+ * released now) and is released in Cleanup.
+ */
 export function killUnit(w: World, idx: number): void {
   const U = w.units.col;
   U.flags[idx] = (U.flags[idx]! | UnitBits.Dead) >>> 0;
   U.state[idx] = UnitState.Idle;
   const row = U.mover[idx]!;
+  clearOrders(w, idx, row);
   if (row >= 0) {
     w.movers.col.state[row] = MoverState.Idle;
     w.movers.col.speed[row] = 0;

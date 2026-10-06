@@ -2,13 +2,15 @@ import { asArmyId, asHandle, asTick, fx, handleGen, handleIndex, makeHandle } fr
 import { encodeCheatSpawn, Op } from '@faf/protocol';
 import { describe, expect, it } from 'vitest';
 import {
-  ARRIVE_TOLERANCE,
+  ARRIVAL_RADIUS,
   armyUnitCount,
   createWorld,
   isAllied,
   isUnitAlive,
   lastAckSeq,
+  MOVE_PIVOT_CREEP,
   setAlliance,
+  spawnRejectedCount,
   step,
   unitCount,
   unitHandles,
@@ -30,9 +32,11 @@ describe('CommandApply', () => {
   it('Cheat Spawn creates units around (x, z) within the spread, clamped to the map', () => {
     const w = world();
     step(w, [spawnCmd(0, 50, 100, 100, 5), spawnCmd(1, 3, 0, 0, 10, 0, 1)]);
-    expect(unitCount(w)).toBe(53);
+    // MS3: the map border cells are not passable (nav), spawns there are rejected and counted.
+    const nearCorner = 3 - spawnRejectedCount(w);
+    expect(unitCount(w)).toBe(50 + nearCorner);
     expect(armyUnitCount(w, 0)).toBe(50);
-    expect(armyUnitCount(w, 1)).toBe(3);
+    expect(armyUnitCount(w, 1)).toBe(nearCorner);
     for (const h of unitHandles(w, 0)) {
       const u = unitInfo(w, h)!;
       const dx = u.x - fx(100);
@@ -50,7 +54,7 @@ describe('CommandApply', () => {
     }
     // Invalid blueprint or inactive army: nothing happens.
     step(w, [spawnCmd(0, 5, 10, 10, 1, 7), spawnCmd(5, 5, 10, 10, 1, 0, 0)]);
-    expect(unitCount(w)).toBe(53);
+    expect(unitCount(w)).toBe(50 + nearCorner);
   });
 
   it('Move drives a cube to its target; it arrives within the tolerance and becomes idle', () => {
@@ -72,14 +76,14 @@ describe('CommandApply', () => {
     expect(u.state).toBe(UnitState.Idle);
     const dx = u.x - fx(60);
     const dz = u.z - fx(50);
-    expect(dx * dx + dz * dz).toBeLessThanOrEqual(ARRIVE_TOLERANCE * ARRIVE_TOLERANCE);
+    expect(dx * dx + dz * dz).toBeLessThanOrEqual(ARRIVAL_RADIUS * ARRIVAL_RADIUS);
     // Facing +x (yaw ≈ 0) after driving along +x.
     expect(Math.min(u.yaw, 65536 - u.yaw)).toBeLessThan(600);
     run(w, 5);
     expect(unitInfo(w, h!)!.speed).toBe(0);
   });
 
-  it('turns towards the target with the blueprint turn rate before accelerating', () => {
+  it('turns towards the target with the blueprint turn rate, creeping while the heading error is large', () => {
     const w = world();
     step(w, [spawnCmd(0, 1, 50, 50, 0)]);
     const [h] = unitHandles(w);
@@ -90,7 +94,9 @@ describe('CommandApply', () => {
     const u = unitInfo(w, h!)!;
     const turned = Math.abs((((u.yaw - yaw0) << 16) >> 16));
     expect(turned).toBe(gameTable().turnRatePerTick(0));
-    expect(u.speed).toBe(0); // heading error ≥ 90° ⇒ no forward speed yet
+    // Heading error > 70° (SPK2 start angle) ⇒ pivot with creep speed (10 % of the top speed).
+    expect(u.speed).toBeGreaterThan(0);
+    expect(u.speed).toBeLessThanOrEqual(Math.floor((gameTable().speedPerTick(0) * MOVE_PIVOT_CREEP) / 4096));
   });
 
   it('Stop halts a moving unit (decelerating) and keeps it idle', () => {
@@ -155,9 +161,14 @@ describe('CommandApply', () => {
     step(w, [moveCmd(0, [h!], 90, 50, 11), moveCmd(0, [h!], 10, 50, 10)]);
     expect(unitInfo(w, h!)!.targetX).toBe(fx(90));
     expect(lastAckSeq(w, 0)).toBe(11);
-    // The Queue flag replaces the order in MS1.
+    // MS3 (G7): the Queue flag appends the order; the active target stays.
     step(w, [moveCmd(0, [h!], 70, 70, 12, 1)]);
+    expect(unitInfo(w, h!)!.targetX).toBe(fx(90));
+    expect(unitInfo(w, h!)!.orders).toBe(2);
+    // Without the flag the queue is replaced.
+    step(w, [moveCmd(0, [h!], 70, 70, 13)]);
     expect(unitInfo(w, h!)!.targetX).toBe(fx(70));
+    expect(unitInfo(w, h!)!.orders).toBe(1);
   });
 
   it('orders a u16 seq wrap-around inside one tick in serial-number order (65535 before 1)', () => {
@@ -212,12 +223,13 @@ describe('CommandApply', () => {
     const w = createWorld({ bpTable: testTable(), seed: 9, armyCount: 1, mapSizeWu: 64 });
     step(w, [spawnCmd(0, 1, 60, 60, 0, 1)]);
     const [h] = unitHandles(w);
-    step(w, [moveCmd(0, [h!], 500, 500)]); // clamped to the map corner
-    expect(unitInfo(w, h!)!.targetX).toBe(fx(64));
+    step(w, [moveCmd(0, [h!], 500, 500)]); // clamped to the map corner, then retargeted (border cells are blocked)
     run(w, 100);
     const u = unitInfo(w, h!)!;
-    expect(u.x).toBeLessThanOrEqual(fx(64));
-    expect(u.z).toBeLessThanOrEqual(fx(64));
+    // Nearest passable cell to the corner: (62, 62), its centre is the new slot.
+    expect([u.targetX, u.targetZ]).toEqual([fx(62.5), fx(62.5)]);
+    expect(u.x).toBeLessThan(fx(63));
+    expect(u.z).toBeLessThan(fx(63));
     expect(u.moving).toBe(false);
   });
 
@@ -225,8 +237,10 @@ describe('CommandApply', () => {
     const w = world();
     step(w, [spawnCmd(0, 60, 100, 100, 15)]);
     const hs = unitHandles(w);
-    step(w, [moveCmd(0, hs, 150, 100)]);
-    run(w, 400);
+    // One command per unit: every unit has the same slot (a group order would keep offsets).
+    step(w, hs.map((h) => moveCmd(0, [h], 150, 100)));
+    // 50 WU at 3 WU/s plus settling (contagion, slot returns of pushed units).
+    run(w, 600);
     const infos = hs.map((h) => unitInfo(w, h)!);
     expect(infos.every((u) => !u.moving)).toBe(true);
     let minD2 = Infinity;

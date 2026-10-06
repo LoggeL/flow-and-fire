@@ -2,9 +2,10 @@
  * Tick benchmark (L6): 1,000 cubes that keep driving (a rotating group of 50 gets a new target
  * every tick), p50/p95/p99 of the whole sim tick, each active phase and the hash tick.
  * MS1: flat test plane (spawn disc r 120 around the centre, targets in [32, 480)²).
- * MS2: with `map` (hollow-ridge): spawn disc r 70 around (150, 150) and targets in [40, 200)², all
- * on the NW side of the river — the cubes drive over plateau cliffs, ramps and the mesa, so every
- * position update samples the heightmap and runs the deep-water rule.
+ * MS2: with `map` (hollow-ridge): targets in [40, 200)², all on the NW side of the river — the
+ * cubes drive over the plateau ramps, the lowland and the mesa, so every position update samples
+ * the heightmap and runs the passability rule. MS3: spawn disc r 20 around (100, 100) on the
+ * plateau (no rejected points), every group order is pathed (HPA*, offsets).
  */
 import { asArmyId, asTick, fx, rng32, type Handle } from '@faf/fixed';
 import { createTestPlaneMap, mapSimData, readRtsMap, type RtsMap, TEST_PLANE_MAP_NAME } from '@faf/formats';
@@ -66,7 +67,9 @@ interface BenchArea {
   readonly span: number;
 }
 const PLANE_AREA: BenchArea = { cx: 256, cz: 256, spread: 120, min: 32, span: 448 };
-const RIDGE_AREA: BenchArea = { cx: 150, cz: 150, spread: 70, min: 40, span: 160 };
+// MS3: the spawn disc stays on the NW plateau (no cliff cells: all 1,000 spawned); the targets
+// cover the NW side of the river (plateau, ramps, lowland, mesa) — every move is pathed.
+const RIDGE_AREA: BenchArea = { cx: 100, cz: 100, spread: 20, min: 40, span: 160 };
 
 export function runTickBench(o: TickBenchOptions): TickBenchResult {
   const seed = o.seed ?? 0x7b0000c1;

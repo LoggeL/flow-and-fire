@@ -104,7 +104,8 @@ for (const server of SERVERS) {
         rafIdleHz,
         fpsRatio: flight.fps / rafIdleHz,
         fpsGe60OrRafRate: flight.fps >= 60 || flight.fps >= FPS_OF_RAF * rafIdleHz,
-        allLodsUsed: flight.lodInstancesMax.every((n) => n > 0),
+        lodsUsed: flight.lodInstancesMax.filter((n) => n > 0).length,
+        iconPassMax: flight.drawsByPassMax.icons,
         mainJsP95Ms: flight.mainJsMs.p95,
         gpuP95Ms: flight.gpuMs?.p95 ?? null,
       },
@@ -117,10 +118,13 @@ for (const server of SERVERS) {
     expect(flight.draws.max).toBeLessThanOrEqual(MAX_DRAWS);
     expect(flight.drawsByPassMax.terrain).toBe(1);
     expect(flight.drawsByPassMax.water).toBe(1);
-    // Culling and LOD are active: views where most instances are culled, and all three LODs used.
+    // Culling and LOD are active: views where most instances are culled, at least two mesh LODs in
+    // use. MS3: beyond the icon threshold (14 px) units are drawn by the IconPass only (1 draw), so the
+    // farthest mesh LOD is no longer reached by the cubes of this flight.
     expect(flight.culledInstances.max).toBeGreaterThan(1000);
     expect(flight.lodInstancesMax.length).toBe(3);
-    expect(flight.lodInstancesMax.every((n) => n > 0), `instances per LOD (max per frame): ${flight.lodInstancesMax.join('/')}`).toBe(true);
+    expect(flight.lodInstancesMax.filter((n) => n > 0).length, `instances per LOD (max per frame): ${flight.lodInstancesMax.join('/')}`).toBeGreaterThanOrEqual(2);
+    expect(flight.drawsByPassMax.icons, 'far units as icons: one IconPass draw').toBe(1);
     if (PERF_GATE) {
       expect(flight.fps, `FPS vs. idle rAF rate ${rafIdleHz.toFixed(1)} Hz`).toBeGreaterThanOrEqual(Math.min(60, FPS_OF_RAF * rafIdleHz));
       expect(flight.mainJsMs.p95, 'Main-JS p95').toBeLessThanOrEqual(5);

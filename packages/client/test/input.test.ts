@@ -35,7 +35,7 @@ describe('InputController action mapping', () => {
     canvas.dispatch(pointer('pointerdown', 110, 120));
     canvas.dispatch(pointer('pointermove', 112, 121)); // below threshold
     canvas.dispatch(pointer('pointerup', 112, 121));
-    expect(actions).toEqual([{ type: 'clickSelect', x: 100, y: 100, additive: false }]);
+    expect(actions).toEqual([{ type: 'clickSelect', x: 100, y: 100, additive: false, double: false }]);
     expect(boxes).toEqual([]);
 
     actions.length = 0;
@@ -185,5 +185,48 @@ describe('InputController action mapping', () => {
     input.dispose();
     expect(canvas.listenerCount()).toBe(0);
     expect(win.listenerCount()).toBe(0);
+  });
+});
+
+describe('InputController MS3: Esc, control groups, double click', () => {
+  it('Esc → deselect; digits → controlGroup (store Ctrl/Alt, add Shift+Ctrl/Alt, recall, recallAdd Shift); ⌘+digit unbound', () => {
+    const { win, actions } = setup();
+    win.dispatch(key('keydown', 'Escape'));
+    const e1 = win.dispatch(key('keydown', 'Digit4', { ctrlKey: true, timeStamp: 10 }));
+    win.dispatch(key('keydown', 'Digit4', { altKey: true, timeStamp: 11 }));
+    win.dispatch(key('keydown', 'Digit4', { ctrlKey: true, shiftKey: true, timeStamp: 12 }));
+    win.dispatch(key('keydown', 'Digit4', { altKey: true, shiftKey: true, timeStamp: 13 }));
+    win.dispatch(key('keydown', 'Digit4', { timeStamp: 14 }));
+    win.dispatch(key('keydown', 'Digit4', { shiftKey: true, timeStamp: 15 }));
+    win.dispatch(key('keydown', 'Numpad0', { timeStamp: 16 }));
+    const meta = win.dispatch(key('keydown', 'Digit4', { metaKey: true, timeStamp: 17 }));
+    win.dispatch(key('keydown', 'Digit4', { timeStamp: 18, repeat: true }));
+    expect(e1.defaultPrevented).toBe(true);
+    expect(meta.defaultPrevented).toBe(false);
+    expect(actions).toEqual([
+      { type: 'deselect' },
+      { type: 'controlGroup', op: 'store', group: 4, timeStamp: 10 },
+      { type: 'controlGroup', op: 'store', group: 4, timeStamp: 11 },
+      { type: 'controlGroup', op: 'add', group: 4, timeStamp: 12 },
+      { type: 'controlGroup', op: 'add', group: 4, timeStamp: 13 },
+      { type: 'controlGroup', op: 'recall', group: 4, timeStamp: 14 },
+      { type: 'controlGroup', op: 'recallAdd', group: 4, timeStamp: 15 },
+      { type: 'controlGroup', op: 'recall', group: 0, timeStamp: 16 },
+    ]);
+  });
+
+  it('a second click within 400 ms and 6 px is a double click; a third click starts over', () => {
+    const { canvas, actions } = setup();
+    const click = (x: number, t: number, shift = false): void => {
+      canvas.dispatch(pointer('pointerdown', x, 100, 0, { timeStamp: t, shiftKey: shift }));
+      canvas.dispatch(pointer('pointerup', x, 100, 0, { timeStamp: t + 40, shiftKey: shift }));
+    };
+    click(110, 1000);
+    click(112, 1200);
+    click(112, 1300);
+    click(140, 1400); // too far
+    click(140, 2000); // too late
+    click(140, 2100, true);
+    expect(actions.map((a) => (a.type === 'clickSelect' ? `${a.double ? 'D' : 'S'}${a.additive ? '+' : ''}` : a.type))).toEqual(['S', 'D', 'S', 'S', 'S', 'D+']);
   });
 });

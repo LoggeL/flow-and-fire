@@ -1,14 +1,17 @@
 /**
  * FakeSimLink: an in-process stand-in for the sim worker. It keeps a tiny cube world, applies the
- * received command batches on the next tick (Move, Stop, Cheat Spawn/Kill), writes real frames
- * with the protocol FrameWriter (ackSeq, paused flag, speed, prev/cur positions, noInterp on
- * spawn) and hands them to the client through a copy-on-arrival FrameConsumer.
+ * received command batches on the next tick (Move incl. Shift queue, Stop, Cheat Spawn/Kill/
+ * Footprint), writes real frames with the protocol FrameWriter (ackSeq, paused flag, speed,
+ * prev/cur positions, noInterp on spawn, MS3: watch section for `ctl.watch` handles with the order
+ * targets and one mid-route waypoint) and hands them to the client through a copy-on-arrival
+ * FrameConsumer.
  *
  * Time is driven by the test: `advance(ms)` runs as many ticks as the current speed allows (none
  * while paused, except requested steps), `tickNow()` runs exactly one tick.
  */
 import {
   CheatSub,
+  CmdFlags,
   CommandBatchView,
   DEFAULT_FRAME_CAPS,
   FrameFlags,
@@ -19,6 +22,7 @@ import {
   readMoveInto,
   speedToPermille,
   UnitFlags,
+  WatchOrderType,
   type CheatSpawnPayload,
   type CtlMessage,
   type FrameConsumer,
@@ -85,7 +89,12 @@ export interface FakeSimOptions {
   readonly paused?: boolean;
   /** Write one PartStream record (turret yaw = tick · 1000) per live unit (merged-part test). */
   readonly parts?: boolean;
+  /** Visual (blueprint sim id) per unit: `visualOf(index)`; default 0. */
+  readonly visualOf?: (i: number) => number;
 }
+
+/** Queued targets per unit (Shift moves). */
+const QUEUE_CAP = 8;
 
 export class FakeSimLink implements SimLink {
   readonly frames: FakeFrameConsumer;
@@ -113,9 +122,19 @@ export class FakeSimLink implements SimLink {
   readonly army: Uint8Array;
   readonly gen: Uint16Array;
   readonly fresh: Uint8Array;
+  readonly visual: Uint16Array;
+  /** Queued targets (QUEUE_CAP per unit) and their count. */
+  readonly qx: Int32Array;
+  readonly qz: Int32Array;
+  readonly qn: Uint8Array;
   readonly speedRaw: number;
   readonly withParts: boolean;
   highWater = 0;
+  /** Handles of the last `ctl.watch` (first `watchN`). */
+  readonly watchHandles = new Uint32Array(64);
+  watchN = 0;
+  /** Footprint cheats received: [x, z, w, h, delta] each. */
+  readonly footprints: number[][] = [];
 
   private readonly writer = new FrameWriter(FAKE_CAPS);
   private readonly target: Uint8Array;
@@ -124,6 +143,7 @@ export class FakeSimLink implements SimLink {
   private readonly move: MovePayload = { x: asFx(0), y: asFx(0), z: asFx(0) };
   private readonly spawnP: CheatSpawnPayload = { bp: 0, army: 0, count: 0, x: asFx(0), z: asFx(0), spread: asFx(0) };
   private readonly listeners: ((m: HostMessage) => void)[] = [];
+  private readonly visualOf: ((i: number) => number) | null;
   private frameSeq = 0;
   private stepsPending = 0;
   private acc = 0;
@@ -143,6 +163,11 @@ export class FakeSimLink implements SimLink {
     this.army = new Uint8Array(cap);
     this.gen = new Uint16Array(cap);
     this.fresh = new Uint8Array(cap);
+    this.visual = new Uint16Array(cap);
+    this.qx = new Int32Array(cap * QUEUE_CAP);
+    this.qz = new Int32Array(cap * QUEUE_CAP);
+    this.qn = new Uint8Array(cap);
+    this.visualOf = opts.visualOf ?? null;
     this.playerArmy = opts.playerArmy ?? 0;
     this.paused = opts.paused ?? false;
     this.speedRaw = opts.speedRaw ?? 2048;
@@ -183,6 +208,10 @@ export class FakeSimLink implements SimLink {
         break;
       case 'step':
         if (this.paused) this.stepsPending += msg.ticks;
+        break;
+      case 'watch':
+        this.watchN = Math.min(64, msg.handles.length);
+        for (let i = 0; i < this.watchN; i++) this.watchHandles[i] = msg.handles[i]! >>> 0;
         break;
       default:
         break;
@@ -240,11 +269,12 @@ export class FakeSimLink implements SimLink {
       if (this.alive[i] === 0 || this.moving[i] === 0) continue;
       const dx = this.tx[i]! - this.x[i]!;
       const dz = this.tz[i]! - this.z[i]!;
-      const d = Math.hypot(dx, dz);
+      const d = Math.sqrt(dx * dx + dz * dz); // not Math.hypot: its varargs call boxes (harness allocation)
       if (d <= this.speedRaw) {
         this.x[i] = this.tx[i]!;
         this.z[i] = this.tz[i]!;
         this.moving[i] = 0;
+        this.popQueue(i);
       } else {
         this.x[i] = this.x[i]! + Math.trunc((dx * this.speedRaw) / d);
         this.z[i] = this.z[i]! + Math.trunc((dz * this.speedRaw) / d);
@@ -276,10 +306,25 @@ export class FakeSimLink implements SimLink {
       if (this.withParts) {
         const yaw = (this.tick * 1000) & 0xffff;
         const part = w.writePart((yaw - 1000) & 0xffff, yaw, 0, 0);
-        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, 0, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), part, 1);
+        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, this.visual[i]!, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), part, 1);
       } else {
-        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, 0, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), 0, 0);
+        w.writeUnit(this.px[i]!, 0, this.pz[i]!, this.x[i]!, 0, this.z[i]!, 0, 0, this.visual[i]!, this.army[i]!, 255, 255, 0, flags, this.handleOf(i), 0, 0);
       }
+    }
+    // Watch section: order targets (active + queued) and one waypoint halfway on long routes.
+    for (let k = 0; k < this.watchN; k++) {
+      const i = this.slotOf(this.watchHandles[k]!);
+      if (i < 0 || this.army[i] !== this.playerArmy) continue;
+      const orders = (this.moving[i] !== 0 ? 1 : 0) + this.qn[i]!;
+      if (w.beginWatch(this.handleOf(i), orders, 0) < 0) break;
+      if (this.moving[i] !== 0) {
+        const dx = this.tx[i]! - this.x[i]!;
+        const dz = this.tz[i]! - this.z[i]!;
+        if (dx * dx + dz * dz > (8 * 4096) ** 2) w.addWatchPoint(this.x[i]! + (dx >> 1), this.z[i]! + (dz >> 1));
+        w.addWatchPoint(this.tx[i]!, this.tz[i]!);
+        w.addWatchTarget(WatchOrderType.Move, this.tx[i]!, this.tz[i]!);
+      }
+      for (let q = 0; q < this.qn[i]!; q++) w.addWatchTarget(WatchOrderType.Move, this.qx[i * QUEUE_CAP + q]!, this.qz[i * QUEUE_CAP + q]!);
     }
     const len = w.endFrame();
     this.frames.deliver(this.target, this.frameSeq, len);
@@ -303,10 +348,26 @@ export class FakeSimLink implements SimLink {
 
   // ---- internals ------------------------------------------------------------------------------
 
+  private popQueue(i: number): void {
+    const n = this.qn[i]!;
+    if (n === 0) return;
+    const o = i * QUEUE_CAP;
+    this.tx[i] = this.qx[o]!;
+    this.tz[i] = this.qz[o]!;
+    this.moving[i] = 1;
+    for (let q = 1; q < n; q++) {
+      this.qx[o + q - 1] = this.qx[o + q]!;
+      this.qz[o + q - 1] = this.qz[o + q]!;
+    }
+    this.qn[i] = n - 1;
+  }
+
   private addUnit(army: number, x: number, z: number, fresh: boolean): number {
     const i = this.highWater++;
     this.alive[i] = 1;
     this.army[i] = army;
+    this.visual[i] = this.visualOf === null ? 0 : this.visualOf(i);
+    this.qn[i] = 0;
     this.x[i] = this.px[i] = this.tx[i] = x;
     this.z[i] = this.pz[i] = this.tz[i] = z;
     this.moving[i] = 0;
@@ -322,9 +383,19 @@ export class FakeSimLink implements SimLink {
       if (v.army === this.playerArmy) this.ackSeq = v.seq;
       if (v.op === Op.Move) {
         readMoveInto(v.dataView, v.payloadOffset, this.move);
+        const queue = (v.flags & CmdFlags.Queue) !== 0;
         for (let k = 0; k < v.unitCount; k++) {
           const i = this.slotOf(v.unitAt(k));
           if (i < 0 || this.army[i] !== v.army) continue;
+          if (queue && this.moving[i] !== 0) {
+            if (this.qn[i]! < QUEUE_CAP) {
+              this.qx[i * QUEUE_CAP + this.qn[i]!] = this.move.x;
+              this.qz[i * QUEUE_CAP + this.qn[i]!] = this.move.z;
+              this.qn[i]!++;
+            }
+            continue;
+          }
+          this.qn[i] = 0;
           this.tx[i] = this.move.x;
           this.tz[i] = this.move.z;
           this.moving[i] = 1;
@@ -334,6 +405,7 @@ export class FakeSimLink implements SimLink {
           const i = this.slotOf(v.unitAt(k));
           if (i < 0) continue;
           this.moving[i] = 0;
+          this.qn[i] = 0;
           this.tx[i] = this.x[i]!;
           this.tz[i] = this.z[i]!;
         }
@@ -342,6 +414,10 @@ export class FakeSimLink implements SimLink {
         if (sub === CheatSub.Spawn) {
           const p = readCheatSpawnInto(v.dataView, v.payloadOffset, this.spawnP);
           for (let k = 0; k < p.count; k++) this.addUnit(p.army, p.x + ((k % 8) - 4) * 4096, p.z + (Math.floor(k / 8) - 4) * 4096, true);
+        } else if (sub === CheatSub.Footprint) {
+          const dv = v.dataView;
+          const o = v.payloadOffset;
+          this.footprints.push([dv.getInt32(o + 1, true), dv.getInt32(o + 5, true), dv.getUint16(o + 9, true), dv.getUint16(o + 11, true), dv.getInt8(o + 13)]);
         } else if (sub === CheatSub.Kill) {
           for (let k = 0; k < v.unitCount; k++) {
             const i = this.slotOf(v.unitAt(k));

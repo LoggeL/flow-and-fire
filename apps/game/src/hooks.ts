@@ -7,13 +7,31 @@
  * MS2 additions: map/terrain checks (`probeHeights` GPU vs. CPU, `unitHeights`, `pickAt` vs.
  * `pickReference`, `exportMap` roundtrip), camera (`camera`, `project`, `flight`), load timings,
  * the last Move target, fullscreen/pointer-lock state and the rule hash.
+ *
+ * MS3 additions (contract for the E2E package ms3-p6): selection and control groups, the screen
+ * geometry of every unit of the current frame (projected position, icon rectangle exactly as the
+ * IconPass draws it, crossfade), strategic zoom and render stats (icons/units draws), watch data,
+ * path counters, HMR timings, simHash/tainted, per-unit info (orders, blocked cell via the client's
+ * nav-rule replica), waiting for a tick.
  */
-import { RAW_PER_WU, type CameraState, type MetricsSnapshot, type RenderPresetName, type StatSummary } from '@faf/client';
+import {
+  RAW_PER_WU,
+  iconScreenRect,
+  interpolatedPos,
+  isOwnUnit,
+  type CameraState,
+  type ControlGroupOp,
+  type MetricsSnapshot,
+  type RenderPresetName,
+  type StatSummary,
+} from '@faf/client';
+import { UnitFlags } from '@faf/protocol';
 import { mapSimHash, readRtsMap, writeRtsMap } from '@faf/formats';
 import { sampleHeightRaw } from '@faf/rules';
 import type { CtlMessage } from '@faf/protocol';
 import type { FrameFingerprint } from './frame-hash.ts';
-import type { Game, MoveTarget } from './game.ts';
+import type { Game, MoveTarget, WatchEntry } from './game.ts';
+import type { HmrSnapshot } from './hmr.ts';
 import type { LoadTimings } from './loading.ts';
 import { probePoints, referencePick } from './testing/reference.ts';
 
@@ -26,7 +44,17 @@ export interface UnitPosWU {
 export interface RenderStatsSnapshot {
   readonly frames: number;
   readonly drawCalls: number;
-  readonly drawsByPass: { terrain: number; water: number; units: number; overlay: number };
+  readonly drawsByPass: { terrain: number; water: number; units: number; icons: number; overlay: number };
+  /** Strategic zoom of the last frame (MS3). */
+  readonly zoomLevel: number;
+  readonly iconForce: number;
+  /** Units whose icon is visible / inside the crossfade band / drawn only as icons. */
+  readonly iconCount: number;
+  readonly fadedUnits: number;
+  readonly iconOnlyUnits: number;
+  /** Dynamic terrain decals (selection rings, target discs). */
+  readonly dynamicDecals: number;
+  readonly decalChunkOverflow: number;
   readonly instances: number;
   readonly unitInstances: number;
   readonly culledInstances: number;
@@ -93,7 +121,13 @@ export interface FlightReport {
   readonly frames: number;
   readonly fps: number;
   readonly draws: { max: number; min: number; mean: number; over50: number };
-  readonly drawsByPassMax: { terrain: number; water: number; units: number; overlay: number };
+  readonly drawsByPassMax: { terrain: number; water: number; units: number; icons: number; overlay: number };
+  /** MS3 strategic zoom: rendered frames per zoom level [Z0, Z1, Z2]. */
+  readonly framesByZoomLevel: [number, number, number];
+  /** Frames with visible units whose IconPass did not draw exactly once (0 = the pass is always one draw). */
+  readonly iconPassNot1Frames: number;
+  /** Largest UnitPass draw count in a Z2 frame (0 = only icons at whole-map zoom). */
+  readonly unitDrawsInZ2Max: number;
   readonly renderCpuMs: { p50: number; p95: number; max: number };
   readonly gpuMs: { p50: number; p95: number; samples: number } | null;
   readonly mainJsMs: StatSummary;
@@ -113,6 +147,71 @@ export interface FullscreenState {
   readonly lockRequests: number;
   readonly lockErrors: number;
   readonly virtualCursor: { x: number; y: number; visible: boolean } | null;
+}
+
+/** Screen geometry of one unit of the current frame (CSS px), as the renderer draws it. */
+export interface ScreenUnit {
+  readonly handle: number;
+  readonly army: number;
+  readonly visual: number;
+  /** Projected (interpolated) position; null behind the camera. */
+  readonly x: number | null;
+  readonly y: number | null;
+  /** Projected centre inside the viewport. */
+  readonly onScreen: boolean;
+  /** Icon coverage 0..1 (render crossfade) and whether hit tests use the icon (≥ 0.5). */
+  readonly fade: number;
+  readonly icon: boolean;
+  /** Icon square [x0, y0, x1, y1] (render `iconScreenRect`); null behind the camera. */
+  readonly iconRect: [number, number, number, number] | null;
+  /** Projected selection radius (CSS px, mesh-mode hit disc). */
+  readonly radiusPx: number;
+  readonly selected: boolean;
+}
+
+export interface ZoomInfo {
+  /** Camera distance (WU) and the strategic zoom it gives on this map (client formula = renderer formula). */
+  readonly distance: number;
+  readonly maxDistance: number;
+  readonly level: number;
+  readonly iconForce: number;
+  readonly z1: number;
+  readonly z2: number;
+  /** Level the renderer used in its last frame. */
+  readonly renderLevel: number;
+}
+
+export interface UnitInfo {
+  readonly handle: number;
+  readonly army: number;
+  readonly visual: number;
+  /** cur position (WU). */
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  /** UnitRecord flag Idle (no orders, standing). */
+  readonly idle: boolean;
+  readonly selected: boolean;
+  /** In the frame's watch section. */
+  readonly watched: boolean;
+  /** Order count from the watch section (null if not watched). */
+  readonly orders: number | null;
+  /** Cell (1 WU) of the unit. */
+  readonly cell: { x: number; z: number };
+  /** Cell blocked for land: static nav rule replica (slope/deep water/border) or a console footprint. */
+  readonly blockedCell: boolean;
+  readonly blockedReason: 'static' | 'footprint' | null;
+}
+
+export interface PathStatsSnapshot {
+  readonly tick: number;
+  readonly pending: number;
+  readonly requestsIssued: number;
+  readonly repathsTriggered: number;
+  readonly expansionsLastTick: number;
+  readonly stuckGiveUps: number;
+  /** `HostStatsMsg.path` (plain) or null before the first stats message. */
+  readonly host: unknown;
 }
 
 export interface FafTestHooks {
@@ -144,12 +243,50 @@ export interface FafTestHooks {
   ownHandles(): number[];
   /** Units of `army` in the newest frame. */
   armyUnitCount(army: number): number;
-  /** Move command for `handles` to (x, z) in WU, like a right click (marker, line, measurement). */
-  sendMove(handles: readonly number[], x: number, z: number): number;
+  /**
+   * Move command for `handles` (null = the selection) to (x, z) in WU, like a right click (marker,
+   * optimistic line, measurement); `queue` = Shift (CmdFlags.Queue).
+   */
+  sendMove(handles: readonly number[] | null, x: number, z: number, queue?: boolean): number;
   /** Last Move command sent to the sim (decoded from the batch; raw coordinates). */
   lastMoveTarget(): MoveTarget | null;
-  /** Explicit selection (empty array = clear; null = back to "all own units"). */
-  select(handles: readonly number[] | null): number;
+  /** Selects `handles` (empty array = clear; null = all own units, like Ctrl+A); `additive` adds. */
+  select(handles: readonly number[] | null, additive?: boolean): number;
+  /** Selected handles (frame order). */
+  selection(): number[];
+  /** Clears the selection (like Esc). */
+  clearSelection(): void;
+  /** Selects every own unit of blueprint (sim id or `core:…`); returns the count. */
+  selectBlueprint(bp: number | string): number;
+  /** Members of control groups 0–9. */
+  controlGroups(): number[][];
+  /** Control-group operation like the hotkeys (store/add/recall/recallAdd); returns the group size. */
+  controlGroup(op: ControlGroupOp, group: number): number;
+  /** Screen geometry of every unit of the current frame (at the displayed alpha). */
+  screenUnits(): ScreenUnit[];
+  /** Strategic zoom (camera distance → Z0/Z1/Z2). */
+  zoom(): ZoomInfo;
+  /** Watch section of the newest frame (WU). */
+  watch(): WatchEntry[];
+  /** Handles last sent with `ctl.watch`. */
+  watchedHandles(): number[];
+  /** Path counters (frame header + host stats). */
+  pathStats(): PathStatsSnapshot | null;
+  /** Order feedback built for the last frame (segments, discs, rings, watched units, optimistic entries). */
+  feedback(): { segments: number; discs: number; rings: number; watchedDrawn: number; optimistic: number; pathOverlay: boolean };
+  /** Path overlay on/off. */
+  setPathOverlay(on: boolean): void;
+  /** Hides all units in the renderer (bare-terrain reference frames for pixel checks); returns the state. */
+  setUnitsHidden(on: boolean): boolean;
+  /** Unit details (null if the handle is not in the newest frame). */
+  unitInfo(handle: number): UnitInfo | null;
+  /** Resolves with the tick once the client has a frame with tick ≥ n (rejects after `timeoutMs`, default 30 s). */
+  waitTick(n: number, timeoutMs?: number): Promise<number>;
+  /** Blueprint HMR bookkeeping (dev server). */
+  readonly hmr: HmrSnapshot;
+  /** Blueprint simHash of the running sim (host status) and whether the command log is tainted. */
+  readonly simHash: number | null;
+  readonly tainted: boolean;
   ctl(msg: CtlMessage): void;
   cameraState(): CameraState;
   /** Alias of cameraState (MS2 name). */
@@ -199,6 +336,8 @@ export interface FafTestHooks {
   renderStats(): RenderStatsSnapshot;
   /** Command log bytes (length) via `exportLog`. */
   exportLogBytes(): Promise<number>;
+  /** The command log itself (bytes as numbers; E2E parses MARKs such as devReload). */
+  exportLogData(): Promise<number[]>;
 }
 
 function percentile(sorted: readonly number[], p: number): number {
@@ -223,7 +362,14 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
     return {
       frames: s.frames,
       drawCalls: s.drawCalls,
-      drawsByPass: { ...s.drawsByPass },
+      drawsByPass: { terrain: s.drawsByPass.terrain, water: s.drawsByPass.water, units: s.drawsByPass.units, icons: s.drawsByPass.icons, overlay: s.drawsByPass.overlay },
+      zoomLevel: s.zoomLevel,
+      iconForce: s.iconForce,
+      iconCount: s.iconCount,
+      fadedUnits: s.fadedUnits,
+      iconOnlyUnits: s.iconOnlyUnits,
+      dynamicDecals: s.dynamicDecals,
+      decalChunkOverflow: s.decalChunkOverflow,
       instances: s.instances,
       unitInstances: s.unitInstances,
       culledInstances: s.culledInstances,
@@ -308,13 +454,135 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
       for (let i = 0; i < r.unitCount; i++) if (r.unitArmy(i) === army) n++;
       return n;
     },
-    sendMove: (handles, x, z) => c.moveTo(x * RAW_PER_WU, z * RAW_PER_WU, handles),
+    sendMove: (handles, x, z, queue) => c.moveTo(x * RAW_PER_WU, z * RAW_PER_WU, handles ?? undefined, undefined, queue === true),
     lastMoveTarget: () => game.lastMove,
-    select: (handles) => {
-      if (handles === null) c.selection.selectAll();
-      else if (handles.length === 0) c.selection.clear();
-      else c.selection.set(handles);
-      return c.selection.count;
+    select: (handles, additive) => {
+      if (handles === null) return c.selectAll();
+      if (handles.length === 0 && additive !== true) {
+        c.clearSelection();
+        return 0;
+      }
+      return c.select(handles, additive === true);
+    },
+    selection: () => Array.from(c.selection.selected()),
+    clearSelection: () => c.clearSelection(),
+    selectBlueprint: (bp) => {
+      const id = typeof bp === 'number' ? bp : game.bp.indexOf(bp.includes(':') ? bp : `core:${bp}`);
+      return id < 0 ? 0 : c.selectVisual(id);
+    },
+    controlGroups: () => c.controlGroups.snapshot(),
+    controlGroup: (op, group) => c.controlGroup(op, group),
+    screenUnits: () => {
+      const r = c.lastFrame;
+      if (r === null) return [];
+      c.camera.update();
+      const pr = c.selection.project(c.camera, c.stream.lastAlpha);
+      const rect = new Float64Array(4);
+      const pos = new Float64Array(3);
+      const out: ScreenUnit[] = [];
+      for (let i = 0; i < pr.count; i++) {
+        const vis = pr.visible[i] === 1;
+        let ir: ScreenUnit['iconRect'] = null;
+        if (vis) {
+          // Same geometry as the IconPass (render iconScreenRect at the displayed position).
+          interpolatedPos(r, i, c.stream.lastAlpha, pos);
+          if (iconScreenRect(c.camera, pos[0]!, pos[1]!, pos[2]!, rect, c.selection.iconSizePx)) ir = [rect[0]!, rect[1]!, rect[2]!, rect[3]!];
+        }
+        out.push({
+          handle: r.unitHandle(i),
+          army: r.unitArmy(i),
+          visual: r.unitVisual(i),
+          x: vis ? pr.sx[i]! : null,
+          y: vis ? pr.sy[i]! : null,
+          onScreen: pr.onScreen(i),
+          fade: pr.fade[i]!,
+          icon: pr.icon[i] === 1,
+          iconRect: ir,
+          radiusPx: pr.radiusPx[i]!,
+          selected: c.selection.highlight[i] === 1,
+        });
+      }
+      return out;
+    },
+    zoom: () => {
+      const z = c.zoom;
+      return {
+        distance: c.camera.distance,
+        maxDistance: c.camera.maxDistance,
+        level: z.level,
+        iconForce: z.iconForce,
+        z1: z.z1,
+        z2: z.z2,
+        renderLevel: renderer.stats.zoomLevel,
+      };
+    },
+    watch: () => game.watchData(),
+    watchedHandles: () => c.watchedHandles(),
+    pathStats: () => game.pathStats(),
+    feedback: () => {
+      const f = c.feedback;
+      return { segments: f.segments, discs: f.discs, rings: f.ringCount, watchedDrawn: f.watchedDrawn, optimistic: f.optimisticCount, pathOverlay: f.pathOverlay };
+    },
+    setPathOverlay: (on) => {
+      c.feedback.pathOverlay = on;
+      c.feedback.invalidate();
+    },
+    setUnitsHidden: (on) => {
+      c.unitsHidden = on;
+      return c.unitsHidden;
+    },
+    unitInfo: (h) => {
+      const r = c.lastFrame;
+      if (r === null) return null;
+      const i = c.selection.index.get(h);
+      if (i < 0) return null;
+      const x = r.unitCur(i, 0);
+      const z = r.unitCur(i, 2);
+      const cx = Math.floor(x / RAW_PER_WU);
+      const cz = Math.floor(z / RAW_PER_WU);
+      const stat = map.landBlockedAtRaw(x, z);
+      const fp = !stat && game.footprintAt(cx, cz);
+      let orders: number | null = null;
+      for (let w = 0; w < r.watchCount; w++) {
+        if (r.watchHandle(w) === h >>> 0) {
+          orders = r.watchOrderCount(w);
+          break;
+        }
+      }
+      return {
+        handle: h >>> 0,
+        army: r.unitArmy(i),
+        visual: r.unitVisual(i),
+        x: x / RAW_PER_WU,
+        y: r.unitCur(i, 1) / RAW_PER_WU,
+        z: z / RAW_PER_WU,
+        idle: (r.unitFlags(i) & UnitFlags.Idle) !== 0,
+        selected: c.selection.highlight[i] === 1 && isOwnUnit(r, i, c.playerArmy),
+        watched: orders !== null,
+        orders,
+        cell: { x: cx, z: cz },
+        blockedCell: stat || fp,
+        blockedReason: stat ? 'static' : fp ? 'footprint' : null,
+      };
+    },
+    waitTick: (n, timeoutMs = 30_000) =>
+      new Promise((resolve, reject) => {
+        const t0 = performance.now();
+        const check = (): void => {
+          if (c.tick >= n) resolve(c.tick);
+          else if (performance.now() - t0 > timeoutMs) reject(new Error(`waitTick(${n}): still at tick ${c.tick} after ${timeoutMs} ms`));
+          else setTimeout(check, 10);
+        };
+        check();
+      }),
+    get hmr() {
+      return game.hmrSnapshot();
+    },
+    get simHash() {
+      return game.status.value?.simHash ?? game.ready?.bpSimHash ?? null;
+    },
+    get tainted() {
+      return game.status.value?.tainted ?? false;
     },
     ctl: (msg) => c.sendCtl(msg),
     cameraState: () => c.cameraState(),
@@ -460,6 +728,7 @@ export function installTestHooks(game: Game, timings: () => LoadTimings | null):
     },
     renderStats,
     exportLogBytes: async () => (await game.exportLog(false)).byteLength,
+    exportLogData: async () => Array.from(new Uint8Array(await game.exportLog(false))),
   };
   const w = window as unknown as Record<string, unknown>;
   w['__faf'] = hooks;
@@ -496,7 +765,7 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
   const draws: number[] = [];
   const cpu: number[] = [];
   const gpu: number[] = [];
-  const passMax = { terrain: 0, water: 0, units: 0, overlay: 0 };
+  const passMax = { terrain: 0, water: 0, units: 0, icons: 0, overlay: 0 };
   let uiMin = Infinity;
   let uiMax = 0;
   let cuMin = Infinity;
@@ -504,6 +773,9 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
   let tpMin = Infinity;
   let tpMax = 0;
   const lodMax = [0, 0, 0];
+  const byLevel: [number, number, number] = [0, 0, 0];
+  let iconNot1 = 0;
+  let unitsZ2 = 0;
   let lastFrame = r.stats.frames;
   return new Promise((resolve) => {
     const p0 = pose(0);
@@ -521,6 +793,7 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
         passMax.water = Math.max(passMax.water, s.drawsByPass.water);
         passMax.units = Math.max(passMax.units, s.drawsByPass.units);
         passMax.overlay = Math.max(passMax.overlay, s.drawsByPass.overlay);
+        passMax.icons = Math.max(passMax.icons, s.drawsByPass.icons);
         uiMin = Math.min(uiMin, s.unitInstances);
         uiMax = Math.max(uiMax, s.unitInstances);
         cuMin = Math.min(cuMin, s.culledInstances);
@@ -528,6 +801,10 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
         tpMin = Math.min(tpMin, s.terrainPatches);
         tpMax = Math.max(tpMax, s.terrainPatches);
         for (let k = 0; k < 3; k++) lodMax[k] = Math.max(lodMax[k]!, s.lodInstances[k]!);
+        const lvl = Math.min(2, Math.max(0, s.zoomLevel | 0));
+        byLevel[lvl] = byLevel[lvl]! + 1;
+        if (lvl === 2) unitsZ2 = Math.max(unitsZ2, s.drawsByPass.units);
+        if (s.unitInstances > 0 && s.iconCount > 0 && s.drawsByPass.icons !== 1) iconNot1++;
       }
       const el = performance.now() - t0;
       if (el >= ms) {
@@ -546,6 +823,9 @@ function runFlight(game: Game, path: readonly FlightWaypoint[], ms: number): Pro
             over50: sd.filter((d) => d > 50).length,
           },
           drawsByPassMax: passMax,
+          framesByZoomLevel: byLevel,
+          iconPassNot1Frames: iconNot1,
+          unitDrawsInZ2Max: unitsZ2,
           renderCpuMs: { p50: percentile(sc, 0.5), p95: percentile(sc, 0.95), max: sc.length === 0 ? 0 : sc[sc.length - 1]! },
           gpuMs: sg.length === 0 ? null : { p50: percentile(sg, 0.5), p95: percentile(sg, 0.95), samples: sg.length },
           mainJsMs: snap.mainJsMs,

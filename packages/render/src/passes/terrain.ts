@@ -13,7 +13,10 @@
  *   painted splat weights (4 or 8 layers, limited by the preset) over a runtime-generated
  *   TEXTURE_2D_ARRAY of procedural layer albedos.
  * - Light: one directional light + hemisphere (Frame block, set from the map's light parameters).
- * - Decals (rings/discs, SDF) from a data texture, binned per chunk ({@link DecalBinner}).
+ * - Decals (rings/discs/rects, SDF) from data textures, binned per chunk ({@link DecalBinner}): a static
+ *   layer (spots) and a dynamic layer (G19: selection/range rings, waypoints, footprints) that is
+ *   re-binned and re-uploaded on its own. From zoom level Z1 on, decal details are reduced (no dashes,
+ *   no footprint fill, rings at least ~1.5 px wide).
  *
  * Every resource lives in the context-loss registry and restores its content from CPU copies.
  */
@@ -21,8 +24,17 @@ import type { Frustum } from '../frustum.ts';
 import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH, TexH, VertexStreamBinding } from '../rhi/types.ts';
 import { vf } from '../rhi/types.ts';
 import { Std140Writer, std140Layout } from '../std140.ts';
-import type { DecalBinStats, TerrainDecal } from '../terrain/decals.ts';
-import { DECAL_DATA_HEIGHT, DECAL_DATA_WIDTH, DECAL_LIST_WIDTH, DECALS_PER_ROW, DecalBinner } from '../terrain/decals.ts';
+import type { DecalBinStats, DecalLayer, TerrainDecal } from '../terrain/decals.ts';
+import {
+  DECAL_DATA_HEIGHT,
+  DECAL_DATA_WIDTH,
+  DECAL_KIND_DISC,
+  DECAL_KIND_RECT,
+  DECAL_LIST_WIDTH,
+  DECALS_PER_ROW,
+  DecalBinner,
+  DynamicDecals,
+} from '../terrain/decals.ts';
 import {
   SLOT_TERRAIN_HEIGHT,
   TERRAIN_ALBEDO_LAYERS,
@@ -51,6 +63,11 @@ const UNIT_SPLAT1 = 3;
 const UNIT_DECAL_DATA = 4;
 const UNIT_DECAL_CHUNKS = 5;
 const UNIT_DECAL_LIST = 6;
+const UNIT_DYN_DATA = 7;
+const UNIT_DYN_CHUNKS = 10;
+const UNIT_DYN_LIST = 11;
+
+const EMPTY_DYNAMIC = new DynamicDecals(0);
 
 /** Water rendering constants shared with the water pass. */
 export const NO_WATER_RAW = -0x80000000;
@@ -124,7 +141,7 @@ const TERRAIN_PASS_BLOCK = /* glsl */ `
 layout(std140) uniform TerrainPass {
   vec4 u_bands;    // shore top WU, highland start WU, highland blend WU, rock slope (1 - n.y)
   ivec4 u_tparams; // x: splat layers (0/4/8), y: has water, z: water level raw, w: decal count
-  vec4 u_tmisc;    // x: 1 / sizeWu, y: albedo tiles per WU, z: underwater darkening, w: 0
+  vec4 u_tmisc;    // x: 1 / sizeWu, y: albedo tiles per WU, z: underwater darkening, w: zoom level (decal detail)
 };
 `;
 
@@ -135,6 +152,7 @@ ${FRAME_BLOCK_GLSL}
 ${TERRAIN_HEIGHT_GLSL}
 ${TERRAIN_PASS_BLOCK}
 uniform highp usampler2D u_decalChunks;
+uniform highp usampler2D u_dynChunks;
 layout(location = 0) in uvec2 a_local; // 0..32 inside the patch
 layout(location = 1) in uvec2 a_chunk; // chunk (x, z), per instance
 out vec3 v_pos;        // world - camPosInt (WU)
@@ -142,7 +160,8 @@ out vec3 v_normal;
 out vec2 v_tile;
 out vec2 v_splatUV;
 out float v_heightWU;
-flat out uint v_decals; // (listStart << 6) | count of the chunk
+flat out uint v_decals; // (listStart << 6) | count of the chunk (static layer)
+flat out uint v_dynDecals; // same for the dynamic layer
 
 void main() {
   ivec2 cell = ivec2(a_chunk) * ${TERRAIN_PATCH_WU} + ivec2(a_local);
@@ -156,6 +175,7 @@ void main() {
   v_splatUV = vec2(cell) * u_tmisc.x;
   v_heightWU = float(h) / 4096.0;
   v_decals = texelFetch(u_decalChunks, ivec2(a_chunk), 0).r;
+  v_dynDecals = texelFetch(u_dynChunks, ivec2(a_chunk), 0).r;
   gl_Position = u_viewProj * vec4(rel, 1.0);
 }
 `;
@@ -171,13 +191,57 @@ uniform highp sampler2D u_splat0;
 uniform highp sampler2D u_splat1;
 uniform highp isampler2D u_decalData;
 uniform highp usampler2D u_decalList;
+uniform highp isampler2D u_dynData;
+uniform highp usampler2D u_dynList;
 in vec3 v_pos;
 in vec3 v_normal;
 in vec2 v_tile;
 in vec2 v_splatUV;
 in float v_heightWU;
 flat in uint v_decals;
+flat in uint v_dynDecals;
 out vec4 o_color;
+
+// Decals of one layer and chunk (SDF ring/disc/rect), anti-aliased over the pixel footprint aa.
+vec3 applyDecals(vec3 color, uint entry, highp isampler2D data, highp usampler2D list, float aa, bool detail) {
+  uint cnt = entry & 63u;
+  uint first = entry >> 6u;
+  for (uint i = 0u; i < cnt; ++i) {
+    uint li = first + i;
+    uint d = texelFetch(list, ivec2(int(li % ${DECAL_LIST_WIDTH}u), int(li / ${DECAL_LIST_WIDTH}u)), 0).r;
+    ivec2 tc = ivec2(int(d % ${DECALS_PER_ROW}u) * 2, int(d / ${DECALS_PER_ROW}u));
+    ivec4 t0 = texelFetch(data, tc, 0);
+    ivec4 t1 = texelFetch(data, tc + ivec2(1, 0), 0);
+    vec2 rel = v_pos.xz - vec2(t0.xy - u_camPosInt.xz) / 4096.0;
+    float a = float(t0.z) / 4096.0;
+    float b = float(t0.w) / 4096.0;
+    int kind = t1.x & 255;
+    float cov;
+    if (kind == ${DECAL_KIND_DISC}) {
+      cov = 1.0 - smoothstep(a - max(b, aa), a + aa, length(rel));
+    } else if (kind == ${DECAL_KIND_RECT}) {
+      float lw = max(float(t1.z) / 4096.0, aa * 1.5);
+      vec2 q = abs(rel) - vec2(a, b);
+      float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
+      float outline = 1.0 - smoothstep(-aa, aa, abs(sd + 0.5 * lw) - 0.5 * lw);
+      float inside = detail ? 0.28 * (1.0 - smoothstep(-aa, aa, sd)) : 0.0;
+      cov = max(outline, inside);
+    } else {
+      float w = detail ? b : max(b, aa * 1.5);
+      float sd = abs(length(rel) - a) - 0.5 * w;
+      cov = 1.0 - smoothstep(-aa, aa, sd);
+      int dashes = (t1.x >> 8) & 255;
+      if (detail && dashes > 0) {
+        float f = fract(atan(rel.y, rel.x) * float(dashes) / 6.283185307179586);
+        cov *= smoothstep(0.0, 0.04, f) * (1.0 - smoothstep(0.56, 0.6, f));
+      }
+    }
+    uint rgba = uint(t1.y);
+    vec4 dc = vec4(float(rgba & 255u), float((rgba >> 8u) & 255u), float((rgba >> 16u) & 255u), float(rgba >> 24u)) / 255.0;
+    color = mix(color, dc.rgb, cov * dc.a);
+  }
+  return color;
+}
 
 void main() {
   vec3 n = normalize(v_normal);
@@ -190,31 +254,11 @@ void main() {
     color *= 1.0 - u_tmisc.z * clamp(depth / 6.0, 0.0, 1.0);
   }
 
-  // Decals of this chunk (SDF rings/discs), anti-aliased over the pixel footprint.
+  // Decals of this chunk: static layer, then the dynamic layer on top.
   float aa = max(length(fwidth(v_pos.xz)), 1e-3);
-  uint cnt = v_decals & 63u;
-  uint first = v_decals >> 6u;
-  for (uint i = 0u; i < cnt; ++i) {
-    uint li = first + i;
-    uint d = texelFetch(u_decalList, ivec2(int(li % ${DECAL_LIST_WIDTH}u), int(li / ${DECAL_LIST_WIDTH}u)), 0).r;
-    ivec2 tc = ivec2(int(d % ${DECALS_PER_ROW}u) * 2, int(d / ${DECALS_PER_ROW}u));
-    ivec4 t0 = texelFetch(u_decalData, tc, 0);
-    ivec4 t1 = texelFetch(u_decalData, tc + ivec2(1, 0), 0);
-    vec2 c = vec2(t0.xy - u_camPosInt.xz) / 4096.0;
-    float dist = length(v_pos.xz - c);
-    float r = float(t0.z) / 4096.0;
-    float w = float(t0.w) / 4096.0;
-    float cov;
-    if (t1.x == 0) {
-      float sd = abs(dist - r) - 0.5 * w;
-      cov = 1.0 - smoothstep(-aa, aa, sd);
-    } else {
-      cov = 1.0 - smoothstep(r - max(w, aa), r + aa, dist);
-    }
-    uint rgba = uint(t1.y);
-    vec4 dc = vec4(float(rgba & 255u), float((rgba >> 8u) & 255u), float((rgba >> 16u) & 255u), float(rgba >> 24u)) / 255.0;
-    color = mix(color, dc.rgb, cov * dc.a);
-  }
+  bool detail = u_tmisc.w < 0.5;
+  color = applyDecals(color, v_decals, u_decalData, u_decalList, aa, detail);
+  color = applyDecals(color, v_dynDecals, u_dynData, u_dynList, aa, detail);
 
   float dist = length(v_pos - u_camFrac.xyz);
   float fog = clamp((dist - u_fog.w) / max(u_fog.w, 1.0), 0.0, 0.85);
@@ -273,6 +317,12 @@ export class TerrainPass {
   private readonly decalDataTex: TexH;
   private readonly decalChunkTex: TexH;
   private readonly decalListTex: TexH;
+  private readonly dynDataTex: TexH;
+  private readonly dynChunkTex: TexH;
+  private readonly dynListTex: TexH;
+  private dynSource: DynamicDecals | null = null;
+  private dynVersion = -1;
+  private zoomLevel = 0;
   private readonly data = new Std140Writer(TERRAIN_PASS_LAYOUT);
   private readonly streams: VertexStreamBinding[];
   private readonly chunks: number;
@@ -315,6 +365,9 @@ export class TerrainPass {
         { name: 'u_decalData', unit: UNIT_DECAL_DATA },
         { name: 'u_decalChunks', unit: UNIT_DECAL_CHUNKS },
         { name: 'u_decalList', unit: UNIT_DECAL_LIST },
+        { name: 'u_dynData', unit: UNIT_DYN_DATA },
+        { name: 'u_dynChunks', unit: UNIT_DYN_CHUNKS },
+        { name: 'u_dynList', unit: UNIT_DYN_LIST },
       ],
       cullMode: 'back',
       depthTest: true,
@@ -392,34 +445,41 @@ export class TerrainPass {
     };
     this.splatTex = [mkSplat(0), mkSplat(1)];
 
-    // Decal textures (content from the binner's CPU arrays).
+    // Decal textures of both layers (content from the binner's CPU arrays).
     const dec = this.decals;
-    const dataRect = { x: 0, y: 0, width: DECAL_DATA_WIDTH, height: DECAL_DATA_HEIGHT };
-    const chunkRect = { x: 0, y: 0, width: this.chunks, height: this.chunks };
-    const listRect = { x: 0, y: 0, width: DECAL_LIST_WIDTH, height: dec.listRows };
-    this.decalDataTex = dev.createTexture({
-      label: 'terrain.decals.data',
-      width: DECAL_DATA_WIDTH,
-      height: DECAL_DATA_HEIGHT,
-      format: 'rgba32i',
-      restore: (h) => dev.writeTexture(h, dataRect, dec.data),
-    });
-    this.decalChunkTex = dev.createTexture({
-      label: 'terrain.decals.chunks',
-      width: this.chunks,
-      height: this.chunks,
-      format: 'r32ui',
-      restore: (h) => dev.writeTexture(h, chunkRect, dec.chunkIndex),
-    });
-    this.decalListTex = dev.createTexture({
-      label: 'terrain.decals.list',
-      width: DECAL_LIST_WIDTH,
-      height: dec.listRows,
-      format: 'r32ui',
-      restore: (h) => dev.writeTexture(h, listRect, dec.list),
-    });
+    const mk = (layer: DecalLayer, name: string): [TexH, TexH, TexH] => {
+      const dataRect = { x: 0, y: 0, width: DECAL_DATA_WIDTH, height: DECAL_DATA_HEIGHT };
+      const chunkRect = { x: 0, y: 0, width: this.chunks, height: this.chunks };
+      const listRect = { x: 0, y: 0, width: DECAL_LIST_WIDTH, height: layer.listRows };
+      return [
+        dev.createTexture({
+          label: `terrain.${name}.data`,
+          width: DECAL_DATA_WIDTH,
+          height: DECAL_DATA_HEIGHT,
+          format: 'rgba32i',
+          restore: (h) => dev.writeTexture(h, dataRect, layer.data),
+        }),
+        dev.createTexture({
+          label: `terrain.${name}.chunks`,
+          width: this.chunks,
+          height: this.chunks,
+          format: 'r32ui',
+          restore: (h) => dev.writeTexture(h, chunkRect, layer.chunkIndex),
+        }),
+        dev.createTexture({
+          label: `terrain.${name}.list`,
+          width: DECAL_LIST_WIDTH,
+          height: layer.listRows,
+          format: 'r32ui',
+          restore: (h) => dev.writeTexture(h, listRect, layer.list),
+        }),
+      ];
+    };
+    [this.decalDataTex, this.decalChunkTex, this.decalListTex] = mk(dec.static, 'decals');
+    [this.dynDataTex, this.dynChunkTex, this.dynListTex] = mk(dec.dynamic, 'dyndecals');
     dec.bin([]);
     this.uploadDecals();
+    this.uploadLayer(dec.dynamic, this.dynDataTex, this.dynChunkTex, this.dynListTex, true);
 
     this.ubo = dev.createBuffer({
       label: 'terrain.pass.ubo',
@@ -437,6 +497,9 @@ export class TerrainPass {
         { unit: UNIT_DECAL_DATA, texture: this.decalDataTex },
         { unit: UNIT_DECAL_CHUNKS, texture: this.decalChunkTex },
         { unit: UNIT_DECAL_LIST, texture: this.decalListTex },
+        { unit: UNIT_DYN_DATA, texture: this.dynDataTex },
+        { unit: UNIT_DYN_CHUNKS, texture: this.dynChunkTex },
+        { unit: UNIT_DYN_LIST, texture: this.dynListTex },
       ],
     });
     this.setMaxSplatLayers(opts.maxSplatLayers ?? 8);
@@ -459,7 +522,7 @@ export class TerrainPass {
     const w = this.data;
     w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('bands'), shoreTop, highland, range * 0.08 + 0.5, 0.28);
     w.ivec4(TERRAIN_PASS_LAYOUT.offsetOf('params'), this.splatLayers, water !== null ? 1 : 0, water ?? 0, this.decals.stats.decals);
-    w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('misc'), 1 / desc.sizeWu, 1 / 8, 0.45, 0);
+    w.vec4(TERRAIN_PASS_LAYOUT.offsetOf('misc'), 1 / desc.sizeWu, 1 / 8, 0.45, this.zoomLevel);
     this.dev.writeBuffer(this.ubo, 0, w.bytes);
   }
 
@@ -473,15 +536,59 @@ export class TerrainPass {
     this.uploadDecals();
     this.data.int(TERRAIN_PASS_LAYOUT.offsetOf('params') + 12, st.decals);
     this.dev.writeBuffer(this.ubo, 0, this.data.bytes);
+    // The dynamic layer's room depends on the static layer: re-bin it (static is not touched).
+    if (this.dynSource !== null) this.rebinDynamic(this.dynSource);
     return st;
   }
 
+  /**
+   * Dynamic decal layer (G19). Re-bins and uploads only when `buf` or its `version` changed; returns
+   * the stats of the current dynamic binning. Allocation-free.
+   */
+  setDynamicDecals(buf: DynamicDecals | null): DecalBinStats {
+    if (buf === this.dynSource && (buf === null || buf.version === this.dynVersion)) return this.decals.dynamic.stats;
+    this.dynSource = buf;
+    if (buf === null) {
+      this.dynVersion = -1;
+      this.rebinDynamic(EMPTY_DYNAMIC);
+      return this.decals.dynamic.stats;
+    }
+    this.rebinDynamic(buf);
+    return this.decals.dynamic.stats;
+  }
+
+  /** Number of dynamic re-binnings so far (tests: "only on change"). */
+  dynamicRebins = 0;
+
+  private rebinDynamic(buf: DynamicDecals): void {
+    const layer = this.decals.dynamic;
+    const prevRows = layer.dataRows;
+    this.decals.binDynamic(buf);
+    this.dynVersion = buf.version;
+    this.dynamicRebins++;
+    this.uploadLayer(layer, this.dynDataTex, this.dynChunkTex, this.dynListTex, false, prevRows);
+  }
+
+  /** Decal detail by zoom level (Z0 full, from Z1 reduced). */
+  setZoomLevel(level: number): void {
+    if (level === this.zoomLevel) return;
+    this.zoomLevel = level;
+    this.data.float(TERRAIN_PASS_LAYOUT.offsetOf('misc') + 12, level);
+    this.dev.writeBuffer(this.ubo, 0, this.data.bytes);
+  }
+
   private uploadDecals(): void {
+    this.uploadLayer(this.decals.static, this.decalDataTex, this.decalChunkTex, this.decalListTex, true);
+  }
+
+  /** Uploads a layer: everything (`full`) or only the rows in use (data, list) plus the chunk index. */
+  private uploadLayer(layer: DecalLayer, dataTex: TexH, chunkTex: TexH, listTex: TexH, full: boolean, prevRows = 0): void {
     const dev = this.dev;
-    const dec = this.decals;
-    dev.writeTexture(this.decalDataTex, { x: 0, y: 0, width: DECAL_DATA_WIDTH, height: DECAL_DATA_HEIGHT }, dec.data);
-    dev.writeTexture(this.decalChunkTex, { x: 0, y: 0, width: this.chunks, height: this.chunks }, dec.chunkIndex);
-    dev.writeTexture(this.decalListTex, { x: 0, y: 0, width: DECAL_LIST_WIDTH, height: dec.listRows }, dec.list);
+    const dataRows = full ? DECAL_DATA_HEIGHT : Math.max(layer.dataRows, prevRows);
+    if (dataRows > 0) dev.writeTexture(dataTex, { x: 0, y: 0, width: DECAL_DATA_WIDTH, height: dataRows }, layer.data);
+    dev.writeTexture(chunkTex, { x: 0, y: 0, width: this.chunks, height: this.chunks }, layer.chunkIndex);
+    const listRows = full ? layer.listRows : layer.listRowsUsed();
+    dev.writeTexture(listTex, { x: 0, y: 0, width: DECAL_LIST_WIDTH, height: listRows }, layer.list);
   }
 
   /** Rebuilds the visible patch list on a camera change; returns the number of visible patches. */
@@ -502,6 +609,11 @@ export class TerrainPass {
     this.region = (this.region + 1) % RING_REGIONS;
     if (n > 0) this.dev.writeBuffer(this.instRing, this.region * chunks * chunks * PATCH_INSTANCE_STRIDE, st, 0, n * 2);
     return n;
+  }
+
+  /** Forces a new visible patch list on the next `prepare`. */
+  invalidate(): void {
+    this.dirty = true;
   }
 
   /** Visible patches of the last `prepare`. */
@@ -529,7 +641,17 @@ export class TerrainPass {
     dev.destroyBuffer(this.patchVbo);
     dev.destroyBuffer(this.patchIbo);
     dev.destroyBuffer(this.instRing);
-    for (const t of [this.albedoTex, this.splatTex[0], this.splatTex[1], this.decalDataTex, this.decalChunkTex, this.decalListTex]) {
+    for (const t of [
+      this.albedoTex,
+      this.splatTex[0],
+      this.splatTex[1],
+      this.decalDataTex,
+      this.decalChunkTex,
+      this.decalListTex,
+      this.dynDataTex,
+      this.dynChunkTex,
+      this.dynListTex,
+    ]) {
       dev.destroyTexture(t);
     }
     dev.destroyPipeline(this.pipeline);

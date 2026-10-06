@@ -1,10 +1,15 @@
 /**
- * URL parameters of the game page (MS1 + MS2):
+ * URL parameters of the game page (MS1 + MS2 + MS3):
  *
+ * - `?spawn=tanks|cubes|none` — start armies (MS3, default `tanks`): blueprint placeholder tanks (a
+ *   mix of the `core:lnd_*` units) around both start positions, the MS1/MS2 cubes, or nothing. An
+ *   explicit `?cubes=` or `?units=` without `?spawn=` keeps the MS2 cube scene (existing tests).
+ * - `?tanks=<n>` — tanks per army in the tank scene (default 150, 0..4096).
+ * - `?paths=1` — path overlay (waypoint dots, route colours by watch flags) from the start.
  * - `?transport=sab|transfer` — frame transport; default: SAB when cross-origin isolated, else transfer.
  * - `?seed=<u32>` — sim seed (default 1).
- * - `?cubes=<n>` — own cubes spawned around the own start position (default 1000, 0..8192).
- * - `?enemy=<n>` — cubes of the second army around its start (default 24, 0..8192).
+ * - `?cubes=<n>` — own cubes spawned around the own start position (cube scene: default 1000, 0..8192).
+ * - `?enemy=<n>` — cubes of the second army around its start (cube scene: default 24, 0..8192).
  * - `?autostart=0` — the sim starts paused (deterministic E2E: advance with `step`).
  * - `?map=<name>` — map asset `maps/<name>` from the asset manifest (default `hollow-ridge`);
  *   `?map=testplane` = the flat MS1 test plane (no map sent to the sim).
@@ -16,6 +21,7 @@
 import { parsePresetName, type RenderPresetName } from '@faf/client';
 
 export type TransportRequest = 'auto' | 'sab' | 'transfer';
+export type SpawnMode = 'tanks' | 'cubes' | 'none';
 
 export interface GameParams {
   readonly transport: TransportRequest;
@@ -28,10 +34,18 @@ export interface GameParams {
   readonly preset: RenderPresetName;
   /** Flight-test units spread over the whole map (0 = none). */
   readonly units: number;
+  /** Start armies (MS3). */
+  readonly spawn: SpawnMode;
+  /** Tanks per army in the tank scene. */
+  readonly tanks: number;
+  /** Path overlay on from the start. */
+  readonly paths: boolean;
 }
 
 export const DEFAULT_SEED = 1;
 export const DEFAULT_CUBES = 1000;
+export const DEFAULT_TANKS = 150;
+export const MAX_TANKS_PER_ARMY = 4096;
 export const DEFAULT_ENEMY_CUBES = 24;
 export const DEFAULT_MAP = 'hollow-ridge';
 /** `?map=testplane`: the flat 512 WU MS1 test plane (no `.rtsmap`). */
@@ -66,15 +80,23 @@ export function parseParams(search: string): GameParams {
   const transport: TransportRequest = t === 'sab' || t === 'transfer' ? t : 'auto';
   const auto = q.get('autostart');
   const units = intParam(q, 'units', 0, 0, MAX_FLIGHT_UNITS);
+  const sp = q.get('spawn')?.trim().toLowerCase();
+  const legacy = q.has('cubes') || q.has('units');
+  const spawn: SpawnMode = sp === 'tanks' || sp === 'cubes' || sp === 'none' ? sp : legacy ? 'cubes' : 'tanks';
+  const cubeScene = spawn === 'cubes';
+  const pathsRaw = q.get('paths');
   return {
     transport,
     seed: intParam(q, 'seed', DEFAULT_SEED, 0, 0xffffffff),
-    cubes: intParam(q, 'cubes', units > 0 ? 0 : DEFAULT_CUBES, 0, MAX_CUBES_PER_ARMY),
-    enemyCubes: intParam(q, 'enemy', units > 0 ? 0 : DEFAULT_ENEMY_CUBES, 0, MAX_CUBES_PER_ARMY),
+    cubes: cubeScene ? intParam(q, 'cubes', units > 0 ? 0 : DEFAULT_CUBES, 0, MAX_CUBES_PER_ARMY) : 0,
+    enemyCubes: cubeScene ? intParam(q, 'enemy', units > 0 ? 0 : DEFAULT_ENEMY_CUBES, 0, MAX_CUBES_PER_ARMY) : 0,
     autostart: !(auto === '0' || auto === 'false' || auto === 'no'),
     map: mapParam(q),
     preset: parsePresetName(q.get('preset')) ?? DEFAULT_PRESET,
     units,
+    spawn,
+    tanks: spawn === 'tanks' ? intParam(q, 'tanks', DEFAULT_TANKS, 0, MAX_TANKS_PER_ARMY) : 0,
+    paths: pathsRaw === '1' || pathsRaw === 'true' || pathsRaw === 'on',
   };
 }
 

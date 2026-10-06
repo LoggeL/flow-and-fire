@@ -36,7 +36,7 @@ function simRuntimeDeps(): string[] {
 }
 
 describe('eslint.config.js applies sim/determinism', () => {
-  const covered = ['fixed', 'heap', 'rules', 'sim', 'protocol', 'formats'];
+  const covered = ['fixed', 'heap', 'rules', 'sim', 'nav', 'protocol', 'formats'];
 
   for (const p of covered) {
     it(`to packages/${p}/src`, async () => {
@@ -54,8 +54,14 @@ describe('eslint.config.js applies sim/determinism', () => {
     expect(await simHits('packages/formats/src/container.ts')).toBe(PROBE_RULE_HITS);
   });
 
-  it('to packages/nav/src once it exists (glob reserved for MS4)', async () => {
+  it('to packages/nav/src (MS3: nav is a sim runtime dependency) but not to its tests and benches', async () => {
     expect(await simHits('packages/nav/src/__probe.ts')).toBe(PROBE_RULE_HITS);
+    expect(await simHits('packages/nav/src/sub/__probe.ts')).toBe(PROBE_RULE_HITS);
+    // The test map generator feeds goldens (@faf/nav/testmap) and is bound by the contract as well;
+    // tests and the SPK3 bench run in Node only (bench timing uses performance.now).
+    expect(await simHits('packages/nav/bench/testmap.ts')).toBe(PROBE_RULE_HITS);
+    expect(await simHits('packages/nav/test/__probe.test.ts')).toBe(0);
+    expect(await simHits('packages/nav/bench/__probe.ts')).toBe(0);
   });
 
   it('to every workspace package the sim depends on at runtime', async () => {

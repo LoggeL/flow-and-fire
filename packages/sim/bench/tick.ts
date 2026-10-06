@@ -1,5 +1,5 @@
 /**
- * Rough Node tick benchmark of the MS1 cube sim (the authoritative multi-engine bench lives in
+ * Rough Node tick benchmark of the cube sim (MS3: every move is pathed; the authoritative multi-engine bench lives in
  * sim-host/headless): 1,000 cubes with new move targets every 100 ticks, p50/p95/p99 per phase.
  * Run: node --expose-gc --import tsx packages/sim/bench/tick.ts [ticks]
  */
@@ -57,7 +57,7 @@ const pct = (a: Float64Array, q: number): number => {
 };
 const hashTicks = Float64Array.from(samples[PhaseId.HashTick]!.filter((_, i) => (i + 2) % 10 === 0));
 const rows: [string, Float64Array][] = [['step total', total]];
-for (const p of [1, 2, 7, 8, 15, 16]) rows.push([PHASE_NAMES[p]!, samples[p]!]);
+for (const p of [1, 2, 3, 7, 8, 15, 16]) rows.push([PHASE_NAMES[p]!, samples[p]!]);
 rows.push(['HashTick (hash ticks)', hashTicks]);
 console.log(`ticks ${ticks}, units ${w.units.liveCount}, node ${process.version}`);
 for (const [name, a] of rows) console.log(`${name.padEnd(24)} p50 ${pct(a, 0.5).toFixed(3)} ms  p95 ${pct(a, 0.95).toFixed(3)} ms  p99 ${pct(a, 0.99).toFixed(3)} ms`);

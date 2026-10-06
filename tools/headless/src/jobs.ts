@@ -9,13 +9,16 @@ import { runSpk1Bench, type Spk1BenchResult } from './spk1/run.ts';
 import { runSpk5, type Spk5Result } from './spk5/bench.ts';
 import { clockResolution, repsFor, round4, type Clock, type EngineInfo } from './stats.ts';
 import { runTickBench, type TickBenchResult } from './tickbench.ts';
+import { runMs3Load, type Ms3LoadResult } from './ms3/load.ts';
 
 export type Job =
   | { readonly kind: 'hashChain'; readonly scenario: string }
   /** `map`: repo-relative .rtsmap path (JobAssets.maps); missing = MS1 test plane. */
   | { readonly kind: 'tickBench'; readonly ticks: number; readonly map?: string }
   | { readonly kind: 'spk1'; readonly ticks: number; readonly rampTicks: number }
-  | { readonly kind: 'spk5'; readonly reps: number };
+  | { readonly kind: 'spk5'; readonly reps: number }
+  /** MS3 scenario 5: 1,000 moving tanks with pathing on `map` (repo-relative .rtsmap path). */
+  | { readonly kind: 'ms3Load'; readonly ticks: number; readonly rampTicks: number; readonly map: string };
 
 /** `measure`: the reported run; `warmup`: only warms the JIT (cheaper settings, result unused). */
 export type RunMode = 'measure' | 'warmup';
@@ -52,11 +55,14 @@ export type JobResult =
   | HashChainResult
   | ({ readonly kind: 'tickBench' } & TickBenchResult)
   | ({ readonly kind: 'spk1' } & Spk1BenchResult)
-  | ({ readonly kind: 'spk5' } & Spk5Result);
+  | ({ readonly kind: 'spk5' } & Spk5Result)
+  | ({ readonly kind: 'ms3Load' } & Ms3LoadResult);
 
 /** Time resolution targets for the repetition method (see measure.ts). */
 export const TICKBENCH_TARGET_RES_MS = 0.05;
 export const SPK1_TARGET_RES_MS = 0.25;
+/** MS3 load (budget 8 ms): 0.2 ms resolution is plenty (WebKit: 5 repetitions per tick). */
+export const MS3_LOAD_TARGET_RES_MS = 0.2;
 
 export async function runJob(job: Job, mode: RunMode, assets: JobAssets, env: JobEnv): Promise<JobResult> {
   const clock = env.clock;
@@ -81,6 +87,13 @@ export async function runJob(job: Job, mode: RunMode, assets: JobAssets, env: Jo
       const reps = mode === 'warmup' ? 1 : repsFor(res, SPK1_TARGET_RES_MS);
       const ticks = mode === 'warmup' ? Math.min(job.ticks, 100) : job.ticks;
       return { kind: 'spk1', ...runSpk1Bench({ ticks, rampTicks: job.rampTicks, reps, clock }) };
+    }
+    case 'ms3Load': {
+      const map = assets.maps[job.map];
+      if (map === undefined) throw new Error(`ms3Load map '${job.map}' not provided`);
+      const reps = mode === 'warmup' ? 1 : repsFor(res, MS3_LOAD_TARGET_RES_MS);
+      const ticks = mode === 'warmup' ? Math.min(job.ticks, 300) : job.ticks;
+      return { kind: 'ms3Load', ...runMs3Load({ simBin: assets.simBin, map, ticks, rampTicks: job.rampTicks, reps, clock }) };
     }
     case 'spk5': {
       const reps = mode === 'warmup' ? 2 : job.reps;

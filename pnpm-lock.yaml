@@ -176,6 +176,28 @@ importers:
         specifier: workspace:*
         version: link:../fixed
 
+  packages/nav:
+    dependencies:
+      '@faf/fixed':
+        specifier: workspace:*
+        version: link:../fixed
+      '@faf/heap':
+        specifier: workspace:*
+        version: link:../heap
+      '@faf/rules':
+        specifier: workspace:*
+        version: link:../rules
+    devDependencies:
+      '@faf/formats':
+        specifier: workspace:*
+        version: link:../formats
+      '@types/node':
+        specifier: ^24.19.0
+        version: 24.19.0
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
   packages/protocol:
     dependencies:
       '@faf/fixed':
@@ -224,6 +246,9 @@ importers:
       '@faf/heap':
         specifier: workspace:*
         version: link:../heap
+      '@faf/nav':
+        specifier: workspace:*
+        version: link:../nav
       '@faf/protocol':
         specifier: workspace:*
         version: link:../protocol
@@ -307,6 +332,9 @@ importers:
       '@faf/heap':
         specifier: workspace:*
         version: link:../../packages/heap
+      '@faf/nav':
+        specifier: workspace:*
+        version: link:../../packages/nav
       '@faf/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

@@ -7,7 +7,7 @@ import { attachJson, captureErrors, expectNoErrors, openGame, SERVERS, waitTick 
 for (const server of SERVERS) {
   test(`pause: Tick steht, Kamera und Commands laufen weiter – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'spawn=cubes', 1000);
     await waitTick(page, 5);
     await page.locator('#game-canvas').focus();
 
@@ -31,7 +31,8 @@ for (const server of SERVERS) {
     // Command accepted during the pause (sent, not yet applied).
     const handles = await page.evaluate(() => window.__faf!.ownHandles().slice(0, 50));
     const pos0 = await page.evaluate((hs) => hs.map((h) => window.__faf!.unitPos(h)), handles);
-    const seq = await page.evaluate((hs) => window.__faf!.sendMove(hs, 140, 140), handles);
+    // Target on the start plateau (MS3 pathing: a target below the cliff is reached over a ramp).
+    const seq = await page.evaluate((hs) => window.__faf!.sendMove(hs, 130, 100), handles);
     expect(seq).toBeGreaterThan(0);
     await page.waitForTimeout(1100);
     const during = await page.evaluate(() => {
@@ -50,19 +51,28 @@ for (const server of SERVERS) {
     const afterStep = await page.evaluate(() => ({ tick: window.__faf!.tick, paused: window.__faf!.paused }));
     expect(afterStep).toEqual({ tick: tick0 + 1, paused: true });
 
-    // Resume: the commanded cubes drive towards (140, 140).
+    // Resume: the commanded cubes drive off (group order: slots around (130, 100)).
     await page.keyboard.press('KeyP');
     await page.waitForFunction(() => window.__faf!.paused === false);
     await waitTick(page, tick0 + 15);
     const pos1 = await page.evaluate((hs) => hs.map((h) => window.__faf!.unitPos(h)), handles);
-    let closer = 0;
+    let moved = 0;
+    const c0 = { x: 0, z: 0 };
+    const c1 = { x: 0, z: 0 };
     for (let i = 0; i < handles.length; i++) {
       const a = pos0[i]!;
       const b = pos1[i]!;
-      if (Math.hypot(b.x - 140, b.z - 140) < Math.hypot(a.x - 140, a.z - 140) - 0.5) closer++;
+      if (Math.hypot(b.x - a.x, b.z - a.z) > 0.5) moved++;
+      c0.x += a.x / handles.length;
+      c0.z += a.z / handles.length;
+      c1.x += b.x / handles.length;
+      c1.z += b.z / handles.length;
     }
-    await attachJson(testInfo, 'pause', { tick0, cam0, cam1, during, afterStep, closer });
-    expect(closer).toBeGreaterThanOrEqual(45);
+    const d0 = Math.hypot(c0.x - 130, c0.z - 100);
+    const d1 = Math.hypot(c1.x - 130, c1.z - 100);
+    await attachJson(testInfo, 'pause', { tick0, cam0, cam1, during, afterStep, moved, d0, d1 });
+    expect(moved).toBeGreaterThanOrEqual(45);
+    expect(d1).toBeLessThan(d0 - 0.5);
     expectNoErrors(errors);
   });
 }
@@ -72,7 +82,7 @@ for (const server of SERVERS) {
 for (const server of SERVERS) {
   test(`pause: verborgener Tab pausiert, sichtbarer setzt fort – ${server.label}`, async ({ page }) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'spawn=cubes', 1000);
     await waitTick(page, 3);
     const setVisibility = (state: 'hidden' | 'visible') =>
       page.evaluate((s) => {

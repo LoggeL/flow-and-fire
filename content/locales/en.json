@@ -1,0 +1,18 @@
+{
+  "ai.core.ai_default.name": "Default AI",
+  "faction.core.faction_core.name": "Core Union",
+  "unit.core.cube.desc": "Test unit of the test plane (MS1 placeholder).",
+  "unit.core.cube.name": "Cube",
+  "unit.core.fac_land_t1.desc": "Builds the light land units of the Core Union.",
+  "unit.core.fac_land_t1.name": "Land Factory T1",
+  "unit.core.lnd_t1_arty.desc": "Slow mobile artillery for indirect fire.",
+  "unit.core.lnd_t1_arty.name": "Hailstone",
+  "unit.core.lnd_t1_scout.desc": "Fast, lightly armed scout.",
+  "unit.core.lnd_t1_scout.name": "Dart",
+  "unit.core.lnd_t1_tank.desc": "Light battle tank with a rotating turret.",
+  "unit.core.lnd_t1_tank.name": "Boar",
+  "unit.core.lnd_t2_tank.desc": "Medium tank with a heavy cannon.",
+  "unit.core.lnd_t2_tank.name": "Bison",
+  "unit.core.lnd_t3_heavy.desc": "Heavy assault tank: slow, massive and hard to push aside.",
+  "unit.core.lnd_t3_heavy.name": "Bulwark"
+}

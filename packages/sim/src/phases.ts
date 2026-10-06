@@ -1,6 +1,6 @@
 /**
- * Sim tick phases in their binding order (PLAN §3.4). All 16 ids exist from MS1 on; MS1 runs
- * CommandApply, Orders, Movement, SpatialRebuild, Cleanup and Output. `HashTick` is a nested
+ * Sim tick phases in their binding order (PLAN §3.4). All 16 ids exist from MS1 on; MS3 runs
+ * CommandApply, Orders, PathService, Movement, SpatialRebuild, Cleanup and Output. `HashTick` is a nested
  * measurement inside Output (the rule-hash computation, PLAN §3.12 L6 "Hash-Tick").
  */
 export const PhaseId = {
@@ -49,10 +49,11 @@ export const PHASE_NAMES: readonly string[] = [
   'HashTick',
 ];
 
-/** Phases that run in MS1 (in execution order). */
+/** Phases that run in MS3 (in execution order). */
 export const ACTIVE_PHASES: readonly PhaseId[] = [
   PhaseId.CommandApply,
   PhaseId.Orders,
+  PhaseId.PathService,
   PhaseId.Movement,
   PhaseId.SpatialRebuild,
   PhaseId.Cleanup,

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { attachJson, captureErrors, COI_URL, expectNoErrors, HOLLOW_RIDGE, openGame, PERF_GATE, SERVERS, stepTicks, waitTick, writeReport } from './support/game.ts';
 import { colorShare, decodePng, pixelStats } from './support/png.ts';
 import { CLEAR_RGB } from './support/terrain.ts';
+import { anyNear, colorDist, cssShot, frames, pauseSim, screenUnits, teamColored, type CssShot, type ScreenUnit } from './support/ms3.ts';
 
 // Context loss (P10, MS2 acceptance "Bild nach ≤ 2 s zurück, die Sim tickt weiter, Hash
 // unverändert") with terrain, water and spot decals on hollow-ridge:
@@ -12,7 +13,11 @@ import { CLEAR_RGB } from './support/terrain.ts';
 //    matches the CPU again;
 // 2. determinism: paused sessions (?autostart=0) are stepped to tick T with the same commands, once
 //    with a context loss in the middle and once without – the rule hash at T is identical (the loss
-//    touches presentation only).
+//    touches presentation only);
+// 3. MS3 strategic icons: at whole-map zoom (Z2) the IconPass draws the MSDF atlas icons; after a
+//    loss/restore the atlas texture is rebuilt from its CPU copy – the icons are back in team color
+//    and the icon pixels equal those before the loss (sim paused: identical frame).
+// The MS2 checks run on the cube scene (`?spawn=cubes`) so their criteria stay unchanged.
 
 declare global {
   interface Window {
@@ -37,7 +42,7 @@ const isLossMessage = (e: string): boolean => /context (was )?lost|CONTEXT_LOST|
 for (const server of SERVERS) {
   test(`context-loss: Terrain/Wasser/Decals nach Restore zurück, Sim läuft weiter – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1024);
+    await openGame(page, server.url, 'spawn=cubes', 1024);
     await waitTick(page, 5);
     await page.evaluate((o) => window.__faf!.setCamera(o.x + 40, o.z + 40, 140), HOLLOW_RIDGE.own);
     expect(await loseContextExt(page), 'WEBGL_lose_context available').toBe(true);
@@ -107,7 +112,7 @@ const RESTORE_AT = 45;
 /** Steps a paused session to tick T (move at MOVE_AT); optionally loses the context in between. */
 async function deterministicRun(page: Page, base: string, withLoss: boolean): Promise<{ hash: { tick: number; hashTick: number; hash: number }; fingerprints: number[]; lostFrames: number | null }> {
   // Paused from tick 0: the start armies are spawned by the first step.
-  await openGame(page, base, 'autostart=0&seed=11', 0);
+  await openGame(page, base, 'spawn=cubes&autostart=0&seed=11', 0);
   await page.evaluate(() => window.__faf!.recordFrameHashes(true));
   await stepTicks(page, MOVE_AT);
   await page.evaluate(() => {
@@ -160,3 +165,67 @@ test('context-loss: Regel-Hash bei Tick T identisch zu einem Lauf ohne Verlust (
   expect(clean.fingerprints.every((h) => h >= 0)).toBe(true);
   expect(firstDiff, `first differing frame at tick ${firstDiff + 1}`).toBe(-1);
 });
+
+/** Team-colored icon at every unit centre (other army ≥ 24 px away); icon pixels compared with `ref`. */
+function iconCheck(shot: CssShot, units: readonly ScreenUnit[], ref: CssShot | null): { sampled: number; team: number; pixels: number; same: number } {
+  const on = units.filter((u) => u.onScreen && u.x !== null && u.y !== null && u.x > 12 && u.y > 12 && u.x < 1268 && u.y < 708);
+  let sampled = 0;
+  let team = 0;
+  let pixels = 0;
+  let same = 0;
+  for (const u of on) {
+    if (on.some((o) => o.army !== u.army && Math.hypot(o.x! - u.x!, o.y! - u.y!) < 24)) continue;
+    sampled++;
+    if (anyNear(shot, u.x!, u.y!, 3, (c) => teamColored(c, u.army))) team++;
+    if (ref !== null) {
+      for (let dy = -6; dy <= 6; dy += 2) {
+        for (let dx = -6; dx <= 6; dx += 2) {
+          pixels++;
+          if (colorDist(shot.at(u.x! + dx, u.y! + dy), ref.at(u.x! + dx, u.y! + dy)) <= 24) same++;
+        }
+      }
+    }
+  }
+  return { sampled, team, pixels, same };
+}
+
+for (const server of SERVERS) {
+  test(`context-loss: Icons (MSDF-Atlas) im Icon-Zoom nach Restore wieder sichtbar – ${server.label}`, async ({ page }, testInfo) => {
+    const errors = captureErrors(page);
+    await openGame(page, server.url, 'spawn=cubes&cubes=1000&enemy=24&units=300', 1300);
+    await waitTick(page, 20);
+    await pauseSim(page);
+    await page.evaluate(() => {
+      const h = window.__faf!;
+      h.setCamera(256, 256, h.zoom().maxDistance);
+    });
+    await frames(page, 4);
+    const rs0 = await page.evaluate(() => window.__faf!.renderStats());
+    const units = await screenUnits(page);
+    const before = await cssShot(page);
+    const b = iconCheck(before, units, null);
+    expect(await loseContextExt(page), 'WEBGL_lose_context available').toBe(true);
+    await page.evaluate(() => window.__fafLoseCtx!.loseContext());
+    await page.waitForFunction(() => window.__faf!.renderStats().lost === true);
+    await page.waitForTimeout(200);
+    await page.evaluate(() => window.__fafLoseCtx!.restoreContext());
+    await page.waitForFunction(() => window.__faf!.renderStats().lost === false);
+    await frames(page, 6);
+    const rs1 = await page.evaluate(() => window.__faf!.renderStats());
+    const after = await cssShot(page);
+    const a = iconCheck(after, units, before);
+    const report = { browser: testInfo.project.name, server: server.name, before: { ...b, zoomLevel: rs0.zoomLevel, draws: rs0.drawsByPass }, after: { ...a, zoomLevel: rs1.zoomLevel, draws: rs1.drawsByPass } };
+    writeReport(`context-loss-icons-${testInfo.project.name}-${server.transport}`, report);
+    await attachJson(testInfo, 'context-loss-icons', report);
+    expect(rs0.zoomLevel).toBe(2);
+    expect(rs0.drawsByPass.icons).toBe(1);
+    expect(rs1.zoomLevel).toBe(2);
+    expect(rs1.drawsByPass.icons, 'IconPass draws again after restore').toBe(1);
+    expect(rs1.drawsByPass.units).toBe(0);
+    expect(b.sampled).toBeGreaterThanOrEqual(20);
+    expect(b.team / b.sampled).toBeGreaterThanOrEqual(0.95);
+    expect(a.team / a.sampled, `team-colored icons after restore ${a.team}/${a.sampled}`).toBeGreaterThanOrEqual(0.95);
+    expect(a.same / a.pixels, `icon pixels equal to before the loss: ${a.same}/${a.pixels}`).toBeGreaterThanOrEqual(0.97);
+    expectNoErrors(errors.filter((e) => !isLossMessage(e)));
+  });
+}

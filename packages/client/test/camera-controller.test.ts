@@ -7,6 +7,7 @@ import {
   MAX_PITCH_OFFSET,
   MIN_EYE_CLEARANCE_WU,
   MIN_ZOOM_DISTANCE_WU,
+  OVERVIEW_DRIFT_START,
   maxDistanceForMap,
 } from '../src/camera-controller.ts';
 import { ClientMap } from '../src/map.ts';
@@ -152,7 +153,9 @@ describe('CameraController – terrain (hollow-ridge)', () => {
       cc.zoomAt(steps, px, py);
       const b = cc.bounds;
       const clamped = cam.targetX <= b.minX || cam.targetX >= b.maxX || cam.targetZ <= b.minZ || cam.targetZ >= b.maxZ;
-      if (clamped || (f === cam.targetX && g === cam.targetZ && (cam.distance === cam.minDistance || cam.distance === cam.maxDistance))) continue;
+      // MS3: zooming out beyond OVERVIEW_DRIFT_START × max also pulls the focus to the map centre (C2).
+      const drift = steps > 0 && cam.distance > OVERVIEW_DRIFT_START * cam.maxDistance;
+      if (clamped || drift || (f === cam.targetX && g === cam.targetZ && (cam.distance === cam.minDistance || cam.distance === cam.maxDistance))) continue;
       expect(picker.pick(cam, px, py)).toBe(true);
       const err = Math.hypot(picker.wuX - bx, picker.wuZ - bz);
       if (err > 1 / 16) console.log('DBG', i, { px, py, steps, bx, bz, x: picker.wuX, z: picker.wuZ, hit: picker.hit, d: cam.distance, pitch: cam.pitch, tx: cam.targetX / 4096, tz: cam.targetZ / 4096, ty: cam.targetY / 4096, f: f / 4096, g: g / 4096 });

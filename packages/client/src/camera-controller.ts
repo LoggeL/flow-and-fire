@@ -76,6 +76,13 @@ export interface CameraState {
   readonly clearance: number;
 }
 
+/**
+ * Strategic zoom (C2): from this share of the maximum distance on, zooming out also pulls the focus
+ * towards the map centre (linearly, fully centred at the maximum), so the fully zoomed-out view is
+ * always the whole map.
+ */
+export const OVERVIEW_DRIFT_START = 0.6;
+
 /** Auto zoom limit: the whole map fits vertically at the far pitch (plus 15 % margin). */
 export function maxDistanceForMap(sizeWu: number, fovY: number): number {
   return (sizeWu / (2 * Math.tan(fovY / 2))) * 1.15;
@@ -304,7 +311,22 @@ export class CameraController {
       this.clamp();
       this.apply();
     }
+    if (steps > 0) this.overviewDrift();
     this.changed();
+  }
+
+  /** Zooming out beyond {@link OVERVIEW_DRIFT_START}: moves the focus towards the map centre. */
+  private overviewDrift(): void {
+    const c = this.camera;
+    const start = OVERVIEW_DRIFT_START * c.maxDistance;
+    if (!(c.distance > start) || !(c.maxDistance > start)) return;
+    const f = Math.min(1, (c.distance - start) / (c.maxDistance - start));
+    const b = this.bounds;
+    c.targetX += ((b.minX + b.maxX) / 2 - c.targetX) * f;
+    c.targetZ += ((b.minZ + b.maxZ) / 2 - c.targetZ) * f;
+    this.clamp();
+    this.focusY = this.terrainHeightRaw();
+    this.apply();
   }
 
   /** Rotation drag: horizontal → yaw around the focus, vertical → pitch offset (limited). */

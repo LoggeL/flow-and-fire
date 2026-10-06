@@ -1,0 +1,18 @@
+{
+  "ai.core.ai_default.name": "Standard-KI",
+  "faction.core.faction_core.name": "Kernverbund",
+  "unit.core.cube.desc": "Testeinheit der Testebene (MS1-Platzhalter).",
+  "unit.core.cube.name": "Würfel",
+  "unit.core.fac_land_t1.desc": "Baut die leichten Landeinheiten des Kernverbunds.",
+  "unit.core.fac_land_t1.name": "Landfabrik T1",
+  "unit.core.lnd_t1_arty.desc": "Langsame mobile Artillerie für indirektes Feuer.",
+  "unit.core.lnd_t1_arty.name": "Hagel",
+  "unit.core.lnd_t1_scout.desc": "Schneller, leicht bewaffneter Aufklärer.",
+  "unit.core.lnd_t1_scout.name": "Flitzer",
+  "unit.core.lnd_t1_tank.desc": "Leichter Kampfpanzer mit Drehturm.",
+  "unit.core.lnd_t1_tank.name": "Keiler",
+  "unit.core.lnd_t2_tank.desc": "Mittlerer Panzer mit schwerer Kanone.",
+  "unit.core.lnd_t2_tank.name": "Wisent",
+  "unit.core.lnd_t3_heavy.desc": "Schwerer Sturmpanzer: langsam, massiv und kaum zu verdrängen.",
+  "unit.core.lnd_t3_heavy.name": "Bollwerk"
+}

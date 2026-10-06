@@ -1,16 +1,28 @@
 {
   "assets": {
     "content/sim.bin": {
-      "bytes": 132,
-      "hash": "sha256-5r6T97fU0K569GrMEDpZGLgrdHARgpehA+O+TpfsRu0=",
+      "bytes": 2292,
+      "hash": "sha256-8K2CgMLnM0ljrZ361RcsHbZ7XRdE1iC87HZ7KjfUHcA=",
       "kind": "simbin",
-      "url": "content/sim.e6be93f7.bin"
+      "url": "content/sim.f0ad8280.bin"
     },
     "content/view.json": {
-      "bytes": 412,
-      "hash": "sha256-Q4Ee9jv/E8/03YhNEtkY7ojD00F3oNw5axkVcX2ke50=",
+      "bytes": 5624,
+      "hash": "sha256-KIpf7O2AW4uUycght1nfL5dAd42sSMcopnspX9Vd0Rc=",
       "kind": "viewjson",
-      "url": "content/view.43811ef6.json"
+      "url": "content/view.288a5fec.json"
+    },
+    "icons/atlas": {
+      "bytes": 147456,
+      "hash": "sha256-7LagAJdxvJl2dXTlwhTMQLP6fIN5IUoAs+wWSybYvPA=",
+      "kind": "iconatlas",
+      "url": "icons/atlas.ecb6a000.rgba"
+    },
+    "icons/atlas-metrics": {
+      "bytes": 1721,
+      "hash": "sha256-Nz6R1Pe56q5GO5tdBy7XVIhR8iwwAqKAkmwNcmpx27k=",
+      "kind": "iconmetrics",
+      "url": "icons/atlas.373e91d4.json"
     },
     "maps/hollow-ridge": {
       "bytes": 593420,

@@ -4,6 +4,7 @@
  */
 export * from './scenario.ts';
 export * from './scenarios.ts';
+export * from './maps.ts';
 export * from './goldens.ts';
 export * from './stats.ts';
 export * from './measure.ts';

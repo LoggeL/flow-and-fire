@@ -1,3 +1,4 @@
+import { FIXED_PASS_DRAWS } from '@faf/render';
 import { describe, expect, it } from 'vitest';
 import { SHADOW_UNIT_LODS, drawBudget } from '../src/budget.ts';
 import { MS2_MAX_DRAWS, SCENARIOS, SPK4_MAX_DRAWS } from '../src/scenarios.ts';
@@ -73,7 +74,7 @@ describe('draw budget', () => {
 
   it('ms2: facade draws = (visual, LOD) buckets + fixed passes ≤ 50', () => {
     const b = drawBudget(SCENARIOS.ms2);
-    expect(b.worst).toBe(36 + 4);
+    expect(b.worst).toBe(36 + FIXED_PASS_DRAWS); // + terrain, water, icons, lines, markers, HP bars
     expect(b.worst).toBeLessThanOrEqual(MS2_MAX_DRAWS);
   });
 

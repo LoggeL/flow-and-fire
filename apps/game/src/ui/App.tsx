@@ -23,7 +23,7 @@ export function Hud({ game }: { game: Game }) {
   const h = game.hud.value;
   return (
     <div class="faf-hud" data-testid="hud">
-      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS2</span></div>
+      <div class="faf-hud-title">Flow &amp; Fire <span class="faf-dim">MS3</span></div>
       <table>
         <tbody>
           <tr><th>Tick</th><td data-testid="hud-tick">{h.tick}</td></tr>
@@ -40,10 +40,20 @@ export function Hud({ game }: { game: Game }) {
           <tr><th>mapSimHash</th><td data-testid="hud-mapsimhash">{hex32(h.mapSimHash)}</td></tr>
           <tr><th>Cursor (WU)</th><td data-testid="hud-cursor">{fmtCursor(h.cursor)}</td></tr>
           <tr><th>Preset</th><td data-testid="hud-preset">{h.preset}</td></tr>
+          <tr><th>Zoom</th><td data-testid="hud-zoom" data-level={h.zoomLevel}>{`Z${h.zoomLevel} · ${h.zoomDistance.toFixed(0)} WU`}</td></tr>
+          <tr><th>simHash</th><td data-testid="hud-simhash">{hex32(h.simHash)}</td></tr>
+          <tr><th>Log</th><td data-testid="hud-tainted" data-tainted={h.tainted ? '1' : '0'}>{h.tainted ? 'tainted' : 'sauber'}</td></tr>
+          {h.hmr !== null ? <tr><th>HMR</th><td data-testid="hud-hmr">{h.hmr}</td></tr> : null}
+          {h.pathOverlay ? <tr><th>Overlay</th><td data-testid="hud-overlay">Pfade</td></tr> : null}
         </tbody>
       </table>
+      {h.hmrError !== null ? (
+        <div class="faf-hmr-error" data-testid="hud-hmr-error">
+          {h.hmrError.split('\n').slice(0, 8).join('\n')}
+        </div>
+      ) : null}
       <div class="faf-hint">
-        Rechtsklick: bewegen · Linksziehen: auswählen · WASD/Rand/Mitte: Kamera · Strg+Mitte: drehen · H: Start · P: Pause · N: Step · ^/F1: Konsole
+        Links: auswählen (Shift: +/−, Doppelklick: Typ) · Rechts: bewegen (Shift: anhängen) · S: Stop · Esc: abwählen · Strg/Alt+Ziffer: Gruppe · Ziffer: abrufen (2×: Kamera) · WASD/Rand/Mitte: Kamera · Rad: Zoom bis Gesamtkarte · ^/F1: Konsole
       </div>
       {game.client.fullscreen?.supported === true ? (
         <button

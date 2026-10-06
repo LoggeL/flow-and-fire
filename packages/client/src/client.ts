@@ -1,20 +1,28 @@
 /**
- * GameClient: main-thread game loop (MS1: S1, S3, A5, G14, SPK6 chain; MS2: map, C1, G15, G16, C11).
+ * GameClient: main-thread game loop (MS1: S1, S3, A5, G14, SPK6 chain; MS2: map, C1, G15, G16, C11;
+ * MS3: C3 selection, C7 control groups, Shift queue + waypoint lines from the Watch section, G19
+ * decals, C2 strategic zoom).
  *
  * Per requestAnimationFrame:
  *   edge scan + keyboard pan + focus-height smoothing → poll the newest frame (ack bookkeeping,
- *   selection/highlight rebuild) → alpha → hover pick → renderer.render (UnitRecords and the
- *   PartStream straight from the frame bytes, highlight, overlays) → metrics.
+ *   handle index, selection/highlight rebuild, control-group pruning, watch sync) → alpha → hover
+ *   pick → order feedback (selection rings + target discs as dynamic terrain decals, routes as
+ *   overlay lines; rebuilt only when frame, alpha, selection or pending commands changed) →
+ *   renderer.render (UnitRecords and the PartStream straight from the frame bytes, highlight,
+ *   overlays) → metrics.
  *
  * Map (MS2): `setMap(clientMap)` sets the renderer terrain, the spot decals, the camera bounds and
  * terrain following and the heightmap raymarch picking (G15); click markers, waypoint lines and
  * the hover point sit on the terrain height. Without a map the client starts on the generated flat
  * test plane map (`ClientMap.testPlane()`), which takes exactly the same path.
  *
- * Input is handled in the DOM event handlers: a right click picks the ground, sends the Move
- * command and adds the click marker immediately, so the marker is drawn in the very next rAF.
- * A waypoint line from the group's centre to the target stays until the command's seq is
- * confirmed by `FrameHeader.ackSeq`.
+ * Input is handled in the DOM event handlers: a right click picks the ground, sends one Move
+ * command for the whole selection (a group command in the sim; Shift = `CmdFlags.Queue`) and adds
+ * the click marker immediately, so the marker is drawn in the very next rAF. An optimistic
+ * waypoint line + target disc stay until the command's seq is confirmed by `FrameHeader.ackSeq`;
+ * from then on the routes come from the frame's Watch section (`ctl.watch` = the first 64
+ * selected handles, sent whenever that list changes). Without a selection a right click does
+ * nothing.
  *
  * Pause (A5): the sim tick stands still, but camera, input, selection and command sending keep
  * working; alpha is frozen at 1.
@@ -22,13 +30,18 @@
  * The steady-state rAF path does not allocate: the render view, overlay arrays and marker objects
  * are reused, the unit bytes are a cached view into the transport's buffer.
  */
-import type { CtlMessage, FrameReader, HostMessage } from '@faf/protocol';
+import { MAX_WATCH, type CtlMessage, type FrameReader, type HostMessage } from '@faf/protocol';
 import {
+  ICON_SIZE_PX,
   RtsCamera,
+  strategicZoom,
+  type DecalBinStats,
+  type DynamicDecals,
   type OverlayMarker,
   type OverlaySegment,
   type RenderStats,
   type RenderView,
+  type StrategicZoom,
   type TerrainDecal,
   type TerrainDesc,
   type UnitPartsView,
@@ -36,7 +49,10 @@ import {
 } from '@faf/render';
 import type { ActionMap } from './actions.ts';
 import { CameraController, type CameraState } from './camera-controller.ts';
-import { CommandBuilder, seqAcked } from './commands.ts';
+import { CommandBuilder } from './commands.ts';
+import { ControlGroups, type ControlGroupOp } from './control-groups.ts';
+import { OrderFeedback } from './order-feedback.ts';
+import { armyColorHex, VisualGeometry } from './visuals.ts';
 import { FrameStream, type FrameStreamOptions } from './frames.ts';
 import { FullscreenController, PointerConfinement, type FullscreenDocument, type FullscreenRoot, type LockableCanvas } from './fullscreen.ts';
 import { InputController, type Action, type DragBox, type InputEventTarget, type InputSurface } from './input.ts';
@@ -44,7 +60,7 @@ import { ClientMap } from './map.ts';
 import { ClientMetrics, type MetricsSnapshot } from './metrics.ts';
 import type { MapBounds } from './picking.ts';
 import { TerrainPicker } from './terrain-picker.ts';
-import { interpolatedPos, isOwnUnit, Selection, type SelectionMode } from './selection.ts';
+import { interpolatedPos, isOwnUnit, Selection } from './selection.ts';
 import type { SimLink } from './sim-link.ts';
 
 /** What the client needs from the renderer (render's `Renderer` satisfies it). */
@@ -56,6 +72,14 @@ export interface RendererLike {
   setTerrain?(desc: TerrainDesc | null): void;
   /** Terrain decals (spot rings). */
   setTerrainDecals?(decals: readonly TerrainDecal[]): unknown;
+  /** Dynamic terrain decals (G19: selection rings, target discs), called every frame. */
+  setDynamicDecals?(buf: DynamicDecals | null): DecalBinStats | unknown;
+}
+
+/** `navigator.keyboard` (Keyboard Lock API, Chromium): lets fullscreen games keep Ctrl+digit etc. */
+export interface KeyboardLockLike {
+  lock(keyCodes?: string[]): Promise<void>;
+  unlock(): void;
 }
 
 /** requestAnimationFrame abstraction (tests drive frames manually). */
@@ -73,8 +97,10 @@ export interface GameClientCallbacks {
   onToggleConsole?(): void;
   /** Selection rectangle while left-dragging (null when done). */
   onDragBox?(box: DragBox | null): void;
-  /** Selection changed by the player. */
-  onSelectionChange?(count: number, mode: SelectionMode): void;
+  /** Selection changed (player input, control group, console, hooks). */
+  onSelectionChange?(count: number): void;
+  /** A control group was stored/extended/recalled (after the selection was updated). */
+  onControlGroup?(op: ControlGroupOp, group: number, size: number, centered: boolean): void;
   /** Host message (ready, status, stats, log, error). */
   onHostMessage?(m: HostMessage): void;
   /** A new frame was accepted (called inside the rAF, before rendering). */
@@ -119,8 +145,15 @@ export interface GameClientOptions {
   readonly frameStream?: FrameStreamOptions;
   /** Click marker color (0xRRGGBB). */
   readonly markerColor?: number;
-  /** Waypoint line color (0xRRGGBB). */
+  /** @deprecated Route colors live in order-feedback.ts (kept for source compatibility). */
   readonly lineColor?: number;
+  /** Icon edge length in CSS px (must match the renderer's `setIconSize`; default 20). */
+  readonly iconSizePx?: number;
+  /**
+   * Keyboard Lock API used while in fullscreen (default `navigator.keyboard` where available;
+   * null disables it).
+   */
+  readonly keyboardLock?: KeyboardLockLike | null;
 }
 
 /** Plain screen position (CSS pixels). */
@@ -138,7 +171,6 @@ export interface WorldPick {
 }
 
 const MAX_MARKERS = 32;
-const MAX_LINES = 32;
 const MARKER_DURATION_MS = 700;
 const MARKER_RADIUS_WU = 1.5;
 
@@ -152,17 +184,6 @@ interface MutableMarker {
   durationMs: number;
 }
 
-interface MutableSegment {
-  ax: number;
-  ay: number;
-  az: number;
-  bx: number;
-  by: number;
-  bz: number;
-  color: number;
-  widthWU: number;
-}
-
 interface MutableView {
   camera: RtsCamera;
   units: { bytes: Uint8Array; count: number; version: number };
@@ -170,7 +191,7 @@ interface MutableView {
   highlight: Uint8Array;
   highlightVersion: number;
   alpha: number;
-  overlays: { markers: OverlayMarker[]; lines: OverlaySegment[] };
+  overlays: { markers: OverlayMarker[]; lines: readonly OverlaySegment[] };
   timeMs: number;
 }
 
@@ -187,6 +208,13 @@ export function visualCornerRadii(visuals: VisualTable): Float64Array {
     else out[i] = spec.hull === 'box' ? Math.hypot(spec.size[0], spec.size[2]) / 2 : 0;
   }
   return out;
+}
+
+function defaultKeyboardLock(): KeyboardLockLike | null {
+  const nav = (globalThis as { navigator?: { keyboard?: Partial<KeyboardLockLike> } }).navigator;
+  const kb = nav?.keyboard;
+  if (kb === undefined || typeof kb.lock !== 'function' || typeof kb.unlock !== 'function') return null;
+  return { lock: (codes) => kb.lock!.call(kb, codes), unlock: () => kb.unlock!.call(kb) };
 }
 
 function defaultRaf(): RafLike {
@@ -206,6 +234,12 @@ export class GameClient {
   readonly camera: RtsCamera;
   readonly cameraController: CameraController;
   readonly selection: Selection;
+  /** Control groups 0–9 (C7). */
+  readonly controlGroups = new ControlGroups();
+  /** Selection rings, target discs and routes (C3/G7/G19). */
+  readonly feedback: OrderFeedback;
+  /** Per-visual selection radius / icon threshold (renderer numbers, from the visual table). */
+  geometry: VisualGeometry;
   readonly commands: CommandBuilder;
   readonly stream: FrameStream;
   readonly metrics: ClientMetrics;
@@ -233,17 +267,32 @@ export class GameClient {
   private terrainPicker: TerrainPicker;
   private bounds: MapBounds;
   private readonly markerColor: number;
-  private readonly lineColor: number;
+  private readonly keyboardLock: KeyboardLockLike | null;
+  private keyboardLocked = false;
   private readonly unsubscribeHost: () => void;
   private readonly unsubscribeAck: () => void;
 
   private readonly markerPool: MutableMarker[] = [];
   private readonly markers: OverlayMarker[] = [];
-  private readonly linePool: MutableSegment[] = [];
-  private readonly lines: OverlaySegment[] = [];
-  private readonly lineSeqs: number[] = [];
   private readonly view: MutableView;
+  /** Handles last sent with `ctl.watch` (first `watchSentN` entries). */
+  private readonly watchSent = new Uint32Array(MAX_WATCH);
+  private watchSentN = -1;
+  /** Watch messages sent (hooks). */
+  watchMessages = 0;
+  private readonly zoomState: StrategicZoom = { level: 0, iconForce: 0, z1: 0, z2: 0 };
+  private readonly isOwnRecord = (i: number): boolean => {
+    const r = this.lastFrame;
+    return r !== null && isOwnUnit(r, i, this.playerArmy);
+  };
+  private readonly tmp2 = new Float64Array(2);
   private readonly emptyUnits = new Uint8Array(0);
+  /**
+   * Debug/test switch: when true the renderer gets no unit records (no meshes, icons, HP bars) while
+   * the sim, selection and feedback keep running – reference frames of the bare terrain for pixel
+   * checks (E2E strategic-zoom crossfade).
+   */
+  unitsHidden = false;
   private readonly unsubscribeFullscreen: () => void;
   private readonly tmp = new Float64Array(4);
   private readonly pos = new Float64Array(3);
@@ -269,7 +318,7 @@ export class GameClient {
     this.rafImpl = opts.raf;
     this.nowFn = opts.now ?? (() => performance.now());
     this.markerColor = opts.markerColor ?? 0x40ff60;
-    this.lineColor = opts.lineColor ?? 0x40ff60;
+    this.keyboardLock = opts.keyboardLock === undefined ? defaultKeyboardLock() : opts.keyboardLock;
 
     const map = opts.map ?? ClientMap.testPlane();
     this.map = map;
@@ -280,6 +329,12 @@ export class GameClient {
     if (opts.camera === undefined) this.cameraController.centerOnMap();
     this.commanderVisuals = opts.commanderVisuals ?? null;
     this.selection = new Selection(opts.playerArmy);
+    this.selection.iconSizePx = opts.iconSizePx ?? ICON_SIZE_PX;
+    this.selection.mapSizeWU = map.sizeWu;
+    this.geometry = new VisualGeometry(opts.visuals);
+    this.selection.geometry = this.geometry;
+    this.feedback = new OrderFeedback(map);
+    this.feedback.ringColor = armyColorHex(opts.playerArmy);
     this.commands = new CommandBuilder(opts.link, opts.playerArmy);
     this.stream = new FrameStream(opts.link.frames, opts.frameStream);
     this.metrics = new ClientMetrics();
@@ -307,9 +362,6 @@ export class GameClient {
     for (let i = 0; i < MAX_MARKERS; i++) {
       this.markerPool.push({ x: 0, y: 0, z: 0, startMs: 0, color: this.markerColor, radiusWU: MARKER_RADIUS_WU, durationMs: MARKER_DURATION_MS });
     }
-    for (let i = 0; i < MAX_LINES; i++) {
-      this.linePool.push({ ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, color: this.lineColor, widthWU: 0.18 });
-    }
     this.view = {
       camera: this.camera,
       units: { bytes: this.emptyUnits, count: 0, version: 0 },
@@ -317,7 +369,7 @@ export class GameClient {
       highlightVersion: 0,
       alpha: 1,
       parts: { bytes: this.emptyUnits, count: 0, version: 0 },
-      overlays: { markers: this.markers, lines: this.lines },
+      overlays: { markers: this.markers, lines: this.feedback.lines },
       timeMs: 0,
     };
 
@@ -341,7 +393,10 @@ export class GameClient {
               viewport: () => ({ width: this.camera.viewportWidth, height: this.camera.viewportHeight }),
               container: fs.root,
             });
-      this.unsubscribeFullscreen = this.fullscreen.onChange((a) => this.callbacks.onFullscreenChange?.(a));
+      this.unsubscribeFullscreen = this.fullscreen.onChange((a) => {
+        this.setKeyboardLock(a);
+        this.callbacks.onFullscreenChange?.(a);
+      });
     } else {
       this.fullscreen = null;
       this.confinement = null;
@@ -373,6 +428,25 @@ export class GameClient {
     this.terrainPicker = new TerrainPicker(map);
     this.cameraController.setTerrain(map, map.bounds);
     this.hover.valid = false;
+    this.selection.mapSizeWU = map.sizeWu;
+    this.selection.projection.invalidate();
+    this.feedback.setHeightSource(map);
+  }
+
+  /**
+   * Replaces the visual table (Blueprint HMR): renderer visuals, hit-test geometry, metric radii.
+   */
+  setVisuals(visuals: VisualTable): void {
+    this.renderer.setVisuals(visuals);
+    this.geometry = new VisualGeometry(visuals);
+    this.selection.geometry = this.geometry;
+    this.metrics.setVisualRadii(visualCornerRadii(visuals));
+    this.feedback.invalidate();
+  }
+
+  /** Strategic zoom of the current camera on the current map (same formula as the renderer). */
+  get zoom(): Readonly<StrategicZoom> {
+    return strategicZoom(this.camera.distance, this.map.sizeWu, this.zoomState);
   }
 
   /** Map rectangle (raw) used for clamping. */
@@ -529,19 +603,114 @@ export class GameClient {
 
   /**
    * Programmatic move (E2E hooks, console): sends Move for `handles` (default: the selection) to
-   * (x, z) raw with the same immediate feedback and measurement as a right click.
+   * (x, z) raw with the same immediate feedback and measurement as a right click; `queue` = Shift.
    */
-  moveTo(xRaw: number, zRaw: number, handles?: ArrayLike<number>, clickMs?: number): number {
+  moveTo(xRaw: number, zRaw: number, handles?: ArrayLike<number>, clickMs?: number, queue = false): number {
     const b = this.bounds;
     const x = Math.min(b.maxX, Math.max(b.minX, Math.round(xRaw)));
     const z = Math.min(b.maxZ, Math.max(b.minZ, Math.round(zRaw)));
     const units = handles ?? this.selection.selected();
-    return this.issueMove(units, handles === undefined, x, z, false, clickMs ?? this.nowFn());
+    return this.issueMove(units, handles === undefined, x, z, queue, clickMs ?? this.nowFn());
   }
 
   /** Stop for the current selection. Returns the seq or −1. */
   stopSelected(): number {
-    return this.commands.stop(this.selection.selected(), this.nowFn());
+    const units = this.selection.selected();
+    this.feedback.targets.forget(units);
+    this.feedback.invalidate();
+    return this.commands.stop(units, this.nowFn());
+  }
+
+  /** Dev console: stamps (+1) / removes (−1) a footprint rectangle (cells = WU). Returns the seq. */
+  footprint(cellX: number, cellZ: number, w: number, h: number, delta: 1 | -1): number {
+    return this.commands.footprint(cellX, cellZ, w, h, delta, this.nowFn());
+  }
+
+  // ---- selection / control groups (C3, C7) ---------------------------------------------------
+
+  /** Selects `handles` (replace or add); returns the new selection size. */
+  select(handles: ArrayLike<number>, additive = false): number {
+    this.selection.set(handles, additive);
+    this.selectionChanged();
+    return this.selection.count;
+  }
+
+  /** Selects every own unit. */
+  selectAll(): number {
+    this.selection.selectAll();
+    this.selectionChanged();
+    return this.selection.count;
+  }
+
+  /** Clears the selection. */
+  clearSelection(): void {
+    this.selection.clear();
+    this.selectionChanged();
+  }
+
+  /** Selects every own unit of visual (= blueprint sim id) `visual`; returns the count. */
+  selectVisual(visual: number, additive = false): number {
+    this.selection.selectVisual(visual, additive);
+    this.selectionChanged();
+    return this.selection.count;
+  }
+
+  /**
+   * Control group operation (C7): store / add the selection, recall (replace) / recallAdd (add to
+   * the selection). A second recall of the same group within 350 ms centers the camera on the
+   * group's centroid. Returns the group size after the operation.
+   */
+  controlGroup(op: ControlGroupOp, group: number, nowMs = this.nowFn()): number {
+    const cg = this.controlGroups;
+    let centered = false;
+    switch (op) {
+      case 'store':
+        cg.store(group, this.selection.selected());
+        break;
+      case 'add':
+        cg.add(group, this.selection.selected());
+        break;
+      case 'recall':
+      case 'recallAdd': {
+        const members = cg.get(group);
+        if (members.length === 0) break;
+        this.selection.set(members, op === 'recallAdd');
+        this.selectionChanged();
+        if (cg.tap(group, nowMs)) centered = this.centerOnGroup(group);
+        break;
+      }
+    }
+    const size = cg.size(group);
+    this.callbacks.onControlGroup?.(op, group, size, centered);
+    return size;
+  }
+
+  /** Moves the camera focus to the centroid (displayed positions) of control group `g`. */
+  centerOnGroup(g: number): boolean {
+    const r = this.lastFrame;
+    if (r === null) return false;
+    const members = this.controlGroups.get(g);
+    const idx = this.selection.index;
+    const alpha = this.stream.lastAlpha;
+    let sx = 0;
+    let sz = 0;
+    let n = 0;
+    for (let k = 0; k < members.length; k++) {
+      const i = idx.get(members[k]!);
+      if (i < 0) continue;
+      interpolatedPos(r, i, alpha, this.pos);
+      sx += this.pos[0]!;
+      sz += this.pos[2]!;
+      n++;
+    }
+    if (n === 0) return false;
+    this.jumpTo(sx / n, sz / n);
+    return true;
+  }
+
+  /** Handles currently sent as `ctl.watch` (plain array). */
+  watchedHandles(): number[] {
+    return this.watchSentN <= 0 ? [] : Array.from(this.watchSent.subarray(0, this.watchSentN));
   }
 
   /** Dev console: cheat-spawn (bp id, count, army, x/z/spread raw). Returns the seq. */
@@ -583,6 +752,7 @@ export class GameClient {
     this.fullscreen?.dispose();
     this.unsubscribeHost();
     this.unsubscribeAck();
+    this.setKeyboardLock(false);
   }
 
   /**
@@ -607,9 +777,12 @@ export class GameClient {
     const alpha = s.alpha(now);
 
     this.expireMarkers(now);
+    this.camera.update();
+    this.feedback.update(s.hasFrame ? s.reader : null, s.frameCount, this.selection, this.geometry, alpha, this.camera, this.map.sizeWu);
+    this.renderer.setDynamicDecals?.(this.feedback.decals);
 
     const v = this.view;
-    if (s.hasFrame) {
+    if (s.hasFrame && !this.unitsHidden) {
       v.units.bytes = s.units();
       v.units.count = s.unitCount;
     } else {
@@ -685,23 +858,13 @@ export class GameClient {
 
   private onNewFrame(now: number): void {
     const s = this.stream;
-    this.selection.onFrame(s.reader);
+    const selVersion = this.selection.version;
+    this.selection.onFrame(s.reader, s.frameCount);
+    this.controlGroups.prune(this.selection.index, this.isOwnRecord);
     this.commands.acknowledge(s.ackSeq, now);
-    // Waypoint lines disappear once their command is confirmed.
-    const ack = s.ackSeq & 0xffff;
-    let w = 0;
-    for (let i = 0; i < this.lines.length; i++) {
-      const seq = this.lineSeqs[i]!;
-      if (seqAcked(ack, seq)) {
-        this.linePool.push(this.lines[i] as MutableSegment);
-        continue;
-      }
-      this.lines[w] = this.lines[i]!;
-      this.lineSeqs[w] = seq;
-      w++;
-    }
-    this.lines.length = w;
-    this.lineSeqs.length = w;
+    // Optimistic lines/discs disappear once their command is confirmed (watch lines take over).
+    this.feedback.acknowledge(s.ackSeq);
+    if (this.selection.version !== selVersion) this.syncWatch();
     if (this.pauseWanted !== null && (s.paused === this.pauseWanted || now - this.pauseWantedAt > 1000)) {
       this.pauseWanted = null;
     }
@@ -736,31 +899,23 @@ export class GameClient {
     this.markers.push(m);
   }
 
-  private addLine(seq: number, ax: number, ay: number, az: number, bx: number, bz: number): void {
-    let l = this.linePool.pop();
-    if (l === undefined) {
-      l = this.lines.shift() as MutableSegment;
-      this.lineSeqs.shift();
-    }
-    l.ax = ax;
-    l.ay = ay;
-    l.az = az;
-    l.bx = bx;
-    l.by = this.heightAtRaw(bx, bz);
-    l.bz = bz;
-    l.color = this.lineColor;
-    this.lines.push(l);
-    this.lineSeqs.push(seq);
-  }
-
   private issueMove(units: ArrayLike<number>, fromSelection: boolean, x: number, z: number, queue: boolean, clickMs: number): number {
     if (units.length === 0) return -1;
     const now = this.nowFn();
     const seq = this.commands.move(units, x, this.heightAtRaw(x, z), z, queue, now);
     this.addMarker(x, z, now);
-    // Waypoint line from the group's displayed centre.
+    const fb = this.feedback;
+    // Optimistic waypoint line: from the previous command target of the first unit (Shift queue) or
+    // from the group's displayed centroid.
     const r = this.lastFrame;
-    if (r !== null) {
+    let started = false;
+    if (queue && fb.targets.lastTargetOf(units[0]!, this.tmp2)) {
+      const ax = this.tmp2[0]!;
+      const az = this.tmp2[1]!;
+      fb.addOptimistic(seq, ax, this.heightAtRaw(ax, az), az, x, z);
+      started = true;
+    }
+    if (!started && r !== null) {
       const alpha = this.stream.lastAlpha;
       let sx = 0;
       let sy = 0;
@@ -776,10 +931,10 @@ export class GameClient {
           n++;
         }
       } else {
-        const wanted = new Set<number>();
-        for (let k = 0; k < units.length; k++) wanted.add(units[k]! >>> 0);
-        for (let i = 0; i < r.unitCount; i++) {
-          if (!wanted.has(r.unitHandle(i))) continue;
+        const idx = this.selection.index;
+        for (let k = 0; k < units.length; k++) {
+          const i = idx.get(units[k]!);
+          if (i < 0) continue;
           interpolatedPos(r, i, alpha, this.pos);
           sx += this.pos[0]!;
           sy += this.pos[1]!;
@@ -787,10 +942,48 @@ export class GameClient {
           n++;
         }
       }
-      if (n > 0) this.addLine(seq, Math.round(sx / n), Math.round(sy / n), Math.round(sz / n), x, z);
+      if (n > 0) fb.addOptimistic(seq, sx / n, sy / n, sz / n, x, z);
     }
+    fb.targets.add(seq, units, x, z, queue);
     this.metrics.beginClick(clickMs, seq, units, r, this.stream.lastAlpha);
     return seq;
+  }
+
+  /** Sends `ctl.watch` with the first 64 selected handles if that list changed. */
+  private syncWatch(): void {
+    const sel = this.selection;
+    const n = Math.min(MAX_WATCH, sel.count);
+    let same = n === this.watchSentN;
+    for (let k = 0; same && k < n; k++) same = this.watchSent[k] === sel.handles[k];
+    if (same) return;
+    for (let k = 0; k < n; k++) this.watchSent[k] = sel.handles[k]!;
+    this.watchSentN = n;
+    this.watchMessages++;
+    this.link.sendCtl({ t: 'watch', handles: Array.from(sel.handles.subarray(0, n)) });
+  }
+
+  /** After any selection change: watch list, UI callback. */
+  private selectionChanged(): void {
+    this.syncWatch();
+    this.feedback.invalidate();
+    this.callbacks.onSelectionChange?.(this.selection.count);
+  }
+
+  private setKeyboardLock(on: boolean): void {
+    const kb = this.keyboardLock;
+    if (kb === null || on === this.keyboardLocked) return;
+    this.keyboardLocked = on;
+    if (on) {
+      kb.lock().catch(() => {
+        this.keyboardLocked = false;
+      });
+    } else {
+      try {
+        kb.unlock();
+      } catch {
+        // not locked
+      }
+    }
   }
 
   private handleAction(a: Action): void {
@@ -825,16 +1018,28 @@ export class GameClient {
       case 'boxSelect':
         this.syncViewport();
         this.selection.boxSelect(this.camera, this.stream.lastAlpha, a.x0, a.y0, a.x1, a.y1, a.additive);
-        this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
+        this.selectionChanged();
         break;
       case 'clickSelect':
         this.syncViewport();
-        this.selection.clickSelect(this.camera, this.stream.lastAlpha, a.x, a.y, a.additive);
-        this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
+        if (a.double) {
+          // Double click: all own units of the clicked unit's type on screen (Shift adds).
+          if (this.selection.selectSameType(this.camera, this.stream.lastAlpha, a.x, a.y, a.additive) < 0 && !a.additive) {
+            this.selection.clickSelect(this.camera, this.stream.lastAlpha, a.x, a.y, false);
+          }
+        } else {
+          this.selection.clickSelect(this.camera, this.stream.lastAlpha, a.x, a.y, a.additive);
+        }
+        this.selectionChanged();
         break;
       case 'selectAll':
-        this.selection.selectAll();
-        this.callbacks.onSelectionChange?.(this.selection.count, this.selection.mode);
+        this.selectAll();
+        break;
+      case 'deselect':
+        this.clearSelection();
+        break;
+      case 'controlGroup':
+        this.controlGroup(a.op, a.group, a.timeStamp > 0 ? a.timeStamp : this.nowFn());
         break;
       case 'moveCommand': {
         this.syncViewport();

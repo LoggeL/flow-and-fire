@@ -1,6 +1,7 @@
 /**
  * Blueprint compiler CLI: `pnpm --filter @faf/blueprints compile [--check]`.
- * Compiles content/blueprints (game bundle: without the test: namespace) and writes
+ * Compiles content/blueprints with content/locales (game bundle: without the test: namespace) via
+ * compileBlueprintModules – the same entry point the Vite HMR plugin uses – and writes
  * content/generated/{sim.bin, view.json, bundle.json, hashes.json}. With --check nothing is
  * written; the exit code is 1 if the generated files are out of date.
  */
@@ -20,7 +21,9 @@ async function main(): Promise<number> {
     throw e;
   }
   const summary =
-    `${result.units.length} unit(s), ${result.categories.length} categories, ` +
+    `${result.units.length} unit(s), ${result.weapons.length} weapon(s), ${result.projectiles.length} projectile(s), ` +
+    `${result.props.length} prop(s), ${result.effects.length} effect(s), ${result.factions.length} faction(s), ` +
+    `${result.aiProfiles.length} AI profile(s), ${result.categories.length} categories, ${result.exprs.length} expressions, ` +
     `simHash ${hex32(result.simHash)}, viewHash ${hex32(result.viewHash)}, sim.bin ${result.simBin.length} B`;
   if (check) {
     const stale = await staleGenerated(result);

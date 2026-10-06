@@ -3,6 +3,7 @@ import { GL } from '../src/webgl2/gl-const.ts';
 import { createWebGL2Device, validateStreams } from '../src/webgl2/device.ts';
 import { RtsCamera } from '../src/camera.ts';
 import { UNIT_INSTANCE_STRIDE, UnitRecordWriter } from '../src/instance-layout.ts';
+import { FRAME_LAYOUT } from '../src/passes/shared.ts';
 import { HIGHLIGHT_STRIDE, MESH_VERTEX_STRIDE, UNIT_ATTR } from '../src/passes/units.ts';
 import { FIXED_PASS_DRAWS, createRenderer } from '../src/renderer.ts';
 import type { RenderView } from '../src/renderer.ts';
@@ -10,10 +11,11 @@ import { vf } from '../src/rhi/types.ts';
 import type { GlCall } from './support/fake-gl.ts';
 import { FakeCanvas } from './support/fake-gl.ts';
 
-// LOD distances far out: every unit of these tests uses LOD 0 (16-segment cylinder).
+// LOD distances far out: every unit of these tests uses LOD 0 (16-segment cylinder). iconThreshold 0:
+// no strategic icons in the small fake viewport (icons are tested in strategic.test.ts).
 const VISUALS = [
-  { spec: { hull: 'box', size: [1, 1, 1] }, color: 0x808080, lodDistancesWU: [1000, 2000] },
-  { spec: { hull: 'cyl', size: [1, 2, 1] }, lodDistancesWU: [1000, 2000] },
+  { spec: { hull: 'box', size: [1, 1, 1] }, color: 0x808080, lodDistancesWU: [1000, 2000], iconThreshold: 0 },
+  { spec: { hull: 'cyl', size: [1, 2, 1] }, lodDistancesWU: [1000, 2000], iconThreshold: 0 },
 ] as const;
 
 function makeUnits(n: number): UnitRecordWriter {
@@ -59,7 +61,8 @@ describe('WebGL2 backend with a recording fake context', () => {
   it('binds UnitRecord integer attributes via vertexAttribIPointer, stride 48, divisor 1', () => {
     const canvas = new FakeCanvas();
     const gl = canvas.gl;
-    const r = createRenderer(canvas);
+    // HP bars off: their instance streams reuse locations 0..3 (checked in strategic.test.ts).
+    const r = createRenderer(canvas, { hpBars: 'off' });
     r.setVisuals(VISUALS);
     const n = 10;
     const w = makeUnits(n);
@@ -137,7 +140,7 @@ describe('WebGL2 backend with a recording fake context', () => {
     // Only the frame UBO is rewritten.
     const uploads = gl.named('bufferSubData');
     expect(uploads.length).toBe(1);
-    expect(r.stats.uploadBytes).toBe(208);
+    expect(r.stats.uploadBytes).toBe(FRAME_LAYOUT.size);
     // No VAO re-creation, no attribute re-pointing for the first visual (same ring region).
     expect(gl.named('createVertexArray').length).toBe(0);
     expect(gl.named('enableVertexAttribArray').length).toBe(0);

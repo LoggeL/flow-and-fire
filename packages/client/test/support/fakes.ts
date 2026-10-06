@@ -2,7 +2,7 @@
  * DOM-free fakes for client tests: event targets with dispatch, a canvas surface, synthetic
  * pointer/wheel/keyboard events, a manual rAF and a recording renderer.
  */
-import type { RenderView, TerrainDecal, TerrainDesc, VisualTable } from '@faf/render';
+import type { DynamicDecals, RenderView, TerrainDecal, TerrainDesc, VisualTable } from '@faf/render';
 import type { InputEventTarget, InputSurface } from '../../src/input.ts';
 import type { RafLike, RendererLike } from '../../src/client.ts';
 
@@ -176,6 +176,8 @@ export interface RecordedRender {
   highlightVersion: number | undefined;
   markers: number;
   lines: number;
+  /** Dynamic decals (selection rings + target discs) handed over for this frame. */
+  decals: number;
   timeMs: number;
 }
 
@@ -188,6 +190,13 @@ export class FakeRenderer implements RendererLike {
   last: RenderView | null = null;
   terrain: TerrainDesc | null = null;
   decals: readonly TerrainDecal[] = [];
+  dynamic: DynamicDecals | null = null;
+  dynamicCalls = 0;
+
+  setDynamicDecals(buf: DynamicDecals | null): void {
+    this.dynamic = buf;
+    this.dynamicCalls++;
+  }
 
   setVisuals(table: VisualTable): void {
     this.visuals = table;
@@ -212,6 +221,7 @@ export class FakeRenderer implements RendererLike {
       highlightVersion: view.highlightVersion,
       markers: view.overlays?.markers.length ?? 0,
       lines: view.overlays?.lines.length ?? 0,
+      decals: this.dynamic?.count ?? 0,
       timeMs: view.timeMs,
     });
   }

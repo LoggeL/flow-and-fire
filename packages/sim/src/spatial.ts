@@ -15,7 +15,8 @@ function cellCoord(v: number, shift: number, dim: number): number {
   return c < 0 ? 0 : c >= dim ? dim - 1 : c;
 }
 
-function rebuildGrid(w: World, g: SpatialGrid): void {
+/** Counting-sort rebuild of one grid (phase 8; Movement also refreshes the fine grid before collisions). */
+export function rebuildGrid(w: World, g: SpatialGrid): void {
   const units = w.units;
   const alive = units.alive;
   const flags = units.col.flags;

@@ -1,5 +1,6 @@
 /**
- * Dev console command interpreter (S8, MS2: map/camera/preset). Pure logic over a
+ * Dev console command interpreter (S8, MS2: map/camera/preset, MS3: obstacle/paths/select/watch).
+ * Pure logic over a
  * {@link ConsoleApi}: the game wires it to the client, tests to a fake. Cheats (spawn, kill) go
  * through the command pipeline only.
  */
@@ -40,6 +41,18 @@ export interface ConsoleApi {
   setPreset(name: RenderPresetName): string[];
   /** Active preset. */
   presetName(): RenderPresetName;
+  /** Stamps (or removes) a footprint of w × h cells at cell (x, z) (CheatSub.Footprint); returns the seq. */
+  obstacle(x: number, z: number, w: number, h: number, remove: boolean): number;
+  /** Lines describing the path statistics. */
+  pathInfo(): string[];
+  /** Path overlay on/off (undefined = toggle); returns the new state. */
+  setPathOverlay(on?: boolean): boolean;
+  /** Selects every own unit of blueprint (sim id) `bp`; returns the count. */
+  selectBlueprint(bp: number): number;
+  /** Lines describing the watch data of the selection. */
+  watchInfo(): string[];
+  /** Current selection size. */
+  readonly selectedCount: number;
 }
 
 export interface ConsoleResult {
@@ -60,6 +73,10 @@ export const CONSOLE_HELP: readonly string[] = [
   'map                    – Karte: Name, Größe, Wasser, Starts, Spots, mapSimHash',
   'camera <x> <z> [dist]  – Kamera auf (x, z) WU setzen, optional Abstand in WU',
   'preset [name]          – Render-Preset low|medium|high|ultra (ohne Name: aktuelles)',
+  'obstacle <x> <z> <w> <h> [remove] – Cheat: Hindernis (w×h Zellen à 1 WU, max. 64) setzen/entfernen',
+  'paths [on|off]         – Pfadstatistik; on/off schaltet das Pfad-Overlay',
+  'select <bp>            – alle eigenen Einheiten eines Blueprints auswählen (z. B. lnd_t1_tank)',
+  'watch                  – Watch-Daten (Orders, Wegpunkte) der Auswahl',
   'help                   – diese Hilfe',
 ];
 
@@ -174,6 +191,37 @@ export function runConsoleCommand(line: string, api: ConsoleApi): ConsoleResult 
       if (name === undefined) return fail(`preset: ${RENDER_PRESET_NAMES.join('|')} erwartet`);
       return ok(...api.setPreset(name));
     }
+    case 'obstacle': {
+      const size = api.mapSizeWu();
+      const v = args.slice(0, 4).map((a) => parseIntStrict(a));
+      if (v.length < 4 || v.some((n) => n === null)) return fail('obstacle: <x> <z> <w> <h> [remove] als ganze Zahlen (Zellen = WU) erwartet');
+      const [x, z, w, h] = v as [number, number, number, number];
+      if (w < 1 || h < 1 || w > 64 || h > 64) return fail('obstacle: Breite/Höhe 1–64 Zellen erwartet');
+      if (x + w <= 0 || z + h <= 0 || x >= size || z >= size) return fail(`obstacle: Rechteck liegt außerhalb der Karte (0–${size} WU)`);
+      const extra = args[4]?.toLowerCase();
+      if (extra !== undefined && extra !== 'remove' && extra !== 'rm' && extra !== '-') return fail(`obstacle: unbekannte Option '${args[4]}' (nur "remove")`);
+      const remove = extra !== undefined;
+      const seq = api.obstacle(x, z, w, h, remove);
+      return ok(`obstacle ${remove ? 'entfernt' : 'gesetzt'}: (${x}, ${z}) ${w}×${h} (seq ${seq})`);
+    }
+    case 'paths': {
+      const a = args[0]?.toLowerCase();
+      if (a === 'on' || a === 'off') {
+        const on = api.setPathOverlay(a === 'on');
+        return ok(`Pfad-Overlay ${on ? 'an' : 'aus'}`);
+      }
+      if (a !== undefined) return fail('paths: on|off erwartet');
+      return ok(...api.pathInfo());
+    }
+    case 'select': {
+      if (args[0] === undefined) return fail('select: Blueprint erwartet (z. B. lnd_t1_tank)');
+      const bp = api.resolveBlueprint(args[0]);
+      if (bp === null) return fail(`select: unbekannter Blueprint '${args[0]}'`);
+      const n = api.selectBlueprint(bp);
+      return ok(`select: ${n} Einheiten von bp ${bp} ausgewählt`);
+    }
+    case 'watch':
+      return ok(...api.watchInfo());
     default:
       return fail(`unbekannter Befehl '${words[0] ?? ''}' – "help" zeigt alle Befehle`);
   }

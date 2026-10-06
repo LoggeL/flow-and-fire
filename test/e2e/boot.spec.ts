@@ -11,7 +11,7 @@ import { decodePng, pixelStats } from './support/png.ts';
 for (const server of SERVERS) {
   test(`boot: 1.000 Würfel, ready mit simId – ${server.label}`, async ({ page }, testInfo) => {
     const errors = captureErrors(page);
-    await openGame(page, server.url, '', 1000);
+    await openGame(page, server.url, 'spawn=cubes', 1000);
     await waitTick(page, 10);
 
     const info = await page.evaluate(() => {
@@ -70,6 +70,46 @@ for (const server of SERVERS) {
     writeFileSync(resolve(dir, `boot-${testInfo.project.name}-${server.transport}.json`), JSON.stringify(report, null, 2));
     expect(stats.distinctColors).toBeGreaterThanOrEqual(16);
     expect(stats.dominantShare).toBeLessThan(0.9);
+    expectNoErrors(errors);
+  });
+}
+
+// MS3 default scene: blueprint placeholder tanks (5 core land types, all size classes) instead of
+// cubes, nothing selected, every tank on the terrain, drawn as meshes (with turret) in the start view.
+for (const server of SERVERS) {
+  test(`boot: Standardszene mit Platzhalter-Panzern (MS3) – ${server.label}`, async ({ page }, testInfo) => {
+    const errors = captureErrors(page);
+    await openGame(page, server.url, '', 300);
+    await waitTick(page, 20);
+    const info = await page.evaluate(() => {
+      const h = window.__faf!;
+      const own = h.ownHandles();
+      const types: Record<string, number> = {};
+      for (const bp of ['lnd_t1_tank', 'lnd_t1_arty', 'lnd_t1_scout', 'lnd_t2_tank', 'lnd_t3_heavy']) types[bp] = h.selectBlueprint(bp);
+      h.clearSelection();
+      return {
+        own: own.length,
+        enemy: h.armyUnitCount(1),
+        types,
+        selection: h.selection().length,
+        heights: h.unitHeights(),
+        render: h.renderStats(),
+        zoom: h.zoom(),
+        hostErrors: h.hostErrors,
+      };
+    });
+    await attachJson(testInfo, 'boot-tanks', info);
+    expect(info.own).toBe(150);
+    expect(info.enemy).toBe(150);
+    // Largest-remainder split of the 5:2:2:2:1 mix (apps/game content.ts TANK_MIX).
+    expect(info.types).toEqual({ lnd_t1_tank: 63, lnd_t1_arty: 25, lnd_t1_scout: 25, lnd_t2_tank: 25, lnd_t3_heavy: 12 });
+    expect(info.selection).toBe(0);
+    expect(info.heights.mismatches).toBe(0);
+    expect(info.zoom.level).toBe(0);
+    expect(info.render.drawsByPass.units).toBeGreaterThanOrEqual(5);
+    expect(info.render.drawsByPass.terrain).toBe(1);
+    expect(info.hostErrors).toEqual([]);
+    await expect(page.locator('[data-testid="hud-zoom"]')).toHaveAttribute('data-level', '0');
     expectNoErrors(errors);
   });
 }

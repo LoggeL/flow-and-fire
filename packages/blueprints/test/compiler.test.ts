@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { xxHash32 } from '@faf/fixed';
 import { describe, expect, it } from 'vitest';
 import {
-  BlueprintCompileError,
   canonicalJson,
   compileBlueprints,
   decimalToFx,
@@ -17,40 +16,11 @@ import {
   perSecond2ToFxPerTick2,
   perSecondToFxPerTick,
   SIM_BIN_MAGIC,
-  type BlueprintDefinition,
   type CompileResult,
-  type SourcedDefinition,
-  type UnitBlueprint,
 } from '../src/index.ts';
 import { compileContent, CONTENT_GENERATED, loadDefinitions, staleGenerated } from '../scripts/content.ts';
 
-/** A complete, valid concrete unit for tests. */
-function fullUnit(id: string, over: Partial<UnitBlueprint> = {}): UnitBlueprint {
-  return {
-    id,
-    categories: ['LAND', 'MOBILE'],
-    sim: {
-      health: { max: 100 },
-      motion: { layer: 'land', speed: 3, accel: 3, turnRateDeg: 180, sizeClass: 1, footprint: [1, 1], maxSlope: 0.6 },
-    },
-    view: { placeholder: { hull: 'box', size: [0.5, 0.5, 0.5] } },
-    ...over,
-  };
-}
-
-function src(...defs: BlueprintDefinition[]): SourcedDefinition[] {
-  return defs.map((def, i) => ({ def, source: `mem/${i}.ts` }));
-}
-
-function compileErr(defs: SourcedDefinition[], includeTest = true): BlueprintCompileError {
-  try {
-    compileBlueprints(defs, { includeTest });
-  } catch (e) {
-    expect(e).toBeInstanceOf(BlueprintCompileError);
-    return e as BlueprintCompileError;
-  }
-  throw new Error('expected compilation to fail');
-}
+import { compileErr, fullUnit, src } from './support/fixtures.ts';
 
 describe('mergePatch', () => {
   it('merges objects, deletes with null, replaces primitives/plain arrays and never mutates inputs', () => {
@@ -233,7 +203,8 @@ describe('compileBlueprints', () => {
     expect(simChanged.viewHash).toBe(base.viewHash);
     const catChanged = compileBlueprints(src(defineUnit(fullUnit('core:a', { categories: ['LAND', 'MOBILE', 'TECH2'] }))));
     expect(catChanged.simHash).not.toBe(base.simHash);
-    expect(catChanged.viewHash).toBe(base.viewHash);
+    // view.json v2 lists the categories (UI filters), so categories move both hashes.
+    expect(catChanged.viewHash).not.toBe(base.viewHash);
     // Hashes are xxHash32 over sim.bin and over the compact canonical view.json.
     expect(base.simHash).toBe(xxHash32(base.simBin, 0, base.simBin.length, 0));
     const compact = new TextEncoder().encode(canonicalJson(JSON.parse(base.viewJson)));
@@ -304,10 +275,7 @@ describe('sim.bin', () => {
     expect(t.indexOf('core:zzz')).toBe(-1);
     expect(t.has(2)).toBe(false);
     // Re-encoding the decoded table reproduces the bytes.
-    const again = encodeSimBin(
-      r.units.map((u) => u.sim),
-      t.categoryNames,
-    );
+    const again = encodeSimBin({ units: r.units.map((u) => u.sim), categoryNames: t.categoryNames });
     expect(Buffer.from(again).equals(Buffer.from(r.simBin))).toBe(true);
   });
 
@@ -321,36 +289,61 @@ describe('sim.bin', () => {
     expect(new DataView(good.buffer).getUint32(0, true)).toBe(SIM_BIN_MAGIC);
     expect(() => decodeSimBin(good.subarray(0, 10))).toThrow(/truncated header/);
     expect(() => decodeSimBin(mutate((b) => (b[0] = 0)))).toThrow(/bad magic/);
-    expect(() => decodeSimBin(mutate((_, dv) => dv.setUint16(4, 2, true)))).toThrow(/unsupported version/);
+    expect(() => decodeSimBin(mutate((_, dv) => dv.setUint16(4, 3, true)))).toThrow(/unsupported version 3 \(this build reads 1\.\.2\)/);
+    expect(() => decodeSimBin(mutate((_, dv) => dv.setUint16(4, 0, true)))).toThrow(/unsupported version 0/);
     expect(() => decodeSimBin(good.subarray(0, good.length - 4))).toThrow(/length/);
-    expect(() => decodeSimBin(mutate((_, dv) => dv.setInt32(32 + 12, 0, true)))).toThrow(/invalid values/);
-    expect(() => encodeSimBin([{ ...compileBlueprints(src(defineUnit(fullUnit('core:a')))).units[0]!.sim, maxHp: 0 }], ['A'])).toThrow(/maxHp/);
+    const unitsOff = new DataView(good.buffer).getUint32(16, true);
+    expect(() => decodeSimBin(mutate((_, dv) => dv.setInt32(unitsOff + 12, 0, true)))).toThrow(/invalid values in unit record 0/);
+    const sim0 = compileBlueprints(src(defineUnit(fullUnit('core:a')))).units[0]!.sim;
+    expect(() => encodeSimBin({ units: [{ ...sim0, maxHp: 0 }], categoryNames: ['A'] })).toThrow(/maxHp/);
   });
 });
 
 describe('content', () => {
   let game: CompileResult;
 
-  it('compiles the checked-in content (core:cube extends the abstract core:base_cube)', async () => {
+  it('compiles the checked-in content (core:cube keeps sim id 0 and its MS1 sim values)', async () => {
     game = await compileContent({ includeTest: false });
-    expect(game.units.map((u) => u.id)).toEqual(['core:cube']);
+    expect(game.units.map((u) => u.id)).toEqual([
+      'core:cube',
+      'core:fac_land_t1',
+      'core:lnd_t1_arty',
+      'core:lnd_t1_scout',
+      'core:lnd_t1_tank',
+      'core:lnd_t2_tank',
+      'core:lnd_t3_heavy',
+    ]);
     const cube = game.units[0]!;
+    expect(cube.simId).toBe(0);
     expect(cube.source).toBe('content/blueprints/core/units/cube.ts');
     expect(cube.resolved.extends).toBe('core:base_cube');
     expect(cube.resolved.view.placeholder.hull).toBe('box');
     expect(cube.resolved.view.placeholder.size).toEqual([0.5, 0.5, 0.5]);
-    expect(cube.sim).toMatchObject({ speedPerTick: 1229, turnRatePerTick: 3277, layer: 0, maxHp: 100 });
+    // The MS1 unit record fields of core:cube are unchanged (goldens, test plane).
+    expect(cube.sim).toMatchObject({
+      speedPerTick: 1229,
+      accelPerTick: 123,
+      turnRatePerTick: 3277,
+      layer: 0,
+      sizeClass: 1,
+      maxHp: 100,
+      radius: 1229,
+      vision: 16 * 4096,
+      maxSlope: 2458,
+      footprintW: 1,
+      footprintH: 1,
+    });
     const withTest = await compileContent({ includeTest: true });
-    expect(withTest.units.map((u) => u.id)).toEqual(['core:cube', 'test:fast_cube']);
-    const fast = withTest.units[1]!;
+    expect(withTest.units.map((u) => u.id)).toContain('test:fast_cube');
+    expect(withTest.units[0]!.id).toBe('core:cube');
+    const fast = withTest.units.find((u) => u.id === 'test:fast_cube')!;
     expect(fast.sim.speedPerTick).toBe(perSecondToFxPerTick(8));
     expect(fast.resolved.view.placeholder.hull).toBe('cyl');
     // Loading order is deterministic (sorted paths).
-    expect((await loadDefinitions()).map((d) => d.source)).toEqual([
-      'content/blueprints/core/units/base_cube.ts',
-      'content/blueprints/core/units/cube.ts',
-      'content/blueprints/test/units/fast_cube.ts',
-    ]);
+    const sources = (await loadDefinitions()).map((d) => d.source);
+    expect(sources).toEqual([...sources].sort());
+    expect(sources[0]).toBe('content/blueprints/core/ai/ai_default.ts');
+    expect(sources.at(-1)).toBe('content/blueprints/test/units/fast_cube.ts');
   });
 
   it('content/generated is up to date (run `pnpm --filter @faf/blueprints compile`)', async () => {
@@ -359,10 +352,14 @@ describe('content', () => {
     const hashes = JSON.parse(await readFile(join(CONTENT_GENERATED, 'hashes.json'), 'utf8')) as { simHash: string; viewHash: string };
     expect(hashes.simHash).toBe(`0x${game.simHash.toString(16).toUpperCase().padStart(8, '0')}`);
     const view = parseViewJson(await readFile(join(CONTENT_GENERATED, 'view.json'), 'utf8'));
-    expect(view.visuals.map((v) => v.id)).toEqual(['core:cube']);
+    expect(view.version).toBe(2);
+    expect(view.visuals.map((v) => v.id)).toEqual(game.units.map((u) => u.id));
     expect(view.visuals[0]!.placeholder).toEqual({ hull: 'box', size: [0.5, 0.5, 0.5], color: [0.62, 0.66, 0.72] });
     const bin = new Uint8Array(await readFile(join(CONTENT_GENERATED, 'sim.bin')));
-    expect(decodeSimBin(bin).ids).toEqual(['core:cube']);
+    const t = decodeSimBin(bin);
+    expect(t.version).toBe(2);
+    expect(t.ids).toEqual(game.units.map((u) => u.id));
+    expect(t.indexOf('core:cube')).toBe(0);
     expect(await readFile(join(CONTENT_GENERATED, 'bundle.json'), 'utf8')).not.toMatch(/test:/);
   });
 });

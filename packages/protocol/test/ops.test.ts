@@ -29,7 +29,7 @@ describe('opcodes (append-only)', () => {
       GroupMove: 23,
       Cheat: 250,
     });
-    expect(CheatSub).toEqual({ Spawn: 1, Kill: 2 });
+    expect(CheatSub).toEqual({ Spawn: 1, Kill: 2, Footprint: 3 });
     expect(CmdFlags).toEqual({ Queue: 1 });
   });
 

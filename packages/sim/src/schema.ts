@@ -5,8 +5,9 @@
  * references −1) so the layout is stable across milestones.
  */
 import { MAX_ARMIES } from '@faf/fixed';
-import { defineDense, defineRegion, defineTable } from '@faf/heap';
-import { CAP_UNITS } from './constants.ts';
+import { defineDense, defineRegion, defineSlab, defineTable } from '@faf/heap';
+import { NAV_CAP_PATHS } from '@faf/nav';
+import { CAP_FORMATIONS, CAP_ORDERS, CAP_UNITS } from './constants.ts';
 
 /** World header words (Int32, raw region `world`). */
 export const WH_TICK = 0;
@@ -17,8 +18,23 @@ export const WH_ARMY_COUNT = 4;
 export const WH_MAP_SIZE_WU = 5;
 /** Monotonic spawn counter (rng32 entity index of cheat spawns). */
 export const WH_SPAWN_SERIAL = 6;
-/** Cheat-spawned units rejected because their point was deep water for their layer (M2). */
+/**
+ * Cheat-spawned units rejected because their point was blocked for them (M2: deep water; MS3: a
+ * nav cell not passable for their size class).
+ */
 export const WH_SPAWN_REJECTED = 7;
+/** MS3: move orders given up by the stuck chain (repath → side-step → give up). */
+export const WH_STUCK_GIVEUPS = 8;
+/** MS3: order records dropped because the unit's queue (MAX_ORDERS_PER_UNIT) or the OrderPool was full. */
+export const WH_ORDERS_DROPPED = 9;
+/** MS3: Move commands dropped because the Formations table was full. */
+export const WH_GROUPS_DROPPED = 10;
+/** MS3: CheatSub.Footprint commands rejected (size out of 1..64, delta not ±1). */
+export const WH_FOOTPRINT_REJECTED = 11;
+/** MS3: path requests that could not be issued (nav path table full; the unit steers directly). */
+export const WH_REQUESTS_FAILED = 12;
+/** MS3: units pushed out of freshly blocked cells (footprints). */
+export const WH_UNITS_EVICTED = 13;
 /** Words reserved in the header (the rest is zero). */
 export const WORLD_HEADER_WORDS = 16;
 
@@ -91,24 +107,103 @@ export const Units = defineTable('units', CAP_UNITS, UNITS_SCHEMA);
 
 /** Dense movement component (back-pointer = Units slot; Units.mover points back). */
 export const MOVERS_SCHEMA = {
-  /** Move target (Fx). */
+  /** Slot = final target of the active move (Fx; anchor + offset, adjusted to a reachable cell). */
   tx: 'i32',
   tz: 'i32',
+  /** Anchor = commanded target of the active/last move (Fx): identity of a group for arrival contagion. */
+  ax: 'i32',
+  az: 'i32',
+  /** Current steering point (Fx): waypoint (+ offset), side-step point or slot. */
+  wx: 'i32',
+  wz: 'i32',
   /** Current scalar speed (Fx per tick, ≥ 0). */
   speed: 'i32',
   /** MoverState. */
   state: 'u8',
-  /** MoverBits. */
-  flags: 'u8',
-  /**
-   * Stuck rule: best (smallest) distance to the target reached by the current order (Fx;
-   * NO_BEST_DIST before the first sample) and the number of water-blocked ticks since then.
-   */
+  /** MoverBits (u16). */
+  flags: 'u16',
+  /** Stuck rule: smallest distance to the steering point since the last progress (Fx; NO_BEST_DIST = none). */
   best: 'i32',
+  /** Ticks without progress (stuck rule) and stage of the stuck chain (0 none, 1 repathed, 2 side-stepped). */
   stuck: 'u8',
+  streak: 'u8',
+  /** Smallest distance to the slot in the current order (Fx; NO_BEST_DIST = none): resets the stuck chain. */
+  sbest: 'i32',
+  /** Followed path id (@faf/nav, −1 = none): the group path of the order's formation or an own path. */
+  path: 'i32',
+  /** Waypoint index: group path = absolute index since the path start; own path = 0 (it is consumed directly). */
+  wp: 'i32',
+  /** Generation of the group path seen (Formations.gen; a repath resets wp). */
+  pgen: 'u16',
+  /** Start-up kick ticks left. */
+  launch: 'u8',
+  /** Idle nudge: ticks left and direction (Fx unit vector). */
+  nudge: 'u8',
+  ndx: 'i16',
+  ndz: 'i16',
+  /** Last tick a moving unit pushed this (idle) unit (slot return delay). */
+  pushTick: 'i32',
+  /** Number of queued order records (Units.orderHead … orderTail). */
+  orders: 'u8',
 } as const;
 
 export const Movers = defineDense('movers', CAP_UNITS, MOVERS_SCHEMA);
+
+/**
+ * OrderPool (PLAN §3.5 "Order-Records à 32 B", G7): one slab record per queued order, linked per
+ * unit (Units.orderHead → … → orderTail). Int32 words of a record:
+ */
+export const ORD_TYPE_FLAGS = 0; // OrderType (bits 0–7) | OrderBits << 8
+export const ORD_TX = 1; // commanded target (Fx; the anchor of a group order)
+export const ORD_TZ = 2;
+export const ORD_FORMATION = 3; // Formations slot (−1 = none)
+export const ORD_PATH = 4; // own path of this order (stuck repath; −1 = none)
+export const ORD_NEXT = 5; // next record of the unit's queue (−1 = last)
+export const ORD_OFFSET = 6; // packed group offset (x, z in 1/16 WU, i16 each)
+export const ORD_TICK = 7; // tick the order was created
+export const ORDER_RECORD_WORDS = 8;
+export const OrderPool = defineSlab('orders', ORDER_RECORD_WORDS * 4, CAP_ORDERS);
+
+/**
+ * Formations (PLAN §3.5 "Anker/Slots", §3.8 "Gruppen"): one record per Move command (group of
+ * n ≥ 1 own units; per queue entry), owner of the single path request of the group.
+ */
+export const FORMATIONS_SCHEMA = {
+  army: 'u8',
+  /** Nav class of the group path = largest class of the members. */
+  cls: 'u8',
+  /** FormationState. */
+  state: 'u8',
+  flags: 'u8',
+  /** Path generation (incremented on a corridor repath; members reset their waypoint index). */
+  gen: 'u16',
+  /** Units at creation / order records still referencing the group (freed at 0). */
+  count: 'i32',
+  refs: 'i32',
+  /** Commanded target (Fx). */
+  tx: 'i32',
+  tz: 'i32',
+  /** Effective anchor (Fx): the path goal (retargeted if unreachable), tx/tz before. */
+  gx: 'i32',
+  gz: 'i32',
+  /** Start of the request (Fx): unit nearest to the centroid (queued: its previous slot). */
+  sx: 'i32',
+  sz: 'i32',
+  /** Path id (−1 before the request / if the path table was full). */
+  path: 'i32',
+  /** Waypoints consumed on the shared path (nav cursor) = minimum over the members. */
+  consumed: 'i32',
+  /** Per-tick minimum of the members' waypoint indices (Movement). */
+  minWp: 'i32',
+} as const;
+export const Formations = defineTable('formations', CAP_FORMATIONS, FORMATIONS_SCHEMA);
+
+/**
+ * Owner of every nav path slot (Int32 per path id): formation f ≥ 0, own path of unit slot u as
+ * −2 − u, −1 = none. Rule state (paths are rule state in @faf/nav).
+ */
+export const PathOwner = defineRegion('paths.owner', NAV_CAP_PATHS * 4);
+export const PATH_OWNER_NONE = -1;
 
 /**
  * Static map area (PLAN §3.5 "Bereich statisch"): written once in createWorld, never hashed,

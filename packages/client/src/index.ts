@@ -1,5 +1,5 @@
-// Public API of @faf/client (MS1 main-thread game logic + MS2 map, camera, input, assets;
-// PLAN §3.2/§3.6/§3.7).
+// Public API of @faf/client (MS1 main-thread game logic + MS2 map, camera, input, assets +
+// MS3 selection, control groups, order feedback, strategic zoom; PLAN §3.2/§3.6/§3.7).
 export type { SimLink } from './sim-link.ts';
 export {
   CameraController,
@@ -7,6 +7,7 @@ export {
   MAX_PITCH_OFFSET,
   MIN_EYE_CLEARANCE_WU,
   MIN_ZOOM_DISTANCE_WU,
+  OVERVIEW_DRIFT_START,
   maxDistanceForMap,
 } from './camera-controller.ts';
 export type { CameraControllerOptions, CameraState, PitchCurve } from './camera-controller.ts';
@@ -14,7 +15,9 @@ export { InputController, isTextInputElement } from './input.ts';
 export type { Action, ActionType, DragBox, InputEventTarget, InputOptions, InputSurface } from './input.ts';
 export {
   ActionMap,
+  CONTROL_GROUP_ACTIONS,
   DEFAULT_ACTION_MAP,
+  DIGIT_CODES,
   KEY_ACTIONS,
   PAN_ACTIONS,
   bindingMatches,
@@ -38,9 +41,22 @@ export { ClientMap, HYDRO_SPOT_DECAL, MAP_CHUNK_WU, MASS_SPOT_DECAL } from './ma
 export type { TerrainHeightSource } from './map.ts';
 export { TerrainPicker, PICK_BISECT_WU, PICK_MAX_STEP_WU } from './terrain-picker.ts';
 export type { PickableTerrain } from './terrain-picker.ts';
-export { Selection, interpolatedPos, isOwnUnit } from './selection.ts';
-export type { SelectionMode } from './selection.ts';
+export { ICON_HIT_FADE, ScreenProjection, Selection, interpolatedPos, isOwnUnit } from './selection.ts';
+export { HandleIndex } from './handle-index.ts';
+export { CONTROL_GROUP_COUNT, ControlGroups, DOUBLE_TAP_MS, controlGroupOfCode } from './control-groups.ts';
+export type { ControlGroupOp } from './control-groups.ts';
+export {
+  CommandTargets,
+  MAX_COMMAND_TARGETS,
+  MAX_ROUTE_SEGMENTS,
+  OrderFeedback,
+  QUEUED_COLOR,
+  ROUTE_COLOR,
+  STOP_COLOR,
+} from './order-feedback.ts';
+export type { HeightSource } from './order-feedback.ts';
 export { CommandBuilder, MAX_PENDING_COMMANDS, seqAcked } from './commands.ts';
+export { NAV_LAND_MAX_SLOPE_RAW_REPLICA, landCellBlocked } from './map.ts';
 export type { AckListener, CommandSink } from './commands.ts';
 export { BASE_TICK_MS, FrameStream } from './frames.ts';
 export type { FrameStreamOptions } from './frames.ts';
@@ -59,12 +75,13 @@ export type {
   ClientCanvas,
   GameClientCallbacks,
   GameClientOptions,
+  KeyboardLockLike,
   RafLike,
   RendererLike,
   ScreenPos,
   WorldPick,
 } from './client.ts';
-export { COMMAND_CATEGORY, commanderVisuals, visualTableFromView } from './visuals.ts';
+export { COMMAND_CATEGORY, VisualGeometry, armyColorHex, commanderVisuals, visualTableFromView } from './visuals.ts';
 export type { ModelLookup } from './visuals.ts';
 
 // Assets (P3): manager on the main thread, loader shared with the worker ('@faf/client/asset-worker').
@@ -82,13 +99,21 @@ export type { AssetLoadRequest, AssetLoadStats, AssetSource, AssetWorkerMessage 
 export {
   backbufferSize,
   createRenderer,
+  iconGlyphIndex,
+  iconScreenRect,
+  iconFade,
+  strategicZoom,
+  unitIconFade,
   parsePresetName,
   RtsCamera,
   RAW_PER_WU,
   RENDER_PRESET_NAMES,
   RENDER_PRESETS,
+  ICON_SIZE_PX,
 } from '@faf/render';
 export type {
+  IconAtlasMetrics,
+  StrategicZoom,
   MeshData,
   RenderPresetName,
   Renderer,

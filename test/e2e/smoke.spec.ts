@@ -66,16 +66,26 @@ for (const server of SERVERS) {
     expect(manifestRes.status()).toBe(200);
     expect(manifestRes.headers()['content-type']).toContain('application/json');
     const manifest = (await manifestRes.json()) as { assets: Record<string, { url: string; kind: string; bytes: number }> };
-    const mime: Record<string, string> = { map: 'application/octet-stream', simbin: 'application/octet-stream', viewjson: 'application/json', model: 'model/gltf-binary' };
+    const mime: Record<string, string> = {
+      map: 'application/octet-stream',
+      simbin: 'application/octet-stream',
+      viewjson: 'application/json',
+      model: 'model/gltf-binary',
+      // MS3: MSDF icon atlas (raw RGBA8) + its metrics.
+      iconatlas: 'application/octet-stream',
+      iconmetrics: 'application/json',
+    };
     for (const [id, a] of Object.entries(manifest.assets)) {
       const r = await page.request.get(new URL(a.url, assetBase).toString());
       expect(r.status(), id).toBe(200);
+      expect(mime[a.kind], `known asset kind ${a.kind} (${id})`).toBeDefined();
       expect(r.headers()['content-type'], id).toContain(mime[a.kind]!);
       expect(r.headers()['cache-control'], id).toBe('public, max-age=31536000, immutable');
       expect((await r.body()).length, id).toBe(a.bytes);
       if (server.coi) expect(r.headers()['cross-origin-resource-policy'], id).toBe('same-origin');
     }
     expect(Object.values(manifest.assets).some((a) => a.url.endsWith('.rtsmap'))).toBe(true);
+    expect(Object.values(manifest.assets).some((a) => a.kind === 'iconatlas' && a.url.endsWith('.rgba'))).toBe(true);
     if (server.coi) {
       expect(html.headers()['cross-origin-opener-policy']).toBe('same-origin');
       expect(html.headers()['cross-origin-embedder-policy']).toBe('require-corp');

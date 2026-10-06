@@ -9,6 +9,7 @@ function fakeApi(paused = false) {
   let isPaused = paused;
   let budget = false;
   let preset: RenderPresetName = 'medium';
+  let overlay = false;
   const api: ConsoleApi = {
     resolveBlueprint: (name) => (name === 'core:cube' || name === '0' ? 0 : name === 'core:tank' || name === '1' ? 1 : null),
     defaultBlueprint: 0,
@@ -53,6 +54,24 @@ function fakeApi(paused = false) {
       return [`preset ${name}`];
     },
     presetName: () => preset,
+    obstacle: (x, z, w, h, remove) => {
+      calls.push(`obstacle ${x} ${z} ${w} ${h} ${remove ? 'remove' : 'add'}`);
+      return ++seq;
+    },
+    pathInfo: () => ['Tick 5: Anfragen 3'],
+    setPathOverlay: (on) => {
+      overlay = on ?? !overlay;
+      calls.push(`overlay ${overlay}`);
+      return overlay;
+    },
+    selectBlueprint: (bp) => {
+      calls.push(`select ${bp}`);
+      return 7;
+    },
+    watchInfo: () => ['beobachtet: 3'],
+    get selectedCount() {
+      return 7;
+    },
   };
   return { api, calls };
 }
@@ -173,5 +192,35 @@ describe('ConsoleHistory', () => {
     expect(h.next()).toBe('');
     h.push('e');
     expect(h.prev()).toBe('e');
+  });
+});
+
+describe('dev console commands (MS3)', () => {
+  it('obstacle <x> <z> <w> <h> [remove]: validated, goes to the API', () => {
+    const { api, calls } = fakeApi();
+    expect(runConsoleCommand('obstacle 100 120 4 6', api).ok).toBe(true);
+    expect(runConsoleCommand('obstacle 100 120 4 6 remove', api).ok).toBe(true);
+    expect(calls).toEqual(['obstacle 100 120 4 6 add', 'obstacle 100 120 4 6 remove']);
+    expect(runConsoleCommand('obstacle 1 2 3', api).ok).toBe(false);
+    expect(runConsoleCommand('obstacle 1 2 65 3', api).ok).toBe(false);
+    expect(runConsoleCommand('obstacle 1 2 0 3', api).ok).toBe(false);
+    expect(runConsoleCommand('obstacle 600 2 3 3', api).ok).toBe(false);
+    expect(runConsoleCommand('obstacle 1 2 3 3 banana', api).ok).toBe(false);
+    expect(runConsoleCommand('obstacle 1.5 2 3 3', api).ok).toBe(false);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('paths [on|off], select <bp>, watch', () => {
+    const { api, calls } = fakeApi();
+    expect(runConsoleCommand('paths', api).lines).toEqual(['Tick 5: Anfragen 3']);
+    expect(runConsoleCommand('paths on', api).lines).toEqual(['Pfad-Overlay an']);
+    expect(runConsoleCommand('paths off', api).lines).toEqual(['Pfad-Overlay aus']);
+    expect(runConsoleCommand('paths maybe', api).ok).toBe(false);
+    expect(runConsoleCommand('select core:tank', api).lines[0]).toMatch(/7 Einheiten von bp 1/);
+    expect(runConsoleCommand('select nothing', api).ok).toBe(false);
+    expect(runConsoleCommand('select', api).ok).toBe(false);
+    expect(runConsoleCommand('watch', api).lines).toEqual(['beobachtet: 3']);
+    expect(calls).toEqual(['overlay true', 'overlay false', 'select 1']);
+    for (const c of ['obstacle', 'paths', 'select', 'watch']) expect(CONSOLE_HELP.some((l) => l.startsWith(c))).toBe(true);
   });
 });
