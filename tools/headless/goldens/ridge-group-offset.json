@@ -1,7 +1,7 @@
 {
   "format": "faf-golden",
   "version": 3,
-  "simBuild": "faf-sim/ms6.4-commander-enhancements",
+  "simBuild": "faf-sim/ms6.5-allied-projectile-passthrough",
   "scenario": "ridge-group-offset",
   "ticks": 3600,
   "seed": "0x5eed0005",

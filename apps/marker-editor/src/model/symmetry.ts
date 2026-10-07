@@ -24,7 +24,7 @@ import type { EditorDocument } from './document.ts';
 import { EMPTY_BATCH, type EditorOp } from './ops.ts';
 import type { MarkerRef, SymmetryMode } from './types.ts';
 
-export const SYMMETRY_MODES: readonly SymmetryMode[] = ['none', 'point', 'mirrorX', 'mirrorZ', 'diagonal', 'antiDiagonal'];
+export { MIRROR_MODES, SYMMETRY_MODES } from './types.ts';
 /** Seed of a mirrored field = seed XOR this constant (golden-ratio constant, involutive). */
 export const MIRROR_SEED_XOR = 0x9e3779b9;
 

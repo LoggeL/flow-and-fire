@@ -1,6 +1,8 @@
 # Einheiten-Modelle: Kitbash-Kit, Konventionen, Stand
 
-**Stand 2026-09-29 (main, nach Merge von `models2`): alle vier Fraktionen vollständig (220 Modelle, davon 21 T4).** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
+**Detail-Review 2026-10-02:** Sieben mobile Varkan-Modelle sind mit zusätzlicher mechanischer Geometrie im Spiel integriert. [Vergleich, Budgets und Laufzeitnachweise](model-detail-subset-2026-10-02/README.md). Sechs spielbare Gebäude ergänzen das zweite Subset mit Produktionstoren, Extraktorpumpen und Radarrotation: [Gebäude und Animationen](model-activity-subset-2026-10-02/README.md). Die folgende Bestandsaufnahme beschreibt die ursprüngliche Modellbasis.
+
+**Ausgangsbasis 2026-09-29 (main, nach Merge von `models2`): alle vier Fraktionen vollständig (220 Modelle, davon 21 T4).** Die Modelle sind reine Content-Daten mit Werkzeugen. Ins Spiel
 (`packages/render`, `packages/sim`, `packages/client`) ist noch nichts integriert, das passiert in den
 Meilensteinen (siehe Abschnitt 4). Detailbeleg: [`docs/status/MODELS-foundation.md`](../status/MODELS-foundation.md).
 Anleitung für Autoren: [`content/models/README.md`](../../content/models/README.md).

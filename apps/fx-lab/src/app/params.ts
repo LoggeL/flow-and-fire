@@ -13,12 +13,16 @@
  * | freeze | –                                        | simulate to T seconds, then hold the frame           |
  * | bench  | 0                                        | 1 = HUD off                                          |
  * | flight | 0                                        | 1 = slow camera flight                               |
- * | fx     | 1                                        | 0 = transparent FX (shields/particles/beams) off     |
+ * | fx     | 1                                        | 0 = transparent FX off; or a list of the parts drawn |
+ * |        |                                          | (`shields,particles,beams`, e.g. `fx=shields`)       |
+ * | gpuseg | fine                                     | GPU timer segments: fine (6, FX inside the pass) or  |
+ * |        |                                          | pass (shadow / scene / post, pass boundaries only)   |
+ * | cam    | –                                        | camera override `dist,pitch,heading[,x,z]` (WU, °)   |
  *
  * Invalid values fall back to the default and add a warning.
  */
 import { parsePresetName } from '@faf/render';
-import type { LabParams, SceneName } from './context.ts';
+import type { LabCameraOverride, LabFxParts, LabGpuSegMode, LabParams, SceneName } from './context.ts';
 import { SCENE_NAMES } from './context.ts';
 
 /** Largest accepted `freeze` value in seconds (the catch-up simulates every step up to it). */
@@ -31,6 +35,32 @@ function parseBool(v: string | null, def: boolean, name: string, warnings: strin
   if (s === '0' || s === 'false' || s === 'off' || s === 'no') return false;
   warnings.push(`${name}='${v}' is not a boolean (0/1) – using ${def ? 1 : 0}`);
   return def;
+}
+
+const FX_ALL: LabFxParts = { shields: true, particles: true, beams: true };
+const FX_NONE: LabFxParts = { shields: false, particles: false, beams: false };
+const FX_PART_NAMES = ['shields', 'particles', 'beams'] as const;
+
+/** `fx=`: a boolean (all / none) or a comma list of FX parts. */
+function parseFxParts(v: string | null, warnings: string[]): LabFxParts {
+  if (v === null) return FX_ALL;
+  const s = v.trim().toLowerCase();
+  if (s === '1' || s === 'true' || s === 'on' || s === 'yes') return FX_ALL;
+  if (s === '0' || s === 'false' || s === 'off' || s === 'no') return FX_NONE;
+  const parts = s.split(',').map((x) => x.trim());
+  if (parts.length > 0 && parts.every((x) => (FX_PART_NAMES as readonly string[]).includes(x))) {
+    return { shields: parts.includes('shields'), particles: parts.includes('particles'), beams: parts.includes('beams') };
+  }
+  warnings.push(`fx='${v}' is neither 0/1 nor a list of shields,particles,beams – using 1`);
+  return FX_ALL;
+}
+
+function parseGpuSeg(v: string | null, warnings: string[]): LabGpuSegMode {
+  if (v === null) return 'fine';
+  const s = v.trim().toLowerCase();
+  if (s === 'fine' || s === 'pass') return s;
+  warnings.push(`gpuseg='${v}' is not 'fine' or 'pass' – using 'fine'`);
+  return 'fine';
 }
 
 function isSceneName(s: string): s is SceneName {
@@ -77,7 +107,18 @@ export function parseLabParams(search: string, available: (name: SceneName) => b
     else warnings.push(`freeze='${freezeRaw}' is not a time in [0, ${MAX_FREEZE_S}] s – not freezing`);
   }
 
+  let cam: LabCameraOverride | undefined;
+  const camRaw = q.get('cam');
+  if (camRaw !== null) {
+    const v = camRaw.split(',').map((x) => Number(x));
+    const ok = (v.length === 3 || v.length === 5) && v.every((x) => Number.isFinite(x)) && v[0]! >= 4 && v[0]! <= 900 && v[1]! >= 5 && v[1]! <= 89;
+    if (ok) cam = { distanceWu: v[0]!, pitchDeg: v[1]!, headingDeg: v[2]!, targetWu: v.length === 5 ? [v[3]!, v[4]!] : null };
+    else warnings.push(`cam='${camRaw}' is not 'dist,pitch,heading[,x,z]' (dist 4..900, pitch 5..89) – using the scene camera`);
+  }
+
+  const fxParts = parseFxParts(q.get('fx'), warnings);
   return {
+    ...(cam !== undefined ? { cam } : {}),
     scene,
     preset,
     hdr: parseBool(q.get('hdr'), true, 'hdr', warnings),
@@ -88,7 +129,9 @@ export function parseLabParams(search: string, available: (name: SceneName) => b
     freeze,
     bench: parseBool(q.get('bench'), false, 'bench', warnings),
     flight: parseBool(q.get('flight'), false, 'flight', warnings),
-    fx: parseBool(q.get('fx'), true, 'fx', warnings),
+    fx: fxParts.shields || fxParts.particles || fxParts.beams,
+    fxParts,
+    gpuSeg: parseGpuSeg(q.get('gpuseg'), warnings),
   };
 }
 
@@ -105,6 +148,13 @@ export function labParamsToSearch(p: LabParams): string {
   if (p.freeze !== null) q.set('freeze', String(p.freeze));
   if (p.bench) q.set('bench', '1');
   if (p.flight) q.set('flight', '1');
+  const f = p.fxParts;
   if (!p.fx) q.set('fx', '0');
+  else if (!(f.shields && f.particles && f.beams)) q.set('fx', FX_PART_NAMES.filter((k) => f[k]).join(','));
+  if (p.gpuSeg !== 'fine') q.set('gpuseg', p.gpuSeg);
+  if (p.cam !== undefined) {
+    const c = p.cam;
+    q.set('cam', [c.distanceWu, c.pitchDeg, c.headingDeg, ...(c.targetWu ?? [])].join(','));
+  }
   return `?${q.toString()}`;
 }

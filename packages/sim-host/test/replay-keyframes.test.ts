@@ -4,6 +4,7 @@
  * under a small budget, timeline branches (discardAfter), the asynchronous native path and
  * foreign-session snapshots.
  */
+import { Buffer } from 'node:buffer';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { decodeSimBin, type SimBpTable } from '@faf/blueprints/simbin';
 import { deflateRaw, FormatError, inflateRaw } from '@faf/formats';
@@ -206,7 +207,7 @@ describe('timeline and capture paths', () => {
     expect(sim.tick).toBe(600);
     runScenario(sim, 1300, () => store.maybeCapture(sim.core));
     expect(store.count).toBe(3);
-    expect(store.bytesAt(2)).toEqual(kf1200); // deterministic state + canonical fflate bytes
+    expect(Buffer.compare(store.bytesAt(2), kf1200), 'recaptured tick-1200 keyframe bytes').toBe(0); // deterministic state + canonical fflate bytes
   });
 
   it('inserts keyframes captured out of order (replay re-simulation) without dropping later ones', () => {
@@ -221,7 +222,7 @@ describe('timeline and capture paths', () => {
     big.set(store.bytesAt(1), 50);
     s.captureBytes(1800, big.subarray(50, 50 + store.bytesAt(1).length), store.snapshotByteLength);
     expect(s.bytesAt(3).buffer).not.toBe(big.buffer);
-    expect(s.bytesAt(3)).toEqual(store.bytesAt(1));
+    expect(Buffer.compare(s.bytesAt(3), store.bytesAt(1)), 'copied keyframe view bytes').toBe(0);
   });
 
   it('captureAsync (native CompressionStream) restores to the same hashes as the synchronous path', async () => {
@@ -251,7 +252,7 @@ describe('timeline and capture paths', () => {
     // Cross-decoding: fflate reads the native stream and the native decoder reads fflate's.
     const nativeBytes = asyncStore.bytesAt(0);
     const fflateBytes = syncStore.bytesAt(0);
-    expect(inflateRaw(nativeBytes, asyncStore.snapshotByteLength)).toEqual(await inflateRawNative(fflateBytes, syncStore.snapshotByteLength));
+    expect(Buffer.compare(inflateRaw(nativeBytes, asyncStore.snapshotByteLength), await inflateRawNative(fflateBytes, syncStore.snapshotByteLength)), 'native/fflate cross-decoded snapshot bytes').toBe(0);
   });
 
   it('an async capture whose tick left the timeline meanwhile is dropped', async () => {
@@ -288,10 +289,10 @@ describe('native deflate helpers', () => {
     for (let i = 0; i < data.length; i++) data[i] = (i % 251) ^ ((i >>> 10) & 0xff);
     const native = await deflateRawNative(data);
     expect(native.length).toBeLessThan(data.length / 5);
-    expect(await inflateRawNative(native, data.length)).toEqual(data);
-    expect(inflateRaw(native, data.length)).toEqual(data);
-    expect(await inflateRawNative(deflateRaw(data), data.length)).toEqual(data);
-    expect(await inflateRawNative(await deflateRawNative(new Uint8Array(0)), 0)).toEqual(new Uint8Array(0));
+    expect(Buffer.compare(await inflateRawNative(native, data.length), data), 'native deflate/native inflate bytes').toBe(0);
+    expect(Buffer.compare(inflateRaw(native, data.length), data), 'native deflate/fflate inflate bytes').toBe(0);
+    expect(Buffer.compare(await inflateRawNative(deflateRaw(data), data.length), data), 'fflate deflate/native inflate bytes').toBe(0);
+    expect(Buffer.compare(await inflateRawNative(await deflateRawNative(new Uint8Array(0)), 0), new Uint8Array(0)), 'empty native roundtrip bytes').toBe(0);
   });
 
   it('reports bad data, wrong lengths and bombs as FormatError', async () => {

@@ -27,6 +27,7 @@
     "core:wpn_cannon_t1": { "sound": "wpn_cannon_t1_fire", "impact": "shell" },
     "core:wpn_bolt_cannon_t1": { "sound": "wpn_cannon_t1_fire", "rate": 0.92, "impact": "shell" },
     "core:wpn_reeve_cannon": { "sound": "wpn_reeve_cannon_fire", "impact": "shell" },
+    "core:wpn_reeve_cannon_enhanced": { "sound": "wpn_reeve_cannon_fire", "impact": "shell" },
     "core:wpn_reeve_tapshot": { "sound": "wpn_reeve_tapshot_fire", "impact": "missile" },
     "core:wpn_mg_t1": { "sound": "wpn_mg_t1_fire", "impact": "bullet" },
     "core:wpn_spark_mg_t1": { "sound": "wpn_mg_t1_fire", "rate": 1.2, "gainDb": -3, "impact": "bullet" },

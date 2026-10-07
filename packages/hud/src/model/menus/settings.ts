@@ -43,6 +43,7 @@ export interface SettingsValues {
   readonly alertText: boolean;
   // game & language
   readonly locale: 'de' | 'en';
+  readonly backgroundAnimation: boolean;
   readonly edgePan: boolean;
   readonly tooltips: 'short' | 'full' | 'off';
   readonly pauseInBackground: boolean;
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   reducedMotion: 'system',
   alertText: true,
   locale: 'de',
+  backgroundAnimation: true,
   edgePan: true,
   tooltips: 'full',
   pauseInBackground: true,

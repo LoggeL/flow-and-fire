@@ -167,7 +167,7 @@ export class AlertQueue {
   /** Number of pending (not yet announced) alerts. */
   get size(): number {
     let n = 0;
-    for (const p of this.pending) if (p.active) n++;
+    for (let i = 0; i < this.pending.length; i++) if (this.pending[i]!.active) n++;
     return n;
   }
 
@@ -197,7 +197,7 @@ export class AlertQueue {
       this.stats.unknown++;
       return false;
     }
-    const hasPos = req.x !== undefined && req.z !== undefined && Number.isFinite(req.x) && Number.isFinite(req.z);
+    const hasPos = req.located !== false && req.x !== undefined && req.z !== undefined && Number.isFinite(req.x) && Number.isFinite(req.z);
     const x = hasPos ? (req.x as number) : 0;
     const z = hasPos ? (req.z as number) : 0;
     const intervalMs = rule !== undefined && rule.repeatMs !== null ? rule.repeatMs : sound.cooldownMs;
@@ -250,7 +250,8 @@ export class AlertQueue {
    * (history, `onAlert`) even if the sink drops the voice (engine locked, muted, not loaded).
    */
   update(nowMs: number, sink: SoundSink): void {
-    for (const p of this.pending) {
+    for (let i = 0; i < this.pending.length; i++) {
+      const p = this.pending[i]!;
       if (p.active && nowMs - p.pushedMs > this.maxAgeMs) {
         p.active = false;
         this.stats.expired++;
@@ -261,7 +262,8 @@ export class AlertQueue {
       this.current = null;
     }
     let best: Pending | null = null;
-    for (const p of this.pending) {
+    for (let i = 0; i < this.pending.length; i++) {
+      const p = this.pending[i]!;
       if (!p.active) continue;
       if (best === null || p.priority > best.priority || (p.priority === best.priority && p.seq < best.seq)) best = p;
     }
@@ -333,7 +335,7 @@ export class AlertQueue {
 
   /** Drops pending alerts and forgets repeat state (history stays). */
   clear(): void {
-    for (const p of this.pending) p.active = false;
+    for (let i = 0; i < this.pending.length; i++) this.pending[i]!.active = false;
     this.kinds.clear();
     this.current = null;
   }
@@ -365,7 +367,8 @@ export class AlertQueue {
   /** A free slot, or the slot of the lowest-priority (then oldest) entry if `priority` beats it. */
   private freeSlot(priority: number): Pending | null {
     let victim: Pending | null = null;
-    for (const p of this.pending) {
+    for (let i = 0; i < this.pending.length; i++) {
+      const p = this.pending[i]!;
       if (!p.active) return p;
       if (victim === null || p.priority < victim.priority || (p.priority === victim.priority && p.seq < victim.seq)) victim = p;
     }

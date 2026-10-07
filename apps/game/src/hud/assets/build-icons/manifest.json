@@ -47,8 +47,8 @@
         "azimuth": 35,
         "elevation": 22
       },
-      "modelSha256": "72935d2f815f63be993e92c3865c14aa3c2893abdaca0729e9dcbe28868d356a",
-      "sha256": "883a3f0757db72c82ff95341f328096c66c4524f9b7df3df8dbfd25635e4b8a0"
+      "modelSha256": "37ed013b0e9e741bb78940cc91211cce8b63043a91fb9520647b710c0701f2ae",
+      "sha256": "4473d0b9a18ef6a6103ee062da2d9daf4bf068b8cd9a1762d888df92b1a2f56e"
     },
     {
       "mesh": "units/varkan/lnd_t1_arty",
@@ -57,8 +57,8 @@
         "azimuth": 35,
         "elevation": 28
       },
-      "modelSha256": "d60cef92150884340e137839c4b5942d35fc0bd2fc35e367421f8aeb3573f524",
-      "sha256": "8db34ed44e1c9f76a02455ab9c01a24b94a9fe1625050b440afe4fa219d3143d"
+      "modelSha256": "e1e7a22c8807cdae2d7da2a0228eef616fa6ddfd32d985031d93f5756de459b2",
+      "sha256": "29e4215647bad5aa8700f3dd704f7843ebd7d941303a752df70f644165583ed2"
     },
     {
       "mesh": "units/varkan/lnd_t1_engineer",
@@ -67,8 +67,8 @@
         "azimuth": 35,
         "elevation": 28
       },
-      "modelSha256": "dff172d5f78c8cbb25acf3f7d6f326b5dfc64dd026d507f65e73c64c5a660b69",
-      "sha256": "1ea935c6c027d5c751bb3b5165e5baf8255042d705047bc66c0bd7a3eaede633"
+      "modelSha256": "0e80672b91d0ad872505fb438d6fe65b2c5ff64c04746361dbb95f3a266d05b3",
+      "sha256": "295f3ca0b9313bdcd4f37521f1ca7e80d764f6665ccc5ab1fedbf0d730fcd939"
     },
     {
       "mesh": "units/varkan/lnd_t1_scout",
@@ -77,8 +77,8 @@
         "azimuth": 35,
         "elevation": 28
       },
-      "modelSha256": "ce6b9e2b52f9f8b73b101ada4d3a06b063a32b43eed4816e696e8a46c7c183ba",
-      "sha256": "038a567082fb2554347a05c274c483bdba519d5b6586620c41e5172efad309ea"
+      "modelSha256": "bac7703b9ea1fa96d6d902a466d784f10d76a41b816a9cda27a4e68b980e9aa5",
+      "sha256": "43788135997f79d10604efc73a94d7b4875731cca442b40689e72fc3e89230ee"
     },
     {
       "mesh": "units/varkan/lnd_t1_tank",
@@ -87,8 +87,8 @@
         "azimuth": 35,
         "elevation": 28
       },
-      "modelSha256": "25b22c76113fd035feb1d89be26098fd9bb2fe9f3b9d8ee367e5380cd07e3943",
-      "sha256": "aa7f49a2dcea12be5d405bb15d52b02741c3ee23967d363cb100608cc02275f4"
+      "modelSha256": "ed4e90e3f18b37e3bf94bf8d7674e6d72fd6a737ab163494e39237665b85878f",
+      "sha256": "ba11a1e745300da12b51bc98893f64ea07c828472c45d903ad26e29e4bcef31b"
     },
     {
       "mesh": "units/varkan/lnd_t2_tank",
@@ -97,8 +97,8 @@
         "azimuth": 35,
         "elevation": 28
       },
-      "modelSha256": "daeeee604aae49d1ce6426a6be01d1937dc7d166776ce4badc4bf893c9e27dcf",
-      "sha256": "ca10bafca747c67bd5839b0440ad820e4b3885c3b1c3cf82977b611e76210148"
+      "modelSha256": "c1e2f3b660991c207c0a5407226c5ee4618e3fec834dce04109e1b86c081237f",
+      "sha256": "c75071039280c69b557493ec7ee4292e937bef61ec7c2c70195434113fb85d1f"
     },
     {
       "mesh": "units/varkan/lnd_t3_bot",
@@ -107,8 +107,8 @@
         "azimuth": 35,
         "elevation": 22
       },
-      "modelSha256": "07cdf6c84a214b4cc337bbf8f741f2be6765e00e0c9147a1b02f715964ca8c68",
-      "sha256": "b2dacbe266a154b5f190a48c6c7a7423f053d49827b4060f5feca285eb6ec93d"
+      "modelSha256": "964c5d32a415706fdaadba1de33c050d45e5fcbcd8f95d942c9d4c0b40c947c7",
+      "sha256": "f0e1e912e8bf4504f12f364ffc3b3af534a1090ca754692fd8ecd5509413a76c"
     },
     {
       "mesh": "units/varkan/str_t1_estore",
@@ -127,8 +127,8 @@
         "azimuth": 35,
         "elevation": 36
       },
-      "modelSha256": "6ddc83ae41aff785394264416897870b033a3b0929fbe6a7054c8138cb4f83cc",
-      "sha256": "9628fee5d37806907e065e92a356d4f26417a5f69e72ae30d60ba01d0c48a89f"
+      "modelSha256": "5a4a7c7719ef1d5aacab8771f045d8e9e3d240b9dba149f6c63e4c5d68af2fea",
+      "sha256": "14c9ce10a43dfbff0f856fd2d22b4af38a47c6ecbc931448abc5d677de6755db"
     },
     {
       "mesh": "units/varkan/str_t1_mex",
@@ -137,8 +137,8 @@
         "azimuth": 35,
         "elevation": 36
       },
-      "modelSha256": "fe5125304099ca29bc32d82b69c470f366c2d78c57db1d268ef24da414cc3b43",
-      "sha256": "4641488739f75f353e6bc7b39fa90ee2518408d13e15ecf8e009b379d189612d"
+      "modelSha256": "b863e6f157c6a8eb39ecb79c2c5d3d09df027d3da64e592244034bca65a12a07",
+      "sha256": "e46178db3ace8bcecc9dabe9c9c5e5a9f0820f8f6865629cf198bc6f0399d0a1"
     },
     {
       "mesh": "units/varkan/str_t1_pd",
@@ -147,8 +147,8 @@
         "azimuth": 35,
         "elevation": 36
       },
-      "modelSha256": "c63cc534b0c263c8ee47b8984f499c8f493967f5988f76a4f2c6ff80428ec3d5",
-      "sha256": "139579ca482b7592bbd1970375ac37a1b6f693c7e9b4eca5e225a245f1cc4682"
+      "modelSha256": "46d0c7c7428d3788cc2bcf32107594be11a978386c6cadbd453552ba11488442",
+      "sha256": "f764fe13346e64639edfc21be67b0d8a11bce49ebe99794bf6bd8dda3d3eeadb"
     },
     {
       "mesh": "units/varkan/str_t1_pgen",
@@ -167,8 +167,8 @@
         "azimuth": 48,
         "elevation": 36
       },
-      "modelSha256": "4d46f6a4ff7e5eeb4d2e10d632e5d61352324f67ba6245d25b96b5aef508aa6d",
-      "sha256": "8e836ffce149ac9e96e14c246232e25c5e77518aa061a0284596578313f7eb9d"
+      "modelSha256": "2b15dff2f8d6ff544b634f66a351a6c24d6b211d992bd404fd52b03e4a6fba3b",
+      "sha256": "8fbf342b60321fad8454db951f3cd0dabb6622f28770b256a6ea805809491af3"
     },
     {
       "mesh": "units/varkan/str_t2_fac_land",
@@ -177,8 +177,8 @@
         "azimuth": 35,
         "elevation": 36
       },
-      "modelSha256": "1759983f2d78a0979b489c0da7cfa248f9dff3c72c801d4280a9204af647595f",
-      "sha256": "226cf6f307ff4417698e0de2c524a18261737cafc6d160482a70a3b8eea4dcb1"
+      "modelSha256": "b3d9c40ada389eab8ac1461e6fae0556f9e71fbd3acbab8391faeda948686af7",
+      "sha256": "db25d3beb7c6f01221a0ef055a8baafe77b348391226fb58259adfb622d9940c"
     },
     {
       "mesh": "units/varkan/str_t2_mex",
@@ -187,8 +187,8 @@
         "azimuth": 35,
         "elevation": 36
       },
-      "modelSha256": "5443f6c3bcf80b71b87d6eaf608b8251dfef58479e712e8b10a3e76128068c98",
-      "sha256": "0e34881d3ebac85c5688af725f0b68e35f27c3fb87f72b0469c99f45d754b696"
+      "modelSha256": "4bdfe92ffd0482496403044e73fd7c027ca98c7ea390ee0f2b9c9c308b966bd1",
+      "sha256": "294d33b05fa3e1199964ff1c32c63eac9d72ff15faab6d7724da4b4b4588c438"
     },
     {
       "mesh": "units/varkan/str_t3_fac_land",

@@ -27,7 +27,7 @@ function play(r: Rig, sound: string | number, extra: Partial<PlayRequest> = {}):
 }
 
 describe('VoiceManager: routing and start', () => {
-  it('routes each category to its bus: source > gain > panner > input > user > duck > master > mute > limiter', async () => {
+  it('routes each category to its bus: source > gain > panner > input > user > duck > master > mute > limiter > makeup > clip', async () => {
     const r = await makeRig(loadRealManifest());
     const g = r.mixer.graph;
     const cases: [string, keyof typeof g.input][] = [
@@ -56,6 +56,8 @@ describe('VoiceManager: routing and start', () => {
         g.user.master,
         g.mute,
         g.limiter,
+        g.makeup,
+        g.clip,
         r.ctx.destination,
       ];
       expect(path.length, name).toBe(expected.length);

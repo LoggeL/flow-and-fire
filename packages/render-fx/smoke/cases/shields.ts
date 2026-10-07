@@ -1,6 +1,7 @@
 /**
  * Shields smoke case (rfx-p4): 20 shield bubbles (radii 6–14 WU) on a 5 × 4 grid seen obliquely from
- * above – roughly screen-filling. Shield 7 receives 4 simultaneous hits at t = 0.3 s and a 5th at 0.4 s,
+ * above – roughly screen-filling. Shield 7 receives 4 simultaneous hits at t = 2.1 s and a 5th at 2.2 s
+ * (late, so the 150 frames give stable GPU medians),
  * other shields get periodic hits; one shield has low HP (red, flickering), one cycles its power state.
  *
  * Checks: exactly one draw; Fresnel (rim pixels brighter than the interior of shield 7); the ripples change
@@ -23,8 +24,8 @@ const LOW_HP_SHIELD = 15;
 const CYCLE_SHIELD = 19;
 /** Shields used by the Fresnel check (no periodic hits). */
 const FRESNEL_SHIELDS = [6, 8, 11];
-const T_HIT = 0.3;
-const T_HIT5 = 0.4;
+const T_HIT = 2.1;
+const T_HIT5 = 2.2;
 
 const GROUND_VS = /* glsl */ `#version 300 es
 precision highp float;
@@ -203,7 +204,7 @@ function meanLum(ctx: SmokeContext, x: number, y: number): number {
 
 export const smokeCase: SmokeCase = {
   name: 'shields',
-  frames: 40,
+  frames: 150,
   segments: ['scene', 'ground', 'fill', 'fillBase'],
   setup(ctx) {
     const dev = ctx.dev;
@@ -305,6 +306,17 @@ export const smokeCase: SmokeCase = {
       const inner = meanLum(ctx, ix, iy);
       if (!(rim > inner + 15)) errors.push(`shield ${idx}: rim luma ${rim.toFixed(0)} not brighter than interior ${inner.toFixed(0)} (Fresnel)`);
     }
+    // The offscreen fill target (GPU measurement) is really covered by the shields: sample a 16 × 9 grid.
+    drawFill(ctx, t, true);
+    const grid = new Uint8Array(4);
+    let covered = 0;
+    for (let gy = 0; gy < 9; gy++) {
+      for (let gx = 0; gx < 16; gx++) {
+        ctx.dev.readTexture(fillColor, { x: Math.round((gx + 0.5) * (ctx.width / 16)), y: Math.round((gy + 0.5) * (ctx.height / 9)), width: 1, height: 1 }, grid);
+        if (grid[0]! + grid[1]! + grid[2]! > 12) covered++;
+      }
+    }
+    if (covered < 16 * 9 * 0.9) errors.push(`fill target only ${covered}/144 samples covered by shields`);
     // Ripples change shield 7 against the pre-hit snapshot.
     if (snapshot === null) errors.push('no pre-hit snapshot of shield 7');
     else {

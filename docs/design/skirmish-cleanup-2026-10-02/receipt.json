@@ -1,0 +1,609 @@
+{
+  "build": "fe36046fb0cb-de87f019b",
+  "nativeFinal": {
+    "cases": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "durationMs": 59025.83,
+    "engines": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ]
+  },
+  "nativeSkirmish": {
+    "cases": 3,
+    "passed": 3
+  },
+  "nativeAdjacentMainMenu": {
+    "cases": 9,
+    "passed": 9,
+    "build": "fe36046fb0cb-de87f019b"
+  },
+  "unit": {
+    "files": 64,
+    "passed": 538,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": {
+    "fullLintAndDependencies": "passed",
+    "finalChangedFileLint": "passed",
+    "productionBuild": "passed",
+    "typecheck": "passed"
+  },
+  "native": [
+    {
+      "browser": "chromium",
+      "build": "fe36046fb0cb-de87f019b",
+      "layouts": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "widths": {
+            "viewport": 1440,
+            "html": 1440,
+            "body": 1440
+          },
+          "preview": {
+            "x": 229.75,
+            "y": 207.375,
+            "width": 432,
+            "height": 432
+          },
+          "panels": [
+            {
+              "x": 162,
+              "y": 118,
+              "right": 729.515625,
+              "bottom": 830.375
+            },
+            {
+              "x": 749.515625,
+              "y": 118,
+              "right": 1275,
+              "bottom": 681.71875
+            }
+          ],
+          "actions": [
+            {
+              "x": 160,
+              "y": 840,
+              "width": 76.78125,
+              "height": 44
+            },
+            {
+              "x": 1100,
+              "y": 840,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "widths": {
+            "viewport": 390,
+            "html": 390,
+            "body": 390
+          },
+          "preview": {
+            "x": 35,
+            "y": 168.375,
+            "width": 317,
+            "height": 317
+          },
+          "panels": [
+            {
+              "x": 18,
+              "y": 79,
+              "right": 369,
+              "bottom": 652.375
+            },
+            {
+              "x": 18,
+              "y": 668.375,
+              "right": 369,
+              "bottom": 1370.46875
+            }
+          ],
+          "actions": [
+            {
+              "x": 16,
+              "y": 772.59375,
+              "width": 76.78125,
+              "height": 44
+            },
+            {
+              "x": 233.28125,
+              "y": 784,
+              "width": 140.71875,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 1024,
+            "height": 600
+          },
+          "widths": {
+            "viewport": 1024,
+            "html": 1024,
+            "body": 1024
+          },
+          "preview": {
+            "x": 136.515625,
+            "y": 198.375,
+            "width": 288,
+            "height": 288
+          },
+          "panels": [
+            {
+              "x": 42.953125,
+              "y": 109,
+              "right": 518.09375,
+              "bottom": 677.375
+            },
+            {
+              "x": 538.09375,
+              "y": 109,
+              "right": 978.046875,
+              "bottom": 672.71875
+            }
+          ],
+          "actions": [
+            {
+              "x": 40.953125,
+              "y": 540,
+              "width": 75.1875,
+              "height": 44
+            },
+            {
+              "x": 803.046875,
+              "y": 540,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        }
+      ],
+      "occupied": [
+        {
+          "text": "1",
+          "color": "rgb(200, 55, 45)"
+        },
+        {
+          "text": "2",
+          "color": "rgb(47, 111, 208)"
+        },
+        {
+          "text": "3",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "4",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "5",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "6",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "7",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "8",
+          "color": "rgba(20, 32, 42, 0.9)"
+        }
+      ],
+      "startPaint": "linear-gradient(105deg, color(srgb 0.0991372 0.234039 0.180078), rgb(22, 39, 51))",
+      "game": {
+        "map": "Hollow Ridge",
+        "tick": 4,
+        "own": 1,
+        "tainted": false,
+        "errors": []
+      },
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "browser": "firefox",
+      "build": "fe36046fb0cb-de87f019b",
+      "layouts": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "widths": {
+            "viewport": 1440,
+            "html": 1440,
+            "body": 1440
+          },
+          "preview": {
+            "x": 229.75,
+            "y": 207.39999389648438,
+            "width": 432,
+            "height": 432.0000305175781
+          },
+          "panels": [
+            {
+              "x": 162,
+              "y": 118,
+              "right": 729.5166625976562,
+              "bottom": 830.4000244140625
+            },
+            {
+              "x": 749.5166625976562,
+              "y": 118,
+              "right": 1275,
+              "bottom": 681.7999877929688
+            }
+          ],
+          "actions": [
+            {
+              "x": 160,
+              "y": 840,
+              "width": 76.76666259765625,
+              "height": 44
+            },
+            {
+              "x": 1100,
+              "y": 840,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "widths": {
+            "viewport": 390,
+            "html": 390,
+            "body": 390
+          },
+          "preview": {
+            "x": 35,
+            "y": 168.39999389648438,
+            "width": 317,
+            "height": 317
+          },
+          "panels": [
+            {
+              "x": 18,
+              "y": 79,
+              "right": 369,
+              "bottom": 652.4000244140625
+            },
+            {
+              "x": 18,
+              "y": 668.4000244140625,
+              "right": 369,
+              "bottom": 1370.6000366210938
+            }
+          ],
+          "actions": [
+            {
+              "x": 16,
+              "y": 772.5999755859375,
+              "width": 76.76667022705078,
+              "height": 44
+            },
+            {
+              "x": 233.35000610351562,
+              "y": 784,
+              "width": 140.64999389648438,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 1024,
+            "height": 600
+          },
+          "widths": {
+            "viewport": 1024,
+            "html": 1024,
+            "body": 1024
+          },
+          "preview": {
+            "x": 136.51666259765625,
+            "y": 198.39999389648438,
+            "width": 288,
+            "height": 288
+          },
+          "panels": [
+            {
+              "x": 42.94999694824219,
+              "y": 109,
+              "right": 518.1000213623047,
+              "bottom": 677.4000244140625
+            },
+            {
+              "x": 538.0999755859375,
+              "y": 109,
+              "right": 978.0499877929688,
+              "bottom": 672.7999877929688
+            }
+          ],
+          "actions": [
+            {
+              "x": 40.95000076293945,
+              "y": 540,
+              "width": 75.16666793823242,
+              "height": 44
+            },
+            {
+              "x": 803.0499877929688,
+              "y": 540,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        }
+      ],
+      "occupied": [
+        {
+          "text": "1",
+          "color": "rgb(200, 55, 45)"
+        },
+        {
+          "text": "2",
+          "color": "rgb(47, 111, 208)"
+        },
+        {
+          "text": "3",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "4",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "5",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "6",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "7",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "8",
+          "color": "rgba(20, 32, 42, 0.9)"
+        }
+      ],
+      "startPaint": "linear-gradient(105deg, color(srgb 0.0991373 0.234039 0.180078), rgb(22, 39, 51))",
+      "game": {
+        "map": "Hollow Ridge",
+        "tick": 7,
+        "own": 1,
+        "tainted": false,
+        "errors": []
+      },
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    },
+    {
+      "browser": "webkit",
+      "build": "fe36046fb0cb-de87f019b",
+      "layouts": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "widths": {
+            "viewport": 1440,
+            "html": 1440,
+            "body": 1440
+          },
+          "preview": {
+            "x": 229.75,
+            "y": 207.375,
+            "width": 432,
+            "height": 432
+          },
+          "panels": [
+            {
+              "x": 162,
+              "y": 118,
+              "right": 729.515625,
+              "bottom": 830.375
+            },
+            {
+              "x": 749.515625,
+              "y": 118,
+              "right": 1274.984375,
+              "bottom": 681.71875
+            }
+          ],
+          "actions": [
+            {
+              "x": 160,
+              "y": 840,
+              "width": 76.78125,
+              "height": 44
+            },
+            {
+              "x": 1100,
+              "y": 840,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "widths": {
+            "viewport": 390,
+            "html": 390,
+            "body": 390
+          },
+          "preview": {
+            "x": 35,
+            "y": 168.375,
+            "width": 317,
+            "height": 317
+          },
+          "panels": [
+            {
+              "x": 18,
+              "y": 79,
+              "right": 369,
+              "bottom": 652.375
+            },
+            {
+              "x": 18,
+              "y": 668.375,
+              "right": 369,
+              "bottom": 1370.46875
+            }
+          ],
+          "actions": [
+            {
+              "x": 16,
+              "y": 772.59375,
+              "width": 76.78125,
+              "height": 44
+            },
+            {
+              "x": 233.28125,
+              "y": 784,
+              "width": 140.71875,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 1024,
+            "height": 600
+          },
+          "widths": {
+            "viewport": 1024,
+            "html": 1024,
+            "body": 1024
+          },
+          "preview": {
+            "x": 136.515625,
+            "y": 198.375,
+            "width": 288,
+            "height": 288
+          },
+          "panels": [
+            {
+              "x": 42.953125,
+              "y": 109,
+              "right": 518.09375,
+              "bottom": 677.375
+            },
+            {
+              "x": 538.09375,
+              "y": 109,
+              "right": 978.046875,
+              "bottom": 672.71875
+            }
+          ],
+          "actions": [
+            {
+              "x": 40.953125,
+              "y": 540,
+              "width": 75.1875,
+              "height": 44
+            },
+            {
+              "x": 803.046875,
+              "y": 540,
+              "width": 180,
+              "height": 44
+            }
+          ]
+        }
+      ],
+      "occupied": [
+        {
+          "text": "1",
+          "color": "rgb(200, 55, 45)"
+        },
+        {
+          "text": "2",
+          "color": "rgb(47, 111, 208)"
+        },
+        {
+          "text": "3",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "4",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "5",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "6",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "7",
+          "color": "rgba(20, 32, 42, 0.9)"
+        },
+        {
+          "text": "8",
+          "color": "rgba(20, 32, 42, 0.9)"
+        }
+      ],
+      "startPaint": "linear-gradient(105deg, color(srgb 0.099137 0.234039 0.180078), rgb(22, 39, 51))",
+      "game": {
+        "map": "Hollow Ridge",
+        "tick": 6,
+        "own": 1,
+        "tainted": false,
+        "errors": []
+      },
+      "audio": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      }
+    }
+  ]
+}

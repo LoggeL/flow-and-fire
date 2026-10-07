@@ -1,0 +1,252 @@
+{
+  "date": "2026-10-02",
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "ramBytes": 51539607552
+  },
+  "measurement": {
+    "tool": "/usr/bin/time -l",
+    "cpuDefinition": "user + system",
+    "heavyJobs": "serialized",
+    "limitations": [
+      "Baseline includes five allocation stress tests; optimized normal runs retain those in the separate full/allocation commands.",
+      "Final normal run overlapped user menu inspection, so this is a development-command observation rather than a strict equal-workload performance qualification.",
+      "CPU variance between optimized runs does not prove a separate cache speedup."
+    ]
+  },
+  "runs": [
+    {
+      "name": "baseline",
+      "tests": 3478,
+      "passed": 3478,
+      "failed": 0,
+      "skipped": 0,
+      "files": 345,
+      "wallSeconds": 346.52,
+      "userSeconds": 1389.21,
+      "systemSeconds": 33.25,
+      "cpuSeconds": 1422.46,
+      "maxResidentBytes": 4972314624
+    },
+    {
+      "name": "unit-after-cold",
+      "tests": 3473,
+      "passed": 3473,
+      "failed": 0,
+      "skipped": 0,
+      "files": 343,
+      "wallSeconds": 276.67,
+      "userSeconds": 915.88,
+      "systemSeconds": 26.5,
+      "cpuSeconds": 942.38,
+      "maxResidentBytes": 2969534464
+    },
+    {
+      "name": "unit-after-warm",
+      "tests": 3473,
+      "passed": 3473,
+      "failed": 0,
+      "skipped": 0,
+      "files": 343,
+      "wallSeconds": 270.54,
+      "userSeconds": 1014.26,
+      "systemSeconds": 37.35,
+      "cpuSeconds": 1051.61,
+      "maxResidentBytes": 2949431296
+    }
+  ],
+  "discovery": {
+    "beforeFiles": 345,
+    "unitFiles": 343,
+    "allocationFiles": 2,
+    "missingFiles": 0,
+    "additionalFiles": 0
+  },
+  "allocation": {
+    "baselinePassed": 5,
+    "sourceAndBudgetsChanged": false,
+    "focusedCanaryPassed": 1,
+    "stressTestsOutsideFocusedRun": 4
+  },
+  "browserBefore": {
+    "build": "d900618c1780",
+    "cases": 18,
+    "passed": 12,
+    "failed": 6,
+    "failures": "All cold-map checks observed a duplicate bootstrap load with 23 cache hits. The implementation now reuses verified initial assets for the same map.",
+    "wallSeconds": 71.97,
+    "cpuSeconds": 100.9
+  },
+  "validation": {
+    "regularTests": 3473,
+    "regularTestFiles": 343,
+    "failed": 0,
+    "skipped": 0,
+    "focusedGameAndHudTestsAfterMenuChange": 538,
+    "focusedFiles": 64,
+    "typecheck": "passed",
+    "fullLintAndDependencyBoundaries": "passed",
+    "finalMenuAndNativeSpecLint": "passed",
+    "diffCheck": "passed",
+    "nativeBrowserCases": 18,
+    "nativeRetries": 0,
+    "hardwareAudioConnections": 0
+  },
+  "browserAfter": {
+    "build": "aef587536cf4-d6d717f58",
+    "cases": 18,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "engines": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "wallSeconds": 88.3,
+    "cpuSeconds": 102.4,
+    "maxResidentBytes": 783056896,
+    "performanceComparison": "Before had six failures; after includes new camera/atmosphere/pause checks, so this is not an equal-workload speed comparison."
+  },
+  "mapLoads": [
+    {
+      "browser": "chromium",
+      "transport": "sab",
+      "cold": {
+        "wallMs": 1091,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1042,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    },
+    {
+      "browser": "chromium",
+      "transport": "transfer",
+      "cold": {
+        "wallMs": 1052,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1040,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    },
+    {
+      "browser": "firefox",
+      "transport": "sab",
+      "cold": {
+        "wallMs": 1832,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1108,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    },
+    {
+      "browser": "firefox",
+      "transport": "transfer",
+      "cold": {
+        "wallMs": 1351,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1078,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    },
+    {
+      "browser": "webkit",
+      "transport": "sab",
+      "cold": {
+        "wallMs": 1229,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1056,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    },
+    {
+      "browser": "webkit",
+      "transport": "transfer",
+      "cold": {
+        "wallMs": 1076,
+        "fromCache": 0,
+        "fromNetwork": 23,
+        "bytesNetwork": 3504780
+      },
+      "cached": {
+        "wallMs": 1060,
+        "fromCache": 23,
+        "fromNetwork": 0,
+        "bytesNetwork": 0
+      },
+      "criteria": {
+        "coldLe8s": true,
+        "cachedLe3s": true,
+        "cachedNoNetworkBytes": true
+      },
+      "perfGate": false
+    }
+  ],
+  "buildE2e": {
+    "passed": true,
+    "build": "aef587536cf4-d6d717f58",
+    "wallSeconds": 3.07,
+    "cpuSeconds": 4.49
+  }
+}

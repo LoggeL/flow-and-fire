@@ -60,6 +60,7 @@ out vec2 v_uv;
 out vec4 v_color;   // linear HDR rgb, alpha
 out vec4 v_misc;    // x: blend, y: shape id, z: per-particle random, w: normalized age
 out float v_streak; // quad length / size (velocity streaks), 1 otherwise
+out vec3 v_light;   // sun direction in quad-uv space (xy) and towards the viewer (z), for smoke volume
 
 const float PI = 3.14159265358979;
 const float TWO_PI = 6.28318530717959;
@@ -99,6 +100,7 @@ void main() {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     v_color = vec4(0.0);
     v_misc = vec4(0.0);
+    v_light = vec3(0.0, 0.0, 1.0);
     return;
   }
   vec4 L1 = layerTexel(layer, 1); // cosSpread gravity drag emitRadius
@@ -177,6 +179,12 @@ void main() {
   float sr = sin(rot);
   vec2 rc = vec2(corner.x * cr - corner.y * sr, corner.x * sr + corner.y * cr);
   int orient = int(L3.w + 0.5);
+  // Sun in the quad's uv frame (screen axes rotated back by the particle rotation).
+  vec3 sun = u_sunDir.xyz;
+  vec2 ls = orient == 2 ? vec2(sun.x, sun.z) : vec2(dot(sun, u_fxRight.xyz), dot(sun, u_fxUp.xyz));
+  vec2 lq = orient == 1 ? ls : vec2(cr * ls.x + sr * ls.y, -sr * ls.x + cr * ls.y);
+  float lz = orient == 2 ? sun.y : -dot(sun, u_fxFwd.xyz);
+  v_light = normalize(vec3(lq, max(lz, 0.0) + 0.35));
   vec3 world;
   if (orient == 1) {
     // Streak along the screen-plane velocity, head at the particle position.
@@ -208,6 +216,7 @@ in vec2 v_uv;
 in vec4 v_color;
 in vec4 v_misc;
 in float v_streak;
+in vec3 v_light;
 out vec4 o_color;
 
 float fxHash2(vec2 p) {
@@ -240,12 +249,17 @@ void main() {
   int shape = int(v_misc.y + 0.5);
   float rnd = v_misc.z;
   float age = v_misc.w;
+  float blend = clamp(v_misc.x, 0.0, 1.0);
   float m;
-  float shade = 1.0;
+  vec3 shade = vec3(1.0);
   if (shape == 0) {
-    // glow: soft hot blob with a slightly brighter core
-    m = exp(-r * r * 3.2) * (1.0 - smoothstep(0.7, 1.0, r));
-    m *= 0.85 + 0.3 * fxNoise(uv * 2.5 + rnd * 61.0 + age * 2.0);
+    // glow: turbulent hot blob (fbm-eroded silhouette); the emissive part cools towards deep red
+    // at its fringe, so stacked fireballs keep an orange rim instead of a flat white disc.
+    float n = fxFbm(uv * 1.6 + vec2(rnd * 53.0, rnd * 17.0) + vec2(0.0, -age * 1.3));
+    float e = r + (n - 0.5) * 0.55;
+    m = exp(-e * e * 3.0) * (1.0 - smoothstep(0.62, 0.98, e));
+    float heat = smoothstep(0.05, 0.85, m);
+    shade = mix(mix(vec3(1.0, 0.38, 0.14), vec3(1.0), heat), vec3(1.0), blend);
   } else if (shape == 1) {
     // spark: thin hot line, bright head (+x), fading tail; round dot when not stretched
     float across = exp(-uv.y * uv.y * 7.0);
@@ -254,26 +268,32 @@ void main() {
     float dot0 = exp(-r * r * 5.0);
     m = mix(dot0, across * streak, clamp((v_streak - 1.0) * 2.0, 0.0, 1.0));
   } else if (shape == 2) {
-    // smoke: fbm-eroded soft puff, noise-shaded
+    // smoke: fbm-eroded puff with pseudo-volume lighting (sphere normal perturbed by the noise,
+    // lit by the sun): bright tops, dark bellies – reads against both dark and mid-bright ground.
     vec2 q = uv * 1.7 + vec2(rnd * 37.0, rnd * 91.0) + vec2(0.0, -age * 0.7);
     float n = fxFbm(q);
-    float edge = r + (n - 0.5) * 0.75;
-    m = 1.0 - smoothstep(0.3, 0.92, edge);
+    float e = r + (n - 0.5) * 0.75;
+    m = 1.0 - smoothstep(0.3, 0.92, e);
     m *= 0.55 + 0.65 * n;
-    shade = 0.62 + 0.6 * n;
+    vec3 nrm = normalize(vec3(uv * 0.85 + (n - 0.5) * 0.9, max(0.2, 1.0 - r * r)));
+    float diff = clamp(dot(nrm, v_light) * 0.6 + 0.4, 0.0, 1.0);
+    shade = vec3((0.45 + 0.9 * diff) * (0.8 + 0.4 * n));
   } else if (shape == 3) {
-    // ring: bright annulus with ragged intensity and a faint fading fill
-    float d = (r - 0.8) / 0.085;
+    // ring: shock front – sharp ragged outer edge, trailing fade towards the centre (wider with age)
     float ang = atan(uv.y, uv.x);
-    float rag = 0.7 + 0.6 * fxNoise(vec2(ang * 5.0 + rnd * 40.0, age * 4.0));
-    m = exp(-d * d) * rag + 0.22 * (1.0 - smoothstep(0.1, 0.8, r)) * (1.0 - age);
-    m *= 1.0 - smoothstep(0.95, 1.0, r);
+    float rag = 0.7 + 0.6 * fxNoise(vec2(ang * 6.0 + rnd * 40.0, age * 3.0));
+    float front = 0.9 - 0.05 * fxNoise(vec2(ang * 3.0 + rnd * 13.0, 1.7));
+    float d = front - r;
+    float lead = 1.0 - smoothstep(0.0, 0.035, -d);
+    float k = 0.03 + 0.05 * age;
+    float trail = exp(-max(d, 0.0) / k) * (1.0 - smoothstep(2.0 * k, 4.0 * k, d));
+    m = lead * trail * rag * (1.0 - smoothstep(0.96, 1.0, r));
   } else if (shape == 4) {
     // debris: hard irregular chunk, lit from one side
     float ang = atan(uv.y, uv.x);
     float rr = 0.58 + 0.13 * sin(3.0 * ang + rnd * 20.0) + 0.08 * sin(5.0 * ang + rnd * 7.0);
     m = 1.0 - smoothstep(rr - 0.12, rr, r);
-    shade = 0.55 + 0.6 * clamp(dot(uv, vec2(-0.55, 0.75)) + 0.5, 0.0, 1.0);
+    shade = vec3(0.55 + 0.6 * clamp(dot(uv, v_light.xy) + 0.5, 0.0, 1.0));
   } else if (shape == 5) {
     // flash: white-hot core plus a four-ray star
     float core = exp(-r * r * 5.0);

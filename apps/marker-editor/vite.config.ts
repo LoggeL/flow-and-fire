@@ -76,24 +76,11 @@ function mapsPlugin(): Plugin {
   };
 }
 
-/**
- * HTML entry points: the editor plus optional tool pages of later packages (overlay demo, UI
- * preview) when they exist, so `vite build` + `vite preview` serve them too.
- */
-function htmlInputs(): Record<string, string> {
-  const inputs: Record<string, string> = { main: resolve(appDir, 'index.html') };
-  for (const page of ['overlay-demo', 'ui-preview']) {
-    const file = resolve(appDir, `${page}.html`);
-    if (existsSync(file)) inputs[page] = file;
-  }
-  return inputs;
-}
-
 export default defineConfig({
   root: appDir,
   // 5199 belongs to the user, 5210 to the model viewer; the editor defaults to 5220 and moves on if taken.
   server: { port: 5220, strictPort: false, fs: { allow: [repoRoot] } },
   preview: { port: 5221, strictPort: false },
   plugins: [preact(), mapsPlugin()],
-  build: { target: 'es2022', chunkSizeWarningLimit: 1500, rollupOptions: { input: htmlInputs() } },
+  build: { target: 'es2022', chunkSizeWarningLimit: 1500, rollupOptions: { input: { main: resolve(appDir, 'index.html') } } },
 });

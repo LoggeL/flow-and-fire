@@ -14,6 +14,7 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import type { EditorStore } from '../app/store.ts';
 import { STRINGS } from '../app/strings.ts';
 import { fetchMapBytes, fetchMapIndex } from './bundled.ts';
+import { EDITOR_OVERLAY_FILE } from '../model/markers-json.ts';
 import { describeError } from './errors.ts';
 import { writeLastMap } from './storage.ts';
 
@@ -145,6 +146,25 @@ export class EditorSession {
     }
     this.deps.download(text, 'markers.json', 'application/json');
     store.status.value = STRINGS.markersExported;
+    return true;
+  }
+
+  /** Downloads editor.json (marker overlay for content/maps/src/<name>/, applied by `pnpm maps`). */
+  exportEditorOverlay(): boolean {
+    const store = this.store;
+    if (store.doc.peek() === null) {
+      store.status.value = STRINGS.noDocument;
+      return false;
+    }
+    let text: string;
+    try {
+      text = store.exportEditorOverlay();
+    } catch (e) {
+      store.status.value = STRINGS.overlayFailed(describeError(e));
+      return false;
+    }
+    this.deps.download(text, EDITOR_OVERLAY_FILE, 'application/json');
+    store.status.value = STRINGS.overlayExported;
     return true;
   }
 

@@ -11,9 +11,16 @@
  *
  * Not representable in markers.json: the interleaved order of mass and hydro spots (mapc lists all
  * mass spots first, then all hydro spots), SPLT/PREV (separate mapc inputs) and unknown chunks.
- * `propFields` is written iff the map has a PFLD chunk (also when empty).
+ * `propFields` is written iff the map has a PFLD chunk (also when empty), always together with
+ * `propFieldAlgo` (the stored expansion algorithm version).
+ *
+ * editor.json (toEditorOverlayJson) is the editor's own source file for maps built by `pnpm maps`
+ * (content/maps/src/<name>/editor.json, see packages/formats/scripts/mapc.ts applyEditorOverlay):
+ * only the markers the editor owns — starts, spots in map order (interleaving kept) and prop fields.
+ * The generator keeps owning terrain, water, light, strata and props, and mapgen never overwrites
+ * editor.json, so edits survive regeneration.
  */
-import { MAP_FX_ONE, type MapPropField, type RtsMap } from '@faf/formats';
+import { MAP_FX_ONE, propFieldAlgoOf, type MapPropField, type RtsMap } from '@faf/formats';
 import type { EditorDocument } from './document.ts';
 
 const wu = (raw: number): number => raw / MAP_FX_ONE;
@@ -58,8 +65,37 @@ export function markersObject(map: RtsMap): Record<string, unknown> {
     light: { azimuthDeg: m.light.azimuthDeg, elevationDeg: m.light.elevationDeg, sun: [...m.light.sun], ambient: [...m.light.ambient] },
     strata: m.strata.map((s) => ({ name: s.name, color: [...s.color] })),
   };
-  if (map.propFields !== undefined) out['propFields'] = map.propFields.map(fieldJson);
+  if (map.propFields !== undefined) {
+    out['propFields'] = map.propFields.map(fieldJson);
+    out['propFieldAlgo'] = propFieldAlgoOf(map);
+  }
   return out;
+}
+
+/** File name of the overlay in a map source directory (mapc: EDITOR_OVERLAY_FILE). */
+export const EDITOR_OVERLAY_FILE = 'editor.json';
+
+/** editor.json object of a map (see module header and mapc applyEditorOverlay). */
+export function editorOverlayObject(map: RtsMap): Record<string, unknown> {
+  const m = map.meta;
+  const out: Record<string, unknown> = {
+    version: 1,
+    editorOverlay: 1,
+    name: m.name,
+    sizeWu: m.sizeWu,
+    starts: m.starts.map((s) => ({ army: s.army, x: wu(s.x), z: wu(s.z) })),
+    spots: m.spots.map((s) => ({ kind: s.kind, x: wu(s.x), z: wu(s.z) })),
+  };
+  if (map.propFields !== undefined) {
+    out['propFields'] = map.propFields.map(fieldJson);
+    out['propFieldAlgo'] = propFieldAlgoOf(map);
+  }
+  return out;
+}
+
+/** editor.json text of the document (2-space JSON with a trailing newline). */
+export function toEditorOverlayJson(doc: EditorDocument): string {
+  return `${JSON.stringify(editorOverlayObject(doc.toRtsMap()), null, 2)}\n`;
 }
 
 /** markers.json text of the document (mapc input together with the original heightmap). */

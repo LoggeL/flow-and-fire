@@ -13,6 +13,7 @@ import {
   impactSound,
   parseEventSoundMap,
   weaponSound,
+  withWeaponSounds,
 } from '../../src/events/index.ts';
 
 /** Deep copy of the default JSON for mutation. */
@@ -218,5 +219,28 @@ describe('event map lookups', () => {
   it('alertForIndex maps aux to ALERT_KINDS', () => {
     expect(alertForIndex(m, 3)).toEqual({ name: 'alt_base_attacked', rule: m.alerts.alt_base_attacked });
     expect(alertForIndex(m, 11)).toBeNull();
+  });
+});
+
+describe('withWeaponSounds', () => {
+  it('merges weapon entries over the map (add + replace, rest kept) without touching the input', () => {
+    const m = DEFAULT_EVENT_SOUND_MAP;
+    const before = m.weapons['core:wpn_mg_t1'];
+    const merged = withWeaponSounds(m, {
+      'core:wpn_new_gun': { sound: 'wpn_cannon_t2_fire', impact: 'shell', rate: 1.1 },
+      'core:wpn_mg_t1': 'wpn_cannon_t1_fire',
+    });
+    expect(merged.weapons['core:wpn_new_gun']).toMatchObject({ sound: 'wpn_cannon_t2_fire', impact: 'shell', rate: 1.1 });
+    expect(merged.weapons['core:wpn_mg_t1']!.sound).toBe('wpn_cannon_t1_fire');
+    expect(merged.weapons['core:wpn_cannon_t1']).toBe(m.weapons['core:wpn_cannon_t1']);
+    expect(m.weapons['core:wpn_mg_t1']).toBe(before);
+    expect(m.weapons['core:wpn_new_gun']).toBeUndefined();
+    expect(merged.kinds).toBe(m.kinds);
+  });
+
+  it('validates like the map parser', () => {
+    expect(() => withWeaponSounds(DEFAULT_EVENT_SOUND_MAP, { 'Bad Ref': 'x' })).toThrow(EventMapError);
+    expect(() => withWeaponSounds(DEFAULT_EVENT_SOUND_MAP, { 'core:wpn_x': { sound: 'x', impact: 'nope' } })).toThrow(/impact family/);
+    expect(() => withWeaponSounds(DEFAULT_EVENT_SOUND_MAP, [])).toThrow(EventMapError);
   });
 });

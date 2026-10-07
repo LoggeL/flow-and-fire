@@ -1,0 +1,540 @@
+{
+  "stats": {
+    "startTime": "2026-10-02T10:40:20.754Z",
+    "duration": 106689.039,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "rows": [
+    {
+      "project": "chromium",
+      "title": "native original ACU Move drives opposed legs and returns their accepted pose to rest",
+      "status": "passed",
+      "duration": 4536,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-original-ACU-gait-receipt",
+          "buildHash": "0a7920400419",
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "firefox",
+      "title": "native original ACU Move drives opposed legs and returns their accepted pose to rest",
+      "status": "passed",
+      "duration": 5425,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-original-ACU-gait-receipt",
+          "buildHash": "0a7920400419",
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "webkit",
+      "title": "native original ACU Move drives opposed legs and returns their accepted pose to rest",
+      "status": "passed",
+      "duration": 6690,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-original-ACU-gait-receipt",
+          "buildHash": "0a7920400419",
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "chromium",
+      "title": "native paid T1 and T2 factory production animates gates and holds on pause before closing at idle",
+      "status": "passed",
+      "duration": 14057,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-factory-activity-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [
+            {
+              "id": "core:fac_land_t1",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 25,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 3744,
+                  "pitch": 10920
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 44,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 12639,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 51,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 15915,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 51,
+                  "paused": true,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 15915,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            },
+            {
+              "id": "core:fac_land_t2",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 194,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 3276,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 213,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 8936,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 220,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 11021,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 220,
+                  "paused": true,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 11021,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "chromium",
+      "title": "native billed extractor and radar activity holds without catchup and point defense retains real combat aim",
+      "status": "passed",
+      "duration": 11391,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-upkeep-and-point-defense-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [],
+          "upkeep": [
+            {
+              "id": "core:str_t1_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t2_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t1_radar",
+              "pitchMin": 0,
+              "pitchMax": 0,
+              "yawValues": 26
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "firefox",
+      "title": "native paid T1 and T2 factory production animates gates and holds on pause before closing at idle",
+      "status": "passed",
+      "duration": 13245,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-factory-activity-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [
+            {
+              "id": "core:fac_land_t1",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 29,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 3744,
+                  "pitch": 10920
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 47,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 12170,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 53,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 14979,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 54,
+                  "paused": true,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 15447,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            },
+            {
+              "id": "core:fac_land_t2",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 197,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 3276,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 215,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 8638,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 221,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 10426,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 222,
+                  "paused": true,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 10724,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "firefox",
+      "title": "native billed extractor and radar activity holds without catchup and point defense retains real combat aim",
+      "status": "passed",
+      "duration": 9597,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-upkeep-and-point-defense-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [],
+          "upkeep": [
+            {
+              "id": "core:str_t1_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t2_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t1_radar",
+              "pitchMin": 0,
+              "pitchMax": 0,
+              "yawValues": 26
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "webkit",
+      "title": "native paid T1 and T2 factory production animates gates and holds on pause before closing at idle",
+      "status": "passed",
+      "duration": 17122,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-factory-activity-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [
+            {
+              "id": "core:fac_land_t1",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 34,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 5149,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 53,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 14043,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 60,
+                  "paused": false,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 17320,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 60,
+                  "paused": true,
+                  "product": "core:lnd_t1_tank",
+                  "progress": 17320,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            },
+            {
+              "id": "core:fac_land_t2",
+              "operatingPitch": 8190,
+              "pausePitch": 8190,
+              "heldPitch": 8190,
+              "resumePitch": 10920,
+              "liveStages": [
+                {
+                  "stage": "liveStart",
+                  "tick": 203,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 3276,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveOpen",
+                  "tick": 223,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 9234,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "liveHeldOpen",
+                  "tick": 230,
+                  "paused": false,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 11319,
+                  "pitch": 14564
+                },
+                {
+                  "stage": "livePaused",
+                  "tick": 230,
+                  "paused": true,
+                  "product": "core:lnd_t2_tank",
+                  "progress": 11319,
+                  "pitch": 14564
+                }
+              ],
+              "closedPitch": 0
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "webkit",
+      "title": "native billed extractor and radar activity holds without catchup and point defense retains real combat aim",
+      "status": "passed",
+      "duration": 12199,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "native-upkeep-and-point-defense-receipt",
+          "buildHash": "0a7920400419",
+          "silent": {
+            "installed": true,
+            "contexts": 1,
+            "speakerConnections": 0,
+            "blockedConnections": 0,
+            "streamDestinations": 1
+          },
+          "factories": [],
+          "upkeep": [
+            {
+              "id": "core:str_t1_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t2_mex",
+              "pitchMin": -910,
+              "pitchMax": 910,
+              "yawValues": 1
+            },
+            {
+              "id": "core:str_t1_radar",
+              "pitchMin": 0,
+              "pitchMax": 0,
+              "yawValues": 26
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "chromium",
+      "title": "actual combat articulates tank barrel and independent heavy turrets without turning the stationary hull",
+      "status": "passed",
+      "duration": 2867,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "actual-unit-rigs",
+          "buildHash": "0a7920400419"
+        }
+      ]
+    },
+    {
+      "project": "firefox",
+      "title": "actual combat articulates tank barrel and independent heavy turrets without turning the stationary hull",
+      "status": "passed",
+      "duration": 3091,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "actual-unit-rigs",
+          "buildHash": "0a7920400419"
+        }
+      ]
+    },
+    {
+      "project": "webkit",
+      "title": "actual combat articulates tank barrel and independent heavy turrets without turning the stationary hull",
+      "status": "passed",
+      "duration": 2992,
+      "errors": [],
+      "receipts": [
+        {
+          "name": "actual-unit-rigs",
+          "buildHash": "0a7920400419"
+        }
+      ]
+    }
+  ]
+}

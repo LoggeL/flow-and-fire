@@ -107,9 +107,9 @@ export function ValueInput<T>(props: ValueInputProps<T>): JSX.Element {
 }
 
 /** Label + arbitrary control in the panel grid. */
-export function Row(props: { readonly label: string; readonly children: ComponentChildren; readonly title?: string }): JSX.Element {
+export function Row(props: { readonly label: string; readonly children: ComponentChildren; readonly title?: string; readonly wide?: boolean }): JSX.Element {
   return (
-    <div class="me-row" title={props.title}>
+    <div class={props.wide === true ? 'me-row me-row-wide' : 'me-row'} title={props.title}>
       <span class="me-row-label">{props.label}</span>
       <span class="me-row-control">{props.children}</span>
     </div>

@@ -332,11 +332,6 @@ export class VoiceManager implements SoundSink {
     }
     // b) cooldown per sound
     if (nowMs - this.lastStartMs[si]! < sound.cooldownMs) return this.drop(D_COOLDOWN);
-    const variant = this.pickVariant(sound);
-    if (variant < 0) {
-      this.resolver.requestLoad(si);
-      return this.drop(D_NOT_LOADED);
-    }
     // c) spatialisation and culling (before any voice is allocated or stolen)
     const reqGain = sanitizeGain(req.gain);
     let spatialGain = 1;
@@ -345,7 +340,7 @@ export class VoiceManager implements SoundSink {
     const x = req.x;
     const z = req.z;
     const ci = sound.categoryIndex;
-    if (sound.spatial && this.spatial !== null && x !== undefined && z !== undefined) {
+    if (sound.spatial && this.spatial !== null && req.spatial !== false && x !== undefined && z !== undefined) {
       spatial = true;
       const out = this.tmp;
       if (!this.spatial.spatialize(ci, x, z, out)) return this.drop(D_CULLED);
@@ -354,6 +349,12 @@ export class VoiceManager implements SoundSink {
     }
     const eff = reqGain * spatialGain;
     if (!(eff >= this.cullGain) || eff === 0) return this.drop(D_CULLED);
+    // Variant after culling (culled plays skip the random draw), before any voice is stolen.
+    const variant = this.pickVariant(sound);
+    if (variant < 0) {
+      this.resolver.requestLoad(si);
+      return this.drop(D_NOT_LOADED);
+    }
     // d) limits and stealing
     const prio = sound.priority + (req.priorityBoost ?? 0);
     if (this.soundVoiceCount[si]! >= sound.maxVoices) {

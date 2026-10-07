@@ -1,0 +1,322 @@
+{
+  "sourceBuild": "ed5792d61f615a96d4b66871eb68484348e1d969",
+  "simBuild": "faf-sim/ms6.5-allied-projectile-passthrough",
+  "contentSimHash": "0x02629d13",
+  "checks": {
+    "focusedCombat": {
+      "passed": 24
+    },
+    "simHostHeadless": {
+      "uniquePassedAfterFixtureRefresh": 410,
+      "initialPassed": 365,
+      "initialOldVersionFixtureFailures": 45,
+      "focusedReplayRerunPassed": 48,
+      "note": "The 48-test rerun includes the 45 initial fixture failures and three previously passing tests."
+    },
+    "officialGoldenScenariosVerified": 9,
+    "native": {
+      "passed": 9,
+      "unexpected": 0,
+      "flaky": 0,
+      "skipped": 0,
+      "startTime": "2026-10-02T10:57:22.371Z",
+      "durationMs": 26048.032000000003,
+      "engines": [
+        "chromium",
+        "firefox",
+        "webkit"
+      ],
+      "cases": [
+        "cannon passage",
+        "artillery splash",
+        "existing actual combat joints"
+      ],
+      "audio": "All nine passed silent-output assertions."
+    },
+    "typecheck": "passed",
+    "fullLint": "passed",
+    "productionBuild": "passed"
+  },
+  "nativeReadbacks": [
+    {
+      "engine": "chromium",
+      "case": "cannon through engineer and factory",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        11,
+        15
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 150,
+            "hpMax": 150
+          },
+          "after": {
+            "hp": 150,
+            "hpMax": 150
+          }
+        },
+        {
+          "handle": 4,
+          "before": {
+            "hp": 4200,
+            "hpMax": 4200
+          },
+          "after": {
+            "hp": 4200,
+            "hpMax": 4200
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 5,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 355,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "engine": "chromium",
+      "case": "artillery splash",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        8,
+        20
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 400,
+            "hpMax": 400
+          },
+          "after": {
+            "hp": 400,
+            "hpMax": 400
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 4,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 309,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "engine": "firefox",
+      "case": "cannon through engineer and factory",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        13,
+        17
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 150,
+            "hpMax": 150
+          },
+          "after": {
+            "hp": 150,
+            "hpMax": 150
+          }
+        },
+        {
+          "handle": 4,
+          "before": {
+            "hp": 4200,
+            "hpMax": 4200
+          },
+          "after": {
+            "hp": 4200,
+            "hpMax": 4200
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 5,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 355,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "engine": "firefox",
+      "case": "artillery splash",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        11,
+        23
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 400,
+            "hpMax": 400
+          },
+          "after": {
+            "hp": 400,
+            "hpMax": 400
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 4,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 309,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "engine": "webkit",
+      "case": "cannon through engineer and factory",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        15,
+        19
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 150,
+            "hpMax": 150
+          },
+          "after": {
+            "hp": 150,
+            "hpMax": 150
+          }
+        },
+        {
+          "handle": 4,
+          "before": {
+            "hp": 4200,
+            "hpMax": 4200
+          },
+          "after": {
+            "hp": 4200,
+            "hpMax": 4200
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 5,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 355,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    },
+    {
+      "engine": "webkit",
+      "case": "artillery splash",
+      "fixture": "Explicitly tainted real Spawn fixture. Native canvas Attack, actual published HP and normal weapon/projectile phases; no injected frames, HP or World reads.",
+      "ticks": [
+        12,
+        24
+      ],
+      "friends": [
+        {
+          "handle": 3,
+          "before": {
+            "hp": 400,
+            "hpMax": 400
+          },
+          "after": {
+            "hp": 400,
+            "hpMax": 400
+          }
+        }
+      ],
+      "enemy": {
+        "handle": 4,
+        "before": {
+          "hp": 400,
+          "hpMax": 400
+        },
+        "after": {
+          "hp": 309,
+          "hpMax": 400
+        }
+      },
+      "silent": {
+        "installed": true,
+        "contexts": 1,
+        "speakerConnections": 0,
+        "blockedConnections": 0,
+        "streamDestinations": 1
+      },
+      "hostErrors": []
+    }
+  ],
+  "hpPublication": "Sim frames floor HP to a u8 fraction; unitInfo rounds that fraction to HP. A real 90-HP hit on a 400-HP mex publishes 309 HP."
+}

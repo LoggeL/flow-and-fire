@@ -214,7 +214,7 @@ function drawStress(ctx: SmokeContext, t: number, what: 0 | 1 | 2): number {
 }
 
 /**
- * Frame schedule (cycle of 5, the last smoke frame 39 is a scene frame): every GPU timer segment spans
+ * Frame schedule (cycle of 5, the last smoke frame 149 is a scene frame): every GPU timer segment spans
  * whole passes of one workload only (ANGLE/Metal splits render passes at query boundaries, so segment
  * switches inside a pass would distort the numbers). Stress cost = stressBeams/stressTrails − stressBase.
  */
@@ -224,7 +224,7 @@ let lastWasScene = false;
 
 export const smokeCase: SmokeCase = {
   name: 'trails',
-  frames: 40,
+  frames: 150,
   segments: ['scene', 'stressBeams', 'stressTrails', 'stressBase'],
   setup(ctx) {
     const dev = ctx.dev;

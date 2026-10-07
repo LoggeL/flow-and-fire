@@ -89,6 +89,38 @@ describe('AudioEngine facade', () => {
     await engine.dispose();
   });
 
+  it('weaponSounds merge over the map; eventCodec reaches the router', async () => {
+    const profiles: number[] = [];
+    const run = async (withData: boolean): Promise<{ played: number; unmapped: number }> => {
+      const r = makeEngineRig({
+        engine: {
+          visualName: (v) => (v === 77 ? 'core:wpn_new_gun' : undefined),
+          ...(withData
+            ? {
+                weaponSounds: { 'core:wpn_new_gun': { sound: 'wpn_cannon_t2_fire', impact: 'shell' } },
+                eventCodec: { visualDeathProfile: (v: number) => (profiles.push(v), { sizeClass: 1, air: false, structure: false }) },
+              }
+            : {}),
+        },
+      });
+      await unlockByGesture(r);
+      const b = new ArrayEventSource(4);
+      b.push(DEFAULT_EVENT_TYPES.weaponFire, 77, 0, 0, 0, WX, 0, WZ, 0, 0);
+      b.push(DEFAULT_EVENT_TYPES.unitDeath, 55, 0, 128, 0, WX, 0, WZ, 3, 0);
+      r.engine.handleEvents(b);
+      const s = r.engine.stats();
+      await r.engine.dispose();
+      return { played: s.played, unmapped: s.eventsUnmapped };
+    };
+    const without = await run(false);
+    const withData = await run(true);
+    expect(withData.played).toBe(2);
+    expect(withData.unmapped).toBe(0);
+    expect(without.played + without.unmapped).toBeGreaterThanOrEqual(1);
+    expect(profiles).toEqual([55]);
+    expect(() => createAudioEngine({ baseUrl: '/', context: new FakeAudioContext(), manifest: loadRealManifest(), weaponSounds: { 'bad ref': 'x' }, settingsStore: null, unlockTarget: null })).toThrow(/weapon ref/);
+  });
+
   it('autoplay blocked: stays locked until the browser grants the gesture', async () => {
     const r = makeEngineRig({ context: { autoplay: 'blocked' } });
     r.target.gesture();
@@ -121,21 +153,23 @@ describe('AudioEngine facade', () => {
     const r = makeEngineRig();
     await unlockByGesture(r);
     const cat = r.engine.catalog!;
-    // Fill all 32 voices with long one-shots/loops of low-priority categories.
+    // Fill all 32 voices with looping low-priority sounds (they never end on their own).
     for (let i = 0; i < cat.size && r.engine.voices!.voiceCount < 32; i++) {
       const s = cat.byIndex(i);
-      if (s.category === 'ack' || s.category === 'ui' || s.category === 'alert' || s.category === 'music') continue;
-      for (let k = 0; k < s.maxVoices; k++) {
-        r.engine.play({ sound: i, x: 0, z: 0, when: undefined });
-        r.ctx.advance(1);
+      if (s.priority >= 80) continue;
+      for (let k = 0; k < s.maxVoices && r.engine.voices!.voiceCount < 32; k++) {
+        r.engine.play({ sound: i, x: 0, z: 0, loop: true });
+        r.ctx.advance(s.cooldownMs + 1);
       }
     }
     expect(r.engine.voices!.voiceCount).toBe(32);
     const stolenBefore = r.engine.stats().stolen;
-    // No audio-clock advance: this assertion requires every slot to remain occupied.
+    const started = r.ctx.startedSources;
     const h = r.engine.playUi('ack_pip_direct');
     expect(h).not.toBeNull();
     expect(h!.alive).toBe(true);
+    // Started inside the call: a new source exists and was started at time 0 (= immediately).
+    expect(r.ctx.startedSources).toBe(started + 1);
     const src = lastSource(r.ctx);
     expect(src.started).toBe(true);
     expect(src.startWhen).toBe(0);
@@ -144,6 +178,7 @@ describe('AudioEngine facade', () => {
     const ui = r.engine.playUi('ui_cmd_move');
     expect(ui).not.toBeNull();
     expect(lastSource(r.ctx).startWhen).toBe(0);
+    expect(r.engine.stats().stolen).toBe(stolenBefore + 2);
     await r.engine.dispose();
   });
 
@@ -366,9 +401,12 @@ describe('AudioEngine facade', () => {
     await unlockByGesture(r);
     r.engine.setLoop('build:0', { sound: 'bld_pour_loop', x: 0, z: 0 });
     expect(r.ctx.liveSources).toBeGreaterThan(0);
+    const loopSrc = lastSource(r.ctx);
     await r.engine.dispose();
-    r.ctx.advance(0); // deliver stop(0), which ends on the next audio render quantum
     expect(r.ctx.state).toBe('running');
+    // Hard stop at the current time (the fake ends stopped sources on the next clock step).
+    expect(loopSrc.stopWhen).toBe(r.ctx.currentTime);
+    r.ctx.advance(1);
     expect(r.ctx.liveSources).toBe(0);
     expect(r.ctx.closeCalls).toBe(0);
   });

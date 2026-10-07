@@ -14,7 +14,7 @@
  *   PROP    u32 count | per prop: u16 idLen | id (UTF-8) | zero pad to 4 | i32 x | i32 z
  *           | u16 yaw (Ang16) | u16 scalePermille
  *   PFLD?   prop fields (TRACK-EDITOR, additive; layout and expansion in propfields.ts):
- *           u32 fieldCount | per field: u16 nameLen | name | pad4 | u8 kind | u8 shapeKind
+ *           u16 algoVersion | u16 fieldCount | per field: u16 nameLen | name | pad4 | u8 kind | u8 shapeKind
  *           | u16 flags | u32 seed | u16 density | u16 maxSlope | u16 scaleMin | u16 scaleMax
  *           | u32 reclaimMassMilli | u32 reclaimEnergyMilli | u16 entryCount | u16 pointCount
  *           | entries (u16 idLen | id | pad4 | u16 weight | u16 reserved) | circle (i32 x, z, r)
@@ -36,13 +36,13 @@ import { MAP_MAX_PROP_ID_BYTES, MAP_MAX_PROPS, PROP_ID_RE, type MapProp } from '
 import {
   decodePropFieldsChunk,
   encodePropFieldsChunk,
-  PROPFIELD_ALGO_VERSION,
+  propFieldAlgoOf,
   propFieldsSimBytes,
   validatePropFields,
   type MapPropField,
 } from './propfields.ts';
 
-export { MAP_MAX_PROP_ID_BYTES, MAP_MAX_PROPS, type MapProp };
+export { MAP_MAX_PROP_ID_BYTES, MAP_MAX_PROPS, PROP_ID_RE, type MapProp };
 
 export const RTSMAP_MAGIC = 'RTSM';
 export const RTSMAP_FORMAT_VERSION = 1;
@@ -157,6 +157,12 @@ export interface RtsMap {
    * (also with 0 fields) ⇔ PFLD is written. Order is preserved (part of mapSimHash).
    */
   readonly propFields?: readonly MapPropField[];
+  /**
+   * Expansion algorithm version of `propFields` (PFLD header). readRtsMap always sets it when the
+   * file has a PFLD chunk; absent in memory = PROPFIELD_ALGO_VERSION (new fields). Ignored without
+   * `propFields`. Part of mapSimHash (only with a non-empty field list).
+   */
+  readonly propFieldAlgo?: number;
   readonly preview: MapPreview | null;
   readonly unknownChunks: readonly UnknownChunk[];
 }
@@ -590,6 +596,7 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
   let splat: MapSplat | null = null;
   let props: MapProp[] | null = null;
   let propFields: MapPropField[] | undefined;
+  let propFieldAlgo = 0;
   let preview: MapPreview | null = null;
   const unknownChunks: UnknownChunk[] = [];
   let last = -1;
@@ -622,8 +629,12 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
         props = decodeProps(ch.data, at);
         break;
       case 'PFLD':
-        propFields = decodePropFieldsChunk(ch.data, at);
+      {
+        const pf = decodePropFieldsChunk(ch.data, at);
+        propFields = pf.fields;
+        propFieldAlgo = pf.algo;
         break;
+      }
       default:
         preview = decodePreview(ch.data, at);
         break;
@@ -633,7 +644,9 @@ export function readRtsMap(bytes: Uint8Array): RtsMap {
   if (heights === null) throw new FormatError('missing-chunk', "required chunk 'HGT ' is missing", 'HGT ');
   if (props === null) throw new FormatError('missing-chunk', 'required chunk PROP is missing', 'PROP');
   const map: RtsMap =
-    propFields === undefined ? { meta, heights, splat, props, preview, unknownChunks } : { meta, heights, splat, props, propFields, preview, unknownChunks };
+    propFields === undefined
+      ? { meta, heights, splat, props, preview, unknownChunks }
+      : { meta, heights, splat, props, propFields, propFieldAlgo, preview, unknownChunks };
   validateRtsMap(map);
   // Canonical META only: guarantees read -> write is byte-identical.
   const canon = encodeUtf8(metaToCanonicalJson(meta));
@@ -657,7 +670,7 @@ export function rtsMapChunks(map: RtsMap): ContainerChunk[] {
     { id: 'HGT ', data: encodeHeightsChunk(map.meta.sizeWu, map.heights) },
     map.splat === null ? null : { id: 'SPLT', data: encodeSplat(map.splat) },
     { id: 'PROP', data: encodePropsChunk(map.props) },
-    map.propFields === undefined ? null : { id: 'PFLD', data: encodePropFieldsChunk(map.propFields) },
+    map.propFields === undefined ? null : { id: 'PFLD', data: encodePropFieldsChunk(map.propFields, propFieldAlgoOf(map)) },
     map.preview === null ? null : { id: 'PREV', data: encodePreview(map.preview) },
   ];
   // Effective anchor: the chunk it followed, or the nearest present chunk before that one.
@@ -707,6 +720,8 @@ export interface CreateRtsMapParams {
   readonly props?: readonly MapProp[];
   /** Default absent (no PFLD chunk). */
   readonly propFields?: readonly MapPropField[];
+  /** Expansion algorithm of propFields; default absent (= PROPFIELD_ALGO_VERSION). */
+  readonly propFieldAlgo?: number;
   readonly light?: MapLight;
   readonly strata?: readonly MapStratum[];
   readonly splat?: MapSplat | null;
@@ -768,7 +783,16 @@ export function createRtsMap(p: CreateRtsMapParams): RtsMap {
   const map: RtsMap =
     p.propFields === undefined
       ? base
-      : { meta: base.meta, heights, splat: base.splat, props: base.props, propFields: p.propFields, preview: base.preview, unknownChunks: base.unknownChunks };
+      : {
+          meta: base.meta,
+          heights,
+          splat: base.splat,
+          props: base.props,
+          propFields: p.propFields,
+          ...(p.propFieldAlgo === undefined ? {} : { propFieldAlgo: p.propFieldAlgo }),
+          preview: base.preview,
+          unknownChunks: base.unknownChunks,
+        };
   validateRtsMap(map);
   return map;
 }
@@ -810,7 +834,7 @@ export const MAP_SIM_HASH_TAG = 'FAFMAPS1';
  *   | u32 spotCount | spotCount × (u32 kind (0 mass, 1 hydro), i32 x, i32 z)
  *   | 'HGT ' payload | PROP payload
  *   [only if propFields is present and non-empty:
- *    'PFLD' | u32 PROPFIELD_ALGO_VERSION | propFieldsSimBytes (PFLD layout without names)]
+ *    'PFLD' | propFieldsSimBytes (PFLD layout incl. the stored u16 algoVersion, without names)]
  * Name, light, strata, SPLT, PREV, prop field names and unknown chunks are presentation-only and
  * excluded. Without prop fields the bytes are exactly those of MS2 (golden hashes unchanged).
  */
@@ -819,9 +843,9 @@ export function mapSimBytes(map: RtsMap): Uint8Array {
   const hgt = encodeHeightsChunk(m.sizeWu, map.heights);
   const prop = encodePropsChunk(map.props);
   const fields = map.propFields;
-  const pfld = fields === undefined || fields.length === 0 ? null : propFieldsSimBytes(fields);
+  const pfld = fields === undefined || fields.length === 0 ? null : propFieldsSimBytes(fields, propFieldAlgoOf(map));
   const head = 8 + 16 + 4 + m.starts.length * 12 + 4 + m.spots.length * 12;
-  const out = new Uint8Array(head + hgt.length + prop.length + (pfld === null ? 0 : 8 + pfld.length));
+  const out = new Uint8Array(head + hgt.length + prop.length + (pfld === null ? 0 : 4 + pfld.length));
   const dv = dvOf(out);
   for (let i = 0; i < 8; i++) out[i] = MAP_SIM_HASH_TAG.charCodeAt(i);
   let p = 8;
@@ -850,8 +874,7 @@ export function mapSimBytes(map: RtsMap): Uint8Array {
   if (pfld !== null) {
     const q = p + hgt.length + prop.length;
     for (let i = 0; i < 4; i++) out[q + i] = 'PFLD'.charCodeAt(i);
-    dv.setUint32(q + 4, PROPFIELD_ALGO_VERSION, true);
-    out.set(pfld, q + 8);
+    out.set(pfld, q + 4);
   }
   return out;
 }

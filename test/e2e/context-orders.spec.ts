@@ -4,7 +4,7 @@ import { CommandBatchView, Op, UnitFlags, WatchOrderType } from '../../packages/
 import { assertSilentOutput, installSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 import { expect, test, type Page } from './support/silent-test.ts';
 import { attachJson, captureErrors, expectNoErrors, SERVERS, stepTicks } from './support/game.ts';
-import { clickUnit, groundPixel, SKIRMISH_BLUEPRINTS } from './support/skirmish.ts';
+import { clickUnit, groundPixel, setFrontendLocale, SKIRMISH_BLUEPRINTS } from './support/skirmish.ts';
 
 async function rendered(page: Page) {
   const frame = await page.evaluate(() => window.__faf!.renderStats().frames + 2);
@@ -16,10 +16,10 @@ async function start(page: Page, url: string) {
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
   await page.waitForFunction(() => document.documentElement.dataset['loadingProgress'] === '100', null, { timeout: 60_000 });
   const main = page.getByTestId('MainMenu'); await expect(main).toBeVisible();
-  await main.getByRole('combobox').selectOption('de');
+  await setFrontendLocale(page, 'de');
   await main.getByRole('button', { name: /Gefecht/ }).click();
   const setup = page.getByTestId('SkirmishSetup'); await expect(setup).toBeVisible();
-  await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+  await setup.getByTestId('skirmish-map-hollow-ridge').click();
   await setup.getByRole('combobox', { name: 'KI-Stufe', exact: true }).selectOption('normal');
   await setup.getByRole('button', { name: 'Gefecht starten', exact: true }).click();
   // The Sim hook becomes ready before the session's audio/first-frame loading overlay retires.

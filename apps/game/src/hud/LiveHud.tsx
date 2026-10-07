@@ -7,6 +7,8 @@ import { GameHudController, type GameHudPorts, type MatchResult } from './live.t
 import type { Game } from '../game.ts';
 import './live.css';
 import './supcom.css';
+import './main-menu.css';
+import './menu-settings.css';
 import { simTypeId } from './type-ids.ts';
 import { liveUnitText } from './unit-text.ts';
 import { LiveNotices } from './LiveNotices.tsx';
@@ -18,8 +20,20 @@ import { CommandArt } from './CommandArt.tsx';
 import { LiveBriefing, LiveCredits } from './LiveInfoScreens.tsx';
 import { BUILD_ROLE_COLORS, buildRole, type BuildRole } from './build-role.ts';
 import { hudArmyTheme } from './faction-theme.ts';
+import { RangeRings } from './RangeRings.tsx';
+import { MenuBackdrop } from './MenuBackdrop.tsx';
+import { chosenArmyColor } from '../army-colors.ts';
+import { BrandLogo } from './BrandLogo.tsx';
 
 const PRIMARY_ORDERS=['move','attack','patrol','stop','assist','reclaim'] as const;
+
+function BuildVolume({corners,roof,valid,testId}: {corners:readonly (readonly [number,number])[];roof:readonly (readonly [number,number])[]|undefined;valid:boolean;testId:string}) {
+  if(corners.length!==4||roof?.length!==4)return null;
+  return <g class={`live-build-volume ${valid?'valid':'invalid'}`} data-testid={testId}>{[0,1,2,3].map(i=>{
+    const a=corners[i]!,b=corners[(i+1)%4]!,c=roof[(i+1)%4]!,d=roof[i]!;
+    return <polygon key={i} points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`}/>;
+  })}<polygon class="roof" points={roof.map(p=>`${p[0]},${p[1]}`).join(' ')}/></g>;
+}
 
 function ControllerView({controller}: {controller:GameHudController}) {
   const root = useRef<HTMLDivElement>(null), m = controller.model;
@@ -31,14 +45,19 @@ function ControllerView({controller}: {controller:GameHudController}) {
     return ()=> {window.removeEventListener('keydown',onKey,true);window.removeEventListener('resize',update);};
   },[controller,m]);
   const screen=controller.screen.value, ghost=controller.ghost.value, queuedGhosts=controller.queuedGhosts.value, dragGhosts=controller.dragGhosts.value;
-  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen}>
+  const menuScene=screen==='main'||screen==='skirmish';
+  const menuHouse=menuScene?m.menus.skirmish.slots.value.find(slot=>slot.controller==='human')?.color:undefined;
+  const menuAccent=menuHouse===undefined?undefined:chosenArmyColor(menuHouse);
+  return <div ref={root} class="live-hud" data-testid="live-hud" data-screen={screen} data-menu-scene={menuScene} data-menu-house-color={menuHouse} style={menuAccent===undefined?undefined:{'--menu-accent':`#${menuAccent.toString(16).padStart(6,'0')}`}}>
     <HudProvider model={m} commands={controller.commands}>
-      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu/>:screen==='skirmish'?<SkirmishSetup/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
+      {menuScene&&<MenuBackdrop/>}
+      {screen==='game'? <LivePresentation controller={controller}/>: screen==='main'?<MainMenu logo={<BrandLogo/>}/>:screen==='skirmish'?<SkirmishSetup logo={<BrandLogo compact/>}/>:screen==='settings'?<Settings/>:screen==='credits'?<LiveCredits build={m.menus.main.build.value}/>:screen==='tutorial'?<LiveBriefing/>:screen==='score'?<ScoreScreen/>:<div class="live-unavailable"><p>{m.locale.value==='en'?'This screen is not available yet.':'Diese Ansicht ist noch nicht verfügbar.'}</p><button onClick={()=>controller.commands.backToMenu()}>{m.locale.value==='en'?'Back':'Zurück'}</button></div>}
     </HudProvider>
     {controller.error.value&&<div class="live-action-error" role="alert" data-testid="hud-action-error">{controller.error.value}<button type="button" aria-label={m.locale.value==='en'?'Close':'Schließen'} onClick={()=>{controller.error.value=null;}}>×</button></div>}
-    {screen==='game'&&queuedGhosts.length>0&&<svg class="live-queued-build-ghosts" data-testid="queued-build-ghosts" data-count={queuedGhosts.length} aria-hidden="true">{queuedGhosts.map(site=><polygon key={site.key} data-testid="queued-build-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-yaw={site.yaw} data-builders={site.builders.length} data-orders={site.orders.length} data-queue-index={site.queueIndex} data-verdict={site.verdict??'unknown'} class={site.verdict===null?'queued':'queued blocked'} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')}/>)}</svg>}
-    {screen==='game'&&dragGhosts.length>0&&<svg class="live-build-ghost live-build-drag-ghosts" data-testid="build-drag-ghosts" data-count={dragGhosts.length} aria-hidden="true">{dragGhosts.map(site=><polygon key={`${site.x}:${site.z}`} data-testid="build-drag-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-verdict={site.verdict} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={site.verdict===0?'valid':'invalid'}/>)}</svg>}
-    {dragGhosts.length===0&&ghost&&ghost.corners.length===4&&<svg class="live-build-ghost" data-testid="build-ghost" data-verdict={ghost.verdict} data-type={ghost.typeId} data-x={ghost.x} data-z={ghost.z} data-role={ghost.role} style={ghost.verdict===0&&ghost.role?{'--ghost-role':BUILD_ROLE_COLORS[ghost.role]}:undefined}><polygon points={ghost.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={ghost.verdict===0?'valid':'invalid'}/>{ghost.roof&&ghost.roof.length===4&&<g class={`live-build-volume ${ghost.verdict===0?'valid':'invalid'}`} data-testid="build-ghost-volume">{[0,1,2,3].map(i=>{const a=ghost.corners[i]!,b=ghost.corners[(i+1)%4]!,c=ghost.roof![(i+1)%4]!,d=ghost.roof![i]!;return <polygon key={i} points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`}/>;})}<polygon class="roof" points={ghost.roof.map(p=>`${p[0]},${p[1]}`).join(' ')}/></g>}<text x={ghost.corners[0]![0]} y={ghost.corners[0]![1]-8}>{ghost.verdict===0?(m.locale.value==='en'?'Place':'Bauen'):(m.locale.value==='en'?'Blocked':'Gesperrt')}</text></svg>}
+    {screen==='game'&&<RangeRings rings={controller.rangeRings.value} locale={m.locale.value}/>}
+    {screen==='game'&&queuedGhosts.length>0&&<svg class="live-queued-build-ghosts" data-testid="queued-build-ghosts" data-count={queuedGhosts.length} aria-hidden="true">{queuedGhosts.map(site=><g key={site.key} data-role={site.role} style={site.role?{'--ghost-role':BUILD_ROLE_COLORS[site.role]}:undefined}><polygon data-testid="queued-build-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-yaw={site.yaw} data-builders={site.builders.length} data-orders={site.orders.length} data-queue-index={site.queueIndex} data-verdict={site.verdict??'unknown'} class={site.verdict===null?'queued':'queued blocked'} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')}/><BuildVolume corners={site.corners} roof={site.roof} valid={site.verdict===null} testId="queued-build-ghost-volume"/></g>)}</svg>}
+    {screen==='game'&&dragGhosts.length>0&&<svg class="live-build-ghost live-build-drag-ghosts" data-testid="build-drag-ghosts" data-count={dragGhosts.length} aria-hidden="true"><defs><pattern id="build-drag-blocked-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#c63f4433"/><path d="M 0 0 V 8" stroke="#ff555b" stroke-opacity=".65" stroke-width="2"/></pattern></defs>{dragGhosts.map(site=><g key={`${site.x}:${site.z}`} data-role={site.role} style={site.role?{'--ghost-role':BUILD_ROLE_COLORS[site.role]}:undefined}><polygon data-testid="build-drag-ghost" data-type={site.typeId} data-x={site.x} data-z={site.z} data-verdict={site.verdict} points={site.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={site.verdict===0?'valid':'invalid'}/><BuildVolume corners={site.corners} roof={site.roof} valid={site.verdict===0} testId="build-drag-ghost-volume"/></g>)}</svg>}
+    {dragGhosts.length===0&&ghost&&ghost.corners.length===4&&<svg class="live-build-ghost" data-testid="build-ghost" data-verdict={ghost.verdict} data-type={ghost.typeId} data-x={ghost.x} data-z={ghost.z} data-role={ghost.role} style={ghost.verdict===0&&ghost.role?{'--ghost-role':BUILD_ROLE_COLORS[ghost.role]}:undefined}><polygon points={ghost.corners.map(p=>`${p[0]},${p[1]}`).join(' ')} class={ghost.verdict===0?'valid':'invalid'}/><BuildVolume corners={ghost.corners} roof={ghost.roof} valid={ghost.verdict===0} testId="build-ghost-volume"/><text x={ghost.corners[0]![0]} y={ghost.corners[0]![1]-8}>{ghost.verdict===0?(m.locale.value==='en'?'Place':'Bauen'):(m.locale.value==='en'?'Blocked':'Gesperrt')}</text></svg>}
   </div>;
 }
 export function LiveGameHud({game,ports,result}: {game:Game;ports?:GameHudPorts;result?:MatchResult}) {
@@ -196,5 +215,5 @@ function LivePresentation({controller}: {controller:GameHudController}) {
     </div>
     {showOrders&&<div class="live-command-context"><Panel class="live-primary-orders sc-frame" panelId="orders" testId="order-bar" component="OrderBar"><div class="live-primary-order-row">{PRIMARY_ORDERS.map(id=><div class="live-primary-order" key={id} data-order={id} role="group" aria-label={t('ui.orders.label',{name:t(`ui.orders.${id}.name`),keys:`Alt+${keyLabel(orderDef(id).key!,m.keyboardLayout.value)}`})}><OrderButton id={id} compact glyph={<CommandArt order={id}/>}/><span class="live-primary-order-caption" aria-hidden="true">{t(`ui.orders.${id}.short`)}</span></div>)}</div></Panel>{card}</div>}
   </div>;
-  return <div class="hud live-game-presentation" style={theme.style} data-hud-army={theme.army} data-hud-color={theme.color} onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer">{controller.ecoAvailable.value&&<ResourceBar/>}<MatchStatus/><PauseBanner/><LiveNotices/>{dock}{m.menus.settings.values.value.tooltips!=='off'&&<TooltipLayer/>}<GameMenu/></div></div>;
+  return <div class="hud live-game-presentation" style={theme.style} data-hud-army={theme.army} data-hud-color={theme.color} onKeyDownCapture={onGridKeyDown} data-testid="hud" data-hud-root="" data-selection-kind={m.selection.kind.value} data-card-page={spec.page}><IconSprite/><div class="hud-layer">{controller.ecoAvailable.value&&<ResourceBar/>}<MatchStatus/><PauseBanner/><LiveNotices/>{dock}{m.menus.settings.values.value.tooltips!=='off'&&<TooltipLayer/>}<GameMenu logo={<BrandLogo compact/>}/></div></div>;
 }

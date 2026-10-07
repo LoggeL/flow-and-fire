@@ -27,12 +27,12 @@ import {
   type RtsMap,
   type SpotKind,
 } from '@faf/formats';
-import { EditorDocument, sameRef } from '../model/document.ts';
+import { EditorDocument } from '../model/document.ts';
 import { History } from '../model/history.ts';
-import { toMarkersJson } from '../model/markers-json.ts';
+import { toEditorOverlayJson, toMarkersJson } from '../model/markers-json.ts';
 import type { EditorOp, FieldPatch } from '../model/ops.ts';
 import { findTwin, mirrorDelta, mirrorField, mirrorPoint, MIRROR_SEED_XOR, symmetrizeOp } from '../model/symmetry.ts';
-import type { EditorIssue, MarkerRef, SymmetryMode, ToolId, Validator } from '../model/types.ts';
+import { refIn, sameRef, type EditorIssue, type MarkerRef, type SymmetryMode, type ToolId, type Validator } from '../model/types.ts';
 
 /** Default snap: 0.5 WU. */
 export const DEFAULT_SNAP_RAW = 2048;
@@ -78,10 +78,6 @@ interface GestureMove {
 
 function errorText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
-}
-
-function containsRef(list: readonly MarkerRef[], r: MarkerRef): boolean {
-  return list.some((o) => sameRef(o, r));
 }
 
 export class EditorStore {
@@ -163,6 +159,11 @@ export class EditorStore {
     return toMarkersJson(this.requireDoc());
   }
 
+  /** editor.json text (marker overlay for content/maps/src/<name>/; throws if no document is open). */
+  exportEditorOverlay(): string {
+    return toEditorOverlayJson(this.requireDoc());
+  }
+
   /** All prop fields expanded (cached per revision; empty without a document). */
   expandedProps(): readonly ExpandedProp[] {
     const doc = this.docSig.peek();
@@ -188,7 +189,7 @@ export class EditorStore {
     const doc = this.docSig.peek();
     if (doc === null) return;
     const out: MarkerRef[] = additive ? this.selectionSig.peek().slice() : [];
-    for (const r of refs) if (doc.has(r) && !containsRef(out, r)) out.push(r);
+    for (const r of refs) if (doc.has(r) && !refIn(out, r)) out.push(r);
     this.selectionSig.value = out;
   }
 
@@ -306,7 +307,7 @@ export class EditorStore {
       if (mode !== 'none') {
         for (const r of refs) {
           const t = findTwin(doc, r, mode);
-          if (t === null || containsRef(refs, t) || containsRef(twins, t)) continue;
+          if (t === null || refIn(refs, t) || refIn(twins, t)) continue;
           if (t.type === 'fieldVertex' && refs.some((o) => o.type === 'field' && o.index === t.index)) continue;
           twins.push(t);
         }
@@ -408,15 +409,15 @@ export class EditorStore {
     const mode = this.live;
     const all: MarkerRef[] = [];
     for (const r of sel) {
-      if (!containsRef(all, r)) all.push(r);
+      if (!refIn(all, r)) all.push(r);
       const t = mode === 'none' ? null : findTwin(doc, r, mode);
-      if (t !== null && !containsRef(all, t)) all.push(t);
+      if (t !== null && !refIn(all, t)) all.push(t);
     }
     const whole: MarkerRef[] = [];
     for (const r of all) {
       if (r.type === 'fieldVertex') continue;
       const w: MarkerRef = r.type === 'fieldRadius' ? { type: 'field', index: r.index } : r;
-      if (!containsRef(whole, w)) whole.push(w);
+      if (!refIn(whole, w)) whole.push(w);
     }
     const startsLeft = doc.starts.length - whole.filter((r) => r.type === 'start').length;
     let note = '';
@@ -629,7 +630,7 @@ function normalizeSelection(doc: EditorDocument, sel: readonly MarkerRef[]): Mar
   for (const r0 of sel) {
     if (!doc.has(r0)) continue;
     const r: MarkerRef = r0.type === 'fieldRadius' ? { type: 'field', index: r0.index } : r0;
-    if (!containsRef(out, r)) out.push(r);
+    if (!refIn(out, r)) out.push(r);
   }
   return out.filter((r) => r.type !== 'fieldVertex' || !out.some((o) => o.type === 'field' && o.index === r.index));
 }

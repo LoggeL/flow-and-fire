@@ -21,6 +21,8 @@ export interface RigBinding {
   readonly pitch: boolean;
   /** Opposed hip rotation driven only by accepted horizontal movement. */
   readonly gait?: 1 | -1;
+  /** Structure motion needs current private-safe economy observations, never wall-clock time. */
+  readonly activity?: 'factory-gate' | 'mex-pump' | 'radar-spin';
 }
 export interface RigVisualEntry extends VisualEntry {
   /** Compiled public category, used only to present accepted factory rally watches. */
@@ -36,6 +38,17 @@ export function combatRig(id: string, parts: readonly ModelPartInfo[]): readonly
     const i = parts.findIndex(p => p.name === name);
     if (i > 0) rig[i] = { mount, yaw, pitch };
   };
+  const activity = (name: string, anim: string, kind: NonNullable<RigBinding['activity']>): void => {
+    const i = parts.findIndex(p => p.name === name && p.anim === anim);
+    if (i > 0) rig[i] = { mount: -1, yaw: false, pitch: false, activity: kind };
+  };
+  if (id === 'core:fac_land_t1' || id === 'core:fac_land_t2') {
+    activity('gate', 'pitch', 'factory-gate');
+  } else if (id === 'core:str_t1_mex' || id === 'core:str_t2_mex') {
+    activity('pump', 'pitch', 'mex-pump');
+  } else if (id === 'core:str_t1_radar') {
+    activity('wing', 'yaw', 'radar-spin');
+  }
   for (const [name, gait] of [['legs_l', 1], ['legs_r', -1]] as const) {
     const i = parts.findIndex(p => p.name === name && p.anim === 'legs');
     if (i > 0) rig[i] = { mount: -1, yaw: false, pitch: false, gait };

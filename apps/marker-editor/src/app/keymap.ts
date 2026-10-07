@@ -1,6 +1,11 @@
 /**
- * Keyboard shortcuts of the editor (DOM-free): maps a key event (KeyboardEvent.code plus modifier
- * flags) to an action. Layout independent through `code` (KeyZ is Z on QWERTY and Y on QWERTZ).
+ * Keyboard shortcuts of the editor (DOM-free): maps a key event to an action.
+ *
+ * Letter shortcuts (Z, Y, S, O, F, G) follow the printed character (`KeyboardEvent.key`), not the
+ * physical key position: on QWERTZ the key labelled Z reports code 'KeyY', and Ctrl/Cmd+Z must
+ * still undo there. `code` is only the fallback when `key` is not a Latin letter (non-Latin
+ * layouts, or synthetic events without `key`). Non-letter keys (Delete, Escape, Enter, digits)
+ * use `code`, which is layout independent for them (Digit1 is also AZERTY's '&' key).
  *
  * | Keys                                    | Action                                   |
  * |-----------------------------------------|------------------------------------------|
@@ -10,8 +15,8 @@
  * | Ctrl/Cmd+O                              | open file                                |
  * | Delete, Backspace                       | delete selection (polygon draft: remove last point) |
  * | Digit1 … Digit7                         | tools in ToolId order                    |
- * | KeyF                                    | fit the view to the map                  |
- * | KeyG                                    | toggle the grid                          |
+ * | F                                       | fit the view to the map                  |
+ * | G                                       | toggle the grid                          |
  * | Escape                                  | cancel the current tool action, else clear the selection |
  * | Enter, NumpadEnter                      | finish the polygon being drawn           |
  *
@@ -39,6 +44,8 @@ export type KeyAction =
 /** The KeyboardEvent fields the keymap reads. */
 export interface KeyInput {
   readonly code: string;
+  /** The produced character (KeyboardEvent.key); drives letter shortcuts. Optional: code fallback. */
+  readonly key?: string;
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly shiftKey: boolean;
@@ -50,17 +57,18 @@ export interface KeyInput {
 /** Action for a key event, or null if the editor does not handle it. */
 export function resolveKey(e: KeyInput, editable: boolean): KeyAction | null {
   const mod = e.ctrlKey || e.metaKey;
+  const letter = letterOf(e);
   if (mod) {
     if (e.altKey) return null;
-    switch (e.code) {
-      case 'KeyZ':
+    switch (letter) {
+      case 'z':
         if (editable) return null;
         return e.shiftKey ? { type: 'redo' } : { type: 'undo' };
-      case 'KeyY':
+      case 'y':
         return editable || e.shiftKey ? null : { type: 'redo' };
-      case 'KeyS':
+      case 's':
         return e.shiftKey || e.repeat === true ? null : { type: 'save' };
-      case 'KeyO':
+      case 'o':
         return e.shiftKey || e.repeat === true ? null : { type: 'open' };
       default:
         return null;
@@ -77,9 +85,13 @@ export function resolveKey(e: KeyInput, editable: boolean): KeyAction | null {
     case 'Enter':
     case 'NumpadEnter':
       return { type: 'confirm' };
-    case 'KeyF':
+    default:
+      break;
+  }
+  switch (letter) {
+    case 'f':
       return e.shiftKey ? null : { type: 'fitView' };
-    case 'KeyG':
+    case 'g':
       return e.shiftKey ? null : { type: 'toggleGrid' };
     default:
       break;
@@ -87,6 +99,23 @@ export function resolveKey(e: KeyInput, editable: boolean): KeyAction | null {
   if (!e.shiftKey && e.code.startsWith('Digit')) {
     const n = e.code.charCodeAt(5) - 49;
     if (e.code.length === 6 && n >= 0 && n < TOOL_ORDER.length) return { type: 'tool', tool: TOOL_ORDER[n]! };
+  }
+  return null;
+}
+
+/**
+ * Lower-case Latin letter of a key event: from `key` when it is one, else from a `KeyA`..`KeyZ`
+ * code (non-Latin layouts, where `key` is e.g. a Cyrillic letter), else null.
+ */
+export function letterOf(e: KeyInput): string | null {
+  const key = e.key;
+  if (key !== undefined && key.length === 1) {
+    const lower = key.toLowerCase();
+    if (lower >= 'a' && lower <= 'z') return lower;
+  }
+  if (e.code.length === 4 && e.code.startsWith('Key')) {
+    const c = e.code.charAt(3).toLowerCase();
+    if (c >= 'a' && c <= 'z') return c;
   }
   return null;
 }

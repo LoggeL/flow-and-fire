@@ -128,7 +128,19 @@ function paths(sx: number, sz: number, slope: boolean | number, blocked: Blocked
   return dist;
 }
 
-const at = (d: Float64Array, x: number, z: number): number => d[Math.round(z) * D + Math.round(x)]!;
+// Only unblocked paths are shared: blocked ramp/ford experiments keep independent searches.
+const unblocked = new Map<string, Readonly<Float64Array>>();
+function unblockedPaths(sx: number, sz: number, slope: boolean): Readonly<Float64Array> {
+  const key = `${sx},${sz},${slope}`;
+  let dist = unblocked.get(key);
+  if (dist === undefined) {
+    dist = paths(sx, sz, slope);
+    unblocked.set(key, dist);
+  }
+  return dist;
+}
+
+const at = (d: Readonly<Float64Array>, x: number, z: number): number => d[Math.round(z) * D + Math.round(x)]!;
 const F = BRAIDWATER_FORDS;
 const axisDist = (z: number): number => Math.abs(z - AXIS);
 const westFord: Blocked = (x, z) => x >= F.west.x0 - 10 && x <= F.west.x1 + 10 && axisDist(z) < 45;
@@ -253,9 +265,10 @@ describe('braidwater map contract', () => {
   it('has a short route over the west ford (≈ 428 WU) and a long one over the island (≈ 676 WU), no other crossing', () => {
     for (const slope of [false, true]) {
       const label = slope ? 'with slope limit' : 'water only';
-      const all = paths(S.x, S.z, slope);
+      const all = unblockedPaths(S.x, S.z, slope);
       const long = at(paths(S.x, S.z, slope, westFord), N.x, N.z);
-      const short = at(paths(S.x, S.z, slope, islandFords), N.x, N.z);
+      const withoutIslandFords = paths(S.x, S.z, slope, islandFords);
+      const short = at(withoutIslandFords, N.x, N.z);
       expect(at(all, N.x, N.z), label).toBeCloseTo(short, 6);
       // Spec §5 [F] ±5 %: 428 / 676 WU.
       expect(short, label).toBeGreaterThanOrEqual(407);
@@ -267,9 +280,9 @@ describe('braidwater map contract', () => {
       const cut = paths(S.x, S.z, slope, allFords);
       expect(at(cut, N.x, N.z), label).toBe(Infinity);
       expect(at(cut, BRAIDWATER_ISLAND.x, AXIS), label).toBe(Infinity);
-      expect(at(paths(S.x, S.z, slope, islandFords), BRAIDWATER_ISLAND.x, AXIS), label).toBe(Infinity);
+      expect(at(withoutIslandFords, BRAIDWATER_ISLAND.x, AXIS), label).toBe(Infinity);
       // Every spot is reachable by land from both starts.
-      const fromN = paths(N.x, N.z, slope);
+      const fromN = unblockedPaths(N.x, N.z, slope);
       for (const s of sim.spots) {
         expect(at(all, s.x / ONE, s.z / ONE), `${label}: spot ${s.x / ONE},${s.z / ONE}`).toBeLessThan(Infinity);
         expect(at(fromN, s.x / ONE, s.z / ONE)).toBeLessThan(Infinity);
@@ -389,8 +402,8 @@ describe('braidwater map contract', () => {
       expect(r.width).toBeGreaterThanOrEqual(16);
     }
     // Reachable over the ramp (nav limit), sealed without it even with the looser SEAL_SLOPE.
-    const fromS = paths(S.x, S.z, true);
-    const fromN = paths(N.x, N.z, true);
+    const fromS = unblockedPaths(S.x, S.z, true);
+    const fromN = unblockedPaths(N.x, N.z, true);
     for (const [id, x, z] of [
       ['bluff', 208, 300],
       ['knoll', BRAIDWATER_PLATEAUS.knoll.x, BRAIDWATER_PLATEAUS.knoll.z],

@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs';
-import { expect, test, type Page } from './support/silent-test.ts';
+import { expect, test, type BrowserContext, type Page } from './support/silent-test.ts';
 import type { LoadTimings } from '../../apps/game/src/loading.ts';
 import { attachJson, captureErrors, expectNoErrors, MEASURED_LOCALLY, PERF_GATE, SERVERS, writeReport } from './support/game.ts';
 import { installSilentOutput } from '../../apps/game/test/support/silent-output.ts';
@@ -95,65 +95,69 @@ for (const server of SERVERS) {
   test(`map-load: kalt ≤ 8 s, aus dem Cache ≤ 3 s, Ladebildschirm mit Fortschritt – ${server.label}`, async ({ playwright, browserName }, testInfo) => {
     const profile = testInfo.outputPath('profile');
     rmSync(profile, { recursive: true, force: true });
-    const ctx = await playwright[browserName].launchPersistentContext(profile, {
-      ...(testInfo.project.use.launchOptions ?? {}),
-      viewport: { width: 1280, height: 720 },
-    });
-    await ctx.addInitScript(recordLoading);
-    const page = ctx.pages()[0] ?? (await ctx.newPage());
-    const errors = captureErrors(page);
+    let ctx: BrowserContext | undefined;
+    try {
+      ctx = await playwright[browserName].launchPersistentContext(profile, {
+        ...(testInfo.project.use.launchOptions ?? {}),
+        viewport: { width: 1280, height: 720 },
+      });
+      await ctx.addInitScript(recordLoading);
+      const page = ctx.pages()[0] ?? (await ctx.newPage());
+      const errors = captureErrors(page);
 
-    const cold = await loadOnce(page, server.url + "?spawn=cubes");
-    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
-    const cached = await loadOnce(page, server.url + "?spawn=cubes");
-    await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
+      const cold = await loadOnce(page, server.url + "?spawn=cubes");
+      await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
+      const cached = await loadOnce(page, server.url + "?spawn=cubes");
+      await page.waitForFunction(() => (window.__faf?.unitCount ?? 0) >= 1024, null, { timeout: 20_000 });
 
-    const report = {
-      browser: testInfo.project.name,
-      transport: server.transport,
-      crossOriginIsolated: server.coi,
-      measuredLocally: MEASURED_LOCALLY,
-      perfGate: PERF_GATE,
-      limits: { coldMs: COLD_LIMIT_MS, cachedMs: CACHED_LIMIT_MS },
-      cold: { wallMs: cold.wallMs, ...cold.timings, progress: cold.record.progress, phases: cold.record.phases },
-      cached: { wallMs: cached.wallMs, ...cached.timings, progress: cached.record.progress, phases: cached.record.phases },
-      criteria: {
-        coldLe8s: cold.wallMs <= COLD_LIMIT_MS,
-        cachedLe3s: cached.wallMs <= CACHED_LIMIT_MS,
-        cachedNoNetworkBytes: cached.timings.bytesNetwork === 0,
-      },
-    };
-    writeReport(`map-load-${testInfo.project.name}-${server.transport}`, report);
-    await attachJson(testInfo, 'map-load', report);
+      const report = {
+        browser: testInfo.project.name,
+        transport: server.transport,
+        crossOriginIsolated: server.coi,
+        measuredLocally: MEASURED_LOCALLY,
+        perfGate: PERF_GATE,
+        limits: { coldMs: COLD_LIMIT_MS, cachedMs: CACHED_LIMIT_MS },
+        cold: { wallMs: cold.wallMs, ...cold.timings, progress: cold.record.progress, phases: cold.record.phases },
+        cached: { wallMs: cached.wallMs, ...cached.timings, progress: cached.record.progress, phases: cached.record.phases },
+        criteria: {
+          coldLe8s: cold.wallMs <= COLD_LIMIT_MS,
+          cachedLe3s: cached.wallMs <= CACHED_LIMIT_MS,
+          cachedNoNetworkBytes: cached.timings.bytesNetwork === 0,
+        },
+      };
+      writeReport(`map-load-${testInfo.project.name}-${server.transport}`, report);
+      await attachJson(testInfo, 'map-load', report);
 
-    // Cold: everything from the network into the (empty) Cache API.
-    expect(cold.timings.fromCache).toBe(0);
-    expect(cold.timings.fromNetwork).toBeGreaterThanOrEqual(4);
-    expect(cold.timings.bytesNetwork).toBeGreaterThan(2_600_000);
-    expect(cold.timings.sources['maps/setons']).toBe('network');
-    expect(cold.timings.cacheApi, 'Cache API available').toBe(true);
-    // Cached: every asset is a Cache API hit, no network bytes for assets.
-    expect(cached.timings.fromCache).toBeGreaterThan(0);
-    expect(cached.timings.fromCache).toBe(cold.timings.fromNetwork);
-    expect(cached.timings.fromNetwork).toBe(0);
-    expect(cached.timings.bytesNetwork).toBe(0);
-    expect(cached.timings.bytesCache).toBe(cold.timings.bytesNetwork);
-    expect(Object.values(cached.timings.sources).every((s) => s === 'cache')).toBe(true);
-    // Models decoded with meshopt (compressed GLB) in every engine.
-    for (const m of Object.values(cold.timings.models)) expect(m.variant).toBe('meshopt');
+      // Cold: everything from the network into the (empty) Cache API.
+      expect(cold.timings.fromCache).toBe(0);
+      expect(cold.timings.fromNetwork).toBeGreaterThanOrEqual(4);
+      expect(cold.timings.bytesNetwork).toBeGreaterThan(2_600_000);
+      expect(cold.timings.sources['maps/setons']).toBe('network');
+      expect(cold.timings.cacheApi, 'Cache API available').toBe(true);
+      // Cached: every asset is a Cache API hit, no network bytes for assets.
+      expect(cached.timings.fromCache).toBeGreaterThan(0);
+      expect(cached.timings.fromCache).toBe(cold.timings.fromNetwork);
+      expect(cached.timings.fromNetwork).toBe(0);
+      expect(cached.timings.bytesNetwork).toBe(0);
+      expect(cached.timings.bytesCache).toBe(cold.timings.bytesNetwork);
+      expect(Object.values(cached.timings.sources).every((s) => s === 'cache')).toBe(true);
+      // Models decoded with meshopt (compressed GLB) in every engine.
+      for (const m of Object.values(cold.timings.models)) expect(m.variant).toBe('meshopt');
 
-    checkProgress(cold.record, true);
-    checkProgress(cached.record, false);
-    for (const t of [cold.timings, cached.timings]) {
-      expect(t.navigationToReadyMs).not.toBeNull();
-      expect(Number.isFinite(t.navigationToReadyMs)).toBe(true);
+      checkProgress(cold.record, true);
+      checkProgress(cached.record, false);
+      for (const t of [cold.timings, cached.timings]) {
+        expect(t.navigationToReadyMs).not.toBeNull();
+        expect(Number.isFinite(t.navigationToReadyMs)).toBe(true);
+      }
+      if (PERF_GATE) {
+        expect(cold.wallMs, 'cold load ≤ 8 s').toBeLessThanOrEqual(COLD_LIMIT_MS);
+        expect(cached.wallMs, 'cached load ≤ 3 s').toBeLessThanOrEqual(CACHED_LIMIT_MS);
+      }
+      expectNoErrors(errors);
+    } finally {
+      try { await ctx?.close(); }
+      finally { rmSync(profile, { recursive: true, force: true }); }
     }
-    if (PERF_GATE) {
-      expect(cold.wallMs, 'cold load ≤ 8 s').toBeLessThanOrEqual(COLD_LIMIT_MS);
-      expect(cached.wallMs, 'cached load ≤ 3 s').toBeLessThanOrEqual(CACHED_LIMIT_MS);
-    }
-    expectNoErrors(errors);
-    await ctx.close();
-    rmSync(profile, { recursive: true, force: true });
   });
 }

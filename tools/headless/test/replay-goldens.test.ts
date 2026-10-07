@@ -39,13 +39,21 @@ describe('golden portable replays', () => {
       expect(result.finalRuleHash).toBe(golden!.finalRuleHash);
       expect(result.finalFullHash).toBe(golden!.finalFullHash);
       expect(result.seekFullHash).toBe(result.finalFullHash);
-      const player = ReplayPlayer.open(replay, { simBin: assets.simBin, map });
+      const player = ReplayPlayer.open(replay, { simBin: assets.simBin, map, keyframes: false });
       const seekTick = Math.min(1000, player.endTick);
       player.runUntil(seekTick);
-      const expected = player.fullHash();
-      player.playToEnd();
-      player.seek(seekTick);
-      expect(player.fullHash()).toBe(expected);
+      const expected = hex32(player.fullHash());
+      if (result.seekTick === seekTick) {
+        // The verification job already played to the end and sought backward here. Compare
+        // that observed restore with this independent forward run, without playing it twice.
+        expect(result.middleFullHash).toBe(expected);
+      } else {
+        // Short/long scenarios have a different midpoint: keep the original additional target.
+        const seeker = ReplayPlayer.open(replay, { simBin: assets.simBin, map });
+        seeker.playToEnd();
+        seeker.seek(seekTick);
+        expect(hex32(seeker.fullHash())).toBe(expected);
+      }
     }, 120_000);
   }
 });

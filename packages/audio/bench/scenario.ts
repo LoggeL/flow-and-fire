@@ -60,6 +60,20 @@ export interface BattleConfig {
   seed?: number | undefined;
 }
 
+/** {@link BattleConfig} with all defaults applied. */
+export interface ResolvedBattleConfig {
+  readonly seconds: number;
+  readonly fps: number;
+  readonly shotsPerSecond: number;
+  readonly impactsPerSecond: number;
+  readonly deathsPerSecond: number;
+  readonly commanderDeathAtS: number | null;
+  readonly alerts: readonly ScenarioAlert[];
+  readonly buildLoops: number;
+  readonly farShare: number;
+  readonly seed: number;
+}
+
 export const DEFAULT_BATTLE_ALERTS: readonly ScenarioAlert[] = [
   { atS: 2, kind: 'alt_base_attacked', x: -30, z: 20 },
   { atS: 4.5, kind: 'alt_commander_danger', x: 12, z: -8 },
@@ -111,7 +125,7 @@ export interface BattleCounts {
 export class BattleScenario {
   readonly batch = new ArrayEventSource(512);
   readonly counts: BattleCounts = { ticks: 0, weaponFire: 0, impacts: 0, deaths: 0, commanderDeaths: 0, alerts: 0 };
-  readonly cfg: { [K in keyof Omit<BattleConfig, 'commanderDeathAtS'>]-?: Exclude<BattleConfig[K], undefined> } & { commanderDeathAtS: number | null };
+  readonly cfg: ResolvedBattleConfig;
   private readonly rnd: () => number;
   private shotAcc = 0;
   private impactAcc = 0;
@@ -213,10 +227,14 @@ export interface BattleHooks {
   advance(ms: number): void;
   /** Wall clock in ms (the engine clock). */
   now(): number;
-  /** Called right before the engine calls of a frame (handleEvents + update), e.g. to start a timer. */
-  frameStart?: ((frame: number) => void) | undefined;
+  /**
+   * Stopwatch in ms (e.g. performance.now). When given, the driver sums the time spent inside
+   * the engine calls of a frame (handleEvents + update; event generation excluded) and passes
+   * it to `onFrame`.
+   */
+  timer?: (() => number) | undefined;
   /** Called right after `engine.update` of every frame (before the clock advances). */
-  onFrame?: ((frame: number, tickFed: boolean) => void) | undefined;
+  onFrame?: ((frame: number, tickFed: boolean, engineMs: number) => void) | undefined;
 }
 
 /** Build loop request of loop `i` (positions left/right of the focus). */
@@ -254,6 +272,7 @@ export class BattleDriver {
   step(): boolean {
     const engine = this.engine;
     const hooks = this.hooks;
+    const timer = hooks.timer;
     if (!this.started) {
       this.started = true;
       engine.setListener(BATTLE_LISTENER);
@@ -261,14 +280,27 @@ export class BattleDriver {
     }
     const f = this.frame;
     let fed = false;
-    hooks.frameStart?.(f);
+    let engineMs = 0;
     while (this.nextTickMs <= this.simMs) {
-      engine.handleEvents(this.scenario.nextTick());
+      const batch = this.scenario.nextTick();
+      if (timer === undefined) {
+        engine.handleEvents(batch);
+      } else {
+        const t0 = timer();
+        engine.handleEvents(batch);
+        engineMs += timer() - t0;
+      }
       this.nextTickMs += this.tickMs;
       fed = true;
     }
-    engine.update(hooks.now());
-    hooks.onFrame?.(f, fed);
+    if (timer === undefined) {
+      engine.update(hooks.now());
+    } else {
+      const t0 = timer();
+      engine.update(hooks.now());
+      engineMs += timer() - t0;
+    }
+    hooks.onFrame?.(f, fed, timer === undefined ? Number.NaN : engineMs);
     hooks.advance(this.frameMs);
     this.simMs += this.frameMs;
     this.frame = f + 1;

@@ -341,7 +341,10 @@ export interface ScorchStats {
   decals: number;
   /** Used list entries at the last pack(). */
   listEntries: number;
-  /** (decal, chunk) pairs beyond {@link MAX_SCORCH_PER_CHUNK} at the last pack() (not drawn there). */
+  /**
+   * (decal, chunk) pairs beyond {@link MAX_SCORCH_PER_CHUNK} at the last pack() (not drawn there).
+   * A full chunk keeps its newest decals (packing order is newest first).
+   */
   chunkOverflow: number;
   /** Decals replaced because the pool was full (cumulative). */
   replaced: number;
@@ -398,6 +401,9 @@ export class ScorchDecals {
   private now = 0;
   private readonly cover: Int32Array;
   private readonly counts: Uint32Array;
+  /** Live slots in packing order (newest first). */
+  private readonly order: Int32Array;
+  private readonly byNewest = (a: number, b: number): number => this.serial[b]! - this.serial[a]!;
   private readonly shadeTmp: ScorchShade = { mult: 1, ember: 0 };
 
   constructor(opts: ScorchDecalsOptions) {
@@ -434,6 +440,7 @@ export class ScorchDecals {
     this.freeCount = cap;
     this.cover = new Int32Array(cap * 4);
     this.counts = new Uint32Array(chunks * chunks);
+    this.order = new Int32Array(cap);
   }
 
   /** Live decals. */
@@ -536,7 +543,11 @@ export class ScorchDecals {
     }
   }
 
-  /** Packs the live decals into {@link data} and bins them into {@link cells}; clears `dirty`. */
+  /**
+   * Packs the live decals into {@link data} (newest first) and bins them into {@link cells}; clears
+   * `dirty`. Each chunk lists at most MAX_SCORCH_PER_CHUNK decals in packing order, so an
+   * overflowing chunk keeps its newest decals (fresh embers never vanish behind old scorch).
+   */
   pack(): void {
     const data = this.data;
     data.fill(0);
@@ -545,9 +556,13 @@ export class ScorchDecals {
     const span = SCORCH_CHUNK_WU * RAW;
     const last = this.chunks - 1;
     const wrapMs = FX_TIME_WRAP_S * 1000;
+    const order = this.order;
+    let live = 0;
+    for (let s = 0; s < this.cap; s++) if (this.live[s] === 1) order[live++] = s;
+    order.subarray(0, live).sort(this.byNewest);
     let n = 0;
-    for (let s = 0; s < this.cap; s++) {
-      if (this.live[s] !== 1) continue;
+    for (let j = 0; j < live; j++) {
+      const s = order[j]!;
       const o = (Math.floor(n / SCORCH_DECALS_PER_ROW) * SCORCH_DATA_WIDTH + (n % SCORCH_DECALS_PER_ROW) * 2) * 4;
       const x = this.xRaw[s]!;
       const z = this.zRaw[s]!;

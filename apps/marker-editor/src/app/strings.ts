@@ -15,6 +15,8 @@ export const STRINGS = {
   saveFailed: (reason: string): string => `Speichern nicht möglich: ${reason}`,
   markersExported: 'markers.json exportiert',
   markersFailed: (reason: string): string => `markers.json-Export nicht möglich: ${reason}`,
+  overlayExported: 'editor.json exportiert (nach content/maps/src/<karte>/ legen, dann pnpm maps)',
+  overlayFailed: (reason: string): string => `editor.json-Export nicht möglich: ${reason}`,
   noDocument: 'Keine Karte geladen',
   discardChanges: (file: string): string => `Ungespeicherte Änderungen an ${file} verwerfen?`,
   beforeUnload: 'Ungespeicherte Änderungen gehen verloren.',

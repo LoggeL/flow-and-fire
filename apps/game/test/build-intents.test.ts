@@ -67,4 +67,31 @@ describe('shared queued build footprint consumer', () => {
     expect(consumer.project(accepted, footprint, { ...camera, project: () => false })).toEqual([]);
     expect(consumer.project(null, footprint, camera)).toEqual([]);
   });
+
+  it('reserves accepted rotated sites independent of projection and permits touching edges', () => {
+    const consumer = new FrameBuildIntents(), accepted = frame([{ builder: 10, x: 20, z: 30, yaw: 16384, index: 0 }]);
+    expect(consumer.project(accepted, footprint, { ...camera, project: () => false })).toEqual([]);
+    const candidate = (x: number, z = 30) => ({ x: x * 4096, z: z * 4096, width: 2, height: 2 });
+    expect(consumer.overlaps(accepted, footprint, candidate(20))).toBe(true);
+    expect(consumer.overlaps(accepted, footprint, candidate(22))).toBe(true);
+    expect(consumer.overlaps(accepted, footprint, candidate(23))).toBe(false);
+    expect(consumer.overlaps(accepted, footprint, candidate(20, 32))).toBe(false);
+    expect(consumer.overlaps(frame([], 101), footprint, candidate(20))).toBe(false);
+    expect(consumer.overlaps(null, footprint, candidate(20))).toBe(false);
+  });
+
+  it('projects the roof above the highest footprint corner and tracks roof-only camera changes', () => {
+    const consumer = new FrameBuildIntents(), accepted = frame([{ builder: 10, x: 20, z: 30, index: 0 }]);
+    const volume = () => ({ ...footprint(), role: 'energy' as const, previewHeightRaw: 2 * 4096 });
+    const project: IntentProjection = { heightAt: x => x === 19 * 4096 ? 4096 : 0,
+      project: (x, y, z, out) => { out[0] = x / 4096; out[1] = (z - y) / 4096; return true; } };
+    const first = consumer.project(accepted, volume, project);
+    expect(first[0]!.role).toBe('energy');
+    expect(first[0]!.roof).toEqual([[19, 25], [21, 25], [21, 29], [19, 29]]);
+    const roofShifted = consumer.project(accepted, volume, { ...project, project: (x, y, z, out) => {
+      project.project(x, y, z, out); if (y > 4096) out[0] = out[0]! + 1; return true;
+    } });
+    expect(first[0]!.corners).toEqual(roofShifted[0]!.corners);
+    expect(equalQueuedGhosts(first, roofShifted)).toBe(false);
+  });
 });

@@ -168,3 +168,22 @@ Opening-Abweichungen der KI bleiben dokumentiert. Der lokale Arena-Welt-Tick-Ver
 Die Arena ersetzt den späteren echten Welt-Tick-Vergleich nicht. Die FX-Szenen und Audio-Demo verwenden eigene Ereignisse; ihre
 Latenztests ersetzen keine Messung am vollständigen Event→Client→Spiel-Pfad. Lokale Keyframes,
 OPFS und Hashprüfungen ersetzen die noch fehlende Replay-Spieloberfläche nicht.
+
+## Nachtrag 2026-10-07: Worktree-Nachlauf integriert, Archive entfernt
+
+Nach dem Erhaltungscheck (30.09., 01:29) wurde in den Archiven bis 06:40 weitergearbeitet; dieser
+Nachlauf war nie im Root. Die uncommitteten Stände wurden auf ihren Branches gesichert und alle
+sieben Branches per Merge-Commit eingebracht (3-Wege-Merge, Basis = Snapshot aus `sources.json`):
+
+| Branch | Ergebnis |
+|---|---|
+| `track-editor` | übernommen: Overlay-Export `editor.json`, PFLD-Kopf mit `algoVersion`, Inset-bewusstes Einpassen, E2E-Specs, Berichte P5–P7 |
+| `track-audioeng` | übernommen: EventCodec, vollständige Gefechts-Demo, Mixer mit Makeup-Kompensation und Clip, Benchmarks, Berichte |
+| `track-renderfx` | übernommen: vollständige fx-lab-Szenen, `fine`/`pass`-GPU-Segmente, Ring-Eviction, Smokes, E2E-Specs, Berichte |
+| `track-replay` | Inhalt bleibt Root: Replay ist dort weiterentwickelt (GAME v3, Upgrades, Match-Statistik, Browser-Host) |
+| `track-hud` | Inhalt bleibt Root: Hauptmenü und Skirmish-Setup des Spiels bauen auf der Root-Fassung auf |
+| `track-ai` | Inhalt bleibt Root: die Spiel-KI nutzt Bündnisse, autoritative Platzierung und sim.bin-Blueprints |
+| `ms3` | Inhalt bleibt Root: MS3 ist im Root abgeschlossen und bis MS6.2 weitergeführt |
+
+Die Begründungen stehen in den jeweiligen Merge-Commits; die nicht übernommenen Stände bleiben
+über die Branch-Historie erreichbar. `.worktrees/` wurde danach gelöscht.

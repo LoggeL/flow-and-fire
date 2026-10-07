@@ -4,7 +4,7 @@
   "ui.skirmish.houses": "Houses",
   "ui.skirmish.rules": "Rules",
   "ui.skirmish.start": "Start skirmish",
-  "ui.skirmish.ready": "Map and blueprints verified",
+  "ui.skirmish.ready": "Ready",
   "ui.skirmish.checking": "Checking data",
   "ui.skirmish.invalid": "Please correct the setup",
   "ui.skirmish.duplicateColor": "Houses need distinct colors",
@@ -40,8 +40,11 @@
   "ui.skirmish.relation": "Own / Enemy",
   "ui.skirmish.cvd": "Colorblind-safe",
   "ui.skirmish.mapStats": "{size} WU · {starts} starts · {mass} mass spots",
+  "ui.skirmish.mapSize": "{size} WU",
   "ui.skirmish.startPosition": "Start position {n}",
   "ui.skirmish.aixLabel": "Economy bonus (AIx)",
   "ui.skirmish.aixFactor": "Bonus factor",
-  "ui.skirmish.aixOff": "no bonus"
+  "ui.skirmish.aixOff": "no bonus",
+  "ui.skirmish.aiOptions": "AI options",
+  "ui.skirmish.moreOptions": "More options"
 }

@@ -11,7 +11,9 @@
 
 import { expandPropField, FormatError, MAP_MAX_PROPS, type MapPropField, type RtsMap } from '@faf/formats';
 import { sampleHeightRaw } from '@faf/rules';
-import { NO_COMPONENT, type TerrainAnalysis } from './terrain.ts';
+import { LAND_MAX_SLOPE_PERMILLE, NO_COMPONENT, type TerrainAnalysis } from './terrain.ts';
+import { mirrorPoint } from '../model/symmetry.ts';
+import { MIRROR_MODES, type MirrorMode } from '../model/types.ts';
 import type { EditorIssue, MarkerRef, SymmetryMode } from './types.ts';
 
 const FX_ONE = 4096;
@@ -34,7 +36,7 @@ export interface ValidationOptions {
   readonly flatProbeStepRaw: number;
   /** start-not-flat: radius of the build platform around a start. Default 8 WU. */
   readonly startPlatformRadiusRaw: number;
-  /** start-not-flat: minimum share of passable samples on the platform in 1/1000. Default 500 (> half). */
+  /** start-not-flat: minimum share of passable cells (centre in the platform disc) in 1/1000. Default 500 (> half). */
   readonly startPlatformMinPassablePermille: number;
   /** spot-overlap: error if two spots are closer than this. Default 2 WU. */
   readonly spotOverlapRaw: number;
@@ -47,8 +49,8 @@ export interface ValidationOptions {
   /** start-close: warning if two starts are closer than this. Default 96 WU. */
   readonly startCloseWarnRaw: number;
   /**
-   * start-/spot-unreachable: markers on an impassable sample (spot on a small bump, start on a
-   * ramp edge) snap to the nearest passable sample within this radius. Default 4 WU.
+   * start-/spot-unreachable: markers in an impassable cell (spot on a small bump, start on a
+   * ramp edge) snap to the nearest passable cell (centre) within this radius. Default 4 WU.
    */
   readonly reachSnapRadiusRaw: number;
   /** field-covers-spot: warning if an expanded field prop is closer than this to a spot. Default 2 WU. */
@@ -215,24 +217,24 @@ function flatness(analysis: TerrainAnalysis, x: number, z: number, rInnerRaw: nu
   return [inner, outer];
 }
 
-/** Passable samples / all samples (1/1000) of the grid samples within `radiusRaw` of (x, z). */
+/** Passable cells / all cells (1/1000) whose centre lies within `radiusRaw` of (x, z). */
 function platformPassablePermille(analysis: TerrainAnalysis, x: number, z: number, radiusRaw: number): number {
-  const max = analysis.sizeWu;
-  const dim = analysis.dim;
-  const x0 = Math.max(0, (x - radiusRaw + FX_ONE - 1) >> FX_SHIFT);
-  const x1 = Math.min(max, (x + radiusRaw) >> FX_SHIFT);
-  const z0 = Math.max(0, (z - radiusRaw + FX_ONE - 1) >> FX_SHIFT);
-  const z1 = Math.min(max, (z + radiusRaw) >> FX_SHIFT);
+  const size = analysis.sizeWu;
+  const half = FX_ONE >> 1;
+  const x0 = Math.max(0, (x - radiusRaw - half) >> FX_SHIFT);
+  const x1 = Math.min(size - 1, (x + radiusRaw) >> FX_SHIFT);
+  const z0 = Math.max(0, (z - radiusRaw - half) >> FX_SHIFT);
+  const z1 = Math.min(size - 1, (z + radiusRaw) >> FX_SHIFT);
   const r2 = radiusRaw * radiusRaw;
   let total = 0;
   let ok = 0;
-  for (let sz = z0; sz <= z1; sz++) {
-    const dz = sz * FX_ONE - z;
-    for (let sx = x0; sx <= x1; sx++) {
-      const dx = sx * FX_ONE - x;
+  for (let cz = z0; cz <= z1; cz++) {
+    const dz = cz * FX_ONE + half - z;
+    for (let cx = x0; cx <= x1; cx++) {
+      const dx = cx * FX_ONE + half - x;
       if (dx * dx + dz * dz > r2) continue;
       total++;
-      if (analysis.passable[sz * dim + sx] === 1) ok++;
+      if (analysis.passable[cz * size + cx] === 1) ok++;
     }
   }
   return total === 0 ? 0 : Math.floor((ok * 1000) / total);
@@ -241,34 +243,13 @@ function platformPassablePermille(analysis: TerrainAnalysis, x: number, z: numbe
 // ---------------------------------------------------------------------------------------------
 // Symmetry
 
-/** Every mirror mode (without 'none') in a fixed order. */
-export const SYMMETRY_MODES: readonly Exclude<SymmetryMode, 'none'>[] = ['point', 'mirrorX', 'mirrorZ', 'diagonal', 'antiDiagonal'];
-
-const SYMMETRY_LABEL: Record<Exclude<SymmetryMode, 'none'>, string> = {
+const SYMMETRY_LABEL: Record<MirrorMode, string> = {
   point: 'punktsymmetrisch',
   mirrorX: 'achsensymmetrisch zu x = Mitte',
   mirrorZ: 'achsensymmetrisch zu z = Mitte',
   diagonal: 'symmetrisch zur Diagonale (x = z)',
   antiDiagonal: 'symmetrisch zur Gegendiagonale',
 };
-
-/** Mirror image of (x, z) under `mode` (S = sizeWu·4096), matching the editor model's convention. */
-export function mirrorPoint(mode: SymmetryMode, sizeRaw: number, x: number, z: number): [number, number] {
-  switch (mode) {
-    case 'point':
-      return [sizeRaw - x, sizeRaw - z];
-    case 'mirrorX':
-      return [sizeRaw - x, z];
-    case 'mirrorZ':
-      return [x, sizeRaw - z];
-    case 'diagonal':
-      return [z, x];
-    case 'antiDiagonal':
-      return [sizeRaw - z, sizeRaw - x];
-    case 'none':
-      return [x, z];
-  }
-}
 
 /** Marker classes that must map onto each other: 0 = start, 1 = mass, 2 = hydro. */
 interface MarkerSet {
@@ -302,12 +283,14 @@ function markerSet(map: RtsMap): MarkerSet {
 }
 
 /** Indices (into the marker set) of markers without a mirror partner of the same class under `mode`. */
-function unmatched(set: MarkerSet, mode: SymmetryMode, sizeRaw: number, tolRaw: number): number[] {
+function unmatched(set: MarkerSet, mode: SymmetryMode, sizeWu: number, tolRaw: number): number[] {
   const out: number[] = [];
   const tol2 = tolRaw * tolRaw;
   const n = set.cls.length;
   for (let i = 0; i < n; i++) {
-    const [mx, mz] = mirrorPoint(mode, sizeRaw, set.xs[i]!, set.zs[i]!);
+    const m = mirrorPoint(mode, sizeWu, set.xs[i]!, set.zs[i]!);
+    const mx = m.x;
+    const mz = m.z;
     let found = false;
     for (let j = 0; j < n && !found; j++) {
       if (set.cls[j] === set.cls[i] && dist2(mx, mz, set.xs[j]!, set.zs[j]!) <= tol2) found = true;
@@ -318,10 +301,9 @@ function unmatched(set: MarkerSet, mode: SymmetryMode, sizeRaw: number, tolRaw: 
 }
 
 /** Symmetry modes under which every start and spot has a mirror partner of the same kind. */
-export function detectSymmetry(map: RtsMap, toleranceRaw: number = DEFAULT_VALIDATION_OPTIONS.symmetryToleranceRaw): Exclude<SymmetryMode, 'none'>[] {
+export function detectSymmetry(map: RtsMap, toleranceRaw: number = DEFAULT_VALIDATION_OPTIONS.symmetryToleranceRaw): MirrorMode[] {
   const set = markerSet(map);
-  const sizeRaw = map.meta.sizeWu * FX_ONE;
-  return SYMMETRY_MODES.filter((m) => unmatched(set, m, sizeRaw, toleranceRaw).length === 0);
+  return MIRROR_MODES.filter((m) => unmatched(set, m, map.meta.sizeWu, toleranceRaw).length === 0);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -470,7 +452,7 @@ export function validateMap(map: RtsMap, analysis: TerrainAnalysis, options?: Pa
       const s = starts[i]!;
       if (startComp[i] === main) continue;
       const why = startComp[i] === NO_COMPONENT ? 'steht auf unpassierbarem Gelände' : 'ist über Land nicht mit den anderen Startpositionen verbunden';
-      add('error', 'start-unreachable', `${startName(map, i)} ${why} (Neigung > ${(analysis.maxSlopePermille / 1000).toFixed(2).replace('.', ',')} oder tiefes Wasser).`, s.x, s.z, [startRef(i)]);
+      add('error', 'start-unreachable', `${startName(map, i)} ${why} (Neigung > ${(LAND_MAX_SLOPE_PERMILLE / 1000).toFixed(2).replace('.', ',')}, tiefes Wasser oder Kartenrand).`, s.x, s.z, [startRef(i)]);
     }
   }
 
@@ -511,10 +493,10 @@ export function validateMap(map: RtsMap, analysis: TerrainAnalysis, options?: Pa
   // asymmetric (info)
   const set = markerSet(map);
   if (set.cls.length > 0) {
-    const found: Exclude<SymmetryMode, 'none'>[] = [];
+    const found: MirrorMode[] = [];
     let best: number[] | null = null;
-    for (const mode of SYMMETRY_MODES) {
-      const miss = unmatched(set, mode, sizeRaw, o.symmetryToleranceRaw);
+    for (const mode of MIRROR_MODES) {
+      const miss = unmatched(set, mode, meta.sizeWu, o.symmetryToleranceRaw);
       if (miss.length === 0) found.push(mode);
       else if (best === null || miss.length < best.length) best = miss;
     }

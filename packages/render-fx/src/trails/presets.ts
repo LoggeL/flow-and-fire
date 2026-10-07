@@ -24,8 +24,8 @@ export const VARKAN_BEAM_STYLES: Readonly<Record<VarkanBeamStyleName, BeamStyle>
   /** "Gießstrom" core: dense, flowing glow stream (particles from rfx-p3 ride on top of it). */
   buildStream: {
     widthWu: 1.3,
-    core: scale(CORE, 4.5),
-    glow: scale(FALLOFF, 1.6),
+    core: scale(CORE, 2.6),
+    glow: scale(FALLOFF, 1.2),
     alpha: 1,
     scrollSpeed: 14,
     noise: 0.65,
@@ -34,8 +34,8 @@ export const VARKAN_BEAM_STYLES: Readonly<Record<VarkanBeamStyleName, BeamStyle>
   /** Reclaim: rust-red, flowing from the wreck to the engineer. */
   reclaimStream: {
     widthWu: 1.1,
-    core: [2.6, 1.1, 0.45],
-    glow: [0.9, 0.26, 0.08],
+    core: [2.0, 0.85, 0.35],
+    glow: [0.8, 0.22, 0.07],
     alpha: 1,
     scrollSpeed: 10,
     noise: 0.55,
@@ -79,9 +79,9 @@ export const VARKAN_TRAIL_STYLES: Readonly<Record<VarkanTrailStyleName, TrailSty
   /** Cannon shell: medium streak, amber. */
   cannon: { lengthWu: 5, widthWu: 0.45, head: [...scale(CORE, 5), 1], tail: [...scale(FALLOFF, 1.2), 0] },
   /** Artillery shell: long faint glow line along the arc. */
-  artillery: { lengthWu: 9, widthWu: 0.6, head: [...scale(CORE, 4), 1], tail: [...scale(FALLOFF, 0.8), 0] },
+  artillery: { lengthWu: 9, widthWu: 0.6, head: [...scale(CORE, 2.8), 1], tail: [...scale(FALLOFF, 0.9), 0] },
   /** Missile exhaust glow (the smoke is a particle emitter). */
-  missile: { lengthWu: 4, widthWu: 0.8, head: [...scale(WHITE_HOT, 6), 1], tail: [...scale(FALLOFF, 2), 0] },
+  missile: { lengthWu: 4, widthWu: 0.8, head: [...scale(WHITE_HOT, 3.5), 1], tail: [...scale(FALLOFF, 1.6), 0] },
   /** Anti-air flak tracer: thin, cool white. */
   aa: { lengthWu: 4.5, widthWu: 0.22, head: [3.5, 3.8, 4.2, 1], tail: [0.6, 0.7, 1.2, 0] },
 };

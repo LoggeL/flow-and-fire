@@ -38,7 +38,12 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'test-results/e2e.json' }]],
   use: {
     baseURL: COI_URL,
-    trace: 'retain-on-failure',
+    trace: {
+      mode: 'retain-on-failure',
+      screenshots: false,
+      snapshots: { dom: true, aria: true, screen: false },
+      sources: false,
+    },
     screenshot: 'only-on-failure',
     viewport: { width: 1280, height: 720 },
   },

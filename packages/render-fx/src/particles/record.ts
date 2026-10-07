@@ -110,6 +110,42 @@ export function writeRecord(
   v.u8[b + 3] = 255;
 }
 
+const TWO_POW_M14 = 2 ** -14;
+const TWO_POW_24 = 2 ** 24;
+
+/**
+ * binary16 bit pattern of `src[i]` – bit-identical to `toHalf(src[i])` (core/half.ts, round to
+ * nearest even, ±Inf, subnormals, NaN → 0x7e00). The value is read from a typed array and the
+ * result is a small integer, so hot paths can convert without boxing doubles at call boundaries.
+ */
+export function halfBitsAt(src: Float64Array, i: number): number {
+  const f = src[i]!;
+  if (f !== f) return 0x7e00;
+  const sign = f < 0 || (f === 0 && 1 / f < 0) ? 0x8000 : 0;
+  const a = f < 0 ? -f : f;
+  if (a === Infinity) return sign | 0x7c00;
+  if (a < TWO_POW_M14) {
+    const x = a * TWO_POW_24; // exact (power-of-two scale)
+    let r = Math.floor(x);
+    const d = x - r;
+    if (d > 0.5 || (d === 0.5 && (r & 1) === 1)) r++;
+    return sign | r;
+  }
+  let e = Math.floor(Math.log2(a));
+  if (2 ** e > a) e--;
+  else if (2 ** (e + 1) <= a) e++;
+  const x = (a / 2 ** e - 1) * 1024;
+  let m = Math.floor(x);
+  const d = x - m;
+  if (d > 0.5 || (d === 0.5 && (m & 1) === 1)) m++;
+  if (m === 1024) {
+    m = 0;
+    e++;
+  }
+  if (e > 15) return sign | 0x7c00;
+  return sign | ((e + 15) << 10) | m;
+}
+
 /** Encodes (x, y, z, w) as four f16 bit patterns into `out`. */
 export function encodeVecHalf(x: number, y: number, z: number, w: number, out: Uint16Array | number[]): void {
   out[0] = toHalf(x);

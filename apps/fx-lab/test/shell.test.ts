@@ -31,7 +31,7 @@ describe('lab shell contracts', () => {
     expect(r.toArray().map(s => s.frame)).toEqual([2, 3]);
     expect(r.setGpu(1, 0, 9)).toBe(false);
     expect(r.setGpu(3, 0, 1)).toBe(true);
-    expect(r.toArray()[1]!.gpuMs).toBeNull(); // A partial segment sum is not a GPU frame time.
+    expect(r.toArray()[1]!.gpuMs).toBe(1); // Sum of the resolved segments ('pass' mode times only some).
     for (let s = 1; s < LAB_SEGMENTS.length; s++) r.setGpu(3, s, 1);
     expect(r.toArray()[1]!.gpuMs).toBe(6);
     r.reset(); expect(r.toArray()).toEqual([]);

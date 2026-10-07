@@ -1,11 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { readRtsMap, writeRtsMap } from '../src/index.ts';
 import { decodePgm, decodeR16, encodeHeightmapPng, encodePgm, encodeR16, HeightmapError, readHeightmap, type HeightmapData } from '../scripts/heightmap-io.ts';
-import { compileMap, compileMapSource, MapcError, mapcFiles, MAPS_DIR, MAPS_SRC_DIR, wuToRaw, degToAng16 } from '../scripts/mapc.ts';
+import { applyEditorOverlay, compileMap, compileMapSource, EDITOR_OVERLAY_FILE, MapcError, mapcFiles, MAPS_DIR, MAPS_SRC_DIR, wuToRaw, degToAng16 } from '../scripts/mapc.ts';
 import { generateHollowRidgeHeights, hollowRidgeMarkers } from '../scripts/mapgen.ts';
 import { generateSetonsSources, SETONS_SPLAT_RES } from '../scripts/mapgen-setons.ts';
 import { decodePng, encodePng } from '../scripts/png.ts';
@@ -227,6 +227,71 @@ describe('mapc prop fields (markers.json "propFields")', () => {
     // Format-level invariants (e.g. a self-intersecting polygon) come back through createRtsMap.
     expect(c({ shape: { polygon: [[0, 0], [10, 10], [10, 0], [0, 12]] } })).toMatch(/not simple/);
     expect(problemsOf(() => compileMap({ heightmap: hm, markers: testMarkers({ propFields: {} }) }))).toMatch(/propFields must be an array/);
+  });
+});
+
+describe('mapc spots list and editor overlay (TRACK-EDITOR)', () => {
+  it("'spots' keeps an interleaved order and excludes mass/hydro", () => {
+    const hm = testHeightmap();
+    const spots = [
+      { kind: 'hydro', x: 30, z: 20 },
+      { kind: 'mass', x: 10, z: 10 },
+      { kind: 'hydro', x: 40, z: 12 },
+    ];
+    const { mass: _m, hydro: _h, ...rest } = testMarkers();
+    const m = compileMap({ heightmap: hm, markers: { ...rest, spots } });
+    expect(m.meta.spots).toEqual(spots.map((s) => ({ kind: s.kind, x: s.x * 4096, z: s.z * 4096 })));
+    expect(problemsOf(() => compileMap({ heightmap: hm, markers: testMarkers({ spots }) }))).toMatch(/either 'spots' or 'mass'\/'hydro'/);
+    expect(problemsOf(() => compileMap({ heightmap: hm, markers: { ...rest, spots: [{ kind: 'oil', x: 1, z: 1 }] } }))).toMatch(/kind must be 'mass' or 'hydro'/);
+  });
+
+  it('editor.json replaces starts, spots and prop fields, keeps everything else', () => {
+    const markers = testMarkers({ propFields: [], light: { azimuthDeg: 10, elevationDeg: 40, sun: [1, 2, 3], ambient: [4, 5, 6] } });
+    const overlay = {
+      version: 1,
+      editorOverlay: 1,
+      name: 'Testkarte',
+      sizeWu: 64,
+      starts: [{ army: 0, x: 20, z: 20 }],
+      spots: [{ kind: 'mass', x: 12, z: 12 }],
+    };
+    const merged = applyEditorOverlay(markers, overlay) as Record<string, unknown>;
+    expect(merged['starts']).toEqual(overlay.starts);
+    expect(merged['spots']).toEqual(overlay.spots);
+    expect('mass' in merged || 'hydro' in merged || 'propFields' in merged).toBe(false);
+    expect(merged['light']).toEqual(markers['light']);
+    expect(merged['props']).toEqual(markers['props']);
+    const bad = (o: Record<string, unknown>): string => problemsOf(() => applyEditorOverlay(markers, { ...overlay, ...o }));
+    expect(bad({ name: 'Andere' })).toMatch(/name "Andere" does not match/);
+    expect(bad({ sizeWu: 128 })).toMatch(/sizeWu 128 does not match/);
+    expect(bad({ editorOverlay: 2 })).toMatch(/editorOverlay must be 1/);
+    expect(bad({ spots: null })).toMatch(/spots must be an array/);
+    expect(bad({ extra: 1 })).toMatch(/unknown key 'extra'/);
+  });
+
+  it('compileMapSource applies content/maps/src/<name>/editor.json (edits survive pnpm maps)', () => {
+    const dir = join(tmp, 'hr-src');
+    cpSync(join(MAPS_SRC_DIR, 'hollow-ridge'), dir, { recursive: true });
+    const base = compileMapSource(dir);
+    const overlay = {
+      version: 1,
+      editorOverlay: 1,
+      name: base.map.meta.name,
+      sizeWu: base.map.meta.sizeWu,
+      starts: base.map.meta.starts.map((s) => ({ army: s.army, x: s.x / 4096 + 2, z: s.z / 4096 })),
+      spots: [...base.map.meta.spots].reverse().map((s) => ({ kind: s.kind, x: s.x / 4096, z: s.z / 4096 })),
+      propFields: [{ name: 'Hain', kind: 'tree', shape: { circle: { x: 200, z: 300, r: 12 } }, entries: [{ id: 'core:tree_01', weight: 1 }], density: 32, seed: 7 }],
+      propFieldAlgo: 1,
+    };
+    writeFileSync(join(dir, EDITOR_OVERLAY_FILE), `${JSON.stringify(overlay, null, 2)}\n`);
+    const edited = compileMapSource(dir);
+    expect(edited.map.meta.starts.map((s) => s.x)).toEqual(base.map.meta.starts.map((s) => s.x + 2 * 4096));
+    expect(edited.map.meta.spots).toEqual([...base.map.meta.spots].reverse());
+    expect(edited.map.propFields?.map((f) => f.name)).toEqual(['Hain']);
+    expect(edited.map.propFieldAlgo).toBe(1);
+    expect(edited.map.heights).toEqual(base.map.heights);
+    // Deterministic: compiling again gives the same bytes.
+    expect(Buffer.from(compileMapSource(dir).bytes).equals(Buffer.from(edited.bytes))).toBe(true);
   });
 });
 

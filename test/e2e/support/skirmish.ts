@@ -8,10 +8,22 @@ import { COI_URL } from './game.ts';
 /** IDs come from the same generated content as the production asset pipeline. */
 export const SKIRMISH_BLUEPRINTS = decodeSimBin(new Uint8Array(readFileSync(resolve(import.meta.dirname, '../../../content/generated/sim.bin'))));
 
+/** Language now lives in Settings, reached through the actual frontend controls. */
+export async function setFrontendLocale(page: Page, locale: 'de' | 'en'): Promise<void> {
+  const main = page.getByTestId('MainMenu');
+  await main.getByRole('button', { name: /Einstellungen|Settings/ }).click();
+  const settings = page.getByTestId('Settings');
+  await expect(settings).toBeVisible();
+  await settings.getByRole('tab', { name: /Spiel & Sprache|Game & language/ }).click();
+  await settings.getByRole('combobox', { name: /^(Sprache|Language)$/ }).selectOption(locale);
+  await settings.getByRole('button', { name: /^(Zurück|Back)$/ }).click();
+  await expect(main).toBeVisible();
+}
+
 /** Uses the actual menu; openGame deliberately starts the legacy cube sandbox. */
-export async function startHumanAiSkirmish(page: Page): Promise<number> {
+export async function startHumanAiSkirmish(page: Page, options: { navigate?: boolean } = {}): Promise<number> {
   await installSilentOutput(page);
-  await page.goto(`${COI_URL}?menu=1&map=hollow-ridge&seed=177`, { waitUntil: 'commit' });
+  if (options.navigate !== false) await page.goto(`${COI_URL}?menu=1&map=hollow-ridge&seed=177`, { waitUntil: 'commit' });
   await page.waitForURL(/\/b\/[^/]+\/(\?.*)?$/);
   // Boot populates maps/config and replaces the frontend controller before ready.
   // Navigating the first visible menu during that phase can be reset back to MainMenu.
@@ -19,12 +31,13 @@ export async function startHumanAiSkirmish(page: Page): Promise<number> {
   await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 60_000 });
   const main = page.getByTestId('MainMenu');
   await expect(main).toBeVisible({ timeout: 60_000 });
-  await main.getByRole('combobox').selectOption('de');
+  await setFrontendLocale(page, 'de');
   await main.getByRole('button', { name: /Gefecht/ }).click();
   const setup = page.getByTestId('SkirmishSetup');
   await expect(setup).toBeVisible();
-  await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+  await setup.getByTestId('skirmish-map-hollow-ridge').click();
   await setup.getByRole('combobox', { name: 'KI-Stufe', exact: true }).selectOption('normal');
+  await setup.getByTestId('skirmish-advanced-options').locator('summary').click();
   // Keyboard interaction uses the real native range control and its onInput handler.
   const speed = setup.getByRole('slider', { name: 'Anfangstempo', exact: true });
   await speed.focus();

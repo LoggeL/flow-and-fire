@@ -149,6 +149,15 @@ describe('BeamPass', () => {
     pass.begin();
     expect(encodeOnce(canvas, dev, (enc) => pass.encode(enc)).draws).toBe(0);
     expect(pass.addTimed([0, 0, 0], [1, 0, 0], STYLE, 0, 0)).toBe(false);
+    // A full timed pool rejects further shots and counts them as dropped.
+    const small = new BeamPass(dev, bindings, { capacity: 4, timedCapacity: 2 });
+    expect(small.addTimed([0, 0, 0], [1, 0, 0], STYLE, 0, 1)).toBe(true);
+    expect(small.addTimed([0, 0, 0], [1, 0, 0], STYLE, 0, 1)).toBe(true);
+    expect(small.addTimed([0, 0, 0], [1, 0, 0], STYLE, 0, 1)).toBe(false);
+    expect(small.stats.dropped).toBe(1);
+    small.update(2);
+    expect(small.addTimed([0, 0, 0], [1, 0, 0], STYLE, 2, 1)).toBe(true);
+    small.destroy();
     pass.destroy();
   });
 

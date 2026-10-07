@@ -60,7 +60,7 @@ interface DecalRec {
 }
 
 const LABELS: readonly { text: string; xWu: number; yWu: number; zWu: number }[] = [
-  { text: 'Krater · Glut', xWu: CENTER, yWu: 14, zWu: CENTER + 6 },
+  { text: 'Wracks (rostig, kalt)', xWu: CENTER, yWu: 14, zWu: CENTER + 4 },
   { text: 'Struktur (Armee 1)', xWu: CENTER - 84, yWu: 20, zWu: CENTER - 18 },
   { text: 'Struktur (Armee 2)', xWu: CENTER + 84, yWu: 20, zWu: CENTER - 22 },
 ];

@@ -1,0 +1,306 @@
+{
+  "buildHash": "1bd5577e87b8",
+  "fixture": "Explicitly tainted real Spawn commands, native Attack and native Move, actual Sim combat/accepted Frames/render buffers.",
+  "heavy": 2,
+  "tank": 3,
+  "target": 4,
+  "idle": {
+    "heavy": {
+      "handle": 2,
+      "tick": 7,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 41503,
+      "bodyCurYaw": 41503,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 3,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 4,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    },
+    "tank": {
+      "handle": 3,
+      "tick": 7,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 2703,
+      "bodyCurYaw": 2703,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    }
+  },
+  "aimed": {
+    "heavy": {
+      "handle": 2,
+      "tick": 11,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 3,
+      "bodyPrevYaw": 41503,
+      "bodyCurYaw": 41503,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 3,
+          "prevYaw": 27309,
+          "curYaw": 28401,
+          "prevPitch": -205,
+          "curPitch": -205
+        },
+        {
+          "id": 4,
+          "prevYaw": 28947,
+          "curYaw": 30585,
+          "prevPitch": -205,
+          "curPitch": -205
+        }
+      ]
+    },
+    "tank": {
+      "handle": 3,
+      "tick": 11,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 1,
+      "bodyPrevYaw": 2703,
+      "bodyCurYaw": 2703,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 63527,
+          "curYaw": 63527,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": -195,
+          "curPitch": -195
+        }
+      ]
+    },
+    "stats": {
+      "animatedUnits": 3,
+      "walkingUnits": 0,
+      "observedMounts": 3,
+      "overflowUnits": 0
+    },
+    "render": {
+      "frames": 89,
+      "drawCalls": 24,
+      "drawsByPass": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 3,
+        "overlay": 2
+      },
+      "passDraws": {
+        "terrain": 1,
+        "water": 1,
+        "fog": 2,
+        "units": 4,
+        "icons": 3,
+        "overlay": 2
+      },
+      "visibilityFog": {
+        "enabled": true,
+        "active": true,
+        "dim": 64,
+        "version": 14,
+        "unknown": 0,
+        "explored": 4044,
+        "visible": 52,
+        "uploads": 14,
+        "uploadBytes": 229376,
+        "draws": 2,
+        "transition": 0.11653333333333346
+      },
+      "zoomLevel": 0,
+      "iconCount": 0,
+      "dynamicDecals": 2,
+      "instances": 54,
+      "unitInstances": 4,
+      "culledInstances": 0,
+      "lodInstances": [
+        4,
+        0,
+        0
+      ],
+      "terrainPatches": 12,
+      "decals": 36,
+      "lost": false,
+      "cpuMs": 0.18000000000006366,
+      "gpuMs": null,
+      "preset": "medium",
+      "backbuffer": {
+        "width": 1440,
+        "height": 900
+      },
+      "css": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1
+    }
+  },
+  "lost": {
+    "heavy": {
+      "handle": 2,
+      "tick": 43,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 41503,
+      "bodyCurYaw": 41503,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 3,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 4,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    },
+    "tank": {
+      "handle": 3,
+      "tick": 43,
+      "viewer": 0,
+      "alpha": 1,
+      "observationMask": 0,
+      "bodyPrevYaw": 2703,
+      "bodyCurYaw": 2703,
+      "parts": [
+        {
+          "id": 1,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        },
+        {
+          "id": 2,
+          "prevYaw": 0,
+          "curYaw": 0,
+          "prevPitch": 0,
+          "curPitch": 0
+        }
+      ]
+    }
+  },
+  "moveTarget": {
+    "x": 104,
+    "z": 100
+  },
+  "issuedMove": {
+    "seq": 5,
+    "units": 1,
+    "x": 425961,
+    "y": 98688,
+    "z": 409584
+  },
+  "moving": {
+    "handle": 3,
+    "tick": 53,
+    "viewer": 0,
+    "alpha": 1,
+    "observationMask": 0,
+    "bodyPrevYaw": 53497,
+    "bodyCurYaw": 51859,
+    "parts": [
+      {
+        "id": 1,
+        "prevYaw": 0,
+        "curYaw": 0,
+        "prevPitch": 0,
+        "curPitch": 0
+      },
+      {
+        "id": 2,
+        "prevYaw": 0,
+        "curYaw": 0,
+        "prevPitch": 0,
+        "curPitch": 0
+      }
+    ]
+  }
+}

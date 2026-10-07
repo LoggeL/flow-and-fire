@@ -2,9 +2,13 @@
  * Sim event kinds that produce sound, with the binding meaning of the Event-32-B fields
  * (PLAN §3.6: type u16, visual u16, tick, subTick u8, flags u8, pos i32×3 Q20.12, aux u32, handle u32).
  *
- * The numeric `type` values in {@link DEFAULT_EVENT_TYPE_TABLE} are provisional (demo, tests).
- * In MS5 @faf/protocol appends these kinds to its event type list and the client passes its own
- * table through `CreateAudioEngineOptions.eventTypes`.
+ * PROVISIONAL: the numeric `type` values in {@link DEFAULT_EVENT_TYPE_TABLE}, the flag bits and
+ * the aux enums below are the audio package's own working encoding (demo, tests). The binding
+ * encoding is defined append-only in @faf/protocol in MS5 (shared with the sim and render-fx);
+ * the client then passes its type table (`CreateAudioEngineOptions.eventTypes`) and an
+ * `EventCodec` (codec.ts: impact surface, alert index, unlocated bit, death profile from the view
+ * data) that translate it into the audio categories. Nothing here is a contract the sim must
+ * follow.
  */
 
 /** Every sim event kind the audio router understands. */
@@ -87,11 +91,11 @@ export const EVENT_FLAG_UNLOCATED = 0x80;
 
 // ---- aux enums ----
 
-/** projectileImpact aux: surface hit (index = aux). */
+/** Impact surfaces of the audio map (EventCodec.impactSurface → index; provisional: index = aux). */
 export const IMPACT_SURFACES = ['ground', 'metal', 'water', 'shield', 'structure'] as const;
 export type ImpactSurface = (typeof IMPACT_SURFACES)[number];
 
-/** unitDeath aux: size class (index = aux). */
+/** unitDeath size classes (view-data death profile; provisional fallback: index = aux). */
 export const DEATH_SIZE_CLASSES = ['small', 'medium', 'large', 'huge'] as const;
 export type DeathSizeClass = (typeof DEATH_SIZE_CLASSES)[number];
 
@@ -144,7 +148,10 @@ export interface SimEventKindInfo {
 
 const NONE = '0 (unused)';
 
-/** Field semantics per kind — the contract @faf/protocol and the sim must follow in MS5+. */
+/**
+ * Field semantics per kind as the audio router reads them with the provisional encoding
+ * (documentation; the binding encoding comes from @faf/protocol in MS5, see the module comment).
+ */
 export const SIM_EVENT_KIND_INFO: Readonly<Record<SimEventKind, SimEventKindInfo>> = {
   weaponFire: {
     meaning: 'a weapon fired one shot/salvo (muzzle flash)',
@@ -158,7 +165,7 @@ export const SIM_EVENT_KIND_INFO: Readonly<Record<SimEventKind, SimEventKindInfo
   projectileImpact: {
     meaning: 'a projectile hit (or missed into the ground)',
     visual: 'visual ID of the weapon that fired it → weapons[ref].impact (impact family)',
-    aux: 'surface: 0 ground, 1 metal (unit), 2 water, 3 shield (silent, shieldHit carries the sound), 4 structure',
+    aux: 'surface, decoded by EventCodec.impactSurface (default: aux = index 0 ground, 1 metal (unit), 2 water, 3 shield (silent, shieldHit carries the sound), 4 structure)',
     flags: `bit0 (${EVENT_FLAG_STRUCTURE}) target is a structure (same as surface 4)`,
     pos: 'impact point',
     handle: 'unit hit, 0 = none',
@@ -166,9 +173,11 @@ export const SIM_EVENT_KIND_INFO: Readonly<Record<SimEventKind, SimEventKindInfo
   },
   unitDeath: {
     meaning: 'a unit or structure was destroyed (not the commander)',
-    visual: 'unit visual ID (informational)',
-    aux: 'size class: 0 small (T1 mobile, walls, small structures), 1 medium (T2 mobile, T1/T2 defence, factory I), 2 large (T3 mobile, power, factory II/III), 3 huge (experimentals)',
-    flags: `bit0 (${EVENT_FLAG_STRUCTURE}) structure → structure collapse follows; bit1 (${EVENT_FLAG_AIR}) airborne → air crash`,
+    visual:
+      'unit visual ID (= blueprint sim id) → EventCodec.visualDeathProfile(visual) from the client view data: size class, air, structure (presentation data, never in sim.bin)',
+    aux:
+      'provisional fallback only (demo/tests, no visualDeathProfile): size class 0 small (T1 mobile, walls, small structures), 1 medium (T2 mobile, T1/T2 defence, factory I), 2 large (T3 mobile, power, factory II/III), 3 huge (experimentals); the sim need not fill it',
+    flags: `provisional fallback only: bit0 (${EVENT_FLAG_STRUCTURE}) structure → structure collapse follows; bit1 (${EVENT_FLAG_AIR}) airborne → air crash`,
     pos: 'unit position',
     handle: 'dead unit',
     milestone: 'MS5',

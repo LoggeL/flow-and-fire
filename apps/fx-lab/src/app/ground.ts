@@ -6,20 +6,8 @@
  * Shading: procedural albedo (earth, dry grass, dark iron ground), CSM receiver, scorch/crater decals
  * (SCORCH_GLSL, ember glow as HDR emissive) and distance fog.
  */
-import type { BindGroupH, BufH, GpuDevice, PassEncoder, PipeH, TexH } from '@faf/render';
-import {
-  SCORCH_GLSL,
-  SCORCH_LAYOUT,
-  SCORCH_SAMPLERS,
-  SCORCH_UNIFORM_BLOCKS,
-  SHADOW_CASTER_GLSL,
-  SHADOW_CASTER_PIPELINE,
-  SHADOW_CASTER_UNIFORM_BLOCKS,
-  SLOT_FX_SCORCH,
-  UNIT_FX_SCORCH_CELLS,
-  UNIT_FX_SCORCH_DATA,
-} from '@faf/render-fx';
-import type { ScorchDecals } from '@faf/render-fx';
+import type { BindGroupH, GpuDevice, PassEncoder, PipeH } from '@faf/render';
+import { SCORCH_GLSL, SCORCH_SAMPLERS, SCORCH_UNIFORM_BLOCKS, SHADOW_CASTER_GLSL, SHADOW_CASTER_PIPELINE, SHADOW_CASTER_UNIFORM_BLOCKS } from '@faf/render-fx';
 import { LAB_WORLD_WU } from './context.ts';
 import { LAB_NOISE_GLSL, LAB_VS_HEADER, RECEIVER_BLOCKS, RECEIVER_SAMPLERS, receiverFsHeader } from './glsl.ts';
 
@@ -135,19 +123,23 @@ in vec2 v_world;
 out vec4 o_color;
 
 vec3 labGroundAlbedo(vec2 p, vec3 n) {
+  // Rotated domains hide the axis-aligned lattice of the value noise.
+  vec2 r1 = mat2(0.866, 0.5, -0.5, 0.866) * p;
+  vec2 r2 = mat2(0.54, -0.84, 0.84, 0.54) * p;
   float broad = labFbm(p * 0.035);
-  float mid = labFbm(p * 0.13 + 31.0);
-  float fine = labNoise(p * 0.9);
-  vec3 earth = vec3(0.34, 0.28, 0.21);
-  vec3 grass = vec3(0.33, 0.37, 0.2);
-  vec3 iron = vec3(0.19, 0.19, 0.2);
-  vec3 c = mix(earth, grass, smoothstep(0.42, 0.62, broad));
+  float mid = labFbm(r1 * 0.11 + 31.0);
+  float fine = 0.6 * labNoise(r2 * 0.7) + 0.4 * labNoise(r1 * 1.9 + 7.0);
+  vec3 earth = vec3(0.36, 0.3, 0.23);
+  vec3 grass = vec3(0.3, 0.33, 0.19);
+  vec3 iron = vec3(0.27, 0.265, 0.27);
+  vec3 c = mix(earth, grass, smoothstep(0.4, 0.66, broad));
   float slope = 1.0 - n.y;
-  float ironMask = smoothstep(0.58, 0.74, mid) * (1.0 - smoothstep(0.62, 0.7, broad) * 0.5) + smoothstep(0.03, 0.08, slope) * 0.5;
-  c = mix(c, iron, clamp(ironMask, 0.0, 1.0));
-  // Rust flecks on the iron ground, pebbles/grain everywhere.
-  c = mix(c, vec3(0.36, 0.2, 0.11), smoothstep(0.78, 0.86, fine) * clamp(ironMask, 0.0, 1.0) * 0.6);
-  c *= 0.86 + 0.28 * fine;
+  float ironMask = smoothstep(0.6, 0.8, mid) * (1.0 - smoothstep(0.6, 0.72, broad) * 0.6) + smoothstep(0.04, 0.1, slope) * 0.35;
+  ironMask = clamp(ironMask, 0.0, 0.85);
+  c = mix(c, iron, ironMask);
+  // Faint rust on the iron ground, grain everywhere (low contrast: scorch marks must stay readable).
+  c = mix(c, vec3(0.34, 0.22, 0.15), smoothstep(0.7, 0.85, fine) * ironMask * 0.35);
+  c *= 0.92 + 0.16 * fine;
   return c;
 }
 
@@ -158,7 +150,8 @@ void main() {
   vec4 sc = fxScorch(v_rel - u_camFrac.xyz);
   albedo *= sc.rgb;
   vec3 c = fxLight(albedo, n, fxShadow(v_rel, n));
-  c += fxScorchGlow(sc.a);
+  // fxEmissive: identity on HDR, normalised to the brightest channel on LDR (saturated glow).
+  c += fxEmissive(fxScorchGlow(sc.a), 1.0);
   o_color = vec4(labFog(c, v_rel), 1.0);
 }
 `;
@@ -178,106 +171,6 @@ void main() {
   gl_Position = fxShadowCasterPos(posRaw, vec3(0.0, labGroundHeight(xz), 0.0));
 }
 `;
-
-/**
- * GPU side of the scorch field: data + cells textures (uploaded when the pool is dirty, restored from
- * the packed arrays after a context loss) and the FxScorch uniform block (written every frame).
- */
-export class ScorchTextures {
-  readonly dataTex: TexH;
-  readonly cellsTex: TexH;
-  readonly ubo: BufH;
-  readonly group: BindGroupH;
-  /** Texture uploads so far. */
-  uploads = 0;
-  private scorch: ScorchDecals;
-  private readonly blockBytes: Uint8Array;
-
-  constructor(
-    private readonly dev: GpuDevice,
-    scorch: ScorchDecals,
-  ) {
-    this.scorch = scorch;
-    const d = scorch.dataTexture;
-    const c = scorch.cellsTexture;
-    this.dataTex = dev.createTexture({
-      label: 'lab.scorch.data',
-      width: d.width,
-      height: d.height,
-      format: d.format,
-      filter: 'nearest',
-      restore: (h) => this.uploadData(h),
-    });
-    this.cellsTex = dev.createTexture({
-      label: 'lab.scorch.cells',
-      width: c.width,
-      height: c.height,
-      format: c.format,
-      filter: 'nearest',
-      restore: (h) => this.uploadCells(h),
-    });
-    this.ubo = dev.createBuffer({ label: 'lab.scorch.ubo', usage: 'uniform', size: SCORCH_LAYOUT.size, dynamic: true });
-    this.blockBytes = new Uint8Array(scorch.block);
-    this.group = dev.createBindGroup({
-      label: 'lab.scorch',
-      buffers: [{ slot: SLOT_FX_SCORCH, buffer: this.ubo }],
-      textures: [
-        { unit: UNIT_FX_SCORCH_DATA, texture: this.dataTex },
-        { unit: UNIT_FX_SCORCH_CELLS, texture: this.cellsTex },
-      ],
-    });
-    scorch.pack();
-    this.uploadData(this.dataTex);
-    this.uploadCells(this.cellsTex);
-  }
-
-  /** Switches to another pool of the same capacity (scene switch). */
-  setScorch(scorch: ScorchDecals): void {
-    const a = scorch.dataTexture;
-    const b = this.scorch.dataTexture;
-    const c = scorch.cellsTexture;
-    const d = this.scorch.cellsTexture;
-    if (a.width !== b.width || a.height !== b.height || c.width !== d.width || c.height !== d.height) {
-      throw new Error('ScorchTextures.setScorch: pool layout differs (same cap and map size required)');
-    }
-    this.scorch = scorch;
-    scorch.pack();
-    this.upload();
-  }
-
-  /** Packs and uploads when the pool changed; writes the uniform block. Call once per frame. */
-  update(tS: number, hdr: boolean): void {
-    if (this.scorch.dirty) {
-      this.scorch.pack();
-      this.upload();
-    }
-    this.scorch.writeBlock(tS, hdr ? 4 : 1.2);
-    this.dev.writeBuffer(this.ubo, 0, this.blockBytes);
-  }
-
-  private upload(): void {
-    this.uploadData(this.dataTex);
-    this.uploadCells(this.cellsTex);
-    this.uploads++;
-  }
-
-  private uploadData(h: TexH): void {
-    const d = this.scorch.dataTexture;
-    this.dev.writeTexture(h, { x: 0, y: 0, width: d.width, height: d.height }, this.scorch.data);
-  }
-
-  private uploadCells(h: TexH): void {
-    const c = this.scorch.cellsTexture;
-    this.dev.writeTexture(h, { x: 0, y: 0, width: c.width, height: c.height }, this.scorch.cells);
-  }
-
-  destroy(): void {
-    this.dev.destroyBindGroup(this.group);
-    this.dev.destroyBuffer(this.ubo);
-    this.dev.destroyTexture(this.dataTex);
-    this.dev.destroyTexture(this.cellsTex);
-  }
-}
 
 /** Ground pass (receiver) and ground shadow caster. Bind groups (frame, receiver, scorch) are set by the app. */
 export class GroundPass {

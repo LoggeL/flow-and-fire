@@ -7,7 +7,7 @@
  * "0.001" is exactly 1 milli and "12.5" WU exactly 51200 raw.
  */
 import { rng32 } from '@faf/fixed';
-import { MAP_FX_ONE, MAP_MAX_FIELD_ENTRIES, MAP_MAX_FIELD_NAME_BYTES, MAP_MAX_PROP_ID_BYTES, type PropFieldEntry } from '@faf/formats';
+import { MAP_FX_ONE, MAP_MAX_FIELD_ENTRIES, MAP_MAX_FIELD_NAME_BYTES, MAP_MAX_PROP_ID_BYTES, PROP_ID_RE, type PropFieldEntry } from '@faf/formats';
 import { E } from './strings.ts';
 
 export type ParseResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string };
@@ -20,11 +20,8 @@ function err<T>(error: string): ParseResult<T> {
   return { ok: false, error };
 }
 
-/**
- * Namespace id of a prop blueprint, identical to PROP_ID_RE in packages/formats/src/mapprop.ts
- * (not re-exported by @faf/formats; the store's validatePropFields stays the final check).
- */
-export const PROP_ID_RE = /^[a-z0-9_]+:[a-z0-9_./-]+$/;
+/** Namespace id of a prop blueprint (the format's own rule; validatePropFields stays the final check). */
+export { PROP_ID_RE };
 
 const U32_MAX = 0xffffffff;
 const U16_MAX = 0xffff;

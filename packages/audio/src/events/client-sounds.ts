@@ -92,13 +92,3 @@ export const DEFERRED_SOUNDS: readonly DeferredSound[] = [
     reason: 'No hover unit in the MVP roster (marine/hover are post-MVP); the sound is prepared for later factions.',
   },
 ];
-
-/** Names of {@link CLIENT_SIDE_SOUNDS}. */
-export function clientSideSoundNames(): string[] {
-  return CLIENT_SIDE_SOUNDS.map((s) => s.name);
-}
-
-/** Names of {@link DEFERRED_SOUNDS}. */
-export function deferredSoundNames(): string[] {
-  return DEFERRED_SOUNDS.map((s) => s.name);
-}

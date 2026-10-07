@@ -1,0 +1,76 @@
+{
+  "generator": "built-in image_gen.imagegen",
+  "mode": "edits of original generated scene",
+  "reference": "docs/design/main-menu-cinematic-2026-10-02/commander-dusk-source-v1.png",
+  "layers": [
+    {
+      "layer": "background",
+      "transparentBackground": false,
+      "source": "docs/design/main-menu-cinematic-2026-10-02/parallax-background-source-v1.png",
+      "runtime": "apps/game/src/hud/assets/menu/parallax-background-v1.webp",
+      "prompt": "Use case: scene-edit. Edit the attached original Flow & Fire cinematic menu painting into the FAR BACKGROUND plate for a three-layer parallax composition. Preserve the exact original 16:9 full canvas, viewpoint, volcanic rainy dusk scene, cold blue-grey and amber lighting, factory skyline, wet terrain, tank silhouettes and calm dark LEFT 40 percent. Remove the large blue-steel commander completely and seamlessly reconstruct the distant industrial factory and smoky terrain behind its entire silhouette. Remove the nearest sharply detailed rock ledge at the bottom and replace with slightly softer middle-distance wet terrain, so a separate foreground plate can overlay it. Keep the composition spatially registered to the original: no crop, no camera move, no zoom, no repositioning the factory horizon, no added large subjects. The right portion is now uninterrupted atmospheric factory landscape. Premium detailed original RTS key-art, quiet powerful mood. Absolutely no text, logos, UI, borders or watermarks. Output a finished opaque background with the same original wide aspect ratio.",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sourceMode": "RGB",
+      "alphaBoundingBox": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "fullyTransparentPixels": 0,
+      "highOpacityPixels": 1573352,
+      "runtimeBytes": 189476,
+      "runtimeSha256": "50d27ac14ec2cb396bd42805f49fceb79ce7224eb177755124f30e17a0be2d2c",
+      "encoding": "WebP quality88, full source canvas and exact alpha preserved, no image edits"
+    },
+    {
+      "layer": "commander",
+      "transparentBackground": true,
+      "source": "docs/design/main-menu-cinematic-2026-10-02/parallax-commander-source-v1.png",
+      "runtime": "apps/game/src/hud/assets/menu/parallax-commander-v1.webp",
+      "prompt": "Use case: background-removal. Extract ONLY the large blue-steel industrial commander from the attached cinematic RTS painting as a transparent RGBA cutout layer. Preserve the exact original full 16:9 canvas, original right-side placement, exact size, viewpoint, silhouette, full mechanical legs and foot bases, surface details, cannon on left image side, engineering emitter on right image side, and existing cold blue/amber lighting. Do not redraw or restyle the commander. Keep the small blue glow around its engineering emitter close to the metal, with natural feathered translucency. Remove everything else: all terrain, rocks, factories, sky, distant tanks, smoke and other background pixels become fully transparent. Do not re-center the commander, do not zoom, do not crop to the bounding box: it must stay registered to the original on a full wide transparent canvas so it can be laid over a separate background image. No ground shadow, no colored backdrop, no checkerboard baked into pixels, no text or UI.",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sourceMode": "RGBA",
+      "alphaBoundingBox": [
+        274,
+        14,
+        1581,
+        884
+      ],
+      "fullyTransparentPixels": 1244139,
+      "highOpacityPixels": 289299,
+      "runtimeBytes": 166322,
+      "runtimeSha256": "944a4cbccb505bf4ebdc14b8fdcb08426a0a6df00c77a3e1b325aa508c93908d",
+      "encoding": "WebP quality88, full source canvas and exact alpha preserved, no image edits"
+    },
+    {
+      "layer": "foreground",
+      "transparentBackground": true,
+      "source": "docs/design/main-menu-cinematic-2026-10-02/parallax-foreground-source-v1.png",
+      "runtime": "apps/game/src/hud/assets/menu/parallax-foreground-v1.webp",
+      "prompt": "Use case: background-removal. Create the NEAR FOREGROUND rock plate for a layered parallax version of the attached cinematic RTS painting. Preserve the exact original full 16:9 canvas and spatial registration. Keep only the very nearest dark wet volcanic rock ledges and small smoky wisps across the BOTTOM 18 percent of the scene, especially the irregular rocky silhouette at the lower left and bottom edge. Make this a shallow uneven edge of detailed dark charcoal wet rocks with restrained reflected amber highlights, consistent with the original painting. Its upper boundary should be naturally irregular, not a straight strip. Everything above and between these foreground rocks must be fully transparent. Remove all commander parts including its feet, tanks, buildings, sky, distant terrain and distant smoke. Where commander feet occlude foreground rocks, reconstruct small near rocks that continue the original bottom ledge without inventing tall obstructions. Keep the rocks low enough not to obstruct the commander's knees or menu navigation. No crop, zoom or re-centering, no text, no logos, no UI. Full wide transparent RGBA canvas suitable to overlay the original composition.",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sourceMode": "RGBA",
+      "alphaBoundingBox": [
+        0,
+        524,
+        1672,
+        941
+      ],
+      "fullyTransparentPixels": 1339025,
+      "highOpacityPixels": 225194,
+      "runtimeBytes": 88556,
+      "runtimeSha256": "0921e64086eccb7061f247b2e1851b44ade79a2979a3952183082e0c65198ec3",
+      "encoding": "WebP quality88, full source canvas and exact alpha preserved, no image edits"
+    }
+  ]
+}

@@ -9,6 +9,21 @@ describe('menu contracts', () => {
     it('blocks duplicate-colour starts in the actual control', () => { const m = model(); m.menus.skirmish.slots.value = m.menus.skirmish.slots.value.map(s => ({ ...s, color: 'red' })); const r = renderWithHud(<SkirmishSetup />, { model: m }); expect((r.getByRole('button', { name: 'Gefecht starten' }) as HTMLButtonElement).disabled).toBe(true); });
     it('traps modal focus and Escape resumes, surrender requires confirmation', async () => { const m = model(); m.menus.gameMenu.open.value = true; const r = renderWithHud(<GameMenu />, { model: m }), buttons = r.getAllByRole('button'); buttons[0]!.focus(); fireEvent.keyDown(buttons[0]!, { key: 'Tab', shiftKey: true }); expect(document.activeElement).toBe(buttons.at(-1)); fireEvent.keyDown(buttons.at(-1)!, { key: 'Escape' }); expect(r.log.at(-1)?.name).toBe('resume'); fireEvent.click(r.getByRole('button', { name: 'Aufgeben' })); await flushSignals(); fireEvent.click(r.getByRole('button', { name: 'Bestätigen' })); expect(r.log.at(-1)?.name).toBe('surrender'); });
     it('settings produce typed values and support live locale replacement', async () => { const r = renderWithHud(<Settings />, { model: model() }); fireEvent.input(r.getByRole('slider', { name: 'Render-Skalierung' }), { target: { value: '.8' } }); expect(r.log.at(-1)).toEqual({ name: 'setSetting', args: ['renderScale', .8] }); fireEvent.click(r.getByRole('switch', { name: 'Bloom' })); expect(r.log.at(-1)).toEqual({ name: 'setSetting', args: ['bloom', false] }); fireEvent.click(r.getByRole('button', { name: 'Zurücksetzen' })); expect(r.log.at(-1)?.name).toBe('resetSettings'); await flushSignals(() => setLocale('en')); expect(r.getByRole('heading', { name: 'Settings' })).toBeTruthy(); expect(validateSettings(DEFAULT_SETTINGS)).toEqual([]); expect(validateSettings({ ...DEFAULT_SETTINGS, renderScale: Infinity, volMusic: -1 })).toEqual(['renderScale', 'volMusic']); });
+    it('offers language and background animation in the game settings tab', async () => {
+        const r = renderWithHud(<Settings />, { model: model() });
+        fireEvent.click(r.getByRole('tab', { name: 'Spiel & Sprache' }));
+        await flushSignals();
+        expect(r.getByRole('combobox', { name: 'Sprache' })).toBeTruthy();
+        const animation = r.getByTestId('menu-animation-setting');
+        expect(animation.getAttribute('role')).toBe('switch');
+        expect(animation.getAttribute('aria-checked')).toBe('true');
+        expect(animation.getAttribute('aria-label')).toBe('Menühintergrund animieren');
+        fireEvent.click(animation);
+        expect(r.log.at(-1)).toEqual({ name: 'setSetting', args: ['backgroundAnimation', false] });
+        await flushSignals(() => setLocale('en'));
+        expect(r.getByRole('combobox', { name: 'Language' })).toBeTruthy();
+        expect(r.getByRole('switch', { name: 'Animate menu background' })).toBe(animation);
+    });
     it('renders loading failure commands and marks score winners', () => { const m = model(); m.menus.loading.error.value = 'Demo failure'; const r = renderWithHud(<LoadingScreen />, { model: m }); fireEvent.click(r.getByRole('button', { name: 'Erneut' })); expect(r.log.at(-1)?.name).toBe('retryLoading'); r.unmount(); const score = renderWithHud(<ScoreScreen />, { model: m }); expect(score.container.querySelectorAll('.is-better').length).toBe(6); fireEvent.click(score.getByRole('button', { name: 'Replay speichern' })); expect(score.log.at(-1)?.name).toBe('saveReplay'); });
     it('uses shared graph scale and clamps crosshair sampling', () => { const s = { id: 'massIncome' as const, stepS: 30, self: [0, 10], enemy: [0, 20] }; expect(seriesMax(s)).toBe(20); expect(seriesPath(s.self, 20)).toBe('M40,170 L460,95'); expect(sampleAt(s, 2)).toEqual({ index: 1, timeS: 30, self: 10, enemy: 20 }); });
 });

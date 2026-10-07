@@ -1,7 +1,7 @@
 import { assertSilentOutput } from '../../apps/game/test/support/silent-output.ts';
 import { expect, test } from './support/silent-test.ts';
 import { COI_URL, captureErrors, expectNoErrors } from './support/game.ts';
-import { findOwnUnit } from './support/skirmish.ts';
+import { findOwnUnit, setFrontendLocale } from './support/skirmish.ts';
 
 for (const { color, mode, hex, channel } of [
   { color: 'blue', mode: 'house', hex: '#2f6fd0', channel: 2 },
@@ -17,13 +17,14 @@ for (const { color, mode, hex, channel } of [
     await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 60_000 });
     const main = page.getByTestId('MainMenu');
     await expect(main).toBeVisible();
-    await main.getByRole('combobox').selectOption('de');
+    await setFrontendLocale(page, 'de');
     await main.getByRole('button', { name: /Gefecht/ }).click();
     const setup = page.getByTestId('SkirmishSetup');
-    await setup.locator('.mapitem').filter({ hasText: 'Hollow Ridge' }).click();
+    await setup.getByTestId('skirmish-map-hollow-ridge').click();
     const colors = setup.getByRole('combobox', { name: 'Farbe', exact: true });
     if (color === 'red') await colors.nth(1).selectOption('blue');
     await colors.nth(0).selectOption(color);
+    await setup.getByTestId('skirmish-advanced-options').locator('summary').click();
     await setup.getByRole('combobox', { name: 'Teamfarben', exact: true }).selectOption(mode);
     await setup.getByRole('button', { name: 'Gefecht starten', exact: true }).click();
     await page.waitForFunction(() => window.__faf?.ready && window.__faf.tick >= 3, null, { timeout: 60_000 });

@@ -6,7 +6,8 @@
  * PFLD payload (all integers little-endian; "pad4" = zero bytes up to the next multiple of 4,
  * counted from the start of the chunk payload):
  *
- *   u32 fieldCount (0..256)
+ *   u16 algoVersion (expansion algorithm the fields were authored with, 1..PROPFIELD_ALGO_VERSION;
+ *       the reader rejects unknown versions) | u16 fieldCount (0..256)
  *   per field:
  *     u16 nameLen | name (UTF-8, 1..64 bytes, no control characters) | pad4
  *     u8  kind (0 tree, 1 rock, 2 wreck) | u8 shapeKind (0 circle, 1 polygon)
@@ -26,9 +27,15 @@
  * like the PROP reader does. All coordinates lie in [0, sizeWu·4096].
  *
  * mapSimHash: the field list enters the sim bytes as `propFieldsSimBytes` = the PFLD layout above
- * with nameLen 0 and no name bytes (the name is an editor label only).
+ * (including the stored algoVersion) with nameLen 0 and no name bytes (the name is an editor label
+ * only).
  *
- * Expansion (PROPFIELD_ALGO_VERSION 1) — integer-only, deterministic, runs in the sim worker (MS8):
+ * Algorithm versions: the file stores the version its fields were authored with (RtsMap
+ * `propFieldAlgo`). A changed expansion gets a new version number and a new branch in scanField;
+ * every version listed in PROPFIELD_ALGO_VERSIONS stays implemented forever, so an existing map
+ * expands exactly as before. New fields (propFieldAlgo absent in memory) use PROPFIELD_ALGO_VERSION.
+ *
+ * Expansion algorithm 1 — integer-only, deterministic, runs in the sim worker (MS8):
  *   cellRaw = isqrt(floor(2^34 / densityPerKWu2))   (32 WU at density 1, 0.5 WU at 4096; one
  *             candidate per cell ⇒ ≈ density props per 1024 WU²)
  *   The grid is global and aligned to (0, 0). Cells (cx, cz) whose rectangle
@@ -37,11 +44,14 @@
  *     x = cx·cellRaw + rng32(seed, cz, cx, 1) mod cellRaw
  *     z = cz·cellRaw + rng32(seed, cz, cx, 2) mod cellRaw
  *   The candidate is dropped if it lies outside the map (> sizeWu·4096), outside the shape
- *   (propFieldContains), or — using the nearest height sample (sx, sz) = ((x + 2048) >> 12,
- *   (z + 2048) >> 12) — if dryOnly and the map has water and h·heightScaleRaw <= waterLevelRaw, or
- *   if maxSlopePermille > 0 and slope > maxSlopePermille, where
- *     gx = (h[sx+1] − h[sx−1])·s (central) or 2·(one-sided difference) at the map edge, gz likewise,
- *     slope = floor(isqrt(gx² + gz²)·1000 / 8192)   (per mille; 8192 = 2 samples in Fx raw).
+ *   (propFieldContains), if dryOnly and the map has water and h·heightScaleRaw <= waterLevelRaw at
+ *   the nearest height sample ((x + 2048) >> 12, (z + 2048) >> 12), or if maxSlopePermille > 0 and
+ *   the slope of the cell containing it exceeds maxSlopePermille / 1000:
+ *     cell (cx, cz) = (min(x >> 12, sizeWu − 1), min(z >> 12, sizeWu − 1)),
+ *     slopeRaw = (max − min of the cell's 4 corner samples)·heightScaleRaw   (Fx raw per WU),
+ *     dropped iff slopeRaw·1000 > maxSlopePermille·4096.
+ *   This is the land cell slope of @faf/rules landCellSlopeRaw (one slope definition for nav, the
+ *   marker editor and prop fields; formats cannot import rules, the formats tests pin the equality).
  *   A kept candidate becomes a prop with
  *     entry = weighted pick: r = rng32(seed, cz, cx, 3) mod Σweight, first entry with r < weight
  *             after subtracting the weights of the entries before it
@@ -95,7 +105,7 @@ export interface MapPropField {
   /** 1..65535, <= scaleMaxPermille. */
   readonly scaleMinPermille: number;
   readonly scaleMaxPermille: number;
-  /** 0 = unlimited, else props only where the slope <= value / 1000. */
+  /** 0 = unlimited, else props only in cells whose slope (@faf/rules landCellSlopeRaw) <= value / 1000. */
   readonly maxSlopePermille: number;
   /** true = no props at or below the water level. */
   readonly dryOnly: boolean;
@@ -120,6 +130,8 @@ export interface PropFieldMapView {
   readonly heights: Uint16Array;
   readonly props: readonly MapProp[];
   readonly propFields?: readonly MapPropField[];
+  /** Stored expansion algorithm version (absent: PROPFIELD_ALGO_VERSION). */
+  readonly propFieldAlgo?: number;
 }
 
 export const MAP_MAX_PROP_FIELDS = 256;
@@ -127,8 +139,13 @@ export const MAP_MAX_FIELD_POINTS = 64;
 export const MAP_MAX_FIELD_ENTRIES = 16;
 export const MAP_MAX_FIELD_DENSITY = 4096;
 export const MAP_MAX_FIELD_NAME_BYTES = 64;
-/** Version of the expansion algorithm (part of the sim bytes; bump on any change). */
+/**
+ * Expansion algorithm version written for new fields (a map without a stored version). Any change
+ * of the expansion adds a NEW version (and keeps the old ones in PROPFIELD_ALGO_VERSIONS).
+ */
 export const PROPFIELD_ALGO_VERSION = 1;
+/** Every expansion algorithm version this build implements (readers reject the others). */
+export const PROPFIELD_ALGO_VERSIONS: readonly number[] = [1];
 /** Upper bound of candidate cells (bounding box clamped to the map) summed over all fields. */
 export const MAP_MAX_FIELD_CELLS = 1 << 21;
 
@@ -136,8 +153,6 @@ const FX_ONE = 4096;
 const HALF_SAMPLE = 2048;
 /** 2^34: cellRaw² · density ≈ 1024 WU² in Fx raw² (1024 · 4096²). */
 const CELL_AREA_NUMERATOR = 17179869184;
-/** Distance of a central difference in Fx raw (two samples). */
-const SLOPE_DISTANCE = 8192;
 /** Fixed bytes of a field after its (padded) name. */
 const FIELD_FIXED_BYTES = 28;
 const KINDS: readonly PropFieldKind[] = ['tree', 'rock', 'wreck'];
@@ -376,7 +391,9 @@ function validateField(f: MapPropField, i: number, maxCoord: number): void {
  */
 export function validatePropFields(map: PropFieldMapView): void {
   const fields = map.propFields;
+  // Without fields a stored version has no meaning and is ignored (writeRtsMap writes no PFLD).
   if (fields === undefined) return;
+  propFieldAlgoOf(map);
   if (!Array.isArray(fields) || fields.length > MAP_MAX_PROP_FIELDS) fail(`propFields must list 0..${MAP_MAX_PROP_FIELDS} fields`);
   const maxCoord = map.meta.sizeWu * FX_ONE;
   let cells = 0;
@@ -393,6 +410,33 @@ export function validatePropFields(map: PropFieldMapView): void {
   }
 }
 
+/**
+ * Slope of cell (x, z) in Fx raw per WU: max − min of its 4 corner samples times heightScaleRaw.
+ * Identical to @faf/rules landCellSlopeRaw (pinned by test/propfields.test.ts).
+ */
+export function propFieldCellSlopeRaw(map: PropFieldMapView, x: number, z: number): number {
+  const dim = map.meta.sizeWu + 1;
+  const h = map.heights;
+  const i = z * dim + x;
+  const a = h[i]!;
+  const b = h[i + 1]!;
+  const c = h[i + dim]!;
+  const d = h[i + dim + 1]!;
+  return (Math.max(Math.max(a, b), Math.max(c, d)) - Math.min(Math.min(a, b), Math.min(c, d))) * map.meta.heightScaleRaw;
+}
+
+/**
+ * Expansion algorithm version of a map: the stored `propFieldAlgo`, or PROPFIELD_ALGO_VERSION for
+ * fields without one. Throws FormatError('bad-value') for a version this build does not implement.
+ */
+export function propFieldAlgoOf(map: { readonly propFieldAlgo?: number }): number {
+  const v = map.propFieldAlgo ?? PROPFIELD_ALGO_VERSION;
+  if (!isInt(v) || !PROPFIELD_ALGO_VERSIONS.includes(v)) {
+    fail(`prop field algorithm version ${String(v)} is not supported (known: ${PROPFIELD_ALGO_VERSIONS.join(', ')})`);
+  }
+  return v;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Expansion
 
@@ -401,6 +445,8 @@ export function validatePropFields(map: PropFieldMapView): void {
  * as soon as the count exceeds `limit`. Returns the number of props produced.
  */
 function scanField(map: PropFieldMapView, f: MapPropField, index: number, out: ExpandedProp[] | null, limit: number): number {
+  // Only algorithm 1 exists; a later version adds its own branch here and keeps this one.
+  if (propFieldAlgoOf(map) !== 1) fail('unreachable: unsupported prop field algorithm');
   const size = map.meta.sizeWu;
   const maxCoord = size * FX_ONE;
   const range = cellRange(f, maxCoord);
@@ -413,6 +459,7 @@ function scanField(map: PropFieldMapView, f: MapPropField, index: number, out: E
   const checkDry = f.dryOnly && water !== null;
   const waterRaw = water === null ? 0 : water;
   const maxSlope = f.maxSlopePermille;
+  const slopeLimit = maxSlope * FX_ONE;
   const shape = f.shape;
   const entries = f.entries;
   let totalWeight = 0;
@@ -428,20 +475,12 @@ function scanField(map: PropFieldMapView, f: MapPropField, index: number, out: E
       const z = oz + (rng32(seed, cz, cx, 2) % cell);
       if (x > maxCoord || z > maxCoord) continue;
       if (!propFieldContains(shape, x, z)) continue;
-      if (checkDry || maxSlope > 0) {
+      if (checkDry) {
         const sx = Math.min(size, (x + HALF_SAMPLE) >> 12);
         const sz = Math.min(size, (z + HALF_SAMPLE) >> 12);
-        const i = sz * dim + sx;
-        if (checkDry && h[i]! * s <= waterRaw) continue;
-        if (maxSlope > 0) {
-          const gx = sx === 0 ? (h[i + 1]! - h[i]!) * 2 : sx === size ? (h[i]! - h[i - 1]!) * 2 : h[i + 1]! - h[i - 1]!;
-          const gz = sz === 0 ? (h[i + dim]! - h[i]!) * 2 : sz === size ? (h[i]! - h[i - dim]!) * 2 : h[i + dim]! - h[i - dim]!;
-          const gxr = gx * s;
-          const gzr = gz * s;
-          const slope = Math.floor((isqrt(gxr * gxr + gzr * gzr) * 1000) / SLOPE_DISTANCE);
-          if (slope > maxSlope) continue;
-        }
+        if (h[sz * dim + sx]! * s <= waterRaw) continue;
       }
+      if (maxSlope > 0 && propFieldCellSlopeRaw(map, Math.min(size - 1, x >> 12), Math.min(size - 1, z >> 12)) * 1000 > slopeLimit) continue;
       count++;
       if (out !== null) {
         let r = rng32(seed, cz, cx, 3) % totalWeight;
@@ -501,7 +540,7 @@ export function expandPropFields(map: PropFieldMapView): ExpandedProp[] {
 // ---------------------------------------------------------------------------------------------
 // Codec
 
-function encodeFields(fields: readonly MapPropField[], withNames: boolean): Uint8Array {
+function encodeFields(fields: readonly MapPropField[], algo: number, withNames: boolean): Uint8Array {
   const names: Uint8Array[] = [];
   const ids: Uint8Array[][] = [];
   let n = 4;
@@ -520,7 +559,8 @@ function encodeFields(fields: readonly MapPropField[], withNames: boolean): Uint
   }
   const out = new Uint8Array(n);
   const dv = dvOf(out);
-  dv.setUint32(0, fields.length, true);
+  dv.setUint16(0, algo, true);
+  dv.setUint16(2, fields.length, true);
   let p = 4;
   for (let i = 0; i < fields.length; i++) {
     const f = fields[i]!;
@@ -568,21 +608,31 @@ function encodeFields(fields: readonly MapPropField[], withNames: boolean): Uint
   return out;
 }
 
-/** PFLD payload of valid fields (layout in the module header). */
-export function encodePropFieldsChunk(fields: readonly MapPropField[]): Uint8Array {
-  return encodeFields(fields, true);
+/** PFLD payload of valid fields (layout in the module header); `algo` defaults to PROPFIELD_ALGO_VERSION. */
+export function encodePropFieldsChunk(fields: readonly MapPropField[], algo: number = PROPFIELD_ALGO_VERSION): Uint8Array {
+  return encodeFields(fields, propFieldAlgoOf({ propFieldAlgo: algo }), true);
 }
 
-/** Simulation bytes of the fields: the PFLD layout with nameLen 0 and no names (see mapSimBytes). */
-export function propFieldsSimBytes(fields: readonly MapPropField[]): Uint8Array {
-  return encodeFields(fields, false);
+/**
+ * Simulation bytes of the fields: the PFLD layout (with the algorithm version) with nameLen 0 and no
+ * names (see mapSimBytes).
+ */
+export function propFieldsSimBytes(fields: readonly MapPropField[], algo: number = PROPFIELD_ALGO_VERSION): Uint8Array {
+  return encodeFields(fields, propFieldAlgoOf({ propFieldAlgo: algo }), false);
+}
+
+/** Decoded PFLD payload. */
+export interface PropFieldsChunk {
+  /** Stored expansion algorithm version (one of PROPFIELD_ALGO_VERSIONS). */
+  readonly algo: number;
+  readonly fields: MapPropField[];
 }
 
 /**
  * Parses a PFLD payload (structure only; value invariants are checked by validatePropFields).
  * `offset` is the payload's byte offset in the file, used for error positions.
  */
-export function decodePropFieldsChunk(data: Uint8Array, offset: number): MapPropField[] {
+export function decodePropFieldsChunk(data: Uint8Array, offset: number): PropFieldsChunk {
   const need = (p: number, bytes: number, what: string): void => {
     if (p + bytes > data.length) throw new FormatError('bad-length', `${what} runs past the chunk end`, 'PFLD', offset + p);
   };
@@ -600,7 +650,11 @@ export function decodePropFieldsChunk(data: Uint8Array, offset: number): MapProp
   };
   need(0, 4, 'PFLD header');
   const dv = dvOf(data);
-  const count = dv.getUint32(0, true);
+  const algo = dv.getUint16(0, true);
+  if (!PROPFIELD_ALGO_VERSIONS.includes(algo)) {
+    fail(`prop field algorithm version ${algo} is not supported by this build (known: ${PROPFIELD_ALGO_VERSIONS.join(', ')})`);
+  }
+  const count = dv.getUint16(2, true);
   if (count > MAP_MAX_PROP_FIELDS) fail(`prop field count ${count} exceeds ${MAP_MAX_PROP_FIELDS}`);
   const fields: MapPropField[] = [];
   let p = 4;
@@ -671,5 +725,5 @@ export function decodePropFieldsChunk(data: Uint8Array, offset: number): MapProp
     });
   }
   if (p !== data.length) throw new FormatError('bad-length', `${data.length - p} bytes after the last prop field`, 'PFLD', offset + p);
-  return fields;
+  return { algo, fields };
 }

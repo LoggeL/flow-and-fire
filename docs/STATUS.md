@@ -660,3 +660,186 @@ Firefox und WebKit, jeweils mit und ohne COOP/COEP).
 - Braidwater: Die Uferkiesflächen an den Inselfurten haben noch fast gerade Ränder (optisch, ohne Wirkung auf Wege).
 - Fels-Props sind wie auf Setons noch unsichtbar und nicht simuliert (Prop-System ab MS8); ohne Pathing (MS3)
   fahren Einheiten geradeaus. Dritte Karte des Sets steht aus.
+
+## Vorarbeits-Track TRACK-EDITOR (M12 vorgezogen)
+
+Stand 2026-09-30 · Branch `track-editor` (Worktree `flow-and-fire/.worktrees/faf-editor`, Basis `2fc956c`) ·
+Pakete P0–P7 + Review-Korrekturen. Kein Meilenstein aus PLAN §5.2, sondern ein paralleler Vorarbeits-Track zu MS3.
+Messwerte lokal auf Apple M5 Pro (Node 24.18, Playwright headless 1280×720), kein Referenz-Laptop/GPU-Runner
+(DECISIONS 5). Ausführlicher Bericht mit PFLD-Spezifikation, Validierungsregeln, Benchmarks und Fragmenten:
+[status/track-editor.md](status/track-editor.md); Entscheidungen: DECISIONS **TE-1 bis TE-10**.
+
+**Ergebnis:** **Marker-Editor `apps/marker-editor`** (Vite, three.js, Preact + `@preact/signals`) zum Laden/Speichern
+von `.rtsmap` – Terrain-Ansicht (Splat-Farben, Wasser, Licht, 32-WU-Raster), Startpositionen, Mass-/Hydro-Spots,
+**Prop-Felder** (Kreis/Polygon mit Art, gewichteten Blueprint-IDs, Dichte, Seed, Skalierung, max. Neigung, dryOnly,
+Reclaim Masse/Energie), Symmetrie (Punkt, Achse X/Z, Diagonale, Gegendiagonale; „Symmetrisieren“ als ein Undo-Schritt
+und Live-Symmetrie), Validierung mit festen Codes und klickbarer Liste, Undo/Redo (Limit 500, Drag = ein Schritt),
+Export `.rtsmap`, `markers.json` und `editor.json`. Das Kartenformat ist additiv um den optionalen Chunk **`PFLD`**
+erweitert (deterministische Integer-Expansion, Algo-Version in der Datei); bestehende Karten bleiben bytegleich,
+mapSimHash-Goldens unverändert (hollow-ridge `0x90ec94f0`, tessera `0x22cb60a8`, braidwater `0xeeaec694`,
+setons `0x52eccf92`).
+
+**Umgesetzte Feature-IDs:** **M12** (Marker-Editor, vollständig bis auf die Sim-Anbindung der Props);
+**E8** nur vorbereitet (Datenformat `PFLD` + Expansion in `@faf/formats`; Sim-/Render-Anbindung und Reclaim folgen in MS8).
+
+### Abnahme TRACK-EDITOR
+
+| # | Kriterium | Status | Messwert / Beleg |
+|---|---|---|---|
+| 1 | Editor baut und läuft; Laden über Auswahl, `?map=`, Datei-Dialog, Drag & Drop; Terrain-Ansicht | ✅ | Build grün; `view.spec.ts`, `files.spec.ts` (filechooser, `Strg/⌘+O`, Drop, Endungsfilter) in 3 Browsern; Setons laden bis erster Frame p50 66–71 ms (chromium), 107–109 ms (firefox), 94 ms (webkit) |
+| 2 | Bestehende Karten (setons, tessera, braidwater, hollow-ridge) unverändert bytegleich gespeichert | ✅ | Node (`document.test.ts`, `legacy-maps.test.ts`) und Browser-Download in chromium/firefox/webkit (`roundtrip.spec.ts`, Bytevergleich mit `content/maps/*.rtsmap`) |
+| 3 | Editor → Datei → Spiel-Loader → Datei bytegleich; mapSimHash Editor == Node == Loader | ✅ | `roundtrip-game.test.ts` (`ClientMap.fromBytes`, `resolveMap`, `SimCore`); `edit.spec.ts` prüft den Browser-Download einer bearbeiteten Karte in Node |
+| 4 | `PFLD` additiv, abwärtskompatibel; Goldens unverändert; `pnpm maps` idempotent; Name hash-neutral | ✅ | `packages/formats/test/{propfields,legacy-maps,rtsmap,mapc}.test.ts`; `pnpm maps && git diff --exit-code -- content/maps` leer; Algo-Version in der Datei, unbekannte Versionen abgelehnt |
+| 5 | Expansion integer-only, deterministisch, Golden, Anzahl ±15 % | ✅ | Golden 380 Props / `0x1cedb935`; fast-check-Roundtrip (150 Läufe); `sim/determinism` grün; 30k Props p50 7,8–8,5 ms, 65k p50 16,6–17,7 ms |
+| 6 | Setzen/Verschieben/Löschen aller Markerarten und Felder (inkl. Vertex/Radius) mit echten Mausgesten | ✅ | `edit.spec.ts` + `gestures.spec.ts` (je Geste genau ein Undo-Schritt, 3 Browser); Spot-Drag p50 0,5–0,6 ms je Mausbewegung |
+| 7 | Symmetrie-Werkzeuge (Punkt/Achsen/Diagonalen), Symmetrisieren = 1 Undo-Schritt, Live-Symmetrie | ✅ | `symmetry.test.ts` (Involution, 400 Zufallsläufe); Setons/Tessera exakt punktsymmetrisch, Symmetrisieren ändert nichts; `edit.spec.ts` |
+| 8 | Undo/Redo jeder Operation, Tastatur (inkl. QWERTZ), Undo bis 0 = Original | ✅ | Property-Tests (250 History-, 200 Store-Läufe); `keymap.test.ts` (QWERTZ/AZERTY/Dvorak/kyrillisch); E2E 26× `Strg+Z` → Original-Bytes |
+| 9 | Validierung: Spots auf flachem Land, Abstände, Erreichbarkeit über Neigung; 0 errors auf den 4 Karten | ✅ | 56 Validierungstests; `validation.spec.ts`; Terrain-Analyse Setons p50 11,1–11,7 ms (Ziel < 150), Validierung je Änderung p50 0,32–0,38 ms (Ziel < 5); Passierbarkeit = MS3-Nav (Paritätstest 0 Abweichungen) |
+| 10 | Export `.rtsmap` / `markers.json` / `editor.json`; mapc-Compile ergibt dieselben Marker/Felder | ✅ | `markers-json.test.ts` (compileMap bytegleich für alle 4 Karten), `editor-overlay.test.ts` (unverändert bytegleich, bearbeitet bis auf `PREV` gleich, Fixpunkt) |
+| 11 | Playwright-E2E (Port 4783, workers 1) in 3 Browsern, ohne Konsolenfehler; Screenshots geprüft | ⚠️ | 45/45 grün in zwei aufeinanderfolgenden Läufen (1,5–1,7 min); Chromium-Download-Roundtrip nur stabil mit Wiederholungs-Helfer `downloadVia()` (Abweichung 3 unten); 4 Screenshots in `docs/status/track-editor/` |
+| 12 | Benchmarks dokumentiert | ✅ | `pnpm --filter @faf/formats bench`, `pnpm --filter @faf/marker-editor bench`, `perf.spec.ts` (Tabellen im Bericht) |
+| 13 | Keine Änderungen in sim/nav/render/client/apps/game/content/maps; depcruise-Regel für den Editor | ✅ | `git diff --exit-code 2fc956c -- …` leer; depcruise 0 Verstöße (531 Module) |
+| 14 | Repo-weit grün: install, typecheck, lint, test | ✅ | `pnpm install --frozen-lockfile`, `tools/heavy pnpm typecheck`, `tools/heavy pnpm lint`, `tools/heavy pnpm test`: 126 Dateien / 1.287 Tests grün, 1 Datei (4 Tests) bewusst übersprungen (`nav-parity`, siehe offene Punkte) |
+| 15 | Doku | ✅ | dieser Abschnitt, `docs/status/track-editor.md` + Fragmente P0–P7, DECISIONS TE-1 bis TE-10, README |
+
+### Abweichungen vom Plan
+
+1. **Worktree-Pfad:** Die Aufträge nennen `/Users/logge/Documents/Projects/faf-editor`; der Worktree des Branches liegt
+   unter `/Users/logge/Documents/Projects/flow-and-fire/.worktrees/faf-editor`.
+2. **`packages/rules/src/terrain.ts` additiv erweitert** (`LAND_MAX_CELL_SLOPE_RAW`, `landCellSlopeRaw`,
+   `isLandCellBlocked`, TE-7): eine Land-Passierbarkeit für Nav, Editor-Validierung und Prop-Expansion.
+3. **E2E-Download-Wiederholung in Chromium:** headless Chromium verwirft gelegentlich einen von schnell
+   aufeinanderfolgenden Downloads (kein App-Fehler); `downloadVia()` klickt nach 5 s erneut (max. 3 Versuche,
+   Annotation `download-retry`).
+4. **`editor.json`-Overlay** (TE-8): Marker gehören dem Editor, Terrain dem Generator; mapc wendet
+   `content/maps/src/<name>/editor.json` an, damit `pnpm maps` Editor-Änderungen nicht überschreibt.
+5. **Zusatzgrenze `MAP_MAX_FIELD_CELLS = 2^21`**, neues Modul `src/mapprop.ts` in `@faf/formats` (Zyklusfreiheit),
+   Zusatzcode `field-invalid`; `asymmetric` prüft nur Starts/Spots.
+6. **`markers.json`** listet Mass- vor Hydro-Spots (mapc-Format); gemischte Reihenfolge bleibt im Binärexport und in
+   der optionalen geordneten `spots`-Liste erhalten.
+7. **ESLint ignoriert `docs/design/**`** (statische Mockups ließen `pnpm lint` schon auf der Basis scheitern);
+   depcruise ignoriert nur noch die eigenen `.d.ts`-Dateien.
+8. **Demo-Seiten entfernt**; der Test-Hook `exportHash()` nutzt xxHash32 aus `@faf/fixed` statt eigener SHA-256 (TE-9).
+
+### Offene Punkte für spätere Meilensteine
+
+- **Merge:** `ci:local` um `pnpm test:e2e:editor` ergänzen (TE-5); `packages/nav/src/static.ts` auf die Zellregel aus
+  `@faf/rules` umstellen, dann läuft `apps/marker-editor/test/validate/nav-parity.test.ts` ohne `FAF_NAV_SRC` mit
+  (gegen den MS3-Worktree heute 4/4 grün).
+- **MS8 (E8):** expandierte Props in `mapSimData`/Sim-Tabelle übernehmen, Prop-Blueprints `core:tree_01/02`,
+  `core:rock_01/02`, `core:wreck_01` anlegen, Reclaim-/Dichte-Defaults balancieren (TE-6), Instanced-Props im
+  Spiel-Renderer; exakt gespiegelte Expansion als Algo-Version 2.
+- **Editor-Komfort:** Layer-Sichtbarkeit des Overlays in der UI, Undo/Redo-Labels als Tooltip, Befundliste > 300
+  gruppieren, Marker-Plaketten batchen (570 Draw Calls auf Setons), Einfügen eines Vertex in einem Polygon, das sein
+  eigener Spiegelzwilling ist, spiegeln.
+- **Validierungsschwellen** (Start-Plattform 50 %, Flachheit) nach den ersten handgebauten Karten nachjustieren.
+- Ursache des Chromium-Download-Verlusts im E2E ungeklärt (nur Testumgebung).
+
+### Starten und Testen
+
+```sh
+pnpm editor                                         # http://localhost:5220/?map=setons (Strg+C beendet)
+pnpm --filter @faf/marker-editor build              # Produktions-Build nach apps/marker-editor/dist
+pnpm vitest run packages/formats apps/marker-editor # Unit-/Komponententests des Tracks
+FAF_E2E_PORT=4783 tools/heavy pnpm test:e2e:editor  # Playwright, 3 Browser, 45 Tests
+tools/heavy pnpm --filter @faf/formats bench        # bzw. @faf/marker-editor bench
+```
+
+Bedienung: Werkzeuge `1`–`7`, Linksklick setzt, Ziehen verschiebt, `Entf` löscht, `Strg/⌘+Z` / `Strg/⌘+Umschalt+Z`,
+`Strg/⌘+S` speichert (Download), `Strg/⌘+O` öffnet, `?` zeigt die Hilfe. Prop-Felder für bestehende Karten über
+„editor.json“ exportieren und unter `content/maps/src/<name>/editor.json` ablegen, danach `pnpm maps`.
+
+## Vorarbeits-Track TRACK-AUDIOENG (`@faf/audio`, 2026-09-30)
+
+Kein Meilenstein aus PLAN §5.2, sondern Vorarbeit für P7/P8 (Integration in MS5) auf Branch `track-audioeng`
+(Worktree `flow-and-fire/.worktrees/faf-audioeng`; der im Plan genannte Pfad `Projects/faf-audioeng` existiert nicht).
+`packages/sim|nav|render|client|protocol` und `apps/game` sind unverändert. **Vollständiger Stand, API, Messwerte,
+Abnahme-Belege und Integrationsschritte: [`docs/status/track-audioeng.md`](status/track-audioeng.md)**; Plan
+`docs/plans/TRACK-AUDIOENG.json`, Fragmente `docs/status/audioeng-{a0,a1,b1,b2,b3,c1,c2,d1}.md`.
+
+**Neu:** Blatt-Paket `packages/audio` (`@faf/audio`, einzige npm-Abhängigkeit `opus-decoder`, dynamisch als eigener
+Chunk) und Demo `apps/audio-demo` (Gefecht mit 200 Schüssen/s, RTS-Kamera, HUD, Browser-Tests mit echtem
+OfflineAudioContext). Module: `mixer`, `settings`, `voices`, `catalog`, `loader`, `unlock`, `spatial`, `alerts`,
+`router`, `events`, `decode`, `engine` (`createAudioEngine`).
+
+### Umgesetzte Feature-IDs
+
+| ID | Umfang in diesem Track | Rest |
+|---|---|---|
+| P7 Positions-Audio & SFX | Engine vollständig: Mixer, Voice-Limiting je Sound/Kategorie/global, Pan + Dämpfung nach Kamera/Zoom, Event→Sound-Daten, Lade-/Dekodierkette | Einbindung ins Spiel (MS5) |
+| P8 Warn-Ansagen & Alerts | Alert-Queue (Priorität, Intervall, Orts-Ausnahme, Verfall), Verlauf, Sprung-zum-Ort-Callback | Sim-Events für Alerts, Kamera-Flug im Spiel (MS5+) |
+| P9 (nur Audio-Teil) | Settings-Modell: 6 Lautstärken, Mute, Mute bei verborgenem Tab, Persistenz | Settings-UI, GPU-Autodetect (P9-Meilenstein) |
+
+### Abnahme (15 Kriterien aus `docs/plans/TRACK-AUDIOENG.json`)
+
+| # | Kriterium | Status | Messwert / Beleg |
+|---|---|---|---|
+| 1 | Blatt-Paket, nur `opus-decoder`, depcruise-Regeln, Tabu-Pfade unverändert | ✅ | `pnpm lint` (523 Module, keine Verstöße), Negativtest `audio-npm-deps`; `git status` der Tabu-Pfade leer |
+| 2 | Mixer: 6 Busse, Kurve, Rampen, Persistenz, Mute/Tab-Mute, Ducking, Limiter ≤ 1,0 | ✅ | Limiter-Peak bei 32 lauten Stimmen 0,963 (Chromium/WebKit) / 0,729 (Firefox), echter OfflineAudioContext |
+| 3 | Voice-Manager: ≤ 32, Limits, Priorität/Stealing, Cooldown, Varianten ±3 %, Steal-Fade, Tails | ✅ | Property-Test 10 × 1 000, Gefecht-200/400 je Frame geprüft; Browser 32/32 im Ack-Test, Steal-Fade 8 ms, ≤ 8 Tails |
+| 4 | Loops mit Loop-Punkten, nahtlos (auch 44,1 kHz), keyed Loops | ✅ | Naht 1,38 × Median (48 kHz), 1,03–1,04 × (44,1 kHz), Korrelation 1,0 in 3 Engines |
+| 5 | Lookup `<fraktion>:` → `common:`, 101 IDs zugeordnet, 17 MS5-Sounds, 27 Waffen-Refs | ✅ | Coverage-Test (59 sim / 40 client / 2 zurückgestellt), alle 55 MS5-Varianten dekodiert |
+| 6 | Event-Map als validierte JSON-Daten, FrameReader-Kontrakt, subTick, Aggregation, allokationsarm | ✅ | Typ- + Laufzeittest gegen echten `FrameReader`; Router ≈ 80–95 KB alloziert je 100 000 Events (vorher 2,7 MB) |
+| 7 | Räumlich: Pan, Distanz-/Zoom-Dämpfung je Profil, Culling vor Stimmenvergabe | ✅ | Pan ±9,76 dB (auch gedreht) in 3 Engines; 5 000 Property-Läufe |
+| 8 | Alert-Queue mit Priorität, Orts-Ausnahme, Verlauf, Sprung-zum-Ort | ✅ | 15 Unit-Tests; E2E Leertaste → Kamera auf Alert-Ort in 3 Engines |
+| 9 | Lade-/Dekodierpipeline native → WebCodecs → WASM, ≤ 6 parallel, Lazy, Fehler isoliert | ✅ | 3 Engines nativ; erzwungen WebCodecs/WASM sample-exakt; Firefox nativ 1 Sample kürzer (Toleranz) |
+| 10 | Autoplay-Unlock, Re-Lock, gesperrte Events verworfen | ✅ | E2E prüft `locked` hart; 193–221 `locked`-Drops vor dem Klick, keine Nachholung |
+| 11 | Ack/UI synchron auch bei vollem Pool, ≤ 1 Frame | ✅ | 32/32 belegt → 2 × `start(0)` im Klick-Handler, Handler 0,16–0,34 ms |
+| 12 | Demo Gefecht-200 + HUD, E2E grün in 3 Engines, keine Konsolenfehler | ✅ | E2E 27/27 (Port 4583, workers 1), Screenshot-Prüfung |
+| 13 | Main-JS p95 ≤ 0,5 ms bei Gefecht-200 (Node + 3 Browser) | ✅ (lokal, M5 Pro) | Node 0,0066–0,0078 ms; Chromium 0,155–0,275, Firefox 0,140–0,260, WebKit 0,140–0,180 ms (je 6 Läufe) |
+| 14 | Vitest mit Fake-AudioContext + OfflineAudioContext-Tests; typecheck/lint/test gesamt grün | ✅ | 33 Dateien / 340 Tests (audio + demo); `pnpm test` 130 Dateien / 1 285 Tests; Demo-E2E im Root-`test:e2e` |
+| 15 | Doku (track-audioeng.md, STATUS, DECISIONS, audio.md §6) | ✅ | dieser Abschnitt, DECISIONS 30–39 |
+
+Weitere Messwerte: Speicher dekodiert 78,8 MiB (alle 101 Sounds / 246 Varianten), 9,74 MiB MS5-Satz; Demo-Build
+Main-JS 33,85 kB; Engine-Leck-Test ≈ 30 KB gehalten über 20 000 Frames.
+
+### Abweichungen vom Plan (Details track-audioeng.md §9, DECISIONS 30–39)
+
+- Eigenes Paket `@faf/audio` statt Audio-Teil von `packages/client` (D30); Bus `voice` → `alerts`, Lautstärkekurve v²,
+  Mute-Quellen (D31); Loop-Punkte in Sekunden (D32); Dekodier-Fallbackkette mit `opus-decoder` (D33).
+- Steal-Fade 8 ms, Tail-Budget 8 (D34); Alert-Cooldown nur in der Queue (D35); Perf-Gate nur mit `FAF_AUDIO_PERF_GATE=1` (D36).
+- Limiter mit Makeup-Kompensation −1,71 dB + harter Clip, sonst Peak 1,17 in Chromium/WebKit (D37).
+- Waffe → Sound als Default-JSON im Audio-Paket, überschreibbar per `weaponSounds` (D38); Feldkodierung `aux`/`flags`
+  per `EventCodec` injizierbar, Todesklasse aus View-Daten je `visual` (D39).
+- Event-Map-Schema verfeinert (Familie × Oberfläche, Größenklassen, `then`, Zusatz-Alert, Burst), zwei zusätzliche
+  Kinds (`wreckDestroyed`, `upgradeComplete`); `commanderDeath` kartenweit ohne Position.
+- Root-Konfiguration additiv angepasst (tsconfig-References, ESLint, depcruise inkl. Exclude nur repo-eigener `.d.ts`,
+  `.gitignore`, Lockfile, `test:e2e` → `test:e2e:audio`); ESLint ignoriert `docs/design/ui-mockups/**`.
+  `@faf/protocol` ist nur devDependency (Kontrakt-Tests).
+
+### Offene Punkte für spätere Meilensteine
+
+- **MS5 (Integration, track-audioeng.md §11):** `@faf/audio` in `apps/game`/`client` einbinden, `FrameReader` als
+  `AudioEventSource`, 21 Event-Kinds append-only in `@faf/protocol` (MS5: weaponFire, projectileImpact, unitDeath,
+  commanderDeath, buildComplete, reclaimStart), `visualName` aus `view.json`, Assets per `fafAudioAssets` bzw.
+  Assets-Pipeline, Kamera → `setListener`, Ack aus dem Command-Builder, Unlock am ersten Klick.
+- **Integrationsrisiko TRACK-RENDERFX:** andere Tod-/Einschlag-Klassen als die vorläufige Audio-Kodierung; die
+  Kodierung muss in MS5 gemeinsam in `@faf/protocol` festgelegt werden.
+- P9: Settings-UI. MS9: `sig_bell_deep`. MS14: Gatling-Burst-Loop (bis dahin Einzelschuss-Fallback).
+- Post-MVP: Fraktion je Event (`visualFaction`), automatisches Entladen dekodierter Puffer (LRU), WASM-Dekodierung im
+  Worker, Wasser-Einschlagsounds (heute Boden −6 dB), `mov_hover_loop`.
+- Sporadische Einzel-Frame-Ausreißer (bis 25,6 ms Chromium bei 400/s, GC/headless) – p95/p99 im Budget.
+
+### Starten und prüfen
+
+```sh
+pnpm install
+pnpm --filter @faf/audio-demo dev          # http://localhost:5583 – Overlay klicken (Unlock), Gefecht läuft; Strg+C beendet
+                                           # ?shots=400&zoom=90&seed=1; WASD/Ziehen = Pan, Rad = Zoom, Q/E = Drehen,
+                                           # Leertaste = Sprung zum letzten Alert, Rechtsklick = Bewegungs-Ack
+                                           # offline.html?run=all – echte Web-Audio-Prüfungen im Browser
+pnpm exec vitest run packages/audio apps/audio-demo
+tools/heavy pnpm --filter @faf/audio bench                                   # Node „Gefecht-200/400“
+FAF_E2E_PORT=4583 tools/heavy pnpm --filter @faf/audio-demo test:e2e         # Chromium/Firefox/WebKit
+FAF_E2E_PORT=4583 tools/heavy pnpm --filter @faf/audio-demo bench:browser    # Browser-Messung
+```
+
+## Track RENDERFX (Vorarbeit, Branch `track-renderfx`, 2026-09-30)
+
+Paralleler Vorarbeits-Track ohne Meilenstein: neues Paket `@faf/render-fx` (GPU-Partikel mit 64k-Spawn-Ring und
+Varkan-Effektbibliothek, Beams/Projektil-Trails, Schild-Kugeln mit Fresnel und 4 Ripples, Scorch-/Krater-Decals,
+CSM mit statischem Cache, HDR + Dual-Kawase-Bloom + ACES + FXAA mit LDR-Fallback) und die Demo `apps/fx-lab`
+(Szenen battle, shields, big, gallery, lighting) mit Benchmark `pnpm bench:fx` und Screenshot-E2E
+`FAF_E2E_PORT=4683 pnpm test:e2e:fx`. `packages/render` und `tools/render-bench` sind unverändert; integriert wird in
+MS5, MS7, MS13 und MS14. Architektur, API, Messwerte, Abnahme und Integrationsanleitung:
+`docs/status/track-renderfx.md`, Entscheidungen: DECISIONS 30–38.

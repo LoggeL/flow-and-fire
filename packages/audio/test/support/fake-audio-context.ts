@@ -211,7 +211,7 @@ export class FakeAudioParam implements AudioParamLike {
 // Nodes
 // ---------------------------------------------------------------------------------------------
 
-export type FakeNodeKind = 'destination' | 'gain' | 'panner' | 'compressor' | 'source';
+export type FakeNodeKind = 'destination' | 'gain' | 'panner' | 'compressor' | 'shaper' | 'source';
 
 export class FakeAudioNode implements AudioNodeLike {
   /** Outgoing connections (no duplicates, like the Web Audio graph). */
@@ -284,6 +284,23 @@ export class FakeDynamicsCompressorNode extends FakeAudioNode implements Dynamic
     this.ratio = new FakeAudioParam(ctx, 12, 1, 20);
     this.attack = new FakeAudioParam(ctx, 0.003, 0, 1);
     this.release = new FakeAudioParam(ctx, 0.25, 0, 1);
+  }
+}
+
+/** WaveShaperNode (the mixer's safety clip); stores curve/oversample, processes nothing. */
+export class FakeWaveShaperNode extends FakeAudioNode {
+  private curveValue: Float32Array | null = null;
+  oversample = 'none';
+  constructor(ctx: FakeBaseAudioContext) {
+    super(ctx, 'shaper');
+  }
+  get curve(): Float32Array | null {
+    return this.curveValue;
+  }
+  /** Like the browser: a curve needs ≥ 2 points (InvalidStateError otherwise); stored as a copy. */
+  set curve(c: Float32Array | null) {
+    if (c !== null && c.length < 2) throw new DOMException('WaveShaperNode.curve: length must be ≥ 2', 'InvalidStateError');
+    this.curveValue = c === null ? null : new Float32Array(c);
   }
 }
 
@@ -455,7 +472,7 @@ export class FakeBaseAudioContext implements BaseAudioContextLike {
   peakLiveSources = 0;
   /** Nodes created through create*() (buffers not counted). */
   createdNodes = 0;
-  readonly createdByKind: Record<FakeNodeKind, number> = { destination: 0, gain: 0, panner: 0, compressor: 0, source: 0 };
+  readonly createdByKind: Record<FakeNodeKind, number> = { destination: 0, gain: 0, panner: 0, compressor: 0, shaper: 0, source: 0 };
   startedSources = 0;
   endedSources = 0;
   connectCalls = 0;
@@ -493,6 +510,11 @@ export class FakeBaseAudioContext implements BaseAudioContextLike {
   createDynamicsCompressor(): FakeDynamicsCompressorNode {
     this.count('compressor');
     return new FakeDynamicsCompressorNode(this);
+  }
+
+  createWaveShaper(): FakeWaveShaperNode {
+    this.count('shaper');
+    return new FakeWaveShaperNode(this);
   }
 
   createBuffer(numberOfChannels: number, length: number, sampleRate: number): FakeAudioBuffer {

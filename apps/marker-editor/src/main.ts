@@ -240,6 +240,9 @@ const io: PanelIo = {
   exportMarkersJson() {
     session.exportMarkersJson();
   },
+  exportEditorOverlay() {
+    session.exportEditorOverlay();
+  },
   focus: (xRaw, zRaw) => view.focus(xRaw / MAP_FX_ONE, zRaw / MAP_FX_ONE),
   fitView: () => view.fitCamera(),
   cursor: controller.cursor,
@@ -247,6 +250,39 @@ const io: PanelIo = {
 };
 
 mountPanels(ui, store, io);
+
+/**
+ * The panels cover the canvas margins: tell the view, so the fitted map and focused markers sit in
+ * the free middle area (measured from the panel columns and bars, updated on every layout change).
+ */
+function updateViewInsets(): void {
+  const c = canvas.getBoundingClientRect();
+  const edge = (sel: string, side: 'left' | 'right' | 'top' | 'bottom'): number => {
+    const el = ui.querySelector(sel);
+    if (!(el instanceof HTMLElement) || el.offsetParent === null) return 0;
+    const r = el.getBoundingClientRect();
+    if (side === 'left') return Math.max(0, r.right - c.left);
+    if (side === 'right') return Math.max(0, c.right - r.left);
+    if (side === 'top') return Math.max(0, r.bottom - c.top);
+    return Math.max(0, c.bottom - r.top);
+  };
+  view.setViewInsets({
+    left: edge('.me-col-left', 'left'),
+    right: edge('.me-col-right', 'right'),
+    top: edge('.me-topbar', 'top'),
+    bottom: edge('.me-statusbar', 'bottom'),
+  });
+}
+if (typeof ResizeObserver !== 'undefined') {
+  const insetObserver = new ResizeObserver(() => updateViewInsets());
+  insetObserver.observe(canvas);
+  for (const sel of ['.me-col-left', '.me-col-right', '.me-topbar', '.me-statusbar']) {
+    const el = ui.querySelector(sel);
+    if (el !== null) insetObserver.observe(el);
+  }
+}
+window.addEventListener('resize', updateViewInsets);
+updateViewInsets();
 
 const hookDeps: HookDeps = { store, session, view, picker, waitForRender };
 window.__editor = createEditorHooks(hookDeps);

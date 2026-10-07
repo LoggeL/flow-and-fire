@@ -367,3 +367,169 @@ MS3-23. **Blueprint-Format MS3: sim.bin v2, view.json v2, iconThreshold, Größe
 Detailbelege: [Konsolidierung](status/consolidation.md), [KI](status/track-ai.md),
 [HUD](status/track-hud.md), [Editor](status/track-editor.md), [Audio](status/track-audioeng.md),
 [FX](status/track-renderfx.md), [Replay](status/track-replay/p6.md).
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track TRACK-EDITOR (Marker-Editor, M12 vorgezogen)
+
+Nummerierung `TE-n`, damit parallele Tracks nicht kollidieren. Details: `docs/status/track-editor.md`.
+
+- **TE-1 Prop-Felder als Kartenchunk `PFLD`:** optional, zwischen `PROP` und `PREV`; Felder (Kreis/Polygon, Art
+  tree/rock/wreck, 1–16 Blueprint-IDs mit Gewicht, Dichte je 1024 WU², u32-Seed, Skalierung ‰, max. Neigung ‰, dryOnly,
+  Reclaim Masse/Energie in Milli je Prop). Fehlt der Chunk, bleibt die Datei bytegleich. Zusatzgrenzen: 256 Felder,
+  64 Polygonpunkte, `MAP_MAX_FIELD_CELLS = 2^21`, Props gesamt ≤ `MAP_MAX_PROPS`.
+- **TE-2 Hash-Regel und Algo-Version (Review-Korrektur):** Die Version des Expansionsverfahrens steht **in der
+  Datei** (PFLD-Kopf `u16 algoVersion | u16 fieldCount`, im Modell `RtsMap.propFieldAlgo`), nicht nur als
+  Code-Konstante. Der Leser kennt die Liste `PROPFIELD_ALGO_VERSIONS` und lehnt andere Versionen ab (`bad-value`);
+  die Expansion wählt das Verfahren nach der gespeicherten Version; neue Felder bekommen `PROPFIELD_ALGO_VERSION`.
+  Ein geändertes Verfahren wird eine **neue** Version, alte Versionen bleiben implementiert – vorhandene Karten
+  expandieren dadurch nie stillschweigend anders. `mapSimBytes` hängt nur bei nicht leeren Feldern
+  `'PFLD' | propFieldsSimBytes` an (PFLD-Layout inkl. gespeicherter Version, ohne Namen); der Feldname ist hash-neutral.
+  Algo v1 (globales Zellgitter `isqrt(2^34/Dichte)`, `rng32`-Kandidaten, Wassertest, Zellneigung nach TE-7) liegt in
+  `@faf/formats` unter dem Determinismus-Lint. Der Editor behält die Version der geöffneten Karte bei jeder Änderung bei.
+- **TE-3 three.js im Editor statt `packages/render`:** Tool-Code nach PLAN §3.2; unabhängig vom parallel umgebauten
+  Spiel-Renderer, eigene Overlays und exaktes Picking gegen `sampleHeightRaw`. depcruise erlaubt `apps/marker-editor/src`
+  nur formats, fixed, rules, protocol, three, preact, @preact/signals.
+- **TE-4 Validierungsschwellen:** Spot-Rand 12 WU (DECISIONS 29), Start-Rand 16 WU; Spot flach: > 0,5 WU Höhenunterschied
+  im Radius 1,5 WU = Fehler, > 0,1 WU im Radius 3 WU = Warnung; Spot-Abstand < 2 WU Fehler / < 4 WU Warnung; Spot–Start
+  < 4 WU Fehler; Start–Start < 48 WU Fehler / < 96 WU Warnung; Bauplatz ≥ 50 % passierbare Zellen im Radius 8 WU;
+  Erreichbarkeit über die Land-Passierbarkeit des Spiels (TE-7, Größenklasse 1); Feld-Props frei ≥ 2 WU um Spots,
+  ≥ 8 WU um Starts. Die vier bestehenden Karten liefern damit 0 errors.
+- **TE-5 Editor-E2E nicht in `ci:local` bis zum Merge:** `pnpm test:e2e:editor` läuft separat (eigener Preview-Server,
+  Port `FAF_E2E_PORT`/4783); der Merge-Schritt ergänzt `ci:local`.
+- **TE-6 Prop-Blueprints und Reclaim-Defaults sind Platzhalter:** Editor-Template referenziert `core:tree_01`,
+  `core:rock_01`, `core:wreck_01` (Baum 25 E, Fels 10 M, Wrack 30 M je Prop, Dichte 64, Neigung 600 ‰, dryOnly);
+  Blueprints und Balancing folgen in MS8/E8.
+- **TE-7 Eine Land-Passierbarkeit für Nav, Editor und Prop-Felder (Review-Korrektur):** Die Zellregel steht jetzt in
+  `@faf/rules` (`terrain.ts`, additiv): `LAND_MAX_CELL_SLOPE_RAW = 3072` (0,75), `landCellSlopeRaw` (max − min der
+  4 Eckhöhen einer 1-WU-Zelle) und `isLandCellBlocked` (Kartenrand, Neigung, Tiefwasser in Zellmitte) – identisch zu
+  `NAV_LAND_MAX_SLOPE_RAW`/`cellSlopeRaw`/`terrainCell` der MS3-Nav. Der Editor rechnet Erreichbarkeit auf diesen
+  Zellen mit Clearance je Größenklasse und 8-Nachbarschaft ohne Eckenschneiden wie die Nav; die Prop-Feld-Expansion
+  prüft `maxSlope` gegen dieselbe Zellneigung (vorher drei Varianten: Editor-Gradient 0,6, Nav-Zelle 0,75,
+  Expansions-Zentraldifferenz). Der Editor importiert `@faf/nav` weiterhin nicht (Regel `marker-editor-deps`
+  unverändert); `rules` ist der gemeinsame Ort. Paritätstest `apps/marker-editor/test/validate/nav-parity.test.ts`
+  vergleicht Passierbarkeit, Clearance und Komponentenlabels aller 3 Klassen auf den 4 Karten mit der Nav
+  (über `FAF_NAV_SRC` gegen den MS3-Worktree: 0 Abweichungen; nach dem Merge automatisch gegen `packages/nav`).
+  Übergabe an den Merge: `packages/nav/src/static.ts` soll `landCellSlopeRaw`/`LAND_MAX_CELL_SLOPE_RAW` aus `rules`
+  verwenden statt eigener Kopien.
+- **TE-8 Marker gehören dem Editor, Terrain dem Generator (Review-Korrektur):** `markers.json` bleibt Ausgabe der
+  Generatoren (`mapgen*.ts` schreiben sie bei jedem `pnpm maps` neu). Der Editor exportiert zusätzlich
+  **`editor.json`** (Starts, Spots in Kartenreihenfolge, Prop-Felder, `propFieldAlgo`) für
+  `content/maps/src/<name>/editor.json`; kein Skript schreibt diese Datei. `mapc` (`compileMapSource`, `--overlay`)
+  ersetzt damit Starts/Spots/Felder aus `markers.json` vor dem Kompilieren. Editor-Änderungen überstehen so jede
+  Regeneration. Dazu kann `markers.json` Spots jetzt optional als geordnete Liste `spots: [{kind, x, z}]` statt
+  `mass`/`hydro` führen (additiv).
+- **TE-9 Test-Hook ohne eigene SHA-256:** `window.__editor.exportHash()` liefert xxHash32 (`@faf/fixed`) der
+  Export-Bytes; die zweite SHA-256-Implementierung und die Demo-Seiten (`overlay-demo.html`, `ui-preview.html`) sind
+  entfernt, `vite build` baut nur noch `index.html`.
+- **TE-10 Buchstabenkürzel nach Zeichen, nicht nach Tastenposition (Review-Korrektur):** Z/Y/S/O/F/G im Editor
+  werden über `KeyboardEvent.key` zugeordnet, `code` ist nur Rückfall für nicht-lateinische Layouts. Auf QWERTZ
+  (Taste „Z“ meldet `code = 'KeyY'`) macht Strg/⌘+Z damit rückgängig statt wiederherzustellen. Ziffern, Entf, Esc,
+  Enter bleiben positionsbasiert (`code`).
+
+## Nachtrag 2026-09-30 – Vorarbeits-Track TRACK-AUDIOENG (`@faf/audio`)
+
+Details, Messwerte und Belege: `docs/status/track-audioeng.md` und die Fragmente `docs/status/audioeng-*.md`.
+Die Nummerierung setzt die globale Liste (1–29) fort.
+
+30. **Audio als eigenes Blatt-Paket `@faf/audio` statt als Teil von `packages/client`.** PLAN §2 führt Audio unter
+    `client`; die Engine entstand parallel zu MS3 als Vorarbeit und darf `client` nicht anfassen. Als Blatt-Paket
+    (keine Workspace-Abhängigkeiten, npm nur `opus-decoder`) ist sie isoliert testbar (Fake-AudioContext, Browser-
+    Demo) und von `client`/`apps/game` in MS5 einfach einzubinden. dependency-cruiser erzwingt `audio-is-leaf`,
+    `audio-npm-deps`, `presentation-never-imports-sim` und `sim-never-imports-presentation` (inkl. `audio`).
+31. **Manifest-Bus `voice` wird auf den Mixer-Bus `alerts` abgebildet.** Quittungen und Alerts teilen sich einen
+    Regler „Alerts“ (Settings-UI: master/sfx/ui/alerts/music/ambience); `voice` bleibt im Manifest für spätere
+    Sprachzeilen reserviert. Lautstärkekurve `gain = v²` (monoton, 0 → Stille ohne Sonderfall), Änderungen als
+    Rampen (τ 15 ms), Mute-Quellen Nutzer/verborgener Tab/System getrennt.
+32. **Loop-Punkte werden in Sekunden gesetzt** (`loop.startS/endS` → `loopStart/loopEnd`), nicht als Samples. Web
+    Audio erwartet Sekunden; so bleiben sie auch für resampelte Puffer (44,1-kHz-Kontext, nativer Dekodierpfad)
+    richtig – im Browser belegt (Naht 1,03–1,04 × Median bei 44,1 kHz, 1,38 × bei 48 kHz).
+33. **Dekodier-Fallbackkette native → WebCodecs → WASM (`opus-decoder`).** `decodeAudioData` genügt heute in
+    Chromium, Firefox und WebKit; WebCodecs (`AudioDecoder` + eigener WebM-Demuxer) und WASM decken Browser ohne
+    Opus/WebM-Unterstützung ab. `opus-decoder` wird nur per dynamischem Import geladen (eigener Chunk, WASM
+    eingebettet, kein Extra-Asset). Einmalige Fähigkeitsprobe je Kontext; ein Dekodierfehler schaltet nur den
+    betroffenen Sound stumm. `parseManifest` verlangt `sampleRate 48000`.
+34. **Stealing- und Tail-Regel.** Höhere Priorität verdrängt die leiseste Stimme streng niedrigerer Priorität (nie
+    umgekehrt; Loops nur durch streng höhere Priorität); Sound-/Kategorie-Limits stehlen innerhalb gleicher
+    Priorität nur, wenn der neue Sound mindestens so laut ist. Gestohlene Stimmen geben ihren Platz sofort frei und
+    blenden in 8 ms aus; diese Tails zählen nicht zu den 32 Stimmen, sind aber auf 8 begrenzt (ist das Budget voll,
+    wird der älteste Tail hart geschnitten) – höchstens 40 klingende Quellen. Culling vor der Stimmenvergabe
+    (auch nicht räumliche Anfragen unter −48 dB).
+35. **Alert-Orts-Ausnahme.** Das Wiederholintervall je Alert (Manifest `cooldownMs`, überschreibbar per Event-Map)
+    verwaltet allein die Alert-Queue: Derselbe Alert wird im Intervall trotzdem angesagt, wenn er einen Ort hat,
+    ≥ 1,5 s seit der letzten Annahme vergangen sind und er > 48 WU (bzw. `radiusWu`) von allen noch gültigen Orten
+    dieses Alerts entfernt ist. Der Sound-Cooldown des Voice-Managers ist für Kategorie `alert` daher aus (sonst
+    würde die Ausnahme stumm verworfen); die Queue garantiert ohnehin genau eine Alert-Stimme.
+36. **Perf-Gate der Audio-Engine nur mit `FAF_AUDIO_PERF_GATE=1`** (Anwendung von DECISIONS 16). Node-Benchmark und
+    Browser-E2E/-Messung melden Main-JS p95 gegen 0,5 ms; hart geprüft (Exit-Code/Test rot) wird nur mit der
+    Umgebungsvariable. Werte „lokal gemessen“ auf Apple M5 Pro (DECISIONS 5).
+37. **Master-Limiter mit Makeup-Kompensation und Sicherheits-Clip.** Der `DynamicsCompressorNode` addiert laut
+    Spec automatisch `(1/fullRangeGain)^0,6` (+1,71 dB bei −3 dB/Ratio 20); 32 laute Stimmen erreichten dadurch
+    Peak 1,17 in Chromium/WebKit. Der Mixer hängt einen festen Gain von −1,71 dB und einen WaveShaper-Clip (±1)
+    an den Limiter: Peak 0,963 (Chromium/WebKit) bzw. 0,729 (Firefox), schon ohne Clip ≤ 1,0.
+38. **Zuordnung Waffe → Sound als Default-JSON im Audio-Paket, View-Daten legen sich darüber.** `docs/design/audio.md`
+    §6 sieht den Sound-Schlüssel je Waffe in den View-Daten; bis MS5 existiert keine View-Daten-Pipeline für Sounds,
+    daher liegt die Zuordnung (`core:wpn_*` → Sound + Alias-Rate/Gain + Einschlag-Familie) in
+    `packages/audio/src/events/default-event-map.json`. Damit eine neue Waffe/Fraktion reine Blueprint-Daten bleibt
+    (PLAN §3.1), ersetzt die Engine-Option `weaponSounds` die Map nicht, sondern legt Einträge darüber
+    (`withWeaponSounds`). Der Router löst mit **einer** Fraktion (Zuschauer) auf; Events tragen keinen
+    Fraktionsbezug. Für eine zweite Fraktion (post-MVP) kommt die Fraktion je Event aus `visual` (Callback
+    `visualFaction`, Caches je Fraktion) – nicht aus einer globalen Engine-Fraktion.
+39. **Kodierung der Event-Felder gehört in `@faf/protocol`, Audio bekommt sie injiziert.** Die `aux`-Enums,
+    Flag-Bits und Alert-Indizes in `packages/audio/src/events/kinds.ts` sind nur die vorläufige Audio-Kodierung
+    (Demo, Tests). TRACK-RENDERFX nutzt für dieselben Events andere Klassen; die Sim kann nur eine Kodierung
+    senden. In MS5 legt `@faf/protocol` die Kodierung append-only fest; der Client übersetzt sie per `EventCodec`
+    (`impactSurface`, `alertIndex`, `unlocatedMask`, `visualDeathProfile`). Präsentationsklassen (Todes-Größe,
+    Luft/Gebäude) sendet die Sim nicht: sie kommen clientseitig aus den View-Daten je `visual` (= Blueprint-Sim-ID),
+    damit klangliche Umstufungen weder `sim.bin`/`bpSimHash` noch Replays berühren (PLAN §3.1).
+
+## Nachtrag 2026-09-30 – TRACK-RENDERFX (Vorarbeit, Branch `track-renderfx`)
+
+Paralleler Vorarbeits-Track ohne Meilenstein: GPU-Partikel, Beams/Trails, Schilde, Scorch-Decals, CSM und Post
+entstehen vor MS5/MS7/MS13/MS14 als eigenes Paket und werden dort integriert. Details, API, Messwerte und
+Integrationsanleitung: `docs/status/track-renderfx.md`.
+
+30. **Eigenes Paket `@faf/render-fx` statt Änderungen an `packages/render`.** MS3 ändert render parallel (Icons,
+    Strategic Zoom, Decals G19). render-fx baut nur auf der öffentlichen render-API auf (RHI `GpuDevice`,
+    `RtsCamera`, `FRAME_BLOCK_GLSL`, `RENDER_PRESETS`). Die Abhängigkeitsrichtung ist per dependency-cruiser
+    festgelegt: render importiert render-fx nie, render-fx hängt nur von render/fixed/protocol und gl-matrix ab.
+    Die Demo `apps/fx-lab` ersetzt bis zur Integration den Renderer. Die Integration baut die Passes in
+    `packages/render/src/renderer.ts` ein; das fx-lab selbst wird nicht integriert.
+31. **Verbindliche Slot-Tabelle** (`packages/render-fx/src/core/slots.ts`): render belegt UBO 0–3 und Textur-Units
+    0–7; UBO 4/5 und Units 8/9 bleiben für render/MS3 frei. FX: UBO 6 `FxView`, 7 `FxShadowRecv`, 8 `FxScorch`;
+    Units 10/11 CSM statisch/dynamisch, 12 Kurven-LUT, 13/14 Scorch-Daten/-Zellen, 15 Partikel-Layer-Tabelle
+    (Erweiterung aus rfx-p3). Post-Passes sind eigene Fullscreen-Passes und nutzen ihre eigenen Units 0/1.
+32. **Partikel: ein premultiplied Draw, keine Sortierung, keine Soft-Particles.** Additiv (Alpha 0) und
+    Alpha-Partikel teilen sich einen Draw mit `blend: 'premultiplied'`, depthTest an und depthWrite aus
+    (2 Draws, wenn das Live-Fenster über das Ringende läuft). Additive Anteile sind reihenfolgeunabhängig, und
+    bei RTS-Kameradistanz stört Rauch in Spawn-Reihenfolge nicht. Soft-Particles bräuchten eine Tiefenkopie pro
+    Frame und sind bei Bedarf in MS14 zusammen mit der PostChain nachrüstbar.
+33. **FX-Zeit im Shader = Sekunden mod 4096.** Alter = `mod(now − t0 + 4096, 4096)`. Damit reicht f32-Präzision
+    über beliebig lange Spiele. Lebensdauern sind vertraglich ≤ 60 s (Effektdaten: Lebensdauer ≤ 30 s,
+    Delay ≤ 10 s). Die FX-Uhr ist dieselbe Client-Zeit, die das Frame-UBO bekommt, nie die Sim-Zeit direkt.
+34. **Prioritäten- und Cap-Politik.** Cap = `RENDER_PRESETS[preset].caps.particles` (Low 8.192, Medium 16.384,
+    High 32.768, Ultra 65.536), Ring immer 65.536. Priorität 0 (Kern der Kommandanten-Explosion) wird nie
+    verworfen; `alive` darf den Cap um die lebenden Prio-0-Partikel überschreiten (je Kommandant ≤ 112).
+    Priorität 1 spawnt bis `alive < Cap`, Priorität 2 bis `alive < 0,75 · Cap`. Sicht-Culling und Ausdünnung
+    (Bildschirmradius < 1,5 px bzw. < 8 px) treffen nur Priorität 2. Verworfene Partikel zählen je Priorität.
+35. **MSAA entfällt, FXAA auf allen Stufen.** Das RHI kennt keine Multisample-Renderbuffer und keinen Resolve, und
+    render darf im Track nicht geändert werden. Wenn MS14 MSAA will, braucht das RHI `RenderbufferDesc.samples`
+    plus einen Resolve-Pass; dann FXAA auf High/Ultra abschalten.
+36. **Scorch-Binning bleibt bis zur Zusammenführung eigenständig.** `ScorchDecals` bint in 32-WU-Chunks (= render's
+    `TERRAIN_PATCH_WU`) und nutzt eigene Texturen (Units 13/14) und einen eigenen UBO (Slot 8). Die Zusammenlegung
+    mit render's `DecalBinner` (G19/MS3) ist eine Integrationsaufgabe in MS7: gleiche Binning-Logik, verschiedene
+    Formen (SDF-Ringe gegen prozeduralen Ruß).
+37. **Eigener Port für das fx-lab.** Die Playwright-E2E (`pnpm test:e2e:fx`) laufen gegen `vite preview` auf
+    `FAF_E2E_PORT ?? 4683`, der Dev-Server auf 4685 (oder dem nächsten freien Port). Das kollidiert nicht mit den
+    Spiel-E2E (4183/4184) und lässt Port 5199 frei. Benchmark und Screenshot-Werkzeug öffnen keinen Port: Sie
+    liefern `dist` per `page.route` unter einer virtuellen, cross-origin-isolierten Origin aus.
+38. **Messung ≠ Gate gilt auch für `bench:fx`** (wie Punkt 16). Exit-Code 1 nur bei Fehlern (GL-/Shader-/Seitenfehler,
+    `__fxlab.error`, nicht registrierte Szene) und beim Überschreiten des Draw-Budgets: FX-Draws
+    (Schilde + Partikel + Beams/Trails) ≤ 6 und Gesamt ≤ 40 je Frame. Draws sind hardwareunabhängig, ms-Werte nicht.
+    ms-Werte sind lokal gemessen (Apple M5 Pro, Playwright headless, kein Iris Xe, Punkt 5) und stehen als
+    Wertebereiche in `docs/status/track-renderfx.md`.
+
+## Nachtrag 2026-10-07: Worktree-Nachlauf
+
+- **Zu 30:** Die Archive unter `.worktrees/` sind aufgelöst. Ihr Nachlauf nach dem Erhaltungscheck
+  ist per Merge eingebracht (Editor, Audio, Render-FX) oder bewusst durch den weiterentwickelten
+  Root-Stand ersetzt (Replay, HUD, KI, MS3). Alle Branches gelten als gemergt; Details:
+  [Konsolidierung](status/consolidation.md).

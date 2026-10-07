@@ -64,11 +64,7 @@ True Peak ≤ −1 dBTP in WAV und dekodiertem Opus. Gesamt 32 Stimmen; ist alle
 
 ## 6. Integrationsplan
 
-Die vorgezogene Engine liegt jetzt in `packages/audio`, die isolierte Oberfläche in
-`apps/audio-demo`. Aktuelle APIs, Busse (`voice` wird zu `alerts`), Loop-Sekunden, Dekodierung und
-Abnahme stehen in [TRACK-AUDIOENG](../status/track-audioeng.md). Die folgende Liste beschreibt die
-noch ausstehende Spielintegration; die dort ursprünglich vorgesehene Implementierung im Client
-wird durch das eigenständige Audio-Paket ersetzt.
+> **Vorab umgesetzt (TRACK-AUDIOENG, 2026-09-30):** Mixer (Busse, Limiter, Ducking, Settings) und Voice-Manager (32 Stimmen, Limits, Priorität/Stealing, Cooldown, Varianten, Loops) samt Lade-/Dekodier-Pipeline, räumlichem Modell, Alert-Queue und Event→Sound-Router liegen als eigenes Paket `@faf/audio` (`packages/audio`) vor, nicht in `packages/client`. Der Manifest-Bus `voice` läuft dort über den Mixer-Bus `alerts`. Stand, API, Messwerte und die konkreten Integrationsschritte für MS5: `docs/status/track-audioeng.md` (§11). Das Waffen-Mapping liegt vorerst als Default-JSON im Paket; View-Daten legen sich per `weaponSounds` darüber (DECISIONS 38). Die Kodierung der Event-Felder (Einschlag-Oberfläche, Todesklasse, Alert-Index) legt `@faf/protocol` fest, der Client übersetzt per `EventCodec`; die Todesklasse kommt aus den View-Daten je `visual` (DECISIONS 39). Der folgende Plan gilt unverändert für die Anbindung im Spiel.
 
 **MS5 (P7, Platzhalter-Set):** Web-Audio-Mixer in `packages/client`: Busse (sfx, ui, voice, music, ambience), Voice-Manager mit 32 Stimmen, Priorität, Stimmen-Limit und Cooldown je Kategorie aus dem Manifest, Panning und Dämpfung nach Zoom, Variantenwahl ohne Wiederholung ±3 % Tonhöhe, Loop zwischen `startSample`/`endSample`, ein Bau-Loop pro Armee (Rate/Dichte aus Build Power). Laden der Opus/WebM-Dateien über das Manifest; die Asset-Pipeline (`packages/assets-pipeline`, „Audio-Transcode, Manifest") übernimmt `content/audio/dist/**/*.webm` + `manifest.json` in den Build-Output. Waffen-Mapping `core:wpn_*` → Sound-id (+ Alias-Rate) in den View-Daten. Die 17 MS5-Sounds der SOUNDLIST. Abnahme: ≤ 32 Stimmen, ≤ 0,5 ms Main-JS, Ack-Sound ≤ 1 Frame nach dem Klick.
 

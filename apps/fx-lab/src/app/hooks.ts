@@ -4,7 +4,7 @@
  */
 import type { RenderPresetName } from '@faf/render';
 import type { FxSegment } from '@faf/render-fx';
-import type { LabFxStats, SceneName } from './context.ts';
+import type { LabFxStats, LabGpuSegMode, SceneName } from './context.ts';
 
 export const SAMPLE_RING_SIZE = 2048;
 
@@ -40,11 +40,14 @@ export interface FxLabStats {
   fx: LabFxStats;
   scene: Record<string, number>;
   units: number;
-  decals: { count: number; cap: number };
+  /** Scorch pool: live decals, cap, (decal, chunk) pairs dropped by the per-chunk limit at the last pack. */
+  decals: { count: number; cap: number; chunkOverflow: number };
   csm: { enabled: boolean; staticRefreshes: number; staticDraws: number; dynamicDraws: number };
   post: { hdr: boolean; bloom: boolean; levels: number; fxaa: boolean };
   shakeActive: boolean;
   gpuTimer: boolean;
+  /** GPU timer granularity of this page (`gpuseg`): 'pass' times only shadow, scene (in 'opaque') and post. */
+  gpuSeg: LabGpuSegMode;
   canvas: [number, number];
 }
 
@@ -66,6 +69,11 @@ export interface FxLabHooks {
   restoreContext(): boolean;
   /** Forwards to the scene 'big' (immediate ACU explosion); no-op without it. */
   triggerBigExplosion(): void;
+  /**
+   * Scene markers projected with the camera of the last frame: centre and radius relative to the
+   * canvas (x, r in canvas widths, y in canvas heights; 0..1 = on screen). Empty without markers.
+   */
+  markers(): { id: string; x: number; y: number; rx: number; ry: number }[];
 }
 
 declare global {
@@ -159,14 +167,15 @@ export class SampleRing {
       const i = (this.head - k + this.capacity) % this.capacity;
       const seg = {} as SegmentRecord<number | null>;
       let sum = 0;
-      let complete = true;
+      let any = false;
       for (let s = 0; s < nSeg; s++) {
         const v = this.gpu[i * nSeg + s]!;
         const ok = !Number.isNaN(v);
         seg[this.segments[s]!] = ok ? v : null;
         if (ok) {
           sum += v;
-        } else complete = false;
+          any = true;
+        }
       }
       out.push({
         frame: this.frame[i]!,
@@ -177,7 +186,7 @@ export class SampleRing {
         labJsMs: this.labJs[i]!,
         draws: this.draws[i]!,
         fxDraws: this.fxDraws[i]!,
-        gpuMs: complete ? sum : null,
+        gpuMs: any ? sum : null,
         gpuSeg: seg,
         particlesAlive: this.alive[i]!,
       });
